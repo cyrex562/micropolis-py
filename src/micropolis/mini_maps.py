@@ -13,11 +13,11 @@ Key features:
 - Support for multiple color depths and rendering modes
 """
 
-from typing import Optional, Callable, Any
 
-from . import types
-from . import macros
 
+from collections.abc import Callable
+from typing import Any
+from . import macros, types
 
 # ============================================================================
 # Small Map Rendering Functions
@@ -215,7 +215,7 @@ def drawDynamic(view: types.SimView) -> None:
 # Helper Functions
 # ============================================================================
 
-def _draw_filtered_map(view: types.SimView, filter_func: Optional[Callable[[int, int, int], int]] = None) -> None:
+def _draw_filtered_map(view: types.SimView, filter_func: Callable[[int, int, int], int]|None = None) -> None:
     """
     Generic function to draw a filtered small map.
 
@@ -261,7 +261,7 @@ def _draw_filtered_map(view: types.SimView, filter_func: Optional[Callable[[int,
             # In pygame, this would update the surface position
 
 
-def _render_small_tile(view: types.SimView, image: Optional[Any], tile: int,
+def _render_small_tile(view: types.SimView, image: Any|None, tile: int,
                       line_bytes: int, pixel_bytes: int) -> None:
     """
     Render a 4x4 small tile to the display buffer.
@@ -291,7 +291,7 @@ def _render_small_tile(view: types.SimView, image: Optional[Any], tile: int,
     # This would need pygame surface integration for actual rendering
 
 
-def _render_solid_color(view: types.SimView, image: Optional[Any], color: int,
+def _render_solid_color(view: types.SimView, image: Any|None, color: int,
                        line_bytes: int, pixel_bytes: int) -> None:
     """
     Render a solid color block (3x3 pixels) to the display buffer.

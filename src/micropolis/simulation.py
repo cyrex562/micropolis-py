@@ -8,7 +8,7 @@ ported from s_sim.c, implementing the city simulation mechanics.
 from typing import Optional
 import time
 
-from . import types, macros, power, zones
+from . import types, macros, power, zones, sprite_manager as sprites
 
 
 # ============================================================================
@@ -637,7 +637,7 @@ def ClearCensus() -> None:
     types.NuclearPop = z
     types.PortPop = z
     types.APortPop = z
-    types.PowerStackNum = z  # Reset before Mapscan
+    power.PowerStackNum = z  # Reset before Mapscan
 
     for x in range(types.SmX):
         for y in range(types.SmY):
@@ -776,23 +776,11 @@ def CollectTax() -> None:
 
     Ported from CollectTax() in s_sim.c.
     """
-    global CashFlow
-
-    # Tax level factors
-    RLevels = [0.7, 0.9, 1.2]
-    FLevels = [1.4, 1.2, 0.8]
-
-def CollectTax() -> None:
-    """
-    Calculate and collect taxes.
-
-    Ported from CollectTax() in s_sim.c.
-    """
     global CashFlow, AvCityTax
 
     # Tax level factors
-    RLevels = [0.7, 0.9, 1.2]
-    FLevels = [1.4, 1.2, 0.8]
+    r_levels = [0.7, 0.9, 1.2]
+    f_levels = [1.4, 1.2, 0.8]
 
     CashFlow = 0
     if not types.TaxFlag:  # if the Tax Port is clear
@@ -802,9 +790,9 @@ def CollectTax() -> None:
 
         types.PoliceFund = types.PolicePop * 100
         types.FireFund = types.FireStPop * 100
-        types.RoadFund = (types.RoadTotal + (types.RailTotal * 2)) * RLevels[types.GameLevel]
+        types.RoadFund = (types.RoadTotal + (types.RailTotal * 2)) * r_levels[types.GameLevel]
         types.TaxFund = (((types.TotalPop * types.LVAverage) // 120) *
-                        types.CityTax * FLevels[types.GameLevel])
+                        types.CityTax * f_levels[types.GameLevel])
 
         if types.TotalPop:  # if there are people to tax
             CashFlow = int(types.TaxFund - (types.PoliceFund + types.FireFund + types.RoadFund))
@@ -823,12 +811,12 @@ def UpdateFundEffects() -> None:
     Ported from UpdateFundEffects() in s_sim.c.
     """
     if types.RoadFund:
-        types.RoadEffect = int(((types.RoadSpend / types.RoadFund) * 32.0))
+        types.RoadEffect = int((types.RoadSpend / types.RoadFund) * 32.0)
     else:
         types.RoadEffect = 32
 
     if types.PoliceFund:
-        types.PoliceEffect = int(((types.PoliceSpend / types.PoliceFund) * 1000.0))
+        types.PoliceEffect = int((types.PoliceSpend / types.PoliceFund) * 1000.0)
     else:
         types.PoliceEffect = 1000
 
@@ -936,7 +924,7 @@ def DoRoad() -> None:
     DenTab = [types.ROADBASE, types.LTRFBASE, types.HTRFBASE]
 
     types.RoadTotal += 1
-    # GenerateBus(SMapX, SMapY) - placeholder
+    sprites.GenerateBus(types.SMapX, types.SMapY)
 
     if types.RoadEffect < 30:  # Deteriorating Roads
         if (types.Rand16() & 511) == 0:

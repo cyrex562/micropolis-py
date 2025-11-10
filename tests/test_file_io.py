@@ -7,7 +7,6 @@ Tests city file loading and saving functionality.
 import os
 import tempfile
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from micropolis.file_io import loadFile, saveFile, validateCityFile, getCityFileInfo
 from micropolis import types, allocation, initialization
@@ -112,7 +111,3 @@ def test_file_io():
 
     print("All file I/O tests passed!")
     return True
-
-if __name__ == "__main__":
-    success = test_file_io()
-    sys.exit(0 if success else 1)

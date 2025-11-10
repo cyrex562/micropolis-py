@@ -6,8 +6,7 @@ implementing fire analysis, population density scanning, pollution/terrain/land 
 analysis, crime scanning, and various smoothing operations.
 """
 
-from . import types, zones, simulation
-
+from . import simulation, types, zones
 
 # ============================================================================
 # Global Scanner State

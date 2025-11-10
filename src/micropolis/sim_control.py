@@ -7,13 +7,22 @@ budget management, and various simulation parameters that were exposed
 through TCL commands in the original implementation.
 """
 
-import time
 import random
-from typing import Optional, Tuple
+import time
+
 
 # Import simulation modules
-from . import types, engine, initialization, file_io, generation, evaluation
-from . import disasters, traffic, terrain
+from . import (
+    disasters,
+    engine,
+    evaluation,
+    file_io,
+    generation,
+    initialization,
+    terrain,
+    traffic,
+    types,
+)
 from . import random as sim_random
 
 # ============================================================================
@@ -227,7 +236,10 @@ def load_scenario(scenario_num: int) -> None:
 
 def get_city_name() -> str:
     """Get current city name"""
-    return types.CityName or "Micropolis"
+    name = getattr(types, "CityName", None)
+    if isinstance(name, str) and name.strip():
+        return name
+    return "Micropolis"
 
 
 def set_city_name(name: str) -> None:
@@ -235,12 +247,12 @@ def set_city_name(name: str) -> None:
     types.setCityName(name)
 
 
-def get_city_file_name() -> Optional[str]:
+def get_city_file_name() -> str | None:
     """Get current city file name"""
     return types.CityFileName
 
 
-def set_city_file_name(filename: Optional[str]) -> None:
+def set_city_file_name(filename: str | None) -> None:
     """Set city file name"""
     if types.CityFileName:
         # Free old filename if needed
@@ -673,37 +685,37 @@ def get_pollution_average() -> int:
     return types.PolluteAverage
 
 
-def get_population_center() -> Tuple[int, int]:
+def get_population_center() -> tuple[int, int]:
     """Get population center coordinates"""
     return ((types.CCx << 4) + 8, (types.CCy << 4) + 8)
 
 
-def get_pollution_center() -> Tuple[int, int]:
+def get_pollution_center() -> tuple[int, int]:
     """Get pollution center coordinates"""
     return ((types.PolMaxX << 4) + 8, (types.PolMaxY << 4) + 8)
 
 
-def get_crime_center() -> Tuple[int, int]:
+def get_crime_center() -> tuple[int, int]:
     """Get crime center coordinates"""
     return ((types.CrimeMaxX << 4) + 8, (types.CrimeMaxY << 4) + 8)
 
 
-def get_traffic_center() -> Tuple[int, int]:
+def get_traffic_center() -> tuple[int, int]:
     """Get traffic center coordinates"""
     return (types.TrafMaxX, types.TrafMaxY)
 
 
-def get_flood_center() -> Tuple[int, int]:
+def get_flood_center() -> tuple[int, int]:
     """Get flood center coordinates"""
     return ((types.FloodX << 4) + 8, (types.FloodY << 4) + 8)
 
 
-def get_crash_center() -> Tuple[int, int]:
+def get_crash_center() -> tuple[int, int]:
     """Get airplane crash center coordinates"""
     return ((types.CrashX << 4) + 8, (types.CrashY << 4) + 8)
 
 
-def get_meltdown_center() -> Tuple[int, int]:
+def get_meltdown_center() -> tuple[int, int]:
     """Get nuclear meltdown center coordinates"""
     return ((types.MeltX << 4) + 8, (types.MeltY << 4) + 8)
 
@@ -758,7 +770,7 @@ def get_performance_timing() -> bool:
 # Utility Functions
 # ============================================================================
 
-def get_world_size() -> Tuple[int, int]:
+def get_world_size() -> tuple[int, int]:
     """Get world dimensions"""
     return (types.WORLD_X, types.WORLD_Y)
 
@@ -823,7 +835,7 @@ def set_pending_tool(tool: int) -> None:
     types.PendingTool = tool
 
 
-def get_pending_position() -> Tuple[int, int]:
+def get_pending_position() -> tuple[int, int]:
     """Get pending tool position"""
     return (types.PendingX, types.PendingY)
 
@@ -876,7 +888,7 @@ def get_version() -> str:
     return types.MicropolisVersion
 
 
-def get_random_number(max_val: Optional[int] = None) -> int:
+def get_random_number(max_val: int | None = None) -> int:
     """Get random number"""
     if max_val is not None:
         return sim_random.Rand(max_val)

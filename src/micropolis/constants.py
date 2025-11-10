@@ -7,9 +7,8 @@
 # Original C header: headers/mac.h
 # Ported to maintain compatibility with Micropolis simulation logic
 
-from typing import Optional, Any
 import ctypes
-
+from typing import Any
 
 # Platform-specific type definitions
 # In the original C code, QUAD was defined differently for OSF1 vs other systems
@@ -34,16 +33,15 @@ class Resource:
     the Macintosh resource fork. In Python, this will be used to
     represent game assets like images, sounds, and data files.
     """
-    def __init__(self, buf: Optional[bytes] = None,
+    def __init__(self, buf: bytes | None = None,
                  size: QUAD = 0,
                  name: str = "",
                  id: QUAD = 0):
-        self.buf: Optional[bytes] = buf  # Resource data buffer
+        self.buf: bytes | None = buf  # Resource data buffer
         self.size: QUAD = size           # Size of resource data
         self.name: str = name            # Resource name (up to 4 chars in original)
         self.id: QUAD = id               # Resource ID
-        self.next: Optional['Resource'] = None  # Next resource in chain
-
+        self.next: "Resource | None" = None  # Next resource in chain
     def __repr__(self) -> str:
         return f"Resource(name='{self.name}', id={self.id}, size={self.size})"
 

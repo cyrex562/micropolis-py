@@ -13,16 +13,13 @@ Key features:
 """
 
 # Import local modules
+from collections.abc import Callable
+from typing import Any
 from . import types
 from . import macros
-try:
-    import pygame
-    PYGAME_AVAILABLE = True
-except ImportError:
-    PYGAME_AVAILABLE = False
-    pygame = None
+import pygame
 
-from typing import List, Optional, Callable, Any
+
 
 
 # ============================================================================
@@ -40,7 +37,7 @@ VAL_MINUS = 7
 VAL_VERYMINUS = 8
 
 # Color mapping arrays (pygame color indices)
-valMap: List[int] = [
+valMap: list[int] = [
     -1,  # VAL_NONE
     types.COLOR_LIGHTGRAY,  # VAL_LOW
     types.COLOR_YELLOW,     # VAL_MEDIUM
@@ -53,7 +50,7 @@ valMap: List[int] = [
 ]
 
 # Grayscale mapping for monochrome displays
-valGrayMap: List[int] = [
+valGrayMap: list[int] = [
     -1,   # VAL_NONE
     31,   # VAL_LOW
     127,  # VAL_MEDIUM
@@ -70,7 +67,7 @@ valGrayMap: List[int] = [
 # ============================================================================
 
 # Forward declarations for map drawing functions
-mapProcs: List[Optional[Callable]] = [None] * types.NMAPS
+mapProcs: list[Callable | None] = [None] * types.NMAPS
 
 
 # ============================================================================

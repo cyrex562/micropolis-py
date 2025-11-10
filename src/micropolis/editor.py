@@ -7,21 +7,28 @@ adapted for pygame graphics instead of X11/TCL-Tk.
 
 import math
 import time
-from typing import Optional, List, Any, Tuple
+from typing import Any
 
-try:
-    import pygame
-    PYGAME_AVAILABLE = True
-except ImportError:
-    PYGAME_AVAILABLE = False
-    pygame = None
+import pygame
 
-from . import types, view_types, tools
+from . import tools, types, view_types
 from .tools import (
-    toolSize, toolOffset, toolColors, lastState,
-    residentialState, commercialState, industrialState,
-    fireState, policeState, stadiumState, seaportState,
-    powerState, nuclearState, airportState, chalkState, eraserState
+    airportState,
+    chalkState,
+    commercialState,
+    eraserState,
+    fireState,
+    industrialState,
+    lastState,
+    nuclearState,
+    policeState,
+    powerState,
+    residentialState,
+    seaportState,
+    stadiumState,
+    toolColors,
+    toolOffset,
+    toolSize,
 )
 
 # ============================================================================
@@ -53,7 +60,7 @@ DoOverlay = 2
 # ============================================================================
 
 def ViewToTileCoords(view: types.SimView, screen_x: int, screen_y: int,
-                    tile_x: List[int], tile_y: List[int]) -> None:
+                    tile_x: list[int], tile_y: list[int]) -> None:
     """
     Convert screen coordinates to tile coordinates.
 
@@ -79,7 +86,7 @@ def ViewToTileCoords(view: types.SimView, screen_x: int, screen_y: int,
     tile_y[0] = pixel_y // 16
 
 
-def TileToViewCoords(view: types.SimView, tile_x: int, tile_y: int) -> Tuple[int, int]:
+def TileToViewCoords(view: types.SimView, tile_x: int, tile_y: int) -> tuple[int, int]:
     """
     Convert tile coordinates to view coordinates.
 
@@ -234,7 +241,7 @@ def DrawOutside(view: types.SimView) -> None:
     Args:
         view: The view to draw on
     """
-    if not PYGAME_AVAILABLE or view.x is None:
+    if view.x is None:
         return
 
     # Calculate map boundaries in screen coordinates
@@ -249,11 +256,8 @@ def DrawOutside(view: types.SimView) -> None:
     # Create a surface for drawing if needed
     surface = getattr(view, 'surface', None)
     if surface is None:
-        if PYGAME_AVAILABLE and pygame is not None:
-            surface = pygame.Surface((view.w_width, view.w_height))
-            setattr(view, 'surface', surface)
-        else:
-            return
+        surface = pygame.Surface((view.w_width, view.w_height))
+        setattr(view, 'surface', surface)
 
     # Draw black rectangles for areas outside the map
     black = (0, 0, 0) if (view.x and view.x.color) else (255, 255, 255)
@@ -284,7 +288,7 @@ def DrawPending(view: types.SimView) -> None:
     Args:
         view: The view to draw on
     """
-    if not PYGAME_AVAILABLE or pygame is None or view.x is None:
+    if view.x is None:
         return
 
     if types.PendingTool == -1:
@@ -361,7 +365,7 @@ def DrawCursor(view: types.SimView) -> None:
     Args:
         view: The view to draw on
     """
-    if not PYGAME_AVAILABLE or view.x is None:
+    if view.x is None or view.surface is None:
         return
 
     # Calculate screen position
@@ -468,7 +472,7 @@ def DrawOverlay(view: types.SimView) -> None:
     Args:
         view: The view to draw overlays on
     """
-    if not PYGAME_AVAILABLE or view.x is None:
+    if view.x is None or view.surface is None or types.sim is None:
         return
 
     width = view.w_width
@@ -525,8 +529,7 @@ def DrawTheOverlay(view: types.SimView, top: int, bottom: int, left: int, right:
         right: Right boundary
         on_overlay: Whether drawing to overlay surface
     """
-    if not PYGAME_AVAILABLE:
-        return
+    
 
     # Set drawing color
     if view.x.color:
@@ -772,142 +775,142 @@ def setWandState(view: types.SimView, state: int) -> None:
 # Placeholder Functions (for TCL command compatibility)
 # ============================================================================
 
-def EditorCmdconfigure(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdconfigure(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Configure command (placeholder)"""
     return 0
 
-def EditorCmdposition(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdposition(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Position command (placeholder)"""
     return 0
 
-def EditorCmdsize(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdsize(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Size command (placeholder)"""
     return 0
 
-def EditorCmdAutoGoto(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdAutoGoto(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Auto goto command (placeholder)"""
     return 0
 
-def EditorCmdSound(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdSound(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Sound command (placeholder)"""
     return 0
 
-def EditorCmdSkip(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdSkip(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Skip command (placeholder)"""
     return 0
 
-def EditorCmdUpdate(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdUpdate(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Update command (placeholder)"""
     return 0
 
-def EditorCmdPan(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdPan(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Pan command (placeholder)"""
     return 0
 
-def EditorCmdToolConstrain(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdToolConstrain(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Tool constrain command (placeholder)"""
     return 0
 
-def EditorCmdToolState(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdToolState(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Tool state command (placeholder)"""
     return 0
 
-def EditorCmdToolMode(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdToolMode(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Tool mode command (placeholder)"""
     return 0
 
-def EditorCmdDoTool(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdDoTool(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Do tool command (placeholder)"""
     return 0
 
-def EditorCmdToolDown(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdToolDown(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Tool down command (placeholder)"""
     return 0
 
-def EditorCmdToolDrag(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdToolDrag(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Tool drag command (placeholder)"""
     return 0
 
-def EditorCmdToolUp(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdToolUp(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Tool up command (placeholder)"""
     return 0
 
-def EditorCmdPanStart(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdPanStart(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Pan start command (placeholder)"""
     return 0
 
-def EditorCmdPanTo(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdPanTo(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Pan to command (placeholder)"""
     return 0
 
-def EditorCmdPanBy(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdPanBy(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Pan by command (placeholder)"""
     return 0
 
-def EditorCmdTweakCursor(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdTweakCursor(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Tweak cursor command (placeholder)"""
     return 0
 
-def EditorCmdVisible(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdVisible(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Visible command (placeholder)"""
     return 0
 
-def EditorCmdKeyDown(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdKeyDown(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Key down command (placeholder)"""
     return 0
 
-def EditorCmdKeyUp(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdKeyUp(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Key up command (placeholder)"""
     return 0
 
-def EditorCmdTileCoord(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdTileCoord(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Tile coord command (placeholder)"""
     return 0
 
-def EditorCmdChalkStart(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdChalkStart(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Chalk start command (placeholder)"""
     return 0
 
-def EditorCmdChalkTo(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdChalkTo(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Chalk to command (placeholder)"""
     return 0
 
-def EditorCmdAutoGoing(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdAutoGoing(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Auto going command (placeholder)"""
     return 0
 
-def EditorCmdAutoSpeed(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdAutoSpeed(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Auto speed command (placeholder)"""
     return 0
 
-def EditorCmdAutoGoal(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdAutoGoal(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Auto goal command (placeholder)"""
     return 0
 
-def EditorCmdSU(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdSU(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """SU command (placeholder)"""
     return 0
 
-def EditorCmdShowMe(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdShowMe(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Show me command (placeholder)"""
     return 0
 
-def EditorCmdFollow(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdFollow(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Follow command (placeholder)"""
     return 0
 
-def EditorCmdShowOverlay(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdShowOverlay(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Show overlay command (placeholder)"""
     return 0
 
-def EditorCmdOverlayMode(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdOverlayMode(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Overlay mode command (placeholder)"""
     return 0
 
-def EditorCmdDynamicFilter(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdDynamicFilter(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Dynamic filter command (placeholder)"""
     return 0
 
-def EditorCmdWriteJpeg(view: types.SimView, interp: Any, argc: int, argv: List[str]) -> int:
+def EditorCmdWriteJpeg(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """Write JPEG command (placeholder)"""
     return 0

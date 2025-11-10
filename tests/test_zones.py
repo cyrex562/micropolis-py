@@ -14,7 +14,9 @@ from src.micropolis.zones import (
 from src.micropolis import types, macros
 
 
-class TestZoneIntegration(unittest.TestCase):
+from tests.assertions import Assertions
+
+class TestZoneIntegration(Assertions):
     """Integration tests for zone processing functions."""
 
     def setUp(self):
@@ -408,6 +410,3 @@ class TestZoneIntegration(unittest.TestCase):
                     # Should attempt shrinkage due to low valve
                     mock_shrink.assert_called_once()
 
-
-if __name__ == '__main__':
-    unittest.main()

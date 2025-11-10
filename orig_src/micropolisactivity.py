@@ -59,7 +59,7 @@
 # CONSUMER, SO SOME OR ALL OF THE ABOVE EXCLUSIONS AND LIMITATIONS MAY
 # NOT APPLY TO YOU.
 
-import gtk
+# import gtk
 import os
 import signal
 import tempfile
@@ -67,7 +67,7 @@ import logging
 import sys
 import time
 import subprocess
-import thread
+# import thread
 import fcntl
 
 from sugar.activity import activity
@@ -201,7 +201,7 @@ class MicropolisActivity(activity.Activity):
     def play_sound(self, name):
         fileName = os.path.join(
             self._bundle_path,
-            'res/sounds',
+            'assets/sounds',
             name.lower() + '.wav')
         print "PLAY_SOUND " + fileName
         try:
@@ -310,4 +310,3 @@ class MicropolisActivity(activity.Activity):
     def _sigchild_handler(self, signum, frame):
         logging.debug("got signal %i %r %r" % (signum, frame, self._process))
         sys.exit(0)
-

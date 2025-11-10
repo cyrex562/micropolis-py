@@ -4,7 +4,6 @@ test_editor.py - Unit tests for the editor.py module
 This module contains comprehensive tests for the map editor interface functionality.
 """
 
-import unittest
 from unittest.mock import Mock, patch
 
 import micropolis.editor as editor
@@ -12,7 +11,9 @@ import micropolis.types as types
 import micropolis.view_types as view_types
 
 
-class TestEditor(unittest.TestCase):
+from tests.assertions import Assertions
+
+class TestEditor(Assertions):
     """Test cases for the editor module"""
 
     def setUp(self):
@@ -262,7 +263,7 @@ class TestEditor(unittest.TestCase):
         self.assertEqual(editor.BOB_HEIGHT, 8)
 
 
-class TestEditorIntegration(unittest.TestCase):
+class TestEditorIntegration(Assertions):
     """Integration tests for editor functionality"""
 
     def setUp(self):
@@ -324,6 +325,3 @@ class TestEditorIntegration(unittest.TestCase):
 
             self.assertFalse(self.view.invalid)
 
-
-if __name__ == '__main__':
-    unittest.main()

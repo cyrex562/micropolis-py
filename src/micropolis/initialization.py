@@ -6,7 +6,7 @@ responsible for setting up the initial simulation state and resetting components
 """
 
 import time
-from . import types, random, allocation
+from . import types, random, allocation, simulation
 
 # ============================================================================
 # Initialization Functions
@@ -253,6 +253,20 @@ def InitializeSimulation() -> bool:
     except Exception as e:
         print(f"Error during simulation initialization: {e}", file=__import__('sys').stderr)
         return False
+
+
+def InitGame() -> None:
+    """
+    Legacy entry point that performs a full new-game initialization sequence.
+    """
+    if not InitializeSimulation():
+        return
+
+    InitFundingLevel()
+    simulation.DoSimInit()
+    types.InitSimLoad = 2
+    types.DoInitialEval = 0
+
 
 def ResetSimulation() -> None:
     """

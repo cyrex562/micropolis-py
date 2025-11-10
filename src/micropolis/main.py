@@ -12,19 +12,45 @@ Usage:
 The script initializes the Micropolis simulation engine and runs the main pygame loop.
 """
 
+import logging
 import sys
-import os
+from datetime import datetime
+from pathlib import Path
 
-# Add the src directory to Python path so we can import micropolis
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+from rich.logging import RichHandler
 
-try:
-    from micropolis.engine import main
-except ImportError as e:
-    print(f"Error importing micropolis engine: {e}", file=sys.stderr)
-    print("Make sure the micropolis package is properly installed.", file=sys.stderr)
-    sys.exit(1)
+from micropolis.engine import main
 
+console_handler = RichHandler(rich_tracebacks=True, show_time=True, show_level=True)
+
+# Create logs directory at project root (two parents up from this file)
+LOG_DIR = Path(__file__).resolve().parents[2] / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+log_file_path = LOG_DIR / f"micropolis-{timestamp}.log"
+
+file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
+file_formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+file_handler.setFormatter(file_formatter)
+
+# Configure root logger to use both handlers
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+console_handler.setLevel(logging.DEBUG)
+root_logger.addHandler(console_handler)
+root_logger.addHandler(file_handler)
+
+# Small startup message
+logging.getLogger(__name__).debug(f"Logging initialized. Console -> rich, File -> {log_file_path}")
+
+# Ensure the src directory is on sys.path when running from a checkout
+PROJECT_SRC = Path(__file__).resolve().parents[1]
+if str(PROJECT_SRC) not in sys.path:
+    sys.path.insert(0, str(PROJECT_SRC))
+
+
+    
 if __name__ == "__main__":
     # Run the main function and exit with its return code
     sys.exit(main())

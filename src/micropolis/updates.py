@@ -14,7 +14,10 @@ Key responsibilities:
 - Evaluation updates
 """
 
-from typing import Optional, Callable, Dict
+
+
+
+from collections.abc import Callable
 
 
 class UIUpdateManager:
@@ -42,7 +45,7 @@ class UIUpdateManager:
         self.last_i_valve = -999999.0
 
         # Callbacks for UI updates
-        self.callbacks: Dict[str, Callable] = {}
+        self.callbacks: dict[str, Callable] = {}
 
         # Simulation state references (will be set externally)
         self.city_time = 0

@@ -6,14 +6,9 @@ structures, adapted from g_setup.c for pygame instead of X11/TCL-Tk.
 """
 
 import os
-from typing import List, Optional, Any
+from typing import Any
 
-try:
-    import pygame
-    PYGAME_AVAILABLE = True
-except ImportError:
-    PYGAME_AVAILABLE = False
-    pygame = None
+import pygame
 
 from . import types, view_types
 
@@ -172,9 +167,9 @@ def get_resource_path(filename: str) -> str:
         
         # Legacy paths for backward compatibility
         os.path.join(os.path.dirname(__file__), '..', '..', 'images', filename),
-        os.path.join(os.path.dirname(__file__), '..', '..', 'res', filename),
+        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', filename),
         os.path.join(os.getcwd(), 'images', filename),
-        os.path.join(os.getcwd(), 'res', filename),
+        os.path.join(os.getcwd(), 'assets', filename),
         filename  # Try current directory as fallback
     ]
 
@@ -185,7 +180,7 @@ def get_resource_path(filename: str) -> str:
     return filename  # Return as-is if not found
 
 
-def load_xpm_surface(filename: str) -> Optional[Any]:
+def load_xpm_surface(filename: str) -> Any | None:
     """
     Load an XPM file as a pygame surface.
 
@@ -195,9 +190,6 @@ def load_xpm_surface(filename: str) -> Optional[Any]:
     Returns:
         pygame Surface if successful, None if failed
     """
-    if not PYGAME_AVAILABLE or pygame is None:
-        print(f"Warning: pygame not available, cannot load {filename}")
-        return None
 
     try:
         filepath = get_resource_path(filename)
@@ -208,7 +200,7 @@ def load_xpm_surface(filename: str) -> Optional[Any]:
         return None
 
 
-def load_hexa_resource(resource_id: int) -> Optional[bytes]:
+def load_hexa_resource(resource_id: int) -> bytes | None:
     """
     Load a hexa resource file.
 
@@ -231,7 +223,7 @@ def load_hexa_resource(resource_id: int) -> Optional[bytes]:
         return None
 
 
-def create_small_tiles_surface() -> Optional[Any]:
+def create_small_tiles_surface() -> Any | None:
     """
     Create a pygame surface for small tiles (map view) from hexa resource.
 
@@ -240,10 +232,7 @@ def create_small_tiles_surface() -> Optional[Any]:
     Returns:
         pygame Surface containing small tile data, or None if failed
     """
-    if not PYGAME_AVAILABLE or pygame is None:
-        return None
-
-    # Load the hexa resource for small tiles
+     # Load the hexa resource for small tiles
     hexa_data = load_hexa_resource(SIM_GSMTILE)
     if hexa_data is None:
         return None
@@ -289,7 +278,7 @@ def create_small_tiles_surface() -> Optional[Any]:
         return None
 
 
-def load_big_tiles_surface(color: bool = True) -> Optional[Any]:
+def load_big_tiles_surface(color: bool = True) -> Any | None:
     """
     Load big tiles surface for editor view.
 
@@ -302,8 +291,7 @@ def load_big_tiles_surface(color: bool = True) -> Optional[Any]:
     Returns:
         pygame Surface for big tiles, or None if failed
     """
-    if not PYGAME_AVAILABLE or pygame is None:
-        return None
+
 
     try:
         # For now, create a placeholder surface
@@ -338,7 +326,7 @@ def load_big_tiles_surface(color: bool = True) -> Optional[Any]:
 
 
 def create_stipple_surface(bits: bytes, width: int = STIPPLE_WIDTH,
-                          height: int = STIPPLE_HEIGHT) -> Optional[Any]:
+                          height: int = STIPPLE_HEIGHT) -> Any | None:
     """
     Create a pygame surface from stipple pattern bits.
 
@@ -350,9 +338,6 @@ def create_stipple_surface(bits: bytes, width: int = STIPPLE_WIDTH,
     Returns:
         pygame Surface with the stipple pattern
     """
-    if not PYGAME_AVAILABLE or pygame is None:
-        return None
-
     try:
         # Create a surface for the stipple pattern
         surface = pygame.Surface((width, height), pygame.SRCALPHA)
@@ -374,7 +359,7 @@ def create_stipple_surface(bits: bytes, width: int = STIPPLE_WIDTH,
         return None
 
 
-def get_object_surfaces(object_id: int, frames: int) -> Optional[List[Any]]:
+def get_object_surfaces(object_id: int, frames: int) -> list[Any]|None:
     """
     Load object sprite surfaces for a given object type.
 
@@ -387,9 +372,6 @@ def get_object_surfaces(object_id: int, frames: int) -> Optional[List[Any]]:
     Returns:
         List of pygame surfaces for the object, or None if failed
     """
-    if not PYGAME_AVAILABLE:
-        return None
-
     surfaces = []
 
     # Map object IDs to filename patterns
@@ -430,9 +412,7 @@ def get_pixmaps(display: view_types.XDisplay) -> None:
     Args:
         display: XDisplay structure to initialize
     """
-    if not PYGAME_AVAILABLE:
-        print("Warning: pygame not available, skipping pixmap initialization")
-        return
+
 
     # Create stipple patterns if not already created
     if display.gray25_stipple is None:
@@ -478,9 +458,6 @@ def get_view_tiles(view: Any) -> None:
     Args:
         view: View structure to initialize with tiles
     """
-    if not PYGAME_AVAILABLE:
-        print("Warning: pygame not available, skipping tile loading")
-        return
 
     # Determine if this is an editor or map view
     is_editor = view_types.IsEditorView(view)
@@ -593,9 +570,7 @@ def init_graphics() -> bool:
     Returns:
         True if initialization successful, False otherwise
     """
-    if not PYGAME_AVAILABLE or pygame is None:
-        print("Error: pygame not available for graphics initialization")
-        return False
+
 
     try:
         # Initialize pygame if not already done
@@ -626,8 +601,7 @@ def init_view_graphics(view: Any) -> bool:
     Returns:
         True if successful, False otherwise
     """
-    if not PYGAME_AVAILABLE:
-        return False
+
 
     try:
         # Ensure the view has a display
@@ -658,7 +632,7 @@ def cleanup_graphics() -> None:
 # Utility Functions
 # ============================================================================
 
-def get_tile_surface(tile_id: int, view: Any) -> Optional[Any]:
+def get_tile_surface(tile_id: int, view: Any) -> Any | None:
     """
     Get the surface for a specific tile.
 
@@ -669,8 +643,7 @@ def get_tile_surface(tile_id: int, view: Any) -> Optional[Any]:
     Returns:
         pygame Surface for the tile, or None if not found
     """
-    if not PYGAME_AVAILABLE or pygame is None:
-        return None
+
 
     try:
         if view_types.IsEditorView(view) and hasattr(view, 'bigtiles'):
@@ -699,7 +672,7 @@ def get_tile_surface(tile_id: int, view: Any) -> Optional[Any]:
     return None
 
 
-def get_object_surface(object_id: int, frame: int = 0, display: Optional[view_types.XDisplay] = None) -> Optional[Any]:
+def get_object_surface(object_id: int, frame: int = 0, display: view_types.XDisplay|None = None) -> Any | None:
     """
     Get the surface for a specific object sprite.
 
@@ -739,8 +712,7 @@ def validate_graphics_setup() -> bool:
     Returns:
         True if graphics are properly set up, False otherwise
     """
-    if not PYGAME_AVAILABLE:
-        return False
+
 
     try:
         # Check main display

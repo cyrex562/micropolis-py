@@ -6,8 +6,11 @@ responsible for displaying city evaluation results, scores, and statistics
 in a pygame-compatible format.
 """
 
-from typing import Optional
-from . import types, evaluation, sim_control
+
+
+import pygame
+
+from . import evaluation, sim_control, types
 
 # ============================================================================
 # City Classification and Level Strings
@@ -32,6 +35,10 @@ PROBLEM_STRINGS = [
 
 # Drawing flags for pygame integration
 must_draw_evaluation: bool = False
+_evaluation_panel_visible: bool = False
+_evaluation_panel_dirty: bool = False
+_evaluation_panel_size: tuple[int, int] = (320, 200)
+_evaluation_surface: pygame.Surface | None = None
 
 # ============================================================================
 # Utility Functions
@@ -241,8 +248,10 @@ def draw_evaluation() -> None:
     Ported from drawEvaluation() equivalent in w_eval.c.
     In pygame version, this sets a flag for UI update.
     """
-    global must_draw_evaluation
+    global must_draw_evaluation, _evaluation_panel_dirty
     must_draw_evaluation = True
+    if _evaluation_panel_visible:
+        _evaluation_panel_dirty = True
 
 
 def really_draw_evaluation() -> None:
@@ -257,6 +266,8 @@ def really_draw_evaluation() -> None:
     # In pygame version, this would render the evaluation data
     # For now, just mark as drawn
     must_draw_evaluation = False
+    if _evaluation_panel_visible:
+        _render_evaluation_surface()
 
 
 def update_evaluation() -> None:
@@ -277,10 +288,10 @@ def update_evaluation() -> None:
 # Data Access Functions
 # ============================================================================
 
-_evaluation_data: Optional[dict] = None
+_evaluation_data: dict | None = None
 
 
-def get_evaluation_data() -> Optional[dict]:
+def get_evaluation_data() -> dict | None:
     """
     Get the current evaluation display data.
 
@@ -288,6 +299,46 @@ def get_evaluation_data() -> Optional[dict]:
         Dictionary containing evaluation data, or None if not available
     """
     return _evaluation_data
+
+
+def set_evaluation_panel_visible(visible: bool) -> None:
+    """
+    Toggle the pygame evaluation overlay visibility.
+    """
+    global _evaluation_panel_visible, _evaluation_panel_dirty
+    _evaluation_panel_visible = visible
+    if visible:
+        _evaluation_panel_dirty = True
+    else:
+        _evaluation_panel_dirty = False
+
+
+def is_evaluation_panel_visible() -> bool:
+    """Return True if the evaluation panel should be shown."""
+    return _evaluation_panel_visible
+
+
+def set_evaluation_panel_size(width: int, height: int) -> None:
+    """Resize the evaluation panel surface used during rendering."""
+    global _evaluation_panel_size, _evaluation_panel_dirty
+    _evaluation_panel_size = (max(1, width), max(1, height))
+    _evaluation_panel_dirty = True
+
+
+def get_evaluation_surface() -> pygame.Surface | None:
+    """
+    Return the pygame surface representing the evaluation panel, rendering it if necessary.
+    """
+    if not _evaluation_panel_visible:
+        return None
+
+    if _evaluation_surface is None or _evaluation_surface.get_size() != _evaluation_panel_size:
+        _create_evaluation_surface()
+
+    if _evaluation_panel_dirty:
+        _render_evaluation_surface()
+
+    return _evaluation_surface
 
 
 def get_city_class_string(city_class: int) -> str:
@@ -370,3 +421,63 @@ def update_evaluation_command() -> None:
     """
     update_evaluation()
     sim_control.kick()
+
+
+# ============================================================================
+# Internal helpers
+# ============================================================================
+
+def _create_evaluation_surface() -> None:
+    """Create the pygame surface for evaluation data."""
+    global _evaluation_surface, _evaluation_panel_dirty
+
+
+    width, height = _evaluation_panel_size
+    _evaluation_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    _evaluation_panel_dirty = True
+
+
+def _render_evaluation_surface() -> None:
+    """Render evaluation data into the pygame surface."""
+    global _evaluation_panel_dirty
+    if not (_evaluation_panel_visible  and _evaluation_surface):
+        _evaluation_panel_dirty = False
+        return
+
+    surface = _evaluation_surface
+    surface.fill((0, 0, 0, 200))
+
+    data = _evaluation_data or {}
+    # Draw a simple textual summary using pygame fonts if available; otherwise colored bars
+    font = None
+    if pygame.font.get_init() or pygame.font.get_init() is False:
+        try:
+            font = pygame.font.SysFont("Verdana", 14)
+        except Exception:
+            font = None
+
+    lines = [
+        data.get("title", "City Evaluation"),
+        f"Score: {data.get('score', '0')} ({data.get('changed', '0')})",
+        f"Population: {data.get('population', '0')} ({data.get('population_delta', '0')})",
+        f"Approval: {data.get('approval_rating', '0%')} vs {data.get('disapproval_rating', '0%')}",
+    ]
+
+    if font:
+        y = 10
+        for line in lines:
+            text_surface = font.render(line, True, (255, 255, 255))
+            surface.blit(text_surface, (10, y))
+            y += text_surface.get_height() + 2
+    else:
+        # Fallback: draw colored stripes
+        colors = [(0, 120, 0), (120, 0, 0), (0, 0, 120), (120, 120, 0)]
+        stripe_height = max(1, surface.get_height() // len(colors))
+        for idx, color in enumerate(colors):
+            pygame.draw.rect(
+                surface,
+                color,
+                pygame.Rect(0, idx * stripe_height, surface.get_width(), stripe_height),
+            )
+
+    _evaluation_panel_dirty = False

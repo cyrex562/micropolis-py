@@ -754,8 +754,8 @@ def SetZPower() -> int:
     # Test for special power cases or power map connectivity
     if ((types.CChr9 == types.NUCLEAR) or
         (types.CChr9 == types.POWERPLANT) or
-        ((types.POWERWORD(types.SMapX, types.SMapY) < types.PWRMAPSIZE) and
-         (types.PowerMap[types.POWERWORD(types.SMapX, types.SMapY)] & (1 << (types.SMapX & 15))))):
+        ((types.powerword(types.SMapX, types.SMapY) < types.PWRMAPSIZE) and
+         (types.PowerMap[types.powerword(types.SMapX, types.SMapY)] & (1 << (types.SMapX & 15))))):
         types.Map[types.SMapX][types.SMapY] = types.CChr | types.PWRBIT
         return 1
     else:

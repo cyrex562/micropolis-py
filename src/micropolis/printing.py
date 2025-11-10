@@ -18,7 +18,7 @@ implementations that maintain API compatibility.
 Adapted from w_print.c for the Python/pygame port.
 """
 
-from typing import Optional
+
 import pygame
 
 
@@ -34,8 +34,8 @@ TILE_COUNT = 960  # From sim.h
 # ============================================================================
 
 # Print output destination (could be file, stdout, etc.)
-_print_output: Optional[str] = None
-_print_file: Optional[str] = None
+_print_output: str | None = None
+_print_file: str | None = None
 
 
 # ============================================================================
@@ -278,7 +278,7 @@ def _print(text: str = "", end: str = "\n") -> None:
 # Configuration Functions
 # ============================================================================
 
-def set_print_destination(filename: Optional[str]) -> None:
+def set_print_destination(filename: str | None) -> None:
     """
     Set the print output destination.
 
@@ -289,7 +289,7 @@ def set_print_destination(filename: Optional[str]) -> None:
     _print_file = filename
 
 
-def get_print_destination() -> Optional[str]:
+def get_print_destination() -> str | None:
     """
     Get the current print destination.
 

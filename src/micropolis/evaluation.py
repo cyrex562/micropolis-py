@@ -7,7 +7,7 @@ responsible for calculating city scores, identifying problems, and determining
 city classification based on population and infrastructure.
 """
 
-from . import types
+from . import types, budget
 
 # ============================================================================
 # Evaluation State Variables
@@ -419,3 +419,19 @@ def UpdateBudget() -> None:
     # This would update the UI in the original TCL/Tk version
     # For now, it's a placeholder until budget.py is implemented
     pass
+
+
+def DoBudget() -> None:
+    """
+    Run the standard annual budget sequence.
+    """
+    budget.do_budget()
+    types.MustUpdateFunds = 1
+
+
+def DoBudgetFromMenu() -> None:
+    """
+    Trigger the budget workflow via the modern budget module.
+    """
+    budget.do_budget_from_menu()
+    types.MustUpdateFunds = 1

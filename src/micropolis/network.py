@@ -8,10 +8,10 @@ Original C file: w_net.c
 Ported to maintain compatibility with potential multiplayer features.
 """
 
-import socket
+from collections.abc import Callable
 import select
+import socket
 import threading
-from typing import Optional, Callable
 
 
 class NetworkManager:
@@ -23,11 +23,11 @@ class NetworkManager:
     """
 
     def __init__(self):
-        self.listen_port: Optional[int] = None
-        self.listen_socket: Optional[socket.socket] = None
+        self.listen_port: int | None = None
+        self.listen_socket: socket.socket | None = None
         self.is_listening = False
-        self.receive_thread: Optional[threading.Thread] = None
-        self.packet_callback: Optional[Callable[[int, str, bytes], None]] = None
+        self.receive_thread: threading.Thread | None = None
+        self.packet_callback: Callable[[int, str, bytes], None] | None = None
         self.running = False
 
     def start_listening(self, port: int) -> bool:
@@ -143,7 +143,7 @@ class NetworkManager:
                 # Select failed, likely due to socket closure
                 break
 
-    def get_listen_port(self) -> Optional[int]:
+    def get_listen_port(self) -> int | None:
         """Get the current listening port."""
         return self.listen_port
 

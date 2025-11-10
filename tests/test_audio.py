@@ -3,18 +3,18 @@ test_audio.py - Test suite for audio.py module
 """
 
 import os
-import unittest
 from unittest.mock import patch, MagicMock
 import pygame.mixer
+
+from tests.assertions import Assertions
 
 # Import the module to test
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from micropolis import audio, types
 
 
-class TestAudio(unittest.TestCase):
+class TestAudio(Assertions):
     """Test cases for audio.py module"""
 
     def setUp(self):
@@ -110,7 +110,7 @@ class TestAudio(unittest.TestCase):
         with patch.object(audio, 'get_sound') as mock_get_sound:
             mock_get_sound.return_value = audio.SoundInfo(sound=mock_sound)
 
-            with patch('pygame.mixer.Channel') as mock_channel_class:
+            with patch('micropolis.audio.pygame.mixer.Channel') as mock_channel_class:
                 mock_channel_class.return_value = mock_channel
 
                 audio.make_sound("city", "test")
@@ -169,7 +169,7 @@ class TestAudio(unittest.TestCase):
         with patch.object(audio, 'get_sound') as mock_get_sound:
             mock_get_sound.return_value = audio.SoundInfo(sound=mock_sound)
 
-            with patch('pygame.mixer.Channel') as mock_channel_class:
+            with patch('micropolis.audio.pygame.mixer.Channel') as mock_channel_class:
                 mock_channel_class.return_value = mock_channel
 
                 audio.start_bulldozer()
@@ -193,7 +193,7 @@ class TestAudio(unittest.TestCase):
         audio.SoundInitialized = True
         audio.Dozing = True
 
-        with patch('pygame.mixer.Channel') as mock_channel_class:
+        with patch('micropolis.audio.pygame.mixer.Channel') as mock_channel_class:
             mock_channel = MagicMock()
             mock_channel_class.return_value = mock_channel
 
@@ -257,11 +257,11 @@ class TestAudio(unittest.TestCase):
         """Test successful sound loading."""
         # Create a temporary sound file path
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        sound_dir = os.path.join(script_dir, "..", "..", "res", "sounds")
+        sound_dir = os.path.join(script_dir, "..", "..", "assets", "sounds")
         test_sound_path = os.path.join(sound_dir, "beep.wav")
 
         # Mock pygame.mixer.Sound to avoid actual file loading
-        with patch('pygame.mixer.Sound') as mock_sound_class:
+        with patch('micropolis.audio.pygame.mixer.Sound') as mock_sound_class:
             mock_sound = MagicMock()
             mock_sound_class.return_value = mock_sound
 
@@ -375,7 +375,3 @@ class TestAudio(unittest.TestCase):
         """Test TCL make_sound command with wrong number of args."""
         with self.assertRaises(ValueError):
             audio.AudioCommand.handle_command("make_sound", "onlyonearg")
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -8,7 +8,6 @@ It handles the binary city file format with proper endianness conversion and dat
 
 import os
 import struct
-from typing import Optional, Tuple
 from . import types, initialization, simulation, engine
 
 # ============================================================================
@@ -182,7 +181,7 @@ def _save_long(buf: list, length: int, file_obj) -> bool:
 # City File Loading
 # ============================================================================
 
-def _load_file(filename: str, directory: Optional[str] = None) -> bool:
+def _load_file(filename: str, directory: str | None = None) -> bool:
     """
     Load city data from a .cty file.
 
@@ -576,10 +575,27 @@ def DidntSaveCity(msg: str) -> None:
     types.Eval(f"UIDidntSaveCity {{{msg}}}")
 
 # ============================================================================
+# Modern API wrappers
+# ============================================================================
+
+def save_city(filename: str) -> bool:
+    """
+    Save the current city state (Pythonic helper used by higher-level modules).
+    """
+    return bool(saveFile(filename))
+
+
+def load_city(filename: str) -> bool:
+    """
+    Load a city file with success/failure semantics.
+    """
+    return bool(LoadCity(filename))
+
+# ============================================================================
 # Utility Functions
 # ============================================================================
 
-def validateCityFile(filename: str) -> Tuple[bool, str]:
+def validateCityFile(filename: str) -> tuple[bool, str]:
     """
     Validate that a file is a proper .cty file.
 
@@ -613,7 +629,7 @@ def validateCityFile(filename: str) -> Tuple[bool, str]:
     except (OSError, IOError, struct.error) as e:
         return False, f"Error reading file: {e}"
 
-def getCityFileInfo(filename: str) -> Optional[dict]:
+def getCityFileInfo(filename: str) -> dict | None:
     """
     Get information about a city file without fully loading it.
 

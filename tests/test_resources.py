@@ -4,18 +4,18 @@ test_resources.py - Test suite for resources.py module
 
 import os
 import tempfile
-import unittest
 from unittest.mock import patch, mock_open
 from typing import List
+
+from tests.assertions import Assertions
 
 # Import the module to test
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from micropolis import resources
 
 
-class TestResources(unittest.TestCase):
+class TestResources(Assertions):
     """Test cases for resources.py module"""
 
     def setUp(self):
@@ -200,9 +200,9 @@ class TestResources(unittest.TestCase):
         resources.ResourceDir = ""
         resources.HomeDir = ""
 
-        # Create a mock res directory
-        res_dir = os.path.join(self.test_dir, "res")
-        os.makedirs(res_dir)
+        # Create a mock assets directory
+        assets_dir = os.path.join(self.test_dir, "assets")
+        os.makedirs(assets_dir)
 
         # Change to test directory and initialize
         old_cwd = os.getcwd()
@@ -210,8 +210,8 @@ class TestResources(unittest.TestCase):
             os.chdir(self.test_dir)
             resources.initialize_resource_paths()
 
-            # Should find the res directory
-            self.assertTrue(resources.ResourceDir.endswith("res"))
+            # Should find the assets directory
+            self.assertTrue(resources.ResourceDir.endswith("assets"))
             self.assertTrue(os.path.exists(resources.ResourceDir))
 
             # Home directory should be set
@@ -289,7 +289,3 @@ class TestResources(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             resources.ResourcesCommand.handle_command("getresource", "name", "notanumber")
-
-
-if __name__ == '__main__':
-    unittest.main()

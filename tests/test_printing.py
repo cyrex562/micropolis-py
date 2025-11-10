@@ -280,6 +280,3 @@ class TestInternalFunctions:
         captured = capsys.readouterr()
         assert captured.out == "Test output\nNo newline!\n"
 
-
-if __name__ == "__main__":
-    pytest.main([__file__])

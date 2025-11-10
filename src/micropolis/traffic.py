@@ -7,10 +7,9 @@
 # Original C file: s_traf.c
 # Ported to maintain algorithmic fidelity with the original Micropolis simulation
 
-import src.micropolis.types as types
-import src.micropolis.macros as macros
-import src.micropolis.random as random
-
+import micropolis.macros as macros
+import micropolis.random as random
+import micropolis.types as types
 
 # ============================================================================
 # Traffic Generation Constants
@@ -177,7 +176,7 @@ def TryDrive() -> bool:
     """
     types.LDir = 5  # Reset last direction
 
-    for z in range(macros.MAXDIS):
+    for z in range(MAXDIS):
         if TryGo(z):
             if DriveDone():
                 return True  # Destination reached
@@ -320,3 +319,19 @@ def RoadTest(x: int) -> bool:
     if (x >= macros.POWERBASE) and (x < macros.RAILHPOWERV):
         return False
     return True
+
+
+def AverageTrf() -> int:
+    """
+    Compute an average of the traffic density overlay.
+    """
+    if not types.TrfDensity:
+        return 0
+
+    total = 0
+    count = 0
+    for row in types.TrfDensity:
+        total += sum(row)
+        count += len(row)
+
+    return int(total / count) if count else 0

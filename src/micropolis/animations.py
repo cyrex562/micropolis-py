@@ -9,11 +9,9 @@
 # Animation tables: headers/animtab.h
 # Ported to maintain compatibility with Micropolis animation system
 
-from typing import List, Dict, Optional, Any
+from typing import Any
 
-from . import macros
-from . import types
-from . import animation
+from . import animation, macros, types
 
 
 def animate_tiles() -> None:
@@ -73,7 +71,7 @@ def count_animated_tiles() -> int:
     return count
 
 
-def get_animated_tile_positions() -> List[tuple[int, int]]:
+def get_animated_tile_positions() -> list[tuple[int, int]]:
     """
     Get a list of all positions containing animated tiles.
 
@@ -88,7 +86,7 @@ def get_animated_tile_positions() -> List[tuple[int, int]]:
     return positions
 
 
-def get_animation_info(x: int, y: int) -> Optional[Dict[str, Any]]:
+def get_animation_info(x: int, y: int) -> dict[str, Any]|None:
     """
     Get detailed animation information for a specific tile.
 

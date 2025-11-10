@@ -339,6 +339,3 @@ class TestCommandInterface:
         # Stub implementation returns empty string
         assert result == ""
 
-
-if __name__ == "__main__":
-    pytest.main([__file__])

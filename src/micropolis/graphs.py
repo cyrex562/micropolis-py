@@ -6,8 +6,10 @@ responsible for displaying historical data graphs for population, money,
 pollution, crime, and other city statistics.
 """
 
-from typing import List, Optional
+
+
 import pygame
+
 from . import types
 
 # ============================================================================
@@ -15,8 +17,8 @@ from . import types
 # ============================================================================
 
 # History data arrays (120 months of data)
-History10: List[List[int]] = []  # 10-year view (120 months)
-History120: List[List[int]] = []  # 120-year view (120 months)
+History10: list[list[int]] = []  # 10-year view (120 months)
+History120: list[list[int]] = []  # 120-year view (120 months)
 HistoryInitialized: bool = False
 
 # Graph scaling variables
@@ -66,7 +68,7 @@ class SimGraph:
         self.w_height: int = 0
 
         # Pygame-specific attributes
-        self.surface: Optional[pygame.Surface] = None
+        self.surface: pygame.Surface | None = None
         self.needs_redraw: bool = False
 
     def set_position(self, x: int, y: int) -> None:
@@ -104,7 +106,7 @@ class SimGraph:
 # ============================================================================
 
 # Global graph instances
-_graphs: List[SimGraph] = []
+_graphs: list[SimGraph] = []
 
 def create_graph() -> SimGraph:
     """
@@ -117,7 +119,7 @@ def create_graph() -> SimGraph:
     _graphs.append(graph)
     return graph
 
-def get_graphs() -> List[SimGraph]:
+def get_graphs() -> list[SimGraph]:
     """
     Get all graph instances.
 
@@ -135,6 +137,81 @@ def remove_graph(graph: SimGraph) -> None:
     """
     if graph in _graphs:
         _graphs.remove(graph)
+
+# ============================================================================
+# Graph Panel State (pygame overlay)
+# ============================================================================
+
+graph_panel_visible: bool = False
+graph_panel_dirty: bool = False
+graph_panel_size: tuple[int, int] = (400, 200)
+graph_panel_surface: pygame.Surface | None = None
+
+
+def set_graph_panel_visible(visible: bool) -> None:
+    """
+    Toggle the pygame graph overlay.
+    """
+    global graph_panel_visible, graph_panel_dirty, graph_panel_surface
+    graph_panel_visible = visible
+
+    if visible and pygame is not None:
+        if graph_panel_surface is None or graph_panel_surface.get_size() != graph_panel_size:
+            graph_panel_surface = pygame.Surface(graph_panel_size, pygame.SRCALPHA)
+        graph_panel_dirty = True
+    elif not visible:
+        graph_panel_dirty = False
+
+
+def is_graph_panel_visible() -> bool:
+    """Return True when the graph panel is currently visible."""
+    return graph_panel_visible
+
+
+def set_graph_panel_size(width: int, height: int) -> None:
+    """Resize the graph panel surface."""
+    global graph_panel_size, graph_panel_dirty
+    graph_panel_size = (max(1, width), max(1, height))
+    graph_panel_dirty = True
+
+
+def request_graph_panel_redraw() -> None:
+    """Mark the graph panel as needing a redraw."""
+    global graph_panel_dirty
+    if graph_panel_visible:
+        graph_panel_dirty = True
+
+
+def render_graph_panel() -> pygame.Surface | None:
+    """
+    Render the graph panel into its surface and return it.
+    """
+    global graph_panel_dirty, graph_panel_surface
+
+    if not graph_panel_visible or pygame is None:
+        return None
+
+    if graph_panel_surface is None or graph_panel_surface.get_size() != graph_panel_size:
+        graph_panel_surface = pygame.Surface(graph_panel_size, pygame.SRCALPHA)
+        graph_panel_dirty = True
+
+    if graph_panel_dirty and graph_panel_surface:
+        graph_panel_surface.fill((24, 24, 24, 230))
+        width, height = graph_panel_surface.get_size()
+        # Draw simple horizontal bars for each history currently tracked.
+        bar_height = max(1, height // max(1, len(HIST_NAMES)))
+        for idx, color in enumerate(HIST_COLORS[: len(HIST_NAMES)]):
+            y = idx * bar_height
+            pygame.draw.rect(
+                graph_panel_surface,
+                color,
+                pygame.Rect(10, y + 4, width - 20, bar_height - 6),
+                border_radius=2,
+            )
+        graph_panel_dirty = False
+
+    return graph_panel_surface
+
 
 # ============================================================================
 # History Data Management
@@ -209,7 +286,7 @@ def init_graph_maxima() -> None:
 
     Graph120Max = max(types.Res2HisMax, types.Com2HisMax, types.Ind2HisMax)
 
-def draw_month(hist: List[int], dest: List[int], scale: float) -> None:
+def draw_month(hist: list[int], dest: list[int], scale: float) -> None:
     """
     Scale and copy one month of history data.
 
@@ -413,7 +490,7 @@ def update_all_graphs() -> None:
 # Graph Data Access Functions
 # ============================================================================
 
-def get_history_data(range_type: int, history_type: int) -> List[int]:
+def get_history_data(range_type: int, history_type: int) -> list[int]:
     """
     Get history data for a specific range and type.
 
@@ -431,7 +508,7 @@ def get_history_data(range_type: int, history_type: int) -> List[int]:
     else:
         return []
 
-def get_history_names() -> List[str]:
+def get_history_names() -> list[str]:
     """
     Get list of history names.
 
@@ -440,7 +517,7 @@ def get_history_names() -> List[str]:
     """
     return HIST_NAMES.copy()
 
-def get_history_colors() -> List[tuple]:
+def get_history_colors() -> list[tuple]:
     """
     Get list of history colors.
 

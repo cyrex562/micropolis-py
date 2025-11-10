@@ -12,14 +12,9 @@ Key features:
 - Support for different color depths and rendering modes
 """
 
-from typing import List, Optional, Any
-import array
+import pygame
 
-from . import types
-from . import macros
-from . import map_view
-from . import engine
-
+from . import engine, graphics_setup, macros, map_view, types
 
 # ============================================================================
 # Editor View Rendering Functions
@@ -93,75 +88,44 @@ def _draw_color_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
         line_bytes: Bytes per line in display buffer
         pixel_bytes: Bytes per pixel
     """
-    # Get map data - use indexing instead of pointer arithmetic
-    map_x = x
-    map_y = y
-
-    # Get tile cache
-    have = view.tiles
-
-    # Get big tiles data
-    bt = view.bigtiles
-    if not bt:
+    surface = _ensure_view_surface(view)
+    if surface is None:
         return
 
-    # Blinking state for lightning bolt
+    have = view.tiles
     blink = (types.flagBlink <= 0)
 
-    # Process each column
     for col in range(w):
-        # Calculate local column index within view
-        local_col = col + (x - view.tile_x)
-        
-        # Get tile cache for this column
+        tile_x = x + col
+        local_col = tile_x - view.tile_x
         ha = have[local_col] if have else None
 
-        # Calculate image buffer position for this column
-        # This would need pygame surface integration
-        image_start = (col * 16 * pixel_bytes)
-
-        # Process each row in this column
         for row in range(h):
-            # Calculate local row index within view
-            local_row = row + (y - view.tile_y)
-            
-            # Get tile from map
-            tile = types.Map[map_x][map_y + row]
+            tile_y = y + row
+            local_row = tile_y - view.tile_y
+
+            tile = types.Map[tile_x][tile_y]
             if (tile & macros.LOMASK) >= types.TILE_COUNT:
                 tile -= types.TILE_COUNT
 
-            # Handle blinking lightning bolt for unpowered zones
             if blink and (tile & macros.ZONEBIT) and not (tile & types.PWRBIT):
                 tile = types.LIGHTNINGBOLT
             else:
                 tile &= macros.LOMASK
 
-            # Apply dynamic filtering if enabled
             if (tile > 63 and view.dynamic_filter != 0 and
-                not map_view.dynamicFilter(col + x, row + y)):
+                    not map_view.dynamicFilter(tile_x, tile_y)):
                 tile = 0
 
-            # Check tile cache
-            cache_hit = ha and ha[local_row] == tile if ha else False
+            if ha and ha[local_row] == tile:
+                continue
 
-            if cache_hit:
-                # Skip to next row (advance image pointer)
-                image_start += (line_bytes * 16)
-            else:
-                # Update cache
-                if ha:
-                    ha[local_row] = tile
+            if ha:
+                ha[local_row] = tile
 
-                # Copy tile data to display buffer
-                # This would use pygame surface blitting in actual implementation
-                tile_offset = tile * 256 * pixel_bytes
-                if tile_offset + 256 * pixel_bytes <= len(bt):
-                    # Copy 16x16 tile (256 pixels)
-                    # In pygame, this would be: surface.blit(tile_surface, (col*16, row*16))
-                    pass
-
-        # Move to next column
-        map_x += 1
+            dest_x = local_col * 16
+            dest_y = local_row * 16
+            _blit_tile(view, tile, dest_x, dest_y)
 
 
 def _draw_mono_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
@@ -175,68 +139,50 @@ def _draw_mono_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
         w, h: Width and height in tiles
         line_bytes: Bytes per line in display buffer
     """
-    # Get map data - use indexing instead of pointer arithmetic
-    map_x = x
-    map_y = y
-
-    # Get tile cache
-    have = view.tiles
-
-    # Get big tiles data
-    bt = view.bigtiles
-    if not bt:
+    surface = _ensure_view_surface(view)
+    if surface is None:
         return
 
-    # Blinking state for lightning bolt
+    have = view.tiles
     blink = (types.flagBlink <= 0)
 
-    # Process each column
     for col in range(w):
-        # Calculate local column index within view
-        local_col = col + (x - view.tile_x)
-        
-        # Get tile cache for this column
+        tile_x = x + col
+        local_col = tile_x - view.tile_x
         ha = have[local_col] if have else None
 
-        # Calculate image buffer position for this column
-        image_start = (col * 2)
-
-        # Process each row in this column
         for row in range(h):
-            # Calculate local row index within view
-            local_row = row + (y - view.tile_y)
-            
-            # Get tile from map
-            tile = types.Map[map_x][map_y + row]
+            tile_y = y + row
+            local_row = tile_y - view.tile_y
+
+            tile = types.Map[tile_x][tile_y]
             if (tile & macros.LOMASK) >= types.TILE_COUNT:
                 tile -= types.TILE_COUNT
 
-            # Handle blinking lightning bolt for unpowered zones
             if blink and (tile & macros.ZONEBIT) and not (tile & types.PWRBIT):
                 tile = types.LIGHTNINGBOLT
             else:
                 tile &= macros.LOMASK
 
-            # Check tile cache
-            cache_hit = ha and ha[local_row] == tile if ha else False
+            if ha and ha[local_row] == tile:
+                continue
 
-            if cache_hit:
-                # Skip to next row
-                image_start += (line_bytes * 16)
-            else:
-                # Update cache
-                if ha:
-                    ha[local_row] = tile
+            if ha:
+                ha[local_row] = tile
 
-                # Copy tile data to display buffer (16-bit monochrome)
-                tile_offset = tile * 32  # 16x16 shorts = 32 bytes
-                if tile_offset + 32 <= len(bt):
-                    # Copy 16x16 tile data
-                    # In pygame, this would handle monochrome rendering
-                    pass
+            dest_x = local_col * 16
+            dest_y = local_row * 16
+            _blit_tile(view, tile, dest_x, dest_y)
 
-        # Move to next column
-        map_x += 1
+
+def _blit_tile(view: types.SimView, tile: int, dest_x: int, dest_y: int) -> None:
+    """Blit a single tile surface into the editor view."""
+    if view.surface is None:
+        return None
+
+    tile_surface = graphics_setup.get_tile_surface(tile, view)
+    if tile_surface is not None:
+        view.surface.blit(tile_surface, (dest_x, dest_y))
 
 
 def WireDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> None:
@@ -373,6 +319,7 @@ def initialize_editor_tiles(view: types.SimView) -> None:
     view.tiles = []
     for i in range(view.tile_width):
         view.tiles.append([-1] * view.tile_height)  # -1 indicates uninitialized
+    _ensure_view_surface(view)
 
 
 def cleanup_editor_tiles(view: types.SimView) -> None:
@@ -383,7 +330,7 @@ def cleanup_editor_tiles(view: types.SimView) -> None:
         view: The editor view to clean up
     """
     if view and view.tiles:
-        view.tiles = None
+        view.tiles.clear()
 
 
 def invalidate_editor_view(view: types.SimView) -> None:
@@ -400,3 +347,19 @@ def invalidate_editor_view(view: types.SimView) -> None:
             for col in view.tiles:
                 for i in range(len(col)):
                     col[i] = -1
+
+
+def _ensure_view_surface(view: types.SimView) -> pygame.Surface:
+    """Create a pygame surface for the editor view when missing."""
+    surface = getattr(view, "surface", None)
+    if surface is not None:
+        return surface
+
+    width = view.width or (view.tile_width or types.WORLD_X) * 16
+    height = view.height or (view.tile_height or types.WORLD_Y) * 16
+
+    view.width = width
+    view.height = height
+
+    view.surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    return view.surface

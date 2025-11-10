@@ -6,12 +6,13 @@ Tests the evaluation module functions including scoring, problem analysis,
 population classification, and voting simulation.
 """
 
-import unittest
 from unittest.mock import patch
 from src.micropolis import evaluation, types
 
 
-class TestEvaluation(unittest.TestCase):
+from tests.assertions import Assertions
+
+class TestEvaluation(Assertions):
     """Test cases for the evaluation system."""
 
     def setUp(self):
@@ -336,6 +337,3 @@ class TestEvaluation(unittest.TestCase):
 
         self.assertEqual(result, 255)
 
-
-if __name__ == '__main__':
-    unittest.main()

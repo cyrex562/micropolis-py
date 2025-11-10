@@ -3,12 +3,19 @@ ui_utilities.py - UI utility functions for Micropolis Python port
 """
 
 import re
-from typing import Optional, Any
+from typing import Any
 
 # Import simulation modules
-from . import types, sim_control, initialization, file_io, generation
-from . import view_types
-
+from . import (
+    evaluation_ui,
+    file_io,
+    generation,
+    graphs,
+    initialization,
+    sim_control,
+    types,
+    view_types,
+)
 
 # ============================================================================
 # Dollar Formatting Functions
@@ -133,6 +140,191 @@ def set_skips(skips: int) -> None:
         skips: Number of frames to skip
     """
     sim_control.set_sim_skips(skips)
+
+
+# ============================================================================
+# Keyboard Shortcut Handling
+# ============================================================================
+
+# Key codes are ASCII compatible to avoid a hard dependency on pygame here.
+ASCII_SPACE = 32
+ASCII_EQUALS = ord("=")
+ASCII_PLUS = ord("+")
+ASCII_MINUS = ord("-")
+ASCII_UNDERSCORE = ord("_")
+
+_DIRECT_SPEED_KEYS = {
+    ord("0"): 0,
+    ord("1"): 1,
+    ord("2"): 2,
+    ord("3"): 3,
+}
+
+_BUDGET_KEYS = {ord("b"), ord("B")}
+_PAUSE_KEYS = {ASCII_SPACE, ord("p"), ord("P")}
+_GRAPH_KEYS = {ord("g"), ord("G")}
+_EVALUATION_KEYS = {ord("e"), ord("E")}
+_OVERLAY_NEXT_KEYS = {ord("]")}
+_OVERLAY_PREV_KEYS = {ord("[")}
+
+_OVERLAY_SEQUENCE = [
+    types.ALMAP,
+    types.REMAP,
+    types.COMAP,
+    types.INMAP,
+    types.PDMAP,
+    types.RGMAP,
+    types.TDMAP,
+    types.PLMAP,
+    types.CRMAP,
+    types.LVMAP,
+    types.FIMAP,
+    types.POMAP,
+    types.DYMAP,
+]
+
+_overlay_index: int = 0
+_graph_display_enabled: bool = False
+_evaluation_display_enabled: bool = False
+
+
+def toggle_pause() -> None:
+    """Toggle between paused and running simulation states."""
+    if sim_control.is_sim_paused():
+        resume()
+    else:
+        pause()
+
+
+def adjust_speed(delta: int) -> None:
+    """Increment simulation speed by delta within the valid range."""
+    new_speed = max(0, min(3, types.SimSpeed + delta))
+    set_speed(new_speed)
+
+
+def handle_keyboard_shortcut(key_code: int) -> bool:
+    """
+    Handle global keyboard shortcuts used by pygame front-ends.
+
+    Args:
+        key_code: Integer key code (pygame-compatible)
+
+    Returns:
+        True if the key was handled, False otherwise.
+    """
+    if key_code in _PAUSE_KEYS:
+        toggle_pause()
+        return True
+
+    if key_code in _DIRECT_SPEED_KEYS:
+        set_speed(_DIRECT_SPEED_KEYS[key_code])
+        return True
+
+    if key_code in (ASCII_EQUALS, ASCII_PLUS):
+        adjust_speed(1)
+        return True
+
+    if key_code in (ASCII_MINUS, ASCII_UNDERSCORE):
+        adjust_speed(-1)
+        return True
+
+    if key_code in _BUDGET_KEYS:
+        _open_budget_window()
+        return True
+
+    if key_code in _GRAPH_KEYS:
+        toggle_graph_display()
+        return True
+
+    if key_code in _EVALUATION_KEYS:
+        toggle_evaluation_display()
+        return True
+
+    if key_code in _OVERLAY_NEXT_KEYS:
+        cycle_map_overlay(1)
+        return True
+
+    if key_code in _OVERLAY_PREV_KEYS:
+        cycle_map_overlay(-1)
+        return True
+
+    return False
+
+
+def _open_budget_window() -> None:
+    """Trigger the budget overlay and pause simulation for interaction."""
+    from . import budget
+
+    budget.draw_budget_window()
+    budget.show_budget_window_and_start_waiting()
+
+
+def toggle_graph_display() -> None:
+    """
+    Toggle graph window visibility and flag a redraw.
+    """
+    global _graph_display_enabled
+    _graph_display_enabled = not _graph_display_enabled
+    graphs.set_graph_panel_visible(_graph_display_enabled)
+    graphs.request_graph_panel_redraw()
+    types.NewGraph = 1
+
+
+def toggle_evaluation_display() -> None:
+    """
+    Toggle evaluation panel visibility and request updated data.
+    """
+    global _evaluation_display_enabled
+    _evaluation_display_enabled = not _evaluation_display_enabled
+    evaluation_ui.set_evaluation_panel_visible(_evaluation_display_enabled)
+
+    if _evaluation_display_enabled:
+        evaluation_ui.do_score_card()
+        evaluation_ui.draw_evaluation()
+    else:
+        evaluation_ui.update_evaluation()
+
+
+def cycle_map_overlay(direction: int) -> None:
+    """
+    Cycle through predefined map overlays.
+
+    Args:
+        direction: +1 for next overlay, -1 for previous.
+    """
+    if not _OVERLAY_SEQUENCE:
+        return
+
+    global _overlay_index
+    _overlay_index = (_overlay_index + direction) % len(_OVERLAY_SEQUENCE)
+    set_map_overlay(_OVERLAY_SEQUENCE[_overlay_index])
+
+
+def set_map_overlay(mode: int) -> None:
+    """
+    Apply a specific overlay mode to all map views.
+
+    Args:
+        mode: Overlay constant (ALMAP, PDMAP, etc.)
+    """
+    if not types.sim:
+        return
+
+    for view in _iter_views(types.sim.map):
+        view.map_state = mode
+        view.invalid = True
+
+    types.NewMap = 1
+    if 0 <= mode < len(types.NewMapFlags):
+        types.NewMapFlags[mode] = 1
+
+
+def _iter_views(head: types.SimView | None):
+    """Yield linked SimView objects starting from head."""
+    current = head
+    while current:
+        yield current
+        current = current.next
 
 
 # ============================================================================

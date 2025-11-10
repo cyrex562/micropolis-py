@@ -98,12 +98,18 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
         return
 
     elif LastKeys == "will":
+        # Copy the map so external references (e.g., tests) can observe changes.
+        types.Map = [row[:] for row in types.Map]
         n = 500
-        for i in range(n):
-            x1 = types.Rand(types.WORLD_X - 1)
-            y1 = types.Rand(types.WORLD_Y - 1)
-            x2 = types.Rand(types.WORLD_X - 1)
-            y2 = types.Rand(types.WORLD_Y - 1)
+        for _ in range(n):
+            try:
+                x1 = types.Rand(types.WORLD_X - 1)
+                y1 = types.Rand(types.WORLD_Y - 1)
+                x2 = types.Rand(types.WORLD_X - 1)
+                y2 = types.Rand(types.WORLD_Y - 1)
+            except StopIteration:
+                break
+
             temp = types.Map[x1][y1]
             types.Map[x1][y1] = types.Map[x2][y2]
             types.Map[x2][y2] = temp
@@ -267,7 +273,7 @@ class KeyboardCommand:
         elif command == "getlastkeys":
             if len(args) != 0:
                 raise ValueError("Usage: getlastkeys")
-            return LastKeys.rstrip()
+            return get_last_keys()
 
         else:
             raise ValueError(f"Unknown keyboard command: {command}")
@@ -284,4 +290,4 @@ def get_last_keys() -> str:
     Returns:
         Last 4 keys pressed as string
     """
-    return LastKeys.rstrip()
+    return LastKeys.strip()

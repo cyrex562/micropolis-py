@@ -5,8 +5,9 @@ This module contains view-related data structures and constants ported from view
 adapted for pygame graphics instead of X11/TCL-Tk.
 """
 
-from typing import List, Optional, Any, Callable
+
 from dataclasses import dataclass
+from typing import Any, Callable
 
 # ============================================================================
 # View Constants
@@ -35,13 +36,13 @@ VIEW_REDRAW_PENDING = 1
 @dataclass
 class Ink:
     """Ink structure for drawing operations"""
-    next: Optional['Ink'] = None
+    next: 'Ink|None' = None
     x: int = 0
     y: int = 0
     color: int = 0
     length: int = 0
     maxlength: int = 0
-    points: Optional[List[Any]] = None  # XPoint equivalent for pygame
+    points: list[Any]|None = None  # XPoint equivalent for pygame
     left: int = 0
     top: int = 0
     right: int = 0
@@ -53,81 +54,79 @@ class Ink:
 @dataclass
 class XDisplay:
     """Display structure adapted for pygame (originally X11)"""
-    next: Optional['XDisplay'] = None
+    next: 'XDisplay|None' = None
     references: int = 0
     display: str = ""
-    tkDisplay: Optional[Any] = None  # TK display (not used in pygame)
-    dpy: Optional[Any] = None        # X11 display (not used in pygame)
-    screen: Optional[Any] = None     # X11 screen (not used in pygame)
-    root: Optional[Any] = None       # X11 root window (not used in pygame)
-    visual: Optional[Any] = None     # X11 visual (not used in pygame)
+    tkDisplay: Any|None = None  # TK display (not used in pygame)
+    dpy: Any|None = None        # X11 display (not used in pygame)
+    screen: Any|None = None     # X11 screen (not used in pygame)
+    root: Any|None = None       # X11 root window (not used in pygame)
+    visual: Any|None = None     # X11 visual (not used in pygame)
     depth: int = 0
     color: int = 0
-    colormap: Optional[Any] = None   # X11 colormap (not used in pygame)
-    pixels: Optional[List[int]] = None
-    gc: Optional[Any] = None         # X11 graphics context (not used in pygame)
+    colormap: Any|None = None   # X11 colormap (not used in pygame)
+    pixels: list[int]|None = None
+    gc: Any|None = None         # X11 graphics context (not used in pygame)
     shared: int = 0
     last_request_read: int = 0
     request: int = 0
-    big_tile_image: Optional[Any] = None    # X11 image (replaced with pygame surface)
-    small_tile_image: Optional[Any] = None  # X11 image (replaced with pygame surface)
-    big_tile_pixmap: Optional[Any] = None   # X11 pixmap (replaced with pygame surface)
-    objects: Optional[List[Optional[List[Any]]]] = None  # X11 pixmaps (replaced with pygame surfaces)
-    overlay_gc: Optional[Any] = None         # X11 graphics context (not used in pygame)
-    gray25_stipple: Optional[Any] = None     # X11 stipple (replaced with pygame surface)
-    gray50_stipple: Optional[Any] = None     # X11 stipple (replaced with pygame surface)
-    gray75_stipple: Optional[Any] = None     # X11 stipple (replaced with pygame surface)
-    vert_stipple: Optional[Any] = None       # X11 stipple (replaced with pygame surface)
-    horiz_stipple: Optional[Any] = None      # X11 stipple (replaced with pygame surface)
-    diag_stipple: Optional[Any] = None       # X11 stipple (replaced with pygame surface)
+    big_tile_image: Any|None = None    # X11 image (replaced with pygame surface)
+    small_tile_image: Any|None = None  # X11 image (replaced with pygame surface)
+    big_tile_pixmap: Any|None = None   # X11 pixmap (replaced with pygame surface)
+    objects: list[list[Any]|None]|None = None  # X11 pixmaps (replaced with pygame surfaces)
+    overlay_gc: Any|None = None         # X11 graphics context (not used in pygame)
+    gray25_stipple: Any|None = None     # X11 stipple (replaced with pygame surface)
+    gray50_stipple: Any|None = None     # X11 stipple (replaced with pygame surface)
+    gray75_stipple: Any|None = None     # X11 stipple (replaced with pygame surface)
+    vert_stipple: Any|None = None       # X11 stipple (replaced with pygame surface)
+    horiz_stipple: Any|None = None      # X11 stipple (replaced with pygame surface)
+    diag_stipple: Any|None = None       # X11 stipple (replaced with pygame surface)
 
 
 @dataclass
 class SimGraph:
     """Graph display structure"""
-    next: Optional['SimGraph'] = None
+    next: 'SimGraph|None' = None
     range: int = 0
     mask: int = 0
-    tkwin: Optional[Any] = None      # TK window (replaced with pygame surface)
-    interp: Optional[Any] = None     # TCL interpreter (not used in pygame)
+    tkwin: Any|None = None      # TK window (replaced with pygame surface)
+    interp: Any|None = None     # TCL interpreter (not used in pygame)
     flags: int = 0
-    x: Optional[XDisplay] = None
+    x: XDisplay|None = None
     visible: bool = False
     w_x: int = 0
     w_y: int = 0
     w_width: int = 0
     w_height: int = 0
-    pixmap: Optional[Any] = None     # X11 pixmap (replaced with pygame surface)
-    pixels: Optional[List[int]] = None
-    fontPtr: Optional[Any] = None    # X11 font (replaced with pygame font)
-    border: Optional[Any] = None     # TK border (not used in pygame)
+    pixmap: Any|None = None     # X11 pixmap (replaced with pygame surface)
+    pixels: list[int]|None = None
+    fontPtr: Any|None = None    # X11 font (replaced with pygame font)
+    border: Any|None = None     # TK border (not used in pygame)
     borderWidth: int = 0
     relief: int = 0
-    draw_graph_token: Optional[Any] = None  # TK timer token (replaced with pygame timer)
-
-
+    draw_graph_token: Any|None = None  # TK timer token (replaced with pygame timer)
 @dataclass
 class SimDate:
     """Date display structure"""
-    next: Optional['SimDate'] = None
+    next: 'SimDate|None' = None
     reset: int = 0
     month: int = 0
     year: int = 0
     lastmonth: int = 0
     lastyear: int = 0
-    tkwin: Optional[Any] = None      # TK window (replaced with pygame surface)
-    interp: Optional[Any] = None     # TCL interpreter (not used in pygame)
+    tkwin: Any|None = None      # TK window (replaced with pygame surface)
+    interp: Any|None = None     # TCL interpreter (not used in pygame)
     flags: int = 0
-    x: Optional[XDisplay] = None
+    x: XDisplay|None = None
     visible: bool = False
     w_x: int = 0
     w_y: int = 0
     w_width: int = 0
     w_height: int = 0
-    pixmap: Optional[Any] = None     # X11 pixmap (replaced with pygame surface)
-    pixels: Optional[List[int]] = None
-    fontPtr: Optional[Any] = None    # X11 font (replaced with pygame font)
-    border: Optional[Any] = None     # TK border (not used in pygame)
+    pixmap: Any|None = None     # X11 pixmap (replaced with pygame surface)
+    pixels: list[int]|None = None
+    fontPtr: Any|None = None    # X11 font (replaced with pygame font)
+    border: Any|None = None     # TK border (not used in pygame)
     borderWidth: int = 0
     padX: int = 0
     padY: int = 0
@@ -136,7 +135,7 @@ class SimDate:
     monthTabX: int = 0
     yearTab: int = 0
     yearTabX: int = 0
-    draw_date_token: Optional[Any] = None  # TK timer token (replaced with pygame timer)
+    draw_date_token: Any|None = None  # TK timer token (replaced with pygame timer)
 
 
 @dataclass
@@ -150,7 +149,7 @@ class Person:
 class Cmd:
     """Command structure"""
     name: str = ""
-    cmd: Optional[Callable[[], int]] = None
+    cmd: Callable[[], int]|None = None
 
 
 # ============================================================================
@@ -162,24 +161,21 @@ class SimExtended:
     """Extended Sim structure with additional view components from view.h"""
     # Basic counts and pointers (from original Sim in types.py)
     editors: int = 0
-    editor: Optional[Any] = None  # SimView
+    editor: list[Any]|None = None  # SimView
     maps: int = 0
-    map: Optional[Any] = None     # SimView
+    map: list[Any]|None = None     # SimView
     graphs: int = 0
-    graph: Optional[SimGraph] = None
+    graph: list[SimGraph]|None = None
     dates: int = 0
-    date: Optional[SimDate] = None
+    date: list[SimDate]|None = None
     sprites: int = 0
-    sprite: Optional[Any] = None  # SimSprite
-
+    sprite: list[Any]|None = None  # SimSprite
     # Camera support (conditional in original)
     scams: int = 0
-    scam: Optional[Any] = None    # SimCam (placeholder)
+    scam: Any|None = None    # SimCam (placeholder)
 
     # Overlay/ink system
-    overlay: Optional[Ink] = None
-
-
+    overlay: Ink|None = None
 # ============================================================================
 # Utility Functions
 # ============================================================================

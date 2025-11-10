@@ -6,11 +6,12 @@ Tests the generation module functions including map clearing, island creation,
 river generation, lake placement, and tree generation.
 """
 
-import unittest
 from src.micropolis import generation, types
 
 
-class TestGeneration(unittest.TestCase):
+from tests.assertions import Assertions
+
+class TestGeneration(Assertions):
     """Test cases for the generation system."""
 
     def setUp(self):
@@ -290,6 +291,3 @@ class TestGeneration(unittest.TestCase):
         # Test that it uses two random calls
         # (This is hard to test directly, but we can check statistical properties)
 
-
-if __name__ == '__main__':
-    unittest.main()

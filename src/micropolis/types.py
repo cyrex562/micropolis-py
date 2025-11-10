@@ -5,9 +5,11 @@ This module contains the main data structures and constants ported from sim.h,
 representing the core simulation state and configuration.
 """
 
-from typing import List, Optional, Any
-from dataclasses import dataclass
 import array
+from dataclasses import Field, dataclass, field
+from typing import Any
+
+import pygame
 
 # Import view_types for graphics structures
 from . import view_types
@@ -58,13 +60,13 @@ POWERMAPLEN = 1700  # Hardcoded value from C (non-MEGA case)
 PWRSTKSIZE = (WORLD_X * WORLD_Y) // 4  # 3000
 
 # Power grid bit operations
-def POWERWORD(x: int, y: int) -> int:
+def powerword(x: int, y: int) -> int:
     """Calculate power map word index for coordinates"""
     return ((x) >> 4) + ((y) << 3)
 
-def SETPOWERBIT(x: int, y: int, power_map: array.array) -> None:
+def setpowerbit(x: int, y: int, power_map: array.array) -> None:
     """Set power bit at coordinates in power map"""
-    power_map[POWERWORD(x, y)] |= 1 << ((x) & 15)
+    power_map[powerword(x, y)] |= 1 << ((x) & 15)
 
 # ============================================================================
 # Map Type Constants
@@ -411,7 +413,7 @@ class SimSprite:
     turn: int = 0
     accel: int = 0
     speed: int = 0
-    next: Optional['SimSprite'] = None
+    next: 'SimSprite | None' = None
 
 
 @dataclass
@@ -423,13 +425,13 @@ class SimView:
     class_id: int = 0  # renamed from 'class' to avoid Python keyword
 
     # Graphics
-    pixels: Optional[List[int]] = None
+    pixels: list[int] = field(default_factory=list[int])
     line_bytes: int = 0
     pixel_bytes: int = 0
     depth: int = 0
-    data: Optional[bytes] = None
+    data: bytes|None = None
     line_bytes8: int = 0
-    data8: Optional[bytes] = None
+    data8: bytes|None = None
     visible: bool = False
     invalid: bool = False
     skips: int = 0
@@ -437,12 +439,12 @@ class SimView:
     update: bool = False
 
     # Map display
-    smalltiles: Optional[bytes] = None
+    smalltiles: bytes|None = None
     map_state: int = 0
     show_editors: bool = False
 
     # Editor display
-    bigtiles: Optional[bytes] = None
+    bigtiles: bytes|None = None
     power_type: int = 0
     tool_showing: bool = False
     tool_mode: int = 0
@@ -491,10 +493,10 @@ class SimView:
     flags: int = 0
 
     # Tile cache for rendering optimization (short **tiles in C)
-    tiles: Optional[List[List[int]]] = None
+    tiles: list[list[int]] = field(default_factory=list)
 
     # X11 display (adapted for pygame)
-    x: Optional[Any] = None
+    x: Any|None = None
 
     # Timing
     updates: int = 0
@@ -509,7 +511,7 @@ class SimView:
     auto_x_goal: int = 0
     auto_y_goal: int = 0
     auto_speed: int = 0
-    follow: Optional[SimSprite] = None
+    follow: SimSprite|None = None
 
     # Sound
     sound: bool = False
@@ -523,22 +525,26 @@ class SimView:
     overlay_mode: int = 0
     overlay_time: float = 0.0  # Simplified from struct timeval
 
-    next: Optional['SimView'] = None
+    surface: pygame.Surface|None = None  # Pygame surface for rendering
+
+    next: "SimView|None" = None
 
 
 @dataclass
 class Sim:
     """Main simulation structure containing all views and sprites"""
     editors: int = 0
-    editor: Optional[SimView] = None
+    editor: SimView|None = None
     maps: int = 0
-    map: Optional[SimView] = None
+    map: SimView|None = None
     graphs: int = 0
-    graph: Optional[Any] = None  # SimGraph placeholder
+    graph: Any|None = None  # SimGraph placeholder
     dates: int = 0
-    date: Optional[Any] = None   # SimDate placeholder
+    date: Any|None = None   # SimDate placeholder
     sprites: int = 0
-    sprite: Optional[SimSprite] = None
+    sprite: SimSprite|None = None
+    overlay: list[Any] = field(default_factory=list[Any])  # Ink overlays
+    
 
 
 # ============================================================================
@@ -546,56 +552,56 @@ class Sim:
 # ============================================================================
 
 # Main simulation instance
-sim: Optional[Sim] = None
+sim: Sim|None = None
 
 # Map data - main tile grid (120x100)
-Map: List[List[int]] = [[0 for _ in range(WORLD_Y)] for _ in range(WORLD_X)]
+Map: list[list[int]] = [[0 for _ in range(WORLD_Y)] for _ in range(WORLD_X)]
 
 # Population density overlay (60x50)
-PopDensity: List[List[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
+PopDensity: list[list[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
 
 # Traffic density overlay (60x50)
-TrfDensity: List[List[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
+TrfDensity: list[list[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
 
 # Pollution overlay (60x50)
-PollutionMem: List[List[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
+PollutionMem: list[list[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
 
 # Land value overlay (60x50)
-LandValueMem: List[List[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
+LandValueMem: list[list[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
 
 # Crime overlay (60x50)
-CrimeMem: List[List[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
+CrimeMem: list[list[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
 
 # Temporary overlays (60x50)
-tem: List[List[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
-tem2: List[List[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
+tem: list[list[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
+tem2: list[list[int]] = [[0 for _ in range(HWLDY)] for _ in range(HWLDX)]
 
 # Terrain memory (30x25)
-TerrainMem: List[List[int]] = [[0 for _ in range(QWY)] for _ in range(QWX)]
-Qtem: List[List[int]] = [[0 for _ in range(QWY)] for _ in range(QWX)]
+TerrainMem: list[list[int]] = [[0 for _ in range(QWY)] for _ in range(QWX)]
+Qtem: list[list[int]] = [[0 for _ in range(QWY)] for _ in range(QWX)]
 
 # Rate of growth (15x13)
-RateOGMem: List[List[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
+RateOGMem: list[list[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
 
 # Fire station coverage (15x13)
-FireStMap: List[List[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
+FireStMap: list[list[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
 
 # Police station coverage (15x13)
-PoliceMap: List[List[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
-PoliceMapEffect: List[List[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
+PoliceMap: list[list[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
+PoliceMapEffect: list[list[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
 
 # Commercial rate (15x13)
-ComRate: List[List[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
+ComRate: list[list[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
 
 # Fire rate (15x13)
-FireRate: List[List[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
+FireRate: list[list[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
 
 # Temporary storage (15x13)
-STem: List[List[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
+STem: list[list[int]] = [[0 for _ in range(SmY)] for _ in range(SmX)]
 
 # Sprite offsets
-SpriteXOffset: List[int] = [0] * OBJN
-SpriteYOffset: List[int] = [0] * OBJN
+SpriteXOffset: list[int] = [0] * OBJN
+SpriteYOffset: list[int] = [0] * OBJN
 
 # Map position
 SMapX: int = 0
@@ -679,16 +685,16 @@ DonDither: int = 0
 DoOverlay: int = 0
 
 # History data (placeholders - will be initialized properly)
-ResHis: List[int] = []
+ResHis: list[int] = []
 ResHisMax: int = 0
-ComHis: List[int] = []
+ComHis: list[int] = []
 ComHisMax: int = 0
-IndHis: List[int] = []
+IndHis: list[int] = []
 IndHisMax: int = 0
-MoneyHis: List[int] = []
-CrimeHis: List[int] = []
-PollutionHis: List[int] = []
-MiscHis: List[int] = []
+MoneyHis: list[int] = []
+CrimeHis: list[int] = []
+PollutionHis: list[int] = []
+MiscHis: list[int] = []
 
 # Power grid
 PowerMap: array.array = array.array('H', [0] * PWRMAPSIZE)  # Unsigned short array
@@ -720,7 +726,7 @@ TilesAnimated: int = 0
 DoAnimation: int = 0
 DoMessages: int = 0
 DoNotices: int = 0
-ColorIntensities: List[int] = [0] * 16
+ColorIntensities: list[int] = [0] * 16
 
 # Message system
 MesX: int = 0
@@ -775,8 +781,8 @@ Com2HisMax: int = 0
 Ind2HisMax: int = 0
 
 # History buffers (placeholders)
-History10: List[List[int]] = [[] for _ in range(HISTORIES)]
-History120: List[List[int]] = [[] for _ in range(HISTORIES)]
+History10: list[list[int]] = [[] for _ in range(HISTORIES)]
+History120: list[list[int]] = [[] for _ in range(HISTORIES)]
 
 # City evaluation
 CityScore: int = 0
@@ -790,8 +796,8 @@ PolMaxX: int = 0
 PolMaxY: int = 0
 TrafficAverage: int = 0
 PosStackN: int = 0
-SMapXStack: List[int] = []
-SMapYStack: List[int] = []
+SMapXStack: list[int] = []
+SMapYStack: list[int] = []
 LDir: int = 5  # Last direction for traffic pathfinding
 
 # Sprite control
@@ -826,14 +832,14 @@ CityPop: int = 0
 deltaCityPop: int = 0
 
 # City class strings
-cityClassStr: List[str] = ["", "", "", "", "", ""]
+cityClassStr: list[str] = ["", "", "", "", "", ""]
 
 # City evaluation
 CityYes: int = 0
 CityNo: int = 0
-ProblemTable: List[int] = [0] * PROBNUM
-ProblemVotes: List[int] = [0] * PROBNUM
-ProblemOrder: List[int] = [0, 0, 0, 0]
+ProblemTable: list[int] = [0] * PROBNUM
+ProblemVotes: list[int] = [0] * PROBNUM
+ProblemOrder: list[int] = [0, 0, 0, 0]
 CityAssValue: int = 0
 
 # Initialization flags
@@ -857,7 +863,7 @@ sim_tty: int = 0
 UpdateDelayed: int = 0
 
 # Dynamic data
-DynamicData: List[int] = [0] * 32
+DynamicData: list[int] = [0] * 32
 
 # Multiplayer
 Players: int = 0
@@ -885,20 +891,20 @@ PunishCnt: int = 0
 Dozing: int = 0
 
 # Tool configuration
-toolSize: List[int] = []
-toolOffset: List[int] = []
-toolColors: List[int] = []
+toolSize: list[int] = []
+toolOffset: list[int] = []
+toolColors: list[int] = []
 
 # Display system
 Displays: str = ""
 FirstDisplay: str = ""
 
 # Date strings
-dateStr: List[str] = [""] * 12
+dateStr: list[str] = [""] * 12
 
 # Map update flags
 NewMap: int = 0
-NewMapFlags: List[int] = [0] * NMAPS
+NewMapFlags: list[int] = [0] * NMAPS
 NewGraph: int = 0
 
 # UI update flags
@@ -921,7 +927,7 @@ ExitReturn: int = 0
 # ============================================================================
 
 # Main display for graphics
-MainDisplay: Optional[view_types.XDisplay] = None
+MainDisplay: view_types.XDisplay|None = None
 
 # ============================================================================
 # Utility Functions
@@ -963,7 +969,7 @@ def MakeNewView() -> SimView:
     """Create a new view instance"""
     return SimView()
 
-def GetSprite() -> Optional[SimSprite]:
+def GetSprite() -> SimSprite|None:
     """Get a sprite from the pool (placeholder)"""
     return None
 

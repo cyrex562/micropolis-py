@@ -4,18 +4,18 @@ test_sim_control.py - Unit tests for the sim_control.py module
 This module contains comprehensive tests for the simulation control functionality.
 """
 
-import unittest
 from unittest.mock import Mock, patch
 import sys
 import os
 
+from tests.assertions import Assertions
+
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from micropolis import sim_control
 
 
-class TestSimControl(unittest.TestCase):
+class TestSimControl(Assertions):
     """Test cases for the sim_control module"""
 
     def setUp(self):
@@ -628,6 +628,3 @@ class TestSimControl(unittest.TestCase):
         sim_control.update_simulation()
         mock_sim_update.assert_called_once()
 
-
-if __name__ == '__main__':
-    unittest.main()

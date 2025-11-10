@@ -3,12 +3,10 @@
 # Tests the tile animation system to ensure animated tiles are properly
 # updated according to the animation tables and preserve tile flags.
 
-import unittest
 from unittest.mock import patch
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from micropolis import animations
 from micropolis import macros
@@ -16,7 +14,9 @@ from micropolis import types
 from micropolis import animation
 
 
-class TestAnimations(unittest.TestCase):
+from tests.assertions import Assertions
+
+class TestAnimations(Assertions):
     """Test cases for the tile animation system"""
 
     def setUp(self):
@@ -229,6 +229,3 @@ class TestAnimations(unittest.TestCase):
         self.assertTrue(result_tile & macros.CONDBIT, "CONDBIT not preserved")
         self.assertTrue(result_tile & macros.BURNBIT, "BURNBIT not preserved")
 
-
-if __name__ == '__main__':
-    unittest.main()

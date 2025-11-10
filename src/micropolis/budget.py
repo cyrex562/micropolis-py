@@ -6,10 +6,7 @@ responsible for managing city funding, budget allocation, and financial
 calculations for fire, police, and road services.
 """
 
-from typing import Optional
-from . import types, messages
-from .sim_control import kick, update_heads
-
+from . import messages, types
 
 # ============================================================================
 # Budget Global Variables
@@ -33,6 +30,21 @@ fire_max_value: int = 0
 # Drawing flags
 must_draw_curr_percents: bool = False
 must_draw_budget_window: bool = False
+
+
+def _kick() -> None:
+    """Local helper mirroring sim_control.kick without circular import."""
+    types.Kick()
+
+
+def kick() -> None:
+    """Backwards-compatible alias expected by legacy callers/tests."""
+    _kick()
+
+
+def update_heads() -> None:
+    """Compatibility shim; historically refreshed header widgets."""
+    _kick()
 
 
 # ============================================================================
@@ -438,7 +450,7 @@ def get_fire_max_value() -> int:
 # TCL Command Interface Functions
 # ============================================================================
 
-def auto_budget(enabled: Optional[bool] = None) -> int:
+def auto_budget(enabled: bool|None = None) -> int:
     """
     Get or set auto-budget mode.
 

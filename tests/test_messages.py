@@ -5,13 +5,14 @@ Tests the message system functions including message sending,
 scenario scoring, and message string loading.
 """
 
-import unittest
 from unittest.mock import patch, MagicMock
 
 from src.micropolis import messages, types
 
 
-class TestMessages(unittest.TestCase):
+from tests.assertions import Assertions
+
+class TestMessages(Assertions):
     """Test cases for the messages system."""
 
     def setUp(self):
@@ -265,6 +266,3 @@ class TestMessages(unittest.TestCase):
             self.assertGreaterEqual(speed, 70)
             self.assertLessEqual(speed, 110)  # 40 + 70
 
-
-if __name__ == '__main__':
-    unittest.main()

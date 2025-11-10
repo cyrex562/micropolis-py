@@ -5,7 +5,6 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 import src.micropolis.types as types
 import src.micropolis.macros as macros
@@ -294,7 +293,3 @@ def run_all_tests():
         traceback.print_exc()
         return False
 
-
-if __name__ == "__main__":
-    success = run_all_tests()
-    sys.exit(0 if success else 1)

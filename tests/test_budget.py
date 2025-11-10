@@ -4,18 +4,18 @@ test_budget.py - Unit tests for the budget.py module
 This module contains comprehensive tests for the budget and finance management system.
 """
 
-import unittest
 from unittest.mock import patch
 import sys
 import os
 
+from tests.assertions import Assertions
+
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from micropolis import budget
 
 
-class TestBudgetGlobals(unittest.TestCase):
+class TestBudgetGlobals(Assertions):
     """Test budget global variables and initialization"""
 
     def setUp(self):
@@ -53,7 +53,7 @@ class TestBudgetGlobals(unittest.TestCase):
         self.assertEqual(budget.get_road_percent(), 1.0)
 
 
-class TestBudgetCalculation(unittest.TestCase):
+class TestBudgetCalculation(Assertions):
     """Test budget calculation logic"""
 
     def setUp(self):
@@ -69,7 +69,7 @@ class TestBudgetCalculation(unittest.TestCase):
         self.mock_types.PoliceFund = 100
         self.mock_types.RoadFund = 100
         self.mock_types.TaxFund = 200
-        self.mock_types.TotalFunds = 1000
+        self.mock_types.TotalFunds = 100
         self.mock_types.autoBudget = 0
         self.mock_types.FireSpend = 0
         self.mock_types.PoliceSpend = 0
@@ -159,7 +159,7 @@ class TestBudgetCalculation(unittest.TestCase):
         self.assertEqual(self.mock_types.MustUpdateOptions, 1)
 
 
-class TestBudgetUI(unittest.TestCase):
+class TestBudgetUI(Assertions):
     """Test budget UI functions"""
 
     def setUp(self):
@@ -202,7 +202,7 @@ class TestBudgetUI(unittest.TestCase):
         self.assertFalse(budget.must_draw_budget_window)
 
 
-class TestBudgetCommands(unittest.TestCase):
+class TestBudgetCommands(Assertions):
     """Test TCL command interfaces"""
 
     def setUp(self):
@@ -268,7 +268,7 @@ class TestBudgetCommands(unittest.TestCase):
         mock_kick.assert_called_once()
 
 
-class TestBudgetIntegration(unittest.TestCase):
+class TestBudgetIntegration(Assertions):
     """Integration tests for budget system"""
 
     def setUp(self):
@@ -317,7 +317,7 @@ class TestBudgetIntegration(unittest.TestCase):
         self.assertEqual(budget.get_road_max_value(), 600)
 
 
-class TestSpendFunction(unittest.TestCase):
+class TestSpendFunction(Assertions):
     """Test the spend utility function"""
 
     def setUp(self):
@@ -348,7 +348,3 @@ class TestSpendFunction(unittest.TestCase):
         self.assertEqual(self.mock_types.TotalFunds, 1100)
         self.assertEqual(self.mock_types.MustUpdateFunds, 1)
         mock_kick.assert_called_once()
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -8,7 +8,7 @@ to determine which areas receive power from coal and nuclear power plants.
 Based on s_power.c from the original C codebase.
 """
 
-from typing import List
+
 import array
 from . import types
 
@@ -23,8 +23,8 @@ CONDBIT = 16384  # 0x4000 - bit 14
 
 # Global power grid state
 PowerStackNum: int = 0
-PowerStackX: List[int] = [0] * PWRSTKSIZE
-PowerStackY: List[int] = [0] * PWRSTKSIZE
+PowerStackX: list[int] = [0] * PWRSTKSIZE
+PowerStackY: list[int] = [0] * PWRSTKSIZE
 MaxPower: int = 0
 NumPower: int = 0
 
@@ -130,7 +130,7 @@ def SetPowerBit(x: int, y: int) -> None:
         y: Y coordinate
     """
     # Calculate the word index in the power map
-    word = types.POWERWORD(x, y)
+    word = types.powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Set the bit
@@ -149,7 +149,7 @@ def TestPowerBit(x: int, y: int) -> bool:
         True if the tile has power, False otherwise
     """
     # Calculate the word index in the power map
-    word = types.POWERWORD(x, y)
+    word = types.powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Test the bit
@@ -179,7 +179,7 @@ def ClearPowerBit(x: int, y: int) -> None:
         y: Y coordinate
     """
     # Calculate the word index in the power map
-    word = types.POWERWORD(x, y)
+    word = types.powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Clear the bit

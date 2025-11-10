@@ -15,13 +15,10 @@ The system handles:
 Ported from s_msg.c.
 """
 
-import time
 import os
-from typing import Optional
+import time
 
-from . import types
-from . import random
-
+from . import random, types
 
 # Message strings loaded from stri.301 file
 MESSAGE_STRINGS: list[str] = []
@@ -40,7 +37,7 @@ def load_message_strings() -> None:
         return
 
     # Path to the message strings file
-    stri_file = os.path.join(os.path.dirname(__file__), '..', '..', 'res', 'stri.301')
+    stri_file = os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'stri.301')
 
     try:
         with open(stri_file, 'r', encoding='utf-8') as f:

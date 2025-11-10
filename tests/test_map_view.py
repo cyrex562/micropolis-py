@@ -9,17 +9,15 @@ Tests the map overview rendering functionality including:
 - Map procedure setup
 """
 
-import unittest
 import pygame
 from unittest.mock import Mock, MagicMock
 
-# Import the module to test
-from . import map_view
-from . import types
-from . import macros
+from micropolis import map_view, types, macros
 
 
-class TestMapView(unittest.TestCase):
+from tests.assertions import Assertions
+
+class TestMapView(Assertions):
     """Test cases for map view functionality"""
 
     def setUp(self):
@@ -326,8 +324,3 @@ class TestMapView(unittest.TestCase):
 
         # Should not crash
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
-
-
-if __name__ == '__main__':
-    unittest.main()</content>
-<parameter name="filePath">c:\Users\cyrex\files\projects\micropolis\test_map_view.py

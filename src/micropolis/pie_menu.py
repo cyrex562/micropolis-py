@@ -6,10 +6,10 @@ Implements circular pie menus with configurable slices and TCL command interface
 """
 
 import math
-import pygame
-from typing import List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
+
+import pygame
 
 # Constants (ported from w_piem.c)
 PI = 3.1415926535897932
@@ -50,7 +50,7 @@ class PieMenuEntry:
     type: EntryType
     piemenu: 'PieMenu'
     label: str = ""
-    bitmap: Optional[pygame.Surface] = None
+    bitmap: pygame.Surface | None = None
 
     # Display information
     width: int = 0
@@ -72,9 +72,9 @@ class PieMenuEntry:
     slope: float = 0.0       # Slope of leading edge
 
     # Commands
-    command: Optional[str] = None
-    preview: Optional[str] = None
-    name: Optional[str] = None
+    command: str | None = None
+    preview: str | None = None
+    name: str | None = None
 
     # State
     flags: int = 0
@@ -91,7 +91,7 @@ class PieMenu:
 
     # Basic properties
     title: str = ""
-    entries: List[PieMenuEntry] = field(default_factory=list)
+    entries: list[PieMenuEntry] = field(default_factory=list)
     active: int = -1  # Active entry index (-1 = none)
 
     # Position and tracking
@@ -127,15 +127,15 @@ class PieMenu:
     active_border_width: int = PIE_ACTIVE_BORDER_WIDTH
 
     # State
-    posted_submenu: Optional[PieMenuEntry] = None
+    posted_submenu: PieMenuEntry | None = None
     flags: int = 0
     popup_delay: int = PIE_POPUP_DELAY
     shaped: bool = True
 
     # Pygame surfaces
-    surface: Optional[pygame.Surface] = None
-    font: Optional[pygame.font.Font] = None
-    title_font: Optional[pygame.font.Font] = None
+    surface: pygame.Surface | None = None
+    font: pygame.font.Font | None = None
+    title_font: pygame.font.Font | None = None
 
     def __post_init__(self):
         """Initialize after dataclass creation."""
@@ -212,7 +212,7 @@ class PieMenu:
             if i == first:
                 return last_i
 
-    def _calc_quadrant_slope(self, x: float, y: float) -> Tuple[int, int, int]:
+    def _calc_quadrant_slope(self, x: float, y: float) -> tuple[int, int, int]:
         """Calculate quadrant, numerator, and denominator for slope calculation."""
         if y > 0:
             quadrant = 0 if x > 0 else 1

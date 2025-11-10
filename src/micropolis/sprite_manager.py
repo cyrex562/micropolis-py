@@ -6,10 +6,10 @@ responsible for managing moving objects (cars, disasters, helicopters, etc.)
 in the game world.
 """
 
-from typing import List, Optional, Dict, Any, Callable
+
 import pygame
-from . import types
-from . import random
+
+from . import random, types
 
 # ============================================================================
 # Constants
@@ -39,10 +39,10 @@ CrashX = 0
 CrashY = 0
 
 # Global sprite instances (one per type)
-GlobalSprites: List[Optional[types.SimSprite]] = [None] * types.OBJN
+GlobalSprites: list[types.SimSprite | None] = [None] * types.OBJN
 
 # Free sprite pool
-FreeSprites: Optional[types.SimSprite] = None
+FreeSprites: types.SimSprite | None = None
 
 # ============================================================================
 # Sprite Lifecycle Management
@@ -63,7 +63,7 @@ def new_sprite(name: str, sprite_type: int, x: int = 0, y: int = 0) -> types.Sim
     """
     global FreeSprites
 
-    sprite: Optional[types.SimSprite] = None
+    sprite: types.SimSprite | None = None
 
     if FreeSprites:
         sprite = FreeSprites
@@ -249,7 +249,7 @@ def destroy_sprite(sprite: types.SimSprite) -> None:
     # Remove from simulation sprite list
     if types.sim:
         current = types.sim.sprite
-        prev: Optional[types.SimSprite] = None
+        prev: types.SimSprite | None = None
         while current:
             if current == sprite:
                 if prev:
@@ -277,7 +277,7 @@ def destroy_all_sprites() -> None:
         sprite.frame = 0
         sprite = sprite.next
 
-def get_sprite(sprite_type: int) -> Optional[types.SimSprite]:
+def get_sprite(sprite_type: int) -> types.SimSprite | None:
     """
     Get the global sprite instance for a type.
 
@@ -1358,6 +1358,44 @@ def make_tornado() -> None:
     y = random.Rand((types.WORLD_Y << 4) - 200) + 100
     make_sprite(types.TOR, x, y)
     # ClearMes() - message system not implemented
+
+# Legacy API compatibility ----------------------------------------------------
+
+def GenerateTrain(x: int, y: int) -> None:
+    """Compatibility wrapper for legacy camel-case API."""
+    generate_train(x, y)
+
+
+def GenerateBus(x: int, y: int) -> None:
+    generate_bus(x, y)
+
+
+def GenerateShip() -> None:
+    generate_ship()
+
+
+def GeneratePlane(x: int, y: int) -> None:
+    generate_plane(x, y)
+
+
+def GenerateCopter(x: int, y: int) -> None:
+    generate_copter(x, y)
+
+
+def MakeExplosion(x: int, y: int) -> None:
+    make_explosion(x, y)
+
+
+def MakeExplosionAt(x: int, y: int) -> None:
+    make_explosion_at(x, y)
+
+
+def GetSprite(sprite_type: int) -> types.SimSprite | None:
+    return get_sprite(sprite_type)
+
+
+def MakeSprite(sprite_type: int, x: int, y: int) -> types.SimSprite:
+    return make_sprite(sprite_type, x, y)
     # SendMesAt(-22, (x >> 4) + 3, (y >> 4) + 2)
 
 def make_explosion(x: int, y: int) -> None:

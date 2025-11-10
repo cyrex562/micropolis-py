@@ -5,7 +5,7 @@ This module contains the random number generation functions ported from rand.c a
 maintaining exact algorithmic compatibility with the original C implementation.
 """
 
-from typing import Optional, List
+
 
 # ============================================================================
 # Constants from rand.c
@@ -123,7 +123,7 @@ def sim_srandom(x: int) -> None:
         for _ in range(10 * rand_deg):
             sim_random()
 
-def sim_initstate(seed: int, arg_state: List[int], n: int) -> Optional[List[int]]:
+def sim_initstate(seed: int, arg_state: list[int], n: int) -> list[int] | None:
     """
     Initialize state information for the advanced random number generator.
 
@@ -184,7 +184,7 @@ def sim_initstate(seed: int, arg_state: List[int], n: int) -> Optional[List[int]
 
     return old_state
 
-def sim_setstate(arg_state: List[int]) -> Optional[List[int]]:
+def sim_setstate(arg_state: list[int]) -> list[int] | None:
     """
     Restore state from a state array.
 

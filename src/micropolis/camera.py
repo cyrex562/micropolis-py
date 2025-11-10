@@ -18,7 +18,8 @@ but do not implement the full cellular automata simulation engine.
 Adapted from w_cam.c, g_cam.c, and cam.h for the Python/pygame port.
 """
 
-from typing import Optional, List, Callable
+
+from collections.abc import Callable
 import pygame
 
 
@@ -34,7 +35,7 @@ class Can:
     with dimensions and memory layout information.
     """
     def __init__(self, width: int = 0, height: int = 0,
-                 mem: Optional[bytearray] = None, line_bytes: int = 0):
+                 mem: bytearray | None = None, line_bytes: int = 0):
         self.width: int = width
         self.height: int = height
         self.line_bytes: int = line_bytes or width
@@ -60,10 +61,10 @@ class Cam:
     position, and simulation parameters.
     """
     def __init__(self):
-        self.next: Optional['Cam'] = None
-        self.back: Optional[Can] = None
-        self.front: Optional[Can] = None
-        self.neighborhood: Optional[Callable] = None
+        self.next: Cam | None = None
+        self.back: Can | None = None
+        self.front: Can | None = None
+        self.neighborhood: Callable | None = None
         self.rule: bytearray = bytearray(256)  # Rule table
         self.rule_size: int = 256
         self.width: int = 0
@@ -89,7 +90,7 @@ class Cam:
         self.set_y0: int = -1
         self.set_x1: int = -1
         self.set_y1: int = -1
-        self.name: Optional[str] = None
+        self.name: str | None = None
 
 
 class SimCam:
@@ -100,7 +101,7 @@ class SimCam:
     and contained the list of cellular automata to render.
     """
     def __init__(self):
-        self.next: Optional['SimCam'] = None
+        self.next: "SimCam | None" = None
         self.w_x: int = 0
         self.w_y: int = 0
         self.w_width: int = 512
@@ -109,19 +110,18 @@ class SimCam:
         self.invalid: bool = True
         self.skips: int = 0
         self.skip: int = 0
-        self.surface: Optional[pygame.Surface] = None  # Pygame replacement for X11
+        self.surface: pygame.Surface | None = None  # Pygame replacement for X11
         self.line_bytes: int = 0
-        self.data: Optional[bytearray] = None
+        self.data: bytearray | None = None
         self.cam_count: int = 0
-        self.cam_list: Optional[Cam] = None
-
+        self.cam_list: Cam | None = None
 
 # ============================================================================
 # Global Variables
 # ============================================================================
 
 # Global camera list (stub implementation)
-_simcam_list: List[SimCam] = []
+_simcam_list: list[SimCam] = []
 _next_cam_id: int = 1
 
 
@@ -129,7 +129,7 @@ _next_cam_id: int = 1
 # Utility Functions
 # ============================================================================
 
-def new_can(width: int, height: int, mem: Optional[bytearray] = None,
+def new_can(width: int, height: int, mem: bytearray | None = None,
             line_bytes: int = 0) -> Can:
     """
     Create a new canvas/buffer.
@@ -147,7 +147,7 @@ def new_can(width: int, height: int, mem: Optional[bytearray] = None,
 
 
 def new_cam(scam: SimCam, x: int, y: int, width: int, height: int,
-            dx: int = 0, dy: int = 0, neighborhood_func: Optional[Callable] = None) -> Cam:
+            dx: int = 0, dy: int = 0, neighborhood_func: Callable | None = None) -> Cam:
     """
     Create a new cellular automaton.
 
@@ -194,7 +194,7 @@ def new_cam(scam: SimCam, x: int, y: int, width: int, height: int,
     return cam
 
 
-def find_cam_by_name(scam: SimCam, name: str) -> Optional[Cam]:
+def find_cam_by_name(scam: SimCam, name: str) -> Cam | None:
     """
     Find a camera by name.
 
@@ -213,7 +213,7 @@ def find_cam_by_name(scam: SimCam, name: str) -> Optional[Cam]:
     return None
 
 
-def find_cam(scam: SimCam, x: int, y: int) -> Optional[Cam]:
+def find_cam(scam: SimCam, x: int, y: int) -> Cam | None:
     """
     Find camera at coordinates.
 
@@ -408,7 +408,7 @@ def cam_step(cam: Cam) -> None:
 # Rendering Functions
 # ============================================================================
 
-def render_simcam(scam: SimCam) -> Optional[pygame.Surface]:
+def render_simcam(scam: SimCam) -> pygame.Surface | None:
     """
     Render simulation camera to pygame surface.
 

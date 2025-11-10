@@ -3,14 +3,13 @@ audio.py - Sound effect management for Micropolis Python port using pygame mixer
 """
 
 import os
-import pygame.mixer
-from typing import Dict, Optional, Any
 from dataclasses import dataclass
+from typing import Any
+
+import pygame.mixer
 
 # Import simulation modules
 from . import types
-from . import resources
-
 
 # ============================================================================
 # Type Definitions and Constants
@@ -39,12 +38,10 @@ class SoundInfo:
     """
     Information about a loaded sound.
     """
-    sound: Optional[pygame.mixer.Sound] = None
-    channel: Optional[pygame.mixer.Channel] = None
+    sound: pygame.mixer.Sound|None = None
+    channel: pygame.mixer.Channel|None = None
     is_looping: bool = False
-    resource_id: Optional[str] = None
-
-
+    resource_id: str|None = None
 # ============================================================================
 # Global Variables
 # ============================================================================
@@ -54,12 +51,10 @@ SoundInitialized: bool = False
 Dozing: bool = False  # Bulldozer sound state
 
 # Sound cache
-sound_cache: Dict[str, SoundInfo] = {}
+sound_cache: dict[str, SoundInfo] = {}
 
 # Active sound channels
-active_channels: Dict[int, SoundInfo] = {}
-
-
+active_channels: dict[int, SoundInfo] = {}
 # ============================================================================
 # Sound System Functions
 # ============================================================================
@@ -113,9 +108,7 @@ def shutdown_sound() -> None:
         return
 
     try:
-        # Stop all sounds
-        pygame.mixer.stop()
-        sound_off()
+        _stop_all_channels()
 
         # Clear caches
         sound_cache.clear()
@@ -251,9 +244,7 @@ def sound_off() -> None:
         return
 
     try:
-        # Stop all channels
-        pygame.mixer.stop()
-        Dozing = False
+        _stop_all_channels()
 
     except Exception as e:
         print(f"Error turning sound off: {e}")
@@ -295,7 +286,7 @@ def do_stop_sound(sound_id: str) -> None:
 # Sound Resource Management
 # ============================================================================
 
-def get_sound(sound_name: str) -> Optional[SoundInfo]:
+def get_sound(sound_name: str) -> SoundInfo|None:
     """
     Get or load a sound by name.
 
@@ -317,7 +308,7 @@ def get_sound(sound_name: str) -> Optional[SoundInfo]:
     return sound_info
 
 
-def load_sound(sound_name: str) -> Optional[SoundInfo]:
+def load_sound(sound_name: str) -> SoundInfo|None:
     """
     Load a sound file from the sounds directory.
 
@@ -329,7 +320,7 @@ def load_sound(sound_name: str) -> Optional[SoundInfo]:
     """
     # Determine sound directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    sound_dir = os.path.join(script_dir, "..", "..", "res", "sounds")
+    sound_dir = os.path.join(script_dir, "..", "..", "assets", "sounds")
 
     # Try different extensions
     for ext in SOUND_EXTENSIONS:
@@ -396,6 +387,37 @@ def preload_sounds(sound_names: list[str]) -> None:
 
     for sound_name in sound_names:
         get_sound(sound_name)  # This will load and cache the sound
+
+
+def _stop_all_channels() -> None:
+    """
+    Stop playback on every mixer channel and reset cached state.
+    """
+    global Dozing
+
+    if not SoundInitialized:
+        return
+
+    pygame.mixer.stop()
+
+    for info in sound_cache.values():
+        if info.channel:
+            try:
+                info.channel.stop()
+            except Exception:
+                pass
+            info.is_looping = False
+
+    for info in active_channels.values():
+        channel = info.channel
+        if channel:
+            try:
+                channel.stop()
+            except Exception:
+                pass
+            info.is_looping = False
+
+    Dozing = False
 
 
 # ============================================================================

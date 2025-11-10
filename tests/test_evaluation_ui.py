@@ -4,18 +4,18 @@ test_evaluation_ui.py - Unit tests for the evaluation_ui.py module
 This module contains comprehensive tests for the city evaluation display system.
 """
 
-import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import sys
 import os
 
+from tests.assertions import Assertions
+
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from micropolis import evaluation_ui, types
 
 
-class TestEvaluationUIConstants(unittest.TestCase):
+class TestEvaluationUIConstants(Assertions):
     """Test evaluation UI constants and string mappings"""
 
     def test_city_class_strings(self):
@@ -56,7 +56,7 @@ class TestEvaluationUIConstants(unittest.TestCase):
         self.assertEqual(evaluation_ui.get_problem_string(7), "UNKNOWN")
 
 
-class TestDollarFormatting(unittest.TestCase):
+class TestDollarFormatting(Assertions):
     """Test dollar amount formatting"""
 
     def test_make_dollar_decimal_str_single_digit(self):
@@ -95,7 +95,7 @@ class TestDollarFormatting(unittest.TestCase):
         self.assertEqual(result, "$123,456,789")
 
 
-class TestCurrentYear(unittest.TestCase):
+class TestCurrentYear(Assertions):
     """Test current year calculation"""
 
     def setUp(self):
@@ -126,7 +126,7 @@ class TestCurrentYear(unittest.TestCase):
         self.assertEqual(evaluation_ui.current_year(), 1900)
 
 
-class TestEvaluationDisplay(unittest.TestCase):
+class TestEvaluationDisplay(Assertions):
     """Test evaluation display functions"""
 
     def setUp(self):
@@ -234,7 +234,7 @@ class TestEvaluationDisplay(unittest.TestCase):
         mock_draw_eval.assert_called_once()
 
 
-class TestEvaluationUIState(unittest.TestCase):
+class TestEvaluationUIState(Assertions):
     """Test evaluation UI state management"""
 
     def test_change_eval(self):
@@ -266,7 +266,7 @@ class TestEvaluationUIState(unittest.TestCase):
         mock_do_score.assert_not_called()
 
 
-class TestDrawingFunctions(unittest.TestCase):
+class TestDrawingFunctions(Assertions):
     """Test UI drawing functions"""
 
     def test_draw_evaluation(self):
@@ -304,7 +304,7 @@ class TestDrawingFunctions(unittest.TestCase):
         self.assertFalse(evaluation_ui.must_draw_evaluation)
 
 
-class TestCommandInterface(unittest.TestCase):
+class TestCommandInterface(Assertions):
     """Test TCL command interface functions"""
 
     @patch('micropolis.evaluation_ui.do_score_card')
@@ -334,7 +334,7 @@ class TestCommandInterface(unittest.TestCase):
         mock_kick.assert_called_once()
 
 
-class TestEvaluationDataAccess(unittest.TestCase):
+class TestEvaluationDataAccess(Assertions):
     """Test evaluation data access functions"""
 
     def test_get_evaluation_data_initially_none(self):
@@ -354,5 +354,54 @@ class TestEvaluationDataAccess(unittest.TestCase):
         self.assertEqual(data, test_data)
 
 
-if __name__ == '__main__':
-    unittest.main()
+class TestEvaluationPanel(Assertions):
+    """Tests for pygame evaluation overlay state."""
+
+    def teardown_method(self):
+        evaluation_ui.set_evaluation_panel_visible(False)
+
+    def test_visibility_toggle(self):
+        evaluation_ui.set_evaluation_panel_visible(False)
+        self.assertFalse(evaluation_ui.is_evaluation_panel_visible())
+        evaluation_ui.set_evaluation_panel_visible(True)
+        self.assertTrue(evaluation_ui.is_evaluation_panel_visible())
+
+    def test_get_surface_without_pygame(self):
+        with patch.object(evaluation_ui, "PYGAME_AVAILABLE", False):
+            evaluation_ui.set_evaluation_panel_visible(True)
+            evaluation_ui.draw_evaluation()
+            self.assertIsNone(evaluation_ui.get_evaluation_surface())
+
+    def test_get_surface_with_pygame(self):
+        with patch.object(evaluation_ui, "PYGAME_AVAILABLE", True), patch.object(
+            evaluation_ui, "pygame"
+        ) as mock_pygame:
+            mock_pygame.SRCALPHA = 0
+            mock_surface = MagicMock()
+            mock_pygame.Surface.return_value = mock_surface
+            mock_surface.get_size.return_value = (250, 150)
+            mock_surface.fill = MagicMock()
+            mock_font = MagicMock()
+            mock_render = MagicMock()
+            mock_render.get_height.return_value = 12
+            mock_font.render.return_value = mock_render
+            mock_pygame.font.get_init.return_value = True
+            mock_pygame.font.SysFont.return_value = mock_font
+            mock_pygame.draw.rect = MagicMock()
+
+            evaluation_ui._evaluation_data = {
+                "title": "Test",
+                "score": "100",
+                "changed": "5",
+                "population": "1000",
+                "population_delta": "50",
+                "approval_rating": "60%",
+                "disapproval_rating": "40%",
+            }
+
+            evaluation_ui.set_evaluation_panel_visible(True)
+            evaluation_ui.set_evaluation_panel_size(250, 150)
+            evaluation_ui.draw_evaluation()
+
+            surface = evaluation_ui.get_evaluation_surface()
+            self.assertIs(surface, mock_surface)

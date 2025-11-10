@@ -9,6 +9,8 @@
 
 from typing import Tuple, Generator
 
+from . import types
+
 
 # ============================================================================
 # Basic Math Utilities
@@ -31,13 +33,13 @@ def ABS(x: int) -> int:
 # Coordinate and Bounds Checking
 # ============================================================================
 
-# World dimensions (imported from constants when available)
-WORLD_X = 120  # Width of the game world
-WORLD_Y = 100  # Height of the game world
+# World dimensions (imported from types to maintain a single source of truth)
+WORLD_X = types.WORLD_X
+WORLD_Y = types.WORLD_Y
 
 # Half world dimensions for downsampled maps
-HWLDX = WORLD_X >> 1  # 60
-HWLDY = WORLD_Y >> 1  # 50
+HWLDX = types.HWLDX
+HWLDY = types.HWLDY
 
 
 def TestBounds(x: int, y: int) -> bool:
@@ -87,26 +89,35 @@ PWRBIT = 0x8000  # Power bit (bit 15)
 ALLBITS = 0xFC00  # Mask for upper 6 bits (bits 10-15)
 
 # Tile ID constants (placeholder values)
-NUCLEAR = 816      # Nuclear power plant tile (from sim.h)
-RBRDR = 0         # Residential zone start
-LASTZONE = 826    # Last zone tile
-RESBASE = 240     # Residential base
-LHTHR = 249       # Light house threshold
-FIRSTRIVEDGE = 0  # First river edge tile
-LASTRIVEDGE = 0   # Last river edge tile
-DIRT = 0          # Dirt tile
-RUBBLE = 44       # Rubble tile
-LASTRUBBLE = 0    # Last rubble tile
+NUCLEAR = types.NUCLEAR
+RBRDR = 0         # Residential zone start (placeholder until port complete)
+LASTZONE = types.LASTZONE
+RESBASE = types.RESBASE
+COMBASE = types.COMBASE
+INDBASE = types.INDBASE
+ROADBASE = types.ROADBASE
+RAILBASE = types.RAILBASE
+LASTROAD = types.LASTROAD
+POWERBASE = types.POWERBASE
+LASTRAIL = types.LASTRAIL
+RAILHPOWERV = types.RAILHPOWERV
+LHTHR = types.LHTHR
+FIRSTRIVEDGE = types.FIRSTRIVEDGE
+LASTRIVEDGE = types.LASTRIVEDGE
+DIRT = types.DIRT
+RUBBLE = types.RUBBLE
+LASTRUBBLE = types.LASTRUBBLE
 
 # Disaster system constants
-FIRE = 56         # Fire tile
-FLOOD = 48        # Flood tile
-RADTILE = 52      # Radiation tile
-WOODS5 = 37       # Woods tile (placeholder - need to check actual value)
+FIRE = types.FIRE
+FLOOD = types.FLOOD
+RADTILE = types.RADTILE
+WOODS5 = types.WOODS5
 
 # Building constants
-PORTBASE = 693    # Port base
-AIRPORT = 716     # Airport tile
+PORTBASE = types.PORTBASE
+PORT = types.PORT
+AIRPORT = types.AIRPORT
 
 # Sprite types for disasters
 GOD = 5           # Monster/Godzilla sprite
@@ -117,7 +128,7 @@ SHI = 4           # Ship sprite
 EXP = 7           # Explosion sprite
 
 # River tile for monster spawning
-RIVER = 2         # River tile (placeholder - need to check actual value)
+RIVER = types.RIVER
 
 
 def TILE_IS_NUCLEAR(tile: int) -> bool:

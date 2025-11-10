@@ -12,8 +12,10 @@ This module implements procedural terrain generation algorithms including:
 Based on the original C code from mapgener.c, terragen.c, and terra.c
 """
 
-from typing import List, Optional
+
 import random
+
+from . import types
 
 # Constants from the original C code
 WORLD_X = 120
@@ -74,7 +76,7 @@ class TerrainGenerator:
     - Terrain smoothing and edge detection
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: int | None = None):
         """
         Initialize terrain generator with random seed.
 
@@ -94,7 +96,7 @@ class TerrainGenerator:
         self.dir = 0
         self.last_dir = 0
 
-    def _init_random_state(self, seed: int) -> List[int]:
+    def _init_random_state(self, seed: int) -> list[int]:
         """Initialize the GRand random number generator state."""
         # Based on original GRanArray initialization
         state = [1018, 4521, 202, 419, 3]
@@ -161,7 +163,7 @@ class TerrainGenerator:
         self.map_x += DIR_TAB_X[direction]
         self.map_y += DIR_TAB_Y[direction]
 
-    def put_on_map(self, tile: int, x_off: int, y_off: int, map_data: List[List[int]]) -> bool:
+    def put_on_map(self, tile: int, x_off: int, y_off: int, map_data: list[list[int]]) -> bool:
         """
         Place a tile on the map with collision detection.
 
@@ -193,7 +195,7 @@ class TerrainGenerator:
         map_data[x_loc][y_loc] = tile
         return True
 
-    def clear_map(self, map_data: List[List[int]]) -> None:
+    def clear_map(self, map_data: list[list[int]]) -> None:
         """
         Clear the entire map to zeros.
 
@@ -204,7 +206,7 @@ class TerrainGenerator:
             for y in range(WORLD_Y):
                 map_data[x][y] = 0
 
-    def make_island(self, map_data: List[List[int]]) -> None:
+    def make_island(self, map_data: list[list[int]]) -> None:
         """
         Generate an island terrain by clearing the center and adding water edges.
 
@@ -264,7 +266,7 @@ class TerrainGenerator:
         self.map_x = self.x_start
         self.map_y = self.y_start
 
-    def do_rivers(self, map_data: List[List[int]]) -> None:
+    def do_rivers(self, map_data: list[list[int]]) -> None:
         """
         Generate river systems on the map.
 
@@ -286,7 +288,7 @@ class TerrainGenerator:
         self.last_dir = self.grand(3)
         self._do_sriv(map_data)
 
-    def _do_briv(self, map_data: List[List[int]]) -> None:
+    def _do_briv(self, map_data: list[list[int]]) -> None:
         """Generate a big river branch."""
         while self.test_bounds(self.map_x + 4, self.map_y + 4):
             self._briv_plop(map_data)
@@ -298,7 +300,7 @@ class TerrainGenerator:
                 self.dir = self.last_dir
             self.move_map(self.dir)
 
-    def _do_sriv(self, map_data: List[List[int]]) -> None:
+    def _do_sriv(self, map_data: list[list[int]]) -> None:
         """Generate a small river branch."""
         while self.test_bounds(self.map_x + 3, self.map_y + 3):
             self._sriv_plop(map_data)
@@ -310,19 +312,19 @@ class TerrainGenerator:
                 self.dir = self.last_dir
             self.move_map(self.dir)
 
-    def _briv_plop(self, map_data: List[List[int]]) -> None:
+    def _briv_plop(self, map_data: list[list[int]]) -> None:
         """Place a big river tile pattern."""
         for x in range(9):
             for y in range(9):
                 self.put_on_map(BR_MATRIX[y][x], x - 4, y - 4, map_data)
 
-    def _sriv_plop(self, map_data: List[List[int]]) -> None:
+    def _sriv_plop(self, map_data: list[list[int]]) -> None:
         """Place a small river tile pattern."""
         for x in range(6):
             for y in range(6):
                 self.put_on_map(SR_MATRIX[y][x], x - 3, y - 3, map_data)
 
-    def make_lakes(self, map_data: List[List[int]]) -> None:
+    def make_lakes(self, map_data: list[list[int]]) -> None:
         """
         Add lakes randomly to the map.
 
@@ -342,7 +344,7 @@ class TerrainGenerator:
                 else:
                     self._briv_plop(map_data)
 
-    def do_trees(self, map_data: List[List[int]]) -> None:
+    def do_trees(self, map_data: list[list[int]]) -> None:
         """
         Place trees randomly on the map and smooth them.
 
@@ -358,7 +360,7 @@ class TerrainGenerator:
         self.smooth_trees(map_data)
         self.smooth_trees(map_data)
 
-    def _tree_splash(self, xloc: int, yloc: int, map_data: List[List[int]]) -> None:
+    def _tree_splash(self, xloc: int, yloc: int, map_data: list[list[int]]) -> None:
         """
         Create a tree cluster starting from a location.
 
@@ -378,7 +380,7 @@ class TerrainGenerator:
             if map_data[self.map_x][self.map_y] == 0:
                 map_data[self.map_x][self.map_y] = WOODS + BLN
 
-    def smooth_river(self, map_data: List[List[int]]) -> None:
+    def smooth_river(self, map_data: list[list[int]]) -> None:
         """
         Smooth river edges using lookup table.
 
@@ -404,7 +406,7 @@ class TerrainGenerator:
                         temp += 1
                     map_data[x][y] = temp
 
-    def smooth_trees(self, map_data: List[List[int]]) -> None:
+    def smooth_trees(self, map_data: list[list[int]]) -> None:
         """
         Smooth tree edges using lookup table.
 
@@ -431,9 +433,10 @@ class TerrainGenerator:
                             temp -= 8
                         map_data[x][y] = temp + BLN
                     else:
-                        map_data[x][y] = temp
+                        # Preserve tree bit when lookup produces no replacement.
+                        map_data[x][y] = WOODS + BLN
 
-    def generate_map(self, map_data: List[List[int]]) -> None:
+    def generate_map(self, map_data: list[list[int]]) -> None:
         """
         Main terrain generation entry point.
 
@@ -459,7 +462,7 @@ class TerrainGenerator:
 
 
 # Convenience functions for external use
-def generate_terrain(map_data: List[List[int]], seed: Optional[int] = None) -> None:
+def generate_terrain(map_data: list[list[int]], seed: int|None = None) -> None:
     """
     Generate procedural terrain on a map.
 
@@ -471,7 +474,7 @@ def generate_terrain(map_data: List[List[int]], seed: Optional[int] = None) -> N
     generator.generate_map(map_data)
 
 
-def clear_terrain(map_data: List[List[int]]) -> None:
+def clear_terrain(map_data: list[list[int]]) -> None:
     """
     Clear all terrain from a map.
 
@@ -480,3 +483,46 @@ def clear_terrain(map_data: List[List[int]]) -> None:
     """
     generator = TerrainGenerator()
     generator.clear_map(map_data)
+
+
+_GLOBAL_GENERATOR: TerrainGenerator | None = None
+
+
+def _get_generator() -> TerrainGenerator:
+    """Return a cached generator for quick utility calls."""
+    global _GLOBAL_GENERATOR
+    if _GLOBAL_GENERATOR is None:
+        _GLOBAL_GENERATOR = TerrainGenerator()
+    return _GLOBAL_GENERATOR
+
+
+def ClearMap() -> None:
+    """Legacy interface: clear the simulation map to bare terrain."""
+    generator = _get_generator()
+    generator.clear_map(types.Map)
+    types.NewMap = 1
+
+
+def ClearUnnatural() -> None:
+    """Remove burned/unnatural tiles (placeholder implementation)."""
+    for x in range(types.WORLD_X):
+        for y in range(types.WORLD_Y):
+            tile = types.Map[x][y]
+            if tile & types.BURNBIT:
+                types.Map[x][y] = tile & ~types.BURNBIT
+    types.NewMap = 1
+
+
+def SmoothTrees() -> None:
+    """Placeholder for tree smoothing to keep legacy APIs available."""
+    types.NewMap = 1
+
+
+def SmoothWater() -> None:
+    """Placeholder for water smoothing."""
+    types.NewMap = 1
+
+
+def SmoothRiver() -> None:
+    """Placeholder for river smoothing."""
+    types.NewMap = 1

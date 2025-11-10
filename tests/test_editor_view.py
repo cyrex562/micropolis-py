@@ -4,18 +4,18 @@ test_editor_view.py - Unit tests for editor_view.py
 Tests the editor view rendering system ported from g_bigmap.c.
 """
 
-import unittest
 from unittest.mock import patch
 import sys
 import os
 
+from tests.assertions import Assertions
+
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from micropolis import types, macros, editor_view
 
 
-class TestEditorView(unittest.TestCase):
+class TestEditorView(Assertions):
     """Test cases for editor view rendering"""
 
     def setUp(self):
@@ -170,6 +170,3 @@ class TestEditorView(unittest.TestCase):
         # Just test that the function doesn't crash
         editor_view.MemDrawBeegMapRect(self.view, 10, 10, 1, 1)
 
-
-if __name__ == '__main__':
-    unittest.main()

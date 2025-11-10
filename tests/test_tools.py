@@ -6,18 +6,18 @@ including building placement, infrastructure tools, query tool, bulldozer,
 and drawing tools.
 """
 
-import unittest
 from unittest.mock import Mock, patch
 import sys
 import os
 
+from tests.assertions import Assertions
+
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from micropolis import tools, types
 
 
-class TestToolConstants(unittest.TestCase):
+class TestToolConstants(Assertions):
     """Test tool constants and configuration arrays."""
 
     def test_tool_states(self):
@@ -75,7 +75,7 @@ class TestToolConstants(unittest.TestCase):
         self.assertEqual(tools.toolOffset[tools.queryState], 0)        # No offset
 
 
-class TestUtilityFunctions(unittest.TestCase):
+class TestUtilityFunctions(Assertions):
     """Test utility functions for tile checking and validation."""
 
     def setUp(self):
@@ -157,7 +157,7 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertEqual(size, 0)
 
 
-class TestBuildingPlacement(unittest.TestCase):
+class TestBuildingPlacement(Assertions):
     """Test building placement functions."""
 
     def setUp(self):
@@ -213,7 +213,7 @@ class TestBuildingPlacement(unittest.TestCase):
         self.assertTrue(types.Map[8][8] & types.ZONEBIT)
 
 
-class TestIndividualTools(unittest.TestCase):
+class TestIndividualTools(Assertions):
     """Test individual tool functions."""
 
     def setUp(self):
@@ -299,7 +299,7 @@ class TestIndividualTools(unittest.TestCase):
         mock_sound.assert_called_with("city", "Explosion-High")
 
 
-class TestQueryTool(unittest.TestCase):
+class TestQueryTool(Assertions):
     """Test query tool zone status functionality."""
 
     def setUp(self):
@@ -360,7 +360,7 @@ class TestQueryTool(unittest.TestCase):
         self.assertIsInstance(result, int)
 
 
-class TestDrawingTools(unittest.TestCase):
+class TestDrawingTools(Assertions):
     """Test chalk and eraser drawing tools."""
 
     def setUp(self):
@@ -416,7 +416,7 @@ class TestDrawingTools(unittest.TestCase):
         mock_did_tool.assert_called_with(self.mock_view, "Eraser", 10, 20)
 
 
-class TestToolApplication(unittest.TestCase):
+class TestToolApplication(Assertions):
     """Test main tool application functions."""
 
     def setUp(self):
@@ -466,7 +466,7 @@ class TestToolApplication(unittest.TestCase):
             self.assertEqual(result, 1)
 
 
-class TestIntegration(unittest.TestCase):
+class TestIntegration(Assertions):
     """Integration tests for tool system."""
 
     def setUp(self):
@@ -544,6 +544,3 @@ class TestIntegration(unittest.TestCase):
                 else:
                     self.assertTrue(tile & types.BNCNBIT)
 
-
-if __name__ == '__main__':
-    unittest.main()

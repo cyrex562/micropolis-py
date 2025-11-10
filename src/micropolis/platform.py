@@ -7,14 +7,23 @@ with pygame. It handles display management, coordinate conversion,
 view management, and drawing operations.
 """
 
-import pygame
-from typing import Optional, Tuple, List, Dict, Any
 from dataclasses import dataclass
+from typing import Any
 
-from .types import SimView, Sim, WORLD_X, WORLD_Y, EDITOR_W, EDITOR_H
-from .view_types import Map_Class, Editor_Class, X_Mem_View
-from .types import COLOR_WHITE, COLOR_LIGHTBROWN, COLOR_BLACK
+import pygame
 
+from .types import (
+    COLOR_BLACK,
+    COLOR_LIGHTBROWN,
+    COLOR_WHITE,
+    EDITOR_H,
+    EDITOR_W,
+    WORLD_X,
+    WORLD_Y,
+    Sim,
+    SimView,
+)
+from .view_types import Editor_Class, Map_Class, X_Mem_View
 
 # Color intensity mapping (from original X implementation)
 COLOR_INTENSITIES = [
@@ -40,12 +49,12 @@ COLOR_INTENSITIES = [
 @dataclass
 class PygameDisplay:
     """Pygame display information and resources."""
-    screen: Optional[pygame.Surface] = None
+    screen: pygame.Surface | None = None
     width: int = 0
     height: int = 0
     depth: int = 32
     color: bool = True
-    pixels: Optional[List[pygame.Color]] = None
+    pixels: list[pygame.Color] | None = None
     initialized: bool = False
 
     def __post_init__(self):
@@ -54,8 +63,8 @@ class PygameDisplay:
 
 
 # Global surface storage for views (since SimView doesn't have surface attributes)
-view_surfaces: Dict[int, pygame.Surface] = {}
-view_overlay_surfaces: Dict[int, pygame.Surface] = {}
+view_surfaces: dict[int, pygame.Surface] = {}
+view_overlay_surfaces: dict[int, pygame.Surface] = {}
 
 
 def initialize_platform() -> bool:
@@ -142,7 +151,7 @@ def set_display_mode(width: int, height: int, fullscreen: bool = False) -> bool:
         return False
 
 
-def view_to_tile_coords(view: SimView, x: int, y: int) -> Tuple[int, int]:
+def view_to_tile_coords(view: SimView, x: int, y: int) -> tuple[int, int]:
     """
     Convert view coordinates to tile coordinates.
 
@@ -187,7 +196,7 @@ def view_to_tile_coords(view: SimView, x: int, y: int) -> Tuple[int, int]:
     return world_x, world_y
 
 
-def view_to_pixel_coords(view: SimView, x: int, y: int) -> Tuple[int, int]:
+def view_to_pixel_coords(view: SimView, x: int, y: int) -> tuple[int, int]:
     """
     Convert view coordinates to pixel coordinates.
 
@@ -263,16 +272,16 @@ def create_sim_view(title: str, view_class: int, width: int, height: int) -> Sim
     view.skips = view.skip = 0
     view.update = False
     view.map_state = 0  # ALMAP equivalent
-    view.show_editors = 1
-    view.tool_showing = 0
+    view.show_editors = True
+    view.tool_showing = False
     view.tool_mode = 0
     view.tool_x = view.tool_y = 0
     view.tool_x_const = view.tool_y_const = -1
     view.tool_state = 0  # dozeState equivalent
     view.tool_state_save = -1
-    view.super_user = 0
-    view.show_me = 1
-    view.dynamic_filter = 0
+    view.super_user = False
+    view.show_me = True
+    view.dynamic_filter = False
     view.tool_event_time = 0
     view.tool_last_event_time = 0
     view.w_x = view.w_y = 0
@@ -291,15 +300,15 @@ def create_sim_view(title: str, view_class: int, width: int, height: int) -> Sim
     view.updates = 0
     view.update_real = view.update_user = view.update_system = 0.0
     view.update_context = 0
-    view.auto_goto = 0
-    view.auto_going = 0
+    view.auto_goto = False
+    view.auto_going = False
     view.auto_x_goal = view.auto_y_goal = 0
     view.auto_speed = 75
     view.follow = None
-    view.sound = 1
+    view.sound = True
     view.width = 0
     view.height = 0
-    view.show_overlay = 1
+    view.show_overlay = True
     view.overlay_mode = 0
 
     # Pygame-specific initialization
@@ -506,7 +515,7 @@ def blit_view_surface(view: SimView, dest_surface: pygame.Surface, dest_x: int, 
         dest_surface.blit(view_surfaces[view_id], (dest_x, dest_y))
 
 
-def get_display_pixels() -> List[int]:
+def get_display_pixels() -> list[int]:
     """
     Get the display color pixels array.
 
@@ -529,7 +538,7 @@ def is_platform_initialized() -> bool:
     return pygame_display is not None and pygame_display.initialized
 
 
-def get_display_info() -> Dict[str, Any]:
+def get_display_info() -> dict[str, Any]:
     """
     Get information about the current display.
 
@@ -552,9 +561,9 @@ def get_display_info() -> Dict[str, Any]:
 @dataclass
 class Ink:
     """Drawing ink for overlay operations."""
-    points: Optional[List[Tuple[int, int]]] = None
+    points: list[tuple[int, int]] | None = None
     color: int = COLOR_WHITE
-    next_ink: Optional['Ink'] = None
+    next_ink: "Ink | None" = None
 
     def __post_init__(self):
         if self.points is None:

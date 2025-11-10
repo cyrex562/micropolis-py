@@ -9,19 +9,22 @@ Adapted from w_tk.c for pygame compatibility while maintaining Sugar
 activity integration through stdin/stdout communication.
 """
 
-import pygame
+from collections.abc import Callable
+import select
 import sys
 import threading
-from typing import Optional, Dict, Callable
 from queue import Queue
-import select
 
-from .types import Sim, SimView, SimSpeed, ShakeNow, NeedRest
-from .types import Eval as TypesEval
-from .engine import sim_loop
-from .engine import sim_update
-from .disasters import DoEarthQuake
+import pygame
+
+from . import types
 from .audio import make_sound
+from .disasters import DoEarthQuake
+from .engine import sim_loop, sim_update
+from .types import Eval as TypesEval
+from .types import SimView
+
+Sim = None  # Optional override for tests
 
 
 # Global state (equivalent to w_tk.c globals)
@@ -33,22 +36,30 @@ auto_scroll_step = 16
 auto_scroll_delay = 10
 
 # Timer management
-sim_timer_token: Optional[int] = None  # pygame timer event ID
+sim_timer_token: int | None = None  # pygame timer event ID
 sim_timer_idle = False
 sim_timer_set = False
-earthquake_timer_token: Optional[int] = None  # pygame timer event ID
+earthquake_timer_token: int | None = None  # pygame timer event ID
 earthquake_timer_set = False
 earthquake_delay = 3000
+SIM_TIMER_EVENT = pygame.USEREVENT + 2
+EARTHQUAKE_TIMER_EVENT = pygame.USEREVENT + 3
+UPDATE_EVENT = pygame.USEREVENT + 4
 
 # Performance timing
 performance_timing = False
 flush_time = 0.0
 
 # Command system
-command_callbacks: Dict[str, Callable] = {}
-stdin_thread: Optional[threading.Thread] = None
+command_callbacks: dict[str, Callable] = {}
+stdin_thread: threading.Thread | None = None
 stdin_queue = Queue()
 running = False
+
+
+def _current_sim():
+    """Return the active simulation object, allowing tests to inject one."""
+    return Sim if Sim is not None else types.sim
 
 
 class TkTimer:
@@ -58,20 +69,21 @@ class TkTimer:
         self.callback = callback
         self.data = data
         self.active = False
-        self.timer_id: Optional[int] = None
+        self.timer_id: int | None = None
 
     def start(self):
         """Start the timer."""
         if not self.active:
             self.active = True
-            self.timer_id = pygame.time.set_timer(pygame.USEREVENT + 1, self.delay_ms)
+            self.timer_id = pygame.USEREVENT + 1
+            pygame.time.set_timer(self.timer_id, self.delay_ms)
 
     def stop(self):
         """Stop the timer."""
         if self.active:
             self.active = False
-            if self.timer_id:
-                pygame.time.set_timer(pygame.USEREVENT + 1, 0)
+            if self.timer_id is not None:
+                pygame.time.set_timer(self.timer_id, 0)
                 self.timer_id = None
 
     def trigger(self):
@@ -118,6 +130,12 @@ def tk_main_loop() -> None:
             elif event.type == pygame.USEREVENT + 1:
                 # Timer event - handled by individual timers
                 pass
+            elif event.type == SIM_TIMER_EVENT:
+                _sim_timer_callback()
+            elif event.type == EARTHQUAKE_TIMER_EVENT:
+                _earthquake_timer_callback()
+            elif event.type == UPDATE_EVENT and update_delayed:
+                _do_delayed_update()
             # Additional event handling can be added here
 
         # Process stdin commands
@@ -136,17 +154,14 @@ def tk_main_loop() -> None:
 
 def tk_main_cleanup() -> None:
     """Clean up TK bridge resources."""
-    global running, sim_timer_token, earthquake_timer_token
+    global running, update_delayed
 
     running = False
 
-    if sim_timer_token is not None:
-        pygame.time.set_timer(sim_timer_token, 0)
-        sim_timer_token = None
-
-    if earthquake_timer_token is not None:
-        pygame.time.set_timer(earthquake_timer_token, 0)
-        earthquake_timer_token = None
+    stop_micropolis_timer()
+    stop_earthquake()
+    pygame.time.set_timer(UPDATE_EVENT, 0)
+    update_delayed = False
 
     stop_stdin_processing()
 
@@ -201,27 +216,24 @@ def eval_command(cmd: str) -> int:
 
 def start_micropolis_timer() -> None:
     """Start the simulation timer."""
-    global sim_timer_token, sim_timer_idle
+    global sim_timer_token, sim_timer_idle, sim_timer_set
 
-    if sim_timer_idle:
-        return
-
-    sim_timer_idle = True
-    # Use pygame's timer system
-    pygame.time.set_timer(pygame.USEREVENT + 2, _calculate_sim_delay())
+    sim_timer_idle = False
+    delay = max(1, _calculate_sim_delay())
+    pygame.time.set_timer(SIM_TIMER_EVENT, delay)
+    sim_timer_token = SIM_TIMER_EVENT
+    sim_timer_set = True
 
 
 def stop_micropolis_timer() -> None:
     """Stop the simulation timer."""
     global sim_timer_token, sim_timer_idle, sim_timer_set
 
-    sim_timer_idle = False
-
     if sim_timer_set:
-        if sim_timer_token is not None:
-            pygame.time.set_timer(sim_timer_token, 0)
-            sim_timer_token = None
+        pygame.time.set_timer(SIM_TIMER_EVENT, 0)
         sim_timer_set = False
+    sim_timer_token = None
+    sim_timer_idle = False
 
 
 def fix_micropolis_timer() -> None:
@@ -234,29 +246,27 @@ def fix_micropolis_timer() -> None:
 
 def _calculate_sim_delay() -> int:
     """Calculate simulation delay based on current state."""
-    from .types import sim_delay
-
-    delay = sim_delay
+    delay = types.sim_delay
 
     # Adjust for special conditions (earthquake, etc.)
-    if ShakeNow or NeedRest > 0:
-        if ShakeNow or NeedRest:
-            delay = max(delay, 50000)  # Minimum 50ms during special states
+    if types.ShakeNow or types.NeedRest > 0:
+        delay = max(delay, 50000)
 
-    return delay // 1000  # Convert microseconds to milliseconds
+    # Convert to milliseconds, ensuring at least 1
+    return max(1, delay // 1000)
 
 
 def _sim_timer_callback() -> None:
     """Simulation timer callback."""
-    global sim_timer_token, sim_timer_set, NeedRest, SimSpeed
+    global sim_timer_token, sim_timer_set
 
     sim_timer_token = None
     sim_timer_set = False
 
-    if NeedRest > 0:
-        NeedRest -= 1
+    if types.NeedRest > 0:
+        types.NeedRest -= 1
 
-    if SimSpeed:
+    if types.SimSpeed:
         sim_loop(True)  # Changed from 1 to True
         start_micropolis_timer()
     else:
@@ -265,38 +275,35 @@ def _sim_timer_callback() -> None:
 
 def really_start_micropolis_timer() -> None:
     """Actually start the simulation timer (called from idle handler)."""
-    global sim_timer_idle, sim_timer_set
+    global sim_timer_idle
 
     sim_timer_idle = False
-
     stop_micropolis_timer()
-
-    delay_ms = _calculate_sim_delay()
-
-    pygame.time.set_timer(pygame.USEREVENT + 2, delay_ms)
-    sim_timer_set = True
+    start_micropolis_timer()
 
 
 def do_earthquake() -> None:
     """Trigger earthquake effect."""
-    global ShakeNow
+    global earthquake_timer_token, earthquake_timer_set
 
     make_sound("city", "Explosion-Low")
     eval_command("UIEarthQuake")
-    ShakeNow = 1
+    types.ShakeNow = 1
 
     # Start earthquake timer
-    pygame.time.set_timer(pygame.USEREVENT + 3, earthquake_delay)
+    pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, earthquake_delay)
+    earthquake_timer_token = EARTHQUAKE_TIMER_EVENT
+    earthquake_timer_set = True
 
 
 def stop_earthquake() -> None:
     """Stop earthquake effect."""
-    global earthquake_timer_set, ShakeNow
+    global earthquake_timer_set, earthquake_timer_token
 
-    ShakeNow = 0
-    if earthquake_timer_set:
-        pygame.time.set_timer(pygame.USEREVENT + 3, 0)
-        earthquake_timer_set = False
+    types.ShakeNow = 0
+    pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, 0)
+    earthquake_timer_set = False
+    earthquake_timer_token = None
 
 
 def _earthquake_timer_callback() -> None:
@@ -359,7 +366,7 @@ def kick() -> None:
     if not update_delayed:
         update_delayed = True
         # Schedule delayed update
-        pygame.time.set_timer(pygame.USEREVENT + 4, 0)  # Immediate
+        pygame.time.set_timer(UPDATE_EVENT, 1)
 
 
 def _do_delayed_update() -> None:
@@ -367,6 +374,7 @@ def _do_delayed_update() -> None:
     global update_delayed
 
     update_delayed = False
+    pygame.time.set_timer(UPDATE_EVENT, 0)
     sim_update()
 
 
@@ -374,10 +382,11 @@ def _do_delayed_update() -> None:
 
 def invalidate_maps() -> None:
     """Invalidate all map views."""
-    if Sim:
-        view = Sim.map
+    sim_obj = _current_sim()
+    if sim_obj:
+        view = sim_obj.map
         while view:
-            view.invalid = True  # Changed from 1 to True
+            view.invalid = True
             view.skip = 0
             _eventually_redraw_view(view)
             view = view.next
@@ -385,10 +394,11 @@ def invalidate_maps() -> None:
 
 def invalidate_editors() -> None:
     """Invalidate all editor views."""
-    if Sim:
-        view = Sim.editor
+    sim_obj = _current_sim()
+    if sim_obj:
+        view = sim_obj.editor
         while view:
-            view.invalid = True  # Changed from 1 to True
+            view.invalid = True
             view.skip = 0
             _eventually_redraw_view(view)
             view = view.next
@@ -396,8 +406,9 @@ def invalidate_editors() -> None:
 
 def redraw_maps() -> None:
     """Redraw all map views."""
-    if Sim:
-        view = Sim.map
+    sim_obj = _current_sim()
+    if sim_obj:
+        view = sim_obj.map
         while view:
             view.skip = 0
             _eventually_redraw_view(view)
@@ -406,8 +417,9 @@ def redraw_maps() -> None:
 
 def redraw_editors() -> None:
     """Redraw all editor views."""
-    if Sim:
-        view = Sim.editor
+    sim_obj = _current_sim()
+    if sim_obj:
+        view = sim_obj.editor
         while view:
             view.skip = 0
             _eventually_redraw_view(view)

@@ -411,7 +411,7 @@ sim ResetDynamic
 # The next three lines have no effect on the OLPC, where we don't provide
 # the font in res (because it's already in the system fonts).  These lines
 # are for other systems that lack the font.
-set FontPath "[pwd]/res/dejavu-lgc"
+set FontPath "[pwd]/assets/dejavu-lgc"
 system "xset -fp $FontPath >&/dev/null"
 system "xset +fp $FontPath >&/dev/null"
 

@@ -403,3 +403,17 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Test Sugar activity full integration
 - [ ] Confirm .cty file 100% compatibility
 - [ ] Final user acceptance testing
+
+## Launch & Test Readiness
+
+### Runtime Bootstrapping
+- [ ] Instantiate the global `types.sim` via `types.MakeNewSim()` and create the default editor/map/graph/date `SimView` chains in `engine.sim_init()` so `sim_update_*` has real views to walk instead of immediately returning when `sim` is `None`.
+- [ ] Wire those `SimView` instances to pygame/window surfaces (tile caches, `view.surface`, `view.bigtiles`, etc.) by calling into `graphics_setup` during startup so editor/map rendering code can actually blit textures.
+- [ ] Replace the placeholder implementations of `setUpMapProcs()`, `ClearMap()`, `InitFundingLevel()`, `SetFunds()`, and `SetGameLevelFunds()` with the real logic for registering `map_view` overlay callbacks, clearing map arrays, seeding terrain, and applying difficulty-based budgets so starting a new city produces a playable state.
+- [ ] Fix the CLI entry point in `micropolis/main.py` to resolve the project root (instead of appending `micropolis/src` to `sys.path`) so running `uv run micropolis` or `python -m micropolis.main` from the repository actually imports `micropolis.engine` without manual tweaks.
+- [ ] Implement `DoStopMicropolis()` teardown to stop the pygame loop, release mixer channels, and reset globals so the process exits cleanly when the user closes the window.
+
+### Test Harness Stabilization
+- [ ] Add a single `tests/conftest.py` (or equivalent helper) that inserts `<repo>/src` into `sys.path`, then remove the per-file `sys.path.insert(..., 'src')` hacks in tests such as `tests/test_tools.py`, `tests/test_file_io.py`, `tests/test_editor_view.py`, etc.
+- [ ] Update `tests/test_map_view.py` to import `src.micropolis.map_view`, `types`, and `macros` from the actual package instead of `from . import ...`, which currently fails because `tests.map_view` does not exist.
+- [ ] Rewrite `tests/test_constants.py` into real pytest test functions that import `micropolis.constants`; today it executes assertions at import time and calls `sys.exit`, so pytest never records any test results.

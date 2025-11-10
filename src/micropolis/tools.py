@@ -18,11 +18,9 @@ The tool system includes:
 Ported from w_tool.c with pygame integration.
 """
 
-from typing import Optional, Tuple, List
 from dataclasses import dataclass
 
-from . import types, macros, messages, random
-
+from . import macros, messages, random, types
 
 # ============================================================================
 # Tool State Constants (from w_tool.c)
@@ -58,7 +56,7 @@ lastState = networkState
 # ============================================================================
 
 # Cost of each tool
-CostOf: List[int] = [
+CostOf: list[int] = [
     100,    100,    100,    500,    # residential, commercial, industrial, fire
       0,    500,      5,      1,    # query, police, wire, bulldoze
      20,     10,      0,      0,    # rail, road, chalk, eraser
@@ -67,7 +65,7 @@ CostOf: List[int] = [
 ]
 
 # Size of each tool (radius from center)
-toolSize: List[int] = [
+toolSize: list[int] = [
   3, 3, 3, 3,  # residential, commercial, industrial, fire (3x3)
   1, 3, 1, 1,  # query, police, wire, bulldoze (1x1 or 3x3)
   1, 1, 0, 0,  # rail, road, chalk, eraser (1x1 or freeform)
@@ -76,7 +74,7 @@ toolSize: List[int] = [
 ]
 
 # Offset from map coordinates to tool center
-toolOffset: List[int] = [
+toolOffset: list[int] = [
   1, 1, 1, 1,  # residential, commercial, industrial, fire
   0, 1, 0, 0,  # query, police, wire, bulldoze
   0, 0, 0, 0,  # rail, road, chalk, eraser
@@ -85,7 +83,7 @@ toolOffset: List[int] = [
 ]
 
 # Tool colors for overlay display (RGB pairs)
-toolColors: List[int] = [
+toolColors: list[int] = [
  0x00FF00, 0x00FFFF, 0xFFFF00, 0x00FF00,  # residential (green), commercial (cyan), industrial (yellow), fire (green/red)
  0xFF8000, 0x00FF00, 0x808080, 0x808080,  # query (orange), police (green/cyan), wire (gray/yellow), bulldoze (brown/gray)
  0x808080, 0xFFFFFF, 0xC0C0C0, 0x808080,  # rail (gray/olive), road (gray/white), chalk (gray/gray), eraser (gray/gray)
@@ -144,7 +142,7 @@ def MakeSoundOn(view: 'types.SimView', channel: str, sound_name: str) -> None:
         MakeSound(channel, sound_name)
 
 
-def ConnecTile(x: int, y: int, tile_ptr: List[int], command: int) -> int:
+def ConnecTile(x: int, y: int, tile_ptr: list[int], command: int) -> int:
     """
     Connect infrastructure tiles (roads, rails, power lines).
 
@@ -252,7 +250,7 @@ def checkSize(temp: int) -> int:
     return 0
 
 
-def checkBigZone(tile_id: int, deltaHPtr: List[int], deltaVPtr: List[int]) -> int:
+def checkBigZone(tile_id: int, deltaHPtr: list[int], deltaVPtr: list[int]) -> int:
     """
     Check if tile is part of a large building and get offset to center.
 
@@ -355,10 +353,10 @@ def putDownPark(view: 'types.SimView', mapH: int, mapV: int) -> int:
         return -2
 
     value = random.Rand(4)
-    if value == 4:
+    if value == 3:
         tile = types.FOUNTAIN | types.BURNBIT | types.BULLBIT | types.ANIMBIT
     else:
-        tile = (value + types.WOODS2) | types.BURNBIT | types.BULLBIT
+        tile = (types.WOODS2 + value) | types.BURNBIT | types.BULLBIT
 
     if types.Map[mapH][mapV] == 0:
         Spend(CostOf[parkState])
@@ -797,7 +795,7 @@ def check6x6(view: 'types.SimView', mapH: int, mapV: int, base: int, tool: int) 
 # ============================================================================
 
 # Search table for zone status string match
-idArray: List[int] = [
+idArray: list[int] = [
   types.DIRT, types.RIVER, types.TREEBASE, types.RUBBLE,
   types.FLOOD, types.RADTILE, types.FIRE, types.ROADBASE,
   types.POWERBASE, types.RAILBASE, types.RESBASE, types.COMBASE,
@@ -1722,12 +1720,12 @@ class Ink:
     y: int = 0
     color: int = 0
     length: int = 0
-    points: List[Tuple[int, int]] = None  # type: ignore
+    points: list[tuple[int, int]] = None  # type: ignore
     left: int = 0
     top: int = 0
     right: int = 0
     bottom: int = 0
-    next: Optional['Ink'] = None
+    next: 'Ink|None' = None
 
     def __post_init__(self):
         if self.points is None:

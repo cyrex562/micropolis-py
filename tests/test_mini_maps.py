@@ -4,18 +4,18 @@ test_mini_maps.py - Unit tests for mini_maps.py
 Tests the small overview map rendering system ported from g_smmaps.c.
 """
 
-import unittest
 from unittest.mock import patch, MagicMock
 import sys
 import os
 
+from tests.assertions import Assertions
+
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from micropolis import types, macros, mini_maps
 
 
-class TestMiniMaps(unittest.TestCase):
+class TestMiniMaps(Assertions):
     """Test cases for small overview map rendering"""
 
     def setUp(self):
@@ -169,6 +169,3 @@ class TestMiniMaps(unittest.TestCase):
         mini_maps._render_solid_color(self.view, None, 0xFF0000, 16, 4)
         # Should return early with no image
 
-
-if __name__ == '__main__':
-    unittest.main()

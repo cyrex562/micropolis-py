@@ -7,8 +7,6 @@
 # Original C header: headers/animtab.h
 # Ported to maintain compatibility with Micropolis animation system
 
-from typing import List
-
 
 # ============================================================================
 # Animation Tile Table
@@ -18,7 +16,7 @@ from typing import List
 # Maps animation indices to actual tile IDs for rendering animated elements
 ANI_TILE_SIZE = 1024
 
-ani_tile: List[int] = [
+ani_tile: list[int] = [
     # Base tiles (0-55)
     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
     16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
@@ -158,7 +156,7 @@ ani_tile: List[int] = [
 # aniSynch: Animation synchronization values
 # Controls timing and synchronization of animated tiles
 # 0xff = no animation, other values control animation speed/phasing
-ani_synch: List[int] = [
+ani_synch: list[int] = [
     # Base tiles (0-55) - no animation
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -287,8 +285,13 @@ ani_synch: List[int] = [
     # Nuclear swirl (953-956) - animated
     0x11, 0x22, 0x44, 0x88,
 
-    # Pad to 1024 elements with 0xff (no animation)
-] + [0xff] * (1024 - 956)
+# Pad to 1024 elements
+]
+
+if len(ani_tile) < ANI_TILE_SIZE:
+    ani_tile.extend([0] * (ANI_TILE_SIZE - len(ani_tile)))
+else:
+    ani_tile = ani_tile[:ANI_TILE_SIZE]
 
 
 # ============================================================================

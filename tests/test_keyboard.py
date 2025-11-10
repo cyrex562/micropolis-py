@@ -2,18 +2,18 @@
 test_keyboard.py - Test suite for keyboard.py
 """
 
-import unittest
 from unittest.mock import Mock, patch
 import sys
 import os
 
+from tests.assertions import Assertions
+
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'micropolis'))
 
 from src.micropolis import keyboard, types, tools
 
 
-class TestKeyboard(unittest.TestCase):
+class TestKeyboard(Assertions):
     """Test cases for keyboard input handling"""
 
     def setUp(self):
@@ -208,6 +208,3 @@ class TestKeyboard(unittest.TestCase):
         with self.assertRaises(ValueError):
             keyboard.KeyboardCommand.handle_command("invalid_command")
 
-
-if __name__ == '__main__':
-    unittest.main()

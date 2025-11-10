@@ -6,6 +6,8 @@ Tests the graph display system ported from w_graph.c.
 
 import pytest
 import pygame
+from unittest.mock import MagicMock, patch
+
 from src.micropolis import graphs, types
 
 
@@ -212,6 +214,62 @@ class TestGraphRendering:
         assert graph.needs_redraw
 
         graphs.remove_graph(graph)
+
+
+class TestGraphPanel:
+    """Tests for the pygame graph overlay panel."""
+
+    def setup_method(self):
+        graphs.set_graph_panel_visible(False)
+        graphs.graph_panel_surface = None
+        graphs.graph_panel_dirty = False
+
+    def test_panel_hidden_without_pygame(self):
+        """Panel rendering returns None when pygame is unavailable."""
+        with patch.object(graphs, "PYGAME_AVAILABLE", False):
+            graphs.set_graph_panel_visible(True)
+            assert graphs.is_graph_panel_visible()
+            assert graphs.render_graph_panel() is None
+
+    def test_panel_render_with_pygame(self):
+        """Panel rendering requests a pygame surface."""
+        with patch.object(graphs, "PYGAME_AVAILABLE", True), patch.object(
+            graphs, "pygame"
+        ) as mock_pygame:
+            mock_pygame.SRCALPHA = 0
+            mock_surface = MagicMock()
+            mock_pygame.Surface.return_value = mock_surface
+            mock_surface.get_size.return_value = graphs.graph_panel_size
+            mock_surface.fill = MagicMock()
+            mock_pygame.draw.rect = MagicMock()
+
+            graphs.set_graph_panel_visible(True)
+            surface = graphs.render_graph_panel()
+
+            assert surface is mock_surface
+            mock_pygame.Surface.assert_called()
+
+    def test_panel_resize_marks_dirty(self):
+        """Changing panel size recreates the surface."""
+        with patch.object(graphs, "PYGAME_AVAILABLE", True), patch.object(
+            graphs, "pygame"
+        ) as mock_pygame:
+            mock_pygame.SRCALPHA = 0
+            initial_surface = MagicMock()
+            initial_surface.get_size.return_value = graphs.graph_panel_size
+            initial_surface.fill = MagicMock()
+            resized_surface = MagicMock()
+            resized_surface.get_size.return_value = (512, 256)
+            resized_surface.fill = MagicMock()
+            mock_pygame.Surface.side_effect = [initial_surface, resized_surface]
+            mock_pygame.draw.rect = MagicMock()
+
+            graphs.set_graph_panel_visible(True)
+            graphs.set_graph_panel_size(512, 256)
+            surface = graphs.render_graph_panel()
+
+            assert surface is resized_surface
+            mock_pygame.Surface.assert_called_with((512, 256), mock_pygame.SRCALPHA)
 
 
 class TestDataAccess:

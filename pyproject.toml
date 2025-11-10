@@ -11,6 +11,7 @@ requires-python = ">=3.13"
 dependencies = [
     "pygame>=2.6.1",
     "pytest>=8.0.0",
+    "rich>=14.2.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -51,7 +52,12 @@ markers = [
 
 [tool.coverage.run]
 source = ["src/micropolis"]
-omit = ["tests/*"]
+omit = [
+    "tests/*",
+    "src/micropolis/micropolisactivity.py",
+    "src/micropolis/test_ui_utilities.py",
+    "src/micropolis/ui_utilities_backup.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [

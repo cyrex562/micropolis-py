@@ -3,12 +3,11 @@ resources.py - Resource management for Micropolis Python port
 """
 
 import os
-from typing import Optional, List, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 # Import simulation modules
 from . import types
-
 
 # ============================================================================
 # Type Definitions
@@ -29,12 +28,11 @@ class Resource:
 
     Represents a loaded resource with its data, metadata, and linked list pointer.
     """
-    buf: Optional[bytes] = None      # Resource data buffer
+    buf: bytes | None = None      # Resource data buffer
     size: QUAD = 0                   # Size of resource data
     name: str = ""                   # Resource name (4 characters)
     id: QUAD = 0                     # Resource ID
-    next: Optional['Resource'] = None  # Next resource in linked list
-
+    next: "Resource | None" = None  # Next resource in linked list
 
 @dataclass
 class StringTable:
@@ -45,8 +43,8 @@ class StringTable:
     """
     id: QUAD = 0                           # String table ID
     lines: int = 0                         # Number of strings in table
-    strings: List[str] = None              # Array of strings
-    next: Optional['StringTable'] = None   # Next string table in linked list
+    strings: list[str] = field(default_factory=list)            # Array of strings
+    next: "StringTable | None" = None   # Next string table in linked list
 
     def __post_init__(self):
         if self.strings is None:
@@ -64,15 +62,15 @@ KeyDir: str = ""
 HostName: str = ""
 
 # Resource management
-Resources: Optional[Resource] = None  # Head of resource linked list
-StringTables: Optional[StringTable] = None  # Head of string table linked list
+Resources: "Resource | None" = None  # Head of resource linked list
+StringTables: "StringTable | None" = None  # Head of string table linked list
 
 
 # ============================================================================
 # Resource Management Functions
 # ============================================================================
 
-def get_resource(name: str, id: QUAD) -> Optional[Handle]:
+def get_resource(name: str, id: QUAD) -> "Handle | None":
     """
     Get a resource by name and ID, loading it from file if necessary.
 
@@ -228,7 +226,7 @@ def resource_id(handle: Handle) -> QUAD:
     return 0
 
 
-def get_ind_string(str_buffer: List[str], id: int, num: int) -> None:
+def get_ind_string(str_buffer: list[str], id: int, num: int) -> None:
     """
     Get a string from a string table resource.
 
@@ -402,9 +400,9 @@ def initialize_resource_paths() -> None:
         # Try to find resources relative to the script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         potential_dirs = [
-            os.path.join(script_dir, "..", "..", "res"),  # From src/micropolis/
-            os.path.join(script_dir, "..", "res"),        # From src/
-            "res",                                        # From project root
+            os.path.join(script_dir, "..", "..", "assets"),  # From src/micropolis/
+            os.path.join(script_dir, "..", "assets"),        # From src/
+            "assets",                                        # From project root
         ]
 
         for res_dir in potential_dirs:

@@ -11,14 +11,15 @@ Tests the terrain generation algorithms to ensure they match the original C impl
 - Map clearing and bounds checking
 """
 
-import unittest
 from src.micropolis.terrain import (
     TerrainGenerator, generate_terrain, clear_terrain,
     WORLD_X, WORLD_Y, RIVER, REDGE, CHANNEL, WOODS, BLN
 )
 
 
-class TestTerrainGenerator(unittest.TestCase):
+from tests.assertions import Assertions
+
+class TestTerrainGenerator(Assertions):
     """Test the TerrainGenerator class and its methods."""
 
     def test_initialization(self):
@@ -333,7 +334,7 @@ class TestTerrainGenerator(unittest.TestCase):
         assert total_tiles > 0
 
 
-class TestTerrainIntegration(unittest.TestCase):
+class TestTerrainIntegration(Assertions):
     """Integration tests for terrain generation system."""
 
     def test_terrain_generation_reproducibility(self):
@@ -394,6 +395,3 @@ class TestTerrainIntegration(unittest.TestCase):
         total_tiles = sum(1 for row in map_data for cell in row if cell != 0)
         self.assertEqual(total_tiles + land_tiles, WORLD_X * WORLD_Y)
 
-
-if __name__ == "__main__":
-    unittest.main()

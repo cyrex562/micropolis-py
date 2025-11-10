@@ -110,6 +110,3 @@ def run_power_tests():
 
     print("\n✅ All power grid tests passed!")
 
-
-if __name__ == "__main__":
-    run_power_tests()

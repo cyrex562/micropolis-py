@@ -9,7 +9,7 @@ import pytest
 import pygame
 from unittest.mock import Mock, patch
 
-from .platform import (
+from micropolis.platform import (
     initialize_platform, shutdown_platform, set_display_mode,
     view_to_tile_coords, view_to_pixel_coords, update_flush,
     create_sim_view, resize_sim_view, destroy_sim_view,
@@ -19,9 +19,8 @@ from .platform import (
     catch_error, do_stop_micropolis, do_timeout_listen, make_new_sim,
     PygameDisplay, Ink, view_surfaces, view_overlay_surfaces
 )
-from .types import SimView, Sim
-from .view_types import Map_Class, Editor_Class
-from .types import COLOR_WHITE, COLOR_BLACK
+from micropolis.types import SimView, Sim, COLOR_WHITE, COLOR_BLACK
+from micropolis.view_types import Map_Class, Editor_Class
 
 
 class TestPlatformInitialization:
@@ -461,7 +460,3 @@ class TestInkDataclass:
         ink = Ink(points=points, color=COLOR_BLACK)
         assert ink.points == points
         assert ink.color == COLOR_BLACK
-
-
-if __name__ == "__main__":
-    pytest.main([__file__])

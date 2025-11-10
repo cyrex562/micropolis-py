@@ -6,8 +6,9 @@ responsible for displaying the current game date (month and year) with
 animation effects for time progression.
 """
 
-from typing import List, Optional
+
 import pygame
+
 from . import types
 
 # ============================================================================
@@ -66,8 +67,8 @@ class SimDate:
         self.w_height: int = 0
 
         # Pygame rendering
-        self.surface: Optional[pygame.Surface] = None
-        self.font: Optional[pygame.font.Font] = None
+        self.surface: pygame.Surface | None = None
+        self.font: pygame.font.Font | None = None
         self.needs_redraw: bool = False
 
         # Layout parameters
@@ -79,8 +80,8 @@ class SimDate:
         self.year_tab: int = YEAR_TAB_CHARS
 
         # Animation state
-        self.animation_months: List[int] = []  # Months to show in gray during animation
-        self.animation_years: List[int] = []   # Years to show in gray during animation
+        self.animation_months: list[int] = []  # Months to show in gray during animation
+        self.animation_years: list[int] = []   # Years to show in gray during animation
         self.animation_timer: int = 0
 
     def set_position(self, x: int, y: int) -> None:
@@ -285,7 +286,7 @@ class SimDate:
 
         self.needs_redraw = False
 
-    def get_surface(self) -> Optional[pygame.Surface]:
+    def get_surface(self) -> pygame.Surface | None:
         """
         Get the rendered surface.
 
@@ -301,7 +302,7 @@ class SimDate:
 # ============================================================================
 
 # Global date display instances
-_date_displays: List[SimDate] = []
+_date_displays: list[SimDate] = []
 
 def create_date_display() -> SimDate:
     """
@@ -314,7 +315,7 @@ def create_date_display() -> SimDate:
     _date_displays.append(date_display)
     return date_display
 
-def get_date_displays() -> List[SimDate]:
+def get_date_displays() -> list[SimDate]:
     """
     Get all date display instances.
 

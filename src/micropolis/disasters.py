@@ -6,10 +6,9 @@
 # Original C files: s_disast.c, parts of w_sprite.c, s_sim.c
 # Ported to maintain algorithmic fidelity with the original Micropolis simulation
 
-import src.micropolis.types as types
-import src.micropolis.macros as macros
-import src.micropolis.random as random
-
+import micropolis.macros as macros
+import micropolis.random as random
+import micropolis.types as types
 
 # ============================================================================
 # Disaster System Constants

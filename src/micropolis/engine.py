@@ -5,15 +5,26 @@ This module contains the main simulation orchestration, initialization, and
 state management functions ported from sim.c, adapted for Python/pygame.
 """
 
+import argparse
 import os
+import signal
 import sys
 import time
-import signal
-from typing import Optional, List
-import argparse
+import pygame
 
-from . import types, allocation, initialization, simulation, editor_view
-
+from . import (
+    allocation,
+    editor_view,
+    evaluation_ui,
+    graphs,
+    initialization,
+    macros,
+    map_view,
+    simulation,
+    types,
+    ui_utilities,
+    view_types,
+)
 
 # ============================================================================
 # Global Simulation State
@@ -23,7 +34,7 @@ from . import types, allocation, initialization, simulation, editor_view
 MicropolisVersion: str = "4.0"
 
 # Main simulation instance
-sim: Optional[types.Sim] = None
+sim: types.Sim|None = None
 
 # Simulation timing and control
 sim_loops: int = 0
@@ -39,6 +50,9 @@ heat_steps: int = 0
 heat_flow: int = -7
 heat_rule: int = 0
 heat_wrap: int = 3
+DEFAULT_STARTING_FUNDS = 20000
+CurrentToolTile: int = types.RESBASE
+editor_viewport_size: tuple[int, int] = (0, 0)
 
 # Timing variables (simplified for Python)
 start_time: float = 0.0
@@ -46,7 +60,7 @@ beat_time: float = 0.0
 last_now_time: float = 0.0
 
 # File and startup settings
-CityFileName: Optional[str] = None
+CityFileName: str | None = None
 Startup: int = 0
 StartupGameLevel: int = 0
 
@@ -81,7 +95,8 @@ def InvalidateEditors() -> None:
     while view:
         view.invalid = True
         view = view.next
-StartupName: Optional[str] = None
+
+StartupName: str | None = None
 
 # Mode flags
 WireMode: int = 0
@@ -95,17 +110,276 @@ DoMessages: int = 1
 DoNotices: int = 1
 
 # Display settings (simplified for pygame)
-Displays: Optional[str] = None
-FirstDisplay: Optional[str] = None
+Displays: str | None = None
+FirstDisplay: str | None = None
 
 # Exit handling
 ExitReturn: int = 0
 tkMustExit: bool = False
 
 # Heat simulation arrays (experimental)
-CellSrc: Optional[List[int]] = None
-CellDst: Optional[List[int]] = None
+CellSrc: list[int] = []
+CellDst: list[int] = []
 
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def _get_or_create_display() -> view_types.XDisplay:
+    """Ensure there is a display object available for view wiring."""
+    if types.MainDisplay is None:
+        types.MainDisplay = view_types.MakeNewXDisplay()
+        types.MainDisplay.color = 1
+        types.MainDisplay.depth = 32
+
+    return types.MainDisplay
+
+
+def set_current_tool(tile_id: int) -> None:
+    """Update the currently selected placement tile."""
+    global CurrentToolTile
+    CurrentToolTile = tile_id & macros.LOMASK
+
+
+def apply_tool_to_tile(tile_x: int, tile_y: int, bulldoze: bool = False) -> None:
+    """Modify the map at the requested tile coordinates."""
+    if not (0 <= tile_x < types.WORLD_X and 0 <= tile_y < types.WORLD_Y):
+        return
+
+    if bulldoze:
+        new_tile = types.DIRT
+    else:
+        new_tile = (CurrentToolTile & macros.LOMASK) | macros.ZONEBIT
+
+    types.Map[tile_x][tile_y] = new_tile
+    types.NewMap = 1
+
+    InvalidateMaps()
+    InvalidateEditors()
+
+
+def area_contains_point(area: tuple[int, int, int, int], pos: tuple[int, int]) -> bool:
+    """Return True if the screen position lies within the given rectangle."""
+    ax, ay, aw, ah = area
+    return ax <= pos[0] < ax + aw and ay <= pos[1] < ay + ah
+
+
+def handle_map_click(pos: tuple[int, int], area: tuple[int, int, int, int], button: int) -> bool:
+    """Handle mouse clicks within the map viewport."""
+    if not area_contains_point(area, pos):
+        return False
+
+    ax, ay, _, _ = area
+    tile_x = (pos[0] - ax) // 3
+    tile_y = (pos[1] - ay) // 3
+    apply_tool_to_tile(tile_x, tile_y, bulldoze=(button == 3))
+    return True
+
+
+def handle_tool_hotkey(key: int, tool_hotkeys: dict[int, int]) -> bool:
+    """Switch tool selection if the key matches a hotkey entry."""
+    tile = tool_hotkeys.get(key)
+    if tile is None:
+        return False
+
+    set_current_tool(tile)
+    print(f"Selected tool tile {tile}")  # Basic feedback until UI is built
+    return True
+
+
+def ensure_sim_structures() -> types.Sim:
+    """Create the global simulation object and default views if needed."""
+    global sim
+
+    if types.sim is None:
+        types.sim = types.MakeNewSim()
+
+    sim = types.sim
+
+    if sim.editor is None:
+        sim.editor = _create_editor_view()
+        sim.editors = 1
+
+    if sim.map is None:
+        sim.map = _create_map_view()
+        sim.maps = 1
+
+    if sim.graph is None:
+        sim.graph = view_types.MakeNewSimGraph()
+        sim.graphs = 1
+
+    if sim.date is None:
+        sim.date = view_types.MakeNewSimDate()
+        sim.dates = 1
+
+    return sim
+
+
+def _create_editor_view() -> types.SimView:
+    """Create and configure the primary editor view."""
+    view = types.MakeNewView()
+    _populate_common_view_fields(view, types.EDITOR_W, types.EDITOR_H, view_types.Editor_Class)
+    view.tile_width = types.WORLD_X
+    view.tile_height = types.WORLD_Y
+    view.line_bytes = view.width * view.pixel_bytes
+    view.tool_state = types.dozeState
+    view.tool_state_save = -1
+    editor_view.initialize_editor_tiles(view)
+    return view
+
+
+def _create_map_view() -> types.SimView:
+    """Create and configure the primary map view."""
+    view = types.MakeNewView()
+    _populate_common_view_fields(view, types.MAP_W, types.MAP_H, view_types.Map_Class)
+    view.tile_width = types.WORLD_X
+    view.tile_height = types.WORLD_Y
+    return view
+
+
+def _populate_common_view_fields(view: types.SimView, width: int, height: int, class_id: int) -> None:
+    """Populate shared view attributes for pygame rendering."""
+    display = _get_or_create_display()
+
+    view.class_id = class_id
+    view.type = view_types.X_Mem_View
+    view.visible = True
+    view.invalid = True
+    view.x = display
+    view.surface = None
+    view.width = width
+    view.height = height
+    view.m_width = width
+    view.m_height = height
+    view.w_width = width
+    view.w_height = height
+    view.i_width = width
+    view.i_height = height
+    view.screen_width = width
+    view.screen_height = height
+    view.pixel_bytes = 4
+    view.line_bytes = width * view.pixel_bytes
+    view.map_state = types.ALMAP
+    view.tile_x = 0
+    view.tile_y = 0
+    view.tile_width = types.WORLD_X
+    view.tile_height = types.WORLD_Y
+    view.pan_x = 0
+    view.pan_y = 0
+    view.next = None
+
+
+def _iter_views(head: types.SimView | None):
+    """Iterate over a linked list of views."""
+    current = head
+    while current:
+        yield current
+        current = current.next
+
+
+def _iter_all_views(sim_obj: types.Sim):
+    """Yield all editor and map views."""
+    yield from _iter_views(sim_obj.editor)
+    yield from _iter_views(sim_obj.map)
+
+
+def pan_editor_view(dx: int, dy: int, viewport: tuple[int, int]) -> None:
+    """Pan the editor preview by the requested pixel delta."""
+    if not sim or not sim.editor:
+        return
+
+    view = sim.editor
+    width, height = viewport
+    if width <= 0 or height <= 0:
+        return
+
+    max_x = max(0, view.width - width)
+    max_y = max(0, view.height - height)
+
+    view.pan_x = max(0, min(max_x, view.pan_x + dx))
+    view.pan_y = max(0, min(max_y, view.pan_y + dy))
+
+def initialize_view_surfaces(graphics_module) -> None:
+    """Attach pygame surfaces and tile caches to all views."""
+    import pygame
+
+    sim_obj = ensure_sim_structures()
+    display = _get_or_create_display()
+
+    for view in _iter_all_views(sim_obj):
+        if view.x is None:
+            view.x = display
+        if view.surface is None:
+            width, height = (
+                (types.MAP_W, types.MAP_H)
+                if view.class_id == view_types.Map_Class
+                else (types.EDITOR_W, types.EDITOR_H)
+            )
+            view.surface = pygame.Surface((width, height), pygame.SRCALPHA)
+
+        try:
+            graphics_module.init_view_graphics(view)
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"Warning: Failed to initialize view graphics: {exc}")
+
+
+def blit_views_to_screen(screen, map_area: tuple[int, int, int, int],
+                         editor_area: tuple[int, int, int, int]) -> None:
+    """Composite map/editor surfaces onto the main pygame screen."""
+    import pygame
+
+    screen.fill((64, 128, 64))
+
+    if sim and sim.map and sim.map.surface:
+        map_surface = pygame.transform.smoothscale(sim.map.surface, (map_area[2], map_area[3]))
+        screen.blit(map_surface, (map_area[0], map_area[1]))
+
+    if sim and sim.editor and sim.editor.surface:
+        editor_surface = sim.editor.surface
+        viewport_w, viewport_h = editor_viewport_size
+        if viewport_w <= 0 or viewport_h <= 0:
+            viewport_w, viewport_h = editor_area[2], editor_area[3]
+
+        viewport_w = min(viewport_w, editor_surface.get_width())
+        viewport_h = min(viewport_h, editor_surface.get_height())
+        max_x = max(0, editor_surface.get_width() - viewport_w)
+        max_y = max(0, editor_surface.get_height() - viewport_h)
+        pan_x = max(0, min(max_x, sim.editor.pan_x))
+        pan_y = max(0, min(max_y, sim.editor.pan_y))
+
+        rect = pygame.Rect(pan_x, pan_y, viewport_w, viewport_h)
+        region = editor_surface.subsurface(rect).copy()
+        scaled = pygame.transform.smoothscale(region, (editor_area[2], editor_area[3]))
+        screen.blit(scaled, (editor_area[0], editor_area[1]))
+
+    _blit_overlay_panels(screen)
+
+
+def _blit_overlay_panels(screen) -> None:
+    """Render graph/evaluation overlays when their toggles are enabled."""
+    overlays = []
+
+    graph_surface = graphs.render_graph_panel()
+    if graph_surface is not None:
+        overlays.append(graph_surface)
+
+    evaluation_surface = evaluation_ui.get_evaluation_surface()
+    if evaluation_surface is not None:
+        overlays.append(evaluation_surface)
+
+    if not overlays:
+        return
+
+    margin = 16
+    spacing = 12
+    anchor_x = screen.get_width() - margin
+    y = margin
+
+    for overlay_surface in overlays:
+        width, height = overlay_surface.get_size()
+        screen.blit(overlay_surface, (anchor_x - width, y))
+        y += height + spacing
 
 # ============================================================================
 # Exit and Signal Handling
@@ -187,7 +461,7 @@ def env_init() -> None:
         print(f"Warning: Home directory '{home}' does not exist", file=sys.stderr)
 
     # Set resource directory
-    resource_dir = os.path.join(home, "res")
+    resource_dir = os.path.join(home, "assets")
     types.ResourceDir = resource_dir
 
     # Check if resource directory exists
@@ -215,6 +489,7 @@ def sim_init() -> None:
     beat_time = time.time()
 
     signal_init()
+    ensure_sim_structures()
 
     # Initialize simulation state
     types.UserSoundOn = 1
@@ -440,7 +715,22 @@ def sim_loop(doSim: bool) -> None:
 
 def DoStopMicropolis() -> None:
     """Stop the Micropolis simulation (placeholder)"""
-    pass
+    global tkMustExit
+    tkMustExit = True
+
+    try:
+        from . import audio
+
+        audio.shutdown_sound()
+    except Exception:
+        pass
+
+    try:
+        from . import graphics_setup
+
+        graphics_setup.cleanup_graphics()
+    except Exception:
+        pass
 
 
 def InitializeSound() -> None:
@@ -456,12 +746,13 @@ def initGraphs() -> None:
 
 def InitFundingLevel() -> None:
     """Initialize funding levels (placeholder)"""
-    pass
+    SetFunds(DEFAULT_STARTING_FUNDS)
+    SetGameLevelFunds(StartupGameLevel)
 
 
 def setUpMapProcs() -> None:
     """Set up map processing (placeholder)"""
-    pass
+    map_view.setUpMapProcs()
 
 
 def StopEarthquake() -> None:
@@ -481,19 +772,22 @@ def ResetEditorState() -> None:
 
 def ClearMap() -> None:
     """Clear the map (placeholder)"""
-    pass
+    for x in range(types.WORLD_X):
+        for y in range(types.WORLD_Y):
+            types.Map[x][y] = types.DIRT
+    types.NewMap = 1
 
 
 def SetFunds(amount: int) -> None:
     """Set initial funds (placeholder)"""
-    types.TotalFunds = amount
+    types.SetFunds(max(0, amount))
 
 
 def SetGameLevelFunds(level: int) -> None:
     """Set funds based on game level (placeholder)"""
     level_funds = [20000, 10000, 5000]
-    if level < len(level_funds):
-        types.TotalFunds = level_funds[level]
+    bounded_level = max(0, min(level, len(level_funds) - 1))
+    SetFunds(level_funds[bounded_level])
 
 
 def setSpeed(speed: int) -> int:
@@ -510,8 +804,9 @@ def setSkips(skips: int) -> int:
 
 
 def graphDoer() -> None:
-    """Update graphs (placeholder)"""
-    pass
+    """Update graph history buffers and refresh pygame overlays."""
+    graphs.update_all_graphs()
+    graphs.request_graph_panel_redraw()
 
 
 def UpdateBudgetWindow() -> None:
@@ -520,8 +815,9 @@ def UpdateBudgetWindow() -> None:
 
 
 def scoreDoer() -> None:
-    """Update score/evaluation (placeholder)"""
-    pass
+    """Update evaluation data and pygame panel state."""
+    evaluation_ui.score_doer()
+    evaluation_ui.update_evaluation()
 
 
 def UpdateFlush() -> None:
@@ -541,7 +837,12 @@ def DoUpdateHeads() -> None:
 
 def DoUpdateMap(view) -> bool:
     """Update map view (placeholder)"""
-    return False
+    if not view or not view.visible:
+        return False
+
+    map_view.MemDrawMap(view)
+    view.invalid = False
+    return True
 
 
 def MoveObjects() -> None:
@@ -723,16 +1024,34 @@ def pygame_main_loop() -> None:
 
     # Set up display
     try:
-        import pygame
+        # import pygame
+
+        global editor_viewport_size
 
         # Set up a basic window
         screen = pygame.display.set_mode((800, 600))
         pygame.display.set_caption("Micropolis Python")
+        map_area = (16, 16, types.MAP_W, types.MAP_H)
+        preview_width = screen.get_width() // 2
+        preview_height = screen.get_height() // 2
+        editor_area = (
+            screen.get_width() - preview_width - 16,
+            screen.get_height() - preview_height - 16,
+            preview_width,
+            preview_height,
+        )
+        editor_viewport_size = (preview_width, preview_height)
+        tool_hotkeys = {
+            pygame.K_r: types.RESBASE,
+            pygame.K_c: types.COMBASE,
+            pygame.K_i: types.INDBASE,
+            pygame.K_p: types.POWERBASE,
+        }
 
-        # Fill with a background color
-        screen.fill((64, 128, 64))  # Green background
-
-        # Update display
+        ensure_sim_structures()
+        initialize_view_surfaces(graphics_setup)
+        sim_update()
+        blit_views_to_screen(screen, map_area, editor_area)
         pygame.display.flip()
 
         print("Pygame window initialized. Press Ctrl+C to exit")
@@ -745,17 +1064,40 @@ def pygame_main_loop() -> None:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         print("Quit event received")
-                        return
+                        DoStopMicropolis()
+                        break
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             print("Escape key pressed")
-                            return
+                            DoStopMicropolis()
+                            break
+                        if event.key in (pygame.K_LEFT, pygame.K_a):
+                            pan_editor_view(-32, 0, editor_viewport_size)
+                            continue
+                        if event.key in (pygame.K_RIGHT, pygame.K_d):
+                            pan_editor_view(32, 0, editor_viewport_size)
+                            continue
+                        if event.key in (pygame.K_UP, pygame.K_w):
+                            pan_editor_view(0, -32, editor_viewport_size)
+                            continue
+                        if event.key in (pygame.K_DOWN, pygame.K_s):
+                            pan_editor_view(0, 32, editor_viewport_size)
+                            continue
+                        if handle_tool_hotkey(event.key, tool_hotkeys):
+                            continue
+                        if ui_utilities.handle_keyboard_shortcut(event.key):
+                            continue
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        if handle_map_click(event.pos, map_area, event.button):
+                            continue
 
-                # Update simulation (placeholder)
-                # self.simulate_step()
+                if tkMustExit:
+                    break
 
-                # Render graphics (placeholder)
-                # self.render()
+                # Update simulation step and redraw
+                sim_loop(True)
+                blit_views_to_screen(screen, map_area, editor_area)
+                pygame.display.flip()
 
                 # Maintain 60 FPS
                 clock.tick(60)

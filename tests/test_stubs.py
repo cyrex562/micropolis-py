@@ -312,6 +312,3 @@ class TestGlobalVariables:
         assert hasattr(stubs, 'sim_paused_speed')
         assert hasattr(stubs, 'heat_steps')
 
-
-if __name__ == "__main__":
-    pytest.main([__file__])

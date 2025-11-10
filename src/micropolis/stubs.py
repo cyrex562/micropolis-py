@@ -9,7 +9,7 @@ Adapted from w_stubs.c for the Python port.
 """
 
 import time
-from typing import Optional
+
 from . import types
 
 
@@ -39,10 +39,11 @@ flagBlink: int = 0
 
 # Game startup state
 Startup: int = 0
-StartupName: Optional[str] = None
+StartupName: str | None = None
 
 # Timing variables
-start_time: Optional[float] = None
+start_time: float | None = None
+_tick_base: float = time.perf_counter()
 
 # Simulation control variables
 sim_skips: int = 0
@@ -89,11 +90,11 @@ def TickCount() -> int:
     Returns:
         Current time in ticks (minutes since epoch)
     """
-    current_time = time.time()
-    return int((current_time / 60) + ((current_time % 1) * 1000000 / 60))
+    elapsed = time.perf_counter() - _tick_base
+    return int(elapsed * 60)
 
 
-def NewPtr(size: int) -> Optional[bytes]:
+def NewPtr(size: int) -> bytes | None:
     """
     Allocate a new pointer (Mac-style memory allocation).
 
@@ -415,7 +416,7 @@ def SetStartupMode(mode: int) -> None:
     Startup = mode
 
 
-def GetStartupName() -> Optional[str]:
+def GetStartupName() -> str | None:
     """
     Get the startup city name.
 
@@ -425,7 +426,7 @@ def GetStartupName() -> Optional[str]:
     return StartupName
 
 
-def SetStartupName(name: Optional[str]) -> None:
+def SetStartupName(name: str | None) -> None:
     """
     Set the startup city name.
 
