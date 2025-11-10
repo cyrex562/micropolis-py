@@ -444,8 +444,9 @@ def DoStopMicropolis() -> None:
 
 
 def InitializeSound() -> None:
-    """Initialize sound system (placeholder)"""
-    pass
+    """Initialize sound system using pygame mixer"""
+    from . import audio
+    audio.initialize_sound()
 
 
 def initGraphs() -> None:
@@ -710,19 +711,66 @@ def pygame_main_loop() -> None:
 
     This replaces the TCL/Tk main loop from the original C version.
     """
-    # Placeholder for pygame integration
-    # This would initialize pygame, set up the display, and run the main loop
-    print("Pygame main loop would start here...")
-    print("Press Ctrl+C to exit")
+    print("Initializing pygame graphics...")
 
+    # Import graphics setup
+    from . import graphics_setup
+
+    # Initialize graphics
+    if not graphics_setup.init_graphics():
+        print("Failed to initialize graphics")
+        return
+
+    # Set up display
     try:
-        while not tkMustExit:
-            # Handle pygame events
-            # Update simulation
-            # Render graphics
-            time.sleep(0.016)  # ~60 FPS
-    except KeyboardInterrupt:
-        sim_exit(0)
+        import pygame
+
+        # Set up a basic window
+        screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption("Micropolis Python")
+
+        # Fill with a background color
+        screen.fill((64, 128, 64))  # Green background
+
+        # Update display
+        pygame.display.flip()
+
+        print("Pygame window initialized. Press Ctrl+C to exit")
+
+        clock = pygame.time.Clock()
+
+        try:
+            while not tkMustExit:
+                # Handle pygame events
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        print("Quit event received")
+                        return
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            print("Escape key pressed")
+                            return
+
+                # Update simulation (placeholder)
+                # self.simulate_step()
+
+                # Render graphics (placeholder)
+                # self.render()
+
+                # Maintain 60 FPS
+                clock.tick(60)
+
+        except KeyboardInterrupt:
+            print("Interrupted by user")
+            return
+
+    except Exception as e:
+        print(f"Error in pygame main loop: {e}")
+        return
+
+    finally:
+        # Clean up
+        pygame.quit()
 
 
 # ============================================================================

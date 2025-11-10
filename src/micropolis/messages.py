@@ -86,17 +86,17 @@ def make_sound(channel: str, sound_name: str) -> None:
     """
     Play a sound effect.
 
-    This is a placeholder for pygame audio integration.
-    In the original TCL/Tk version, this would send commands to play sounds.
+    Now uses the pygame audio system for actual sound playback.
 
     Args:
         channel: Sound channel (e.g., "city")
         sound_name: Name of the sound to play
     """
-    # TODO: Implement pygame mixer sound playback
-    # For now, just print for debugging
-    if types.Sound:
-        print(f"PLAY SOUND: {channel}/{sound_name}")
+    # Import audio module here to avoid circular imports
+    from . import audio
+
+    if types.Sound and types.UserSoundOn:
+        audio.make_sound(channel, sound_name)
 
 
 def send_messages() -> None:

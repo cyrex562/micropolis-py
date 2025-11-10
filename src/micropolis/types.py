@@ -54,6 +54,7 @@ MISCHISTLEN = 240
 
 POWERMAPROW = (WORLD_X + 15) // 16  # 8
 PWRMAPSIZE = POWERMAPROW * WORLD_Y  # 800
+POWERMAPLEN = 1700  # Hardcoded value from C (non-MEGA case)
 PWRSTKSIZE = (WORLD_X * WORLD_Y) // 4  # 3000
 
 # Power grid bit operations
@@ -85,6 +86,12 @@ FIMAP = 12 # fire radius
 POMAP = 13 # police radius
 DYMAP = 14 # dynamic
 NMAPS = 15
+
+# ============================================================================
+# Problem Tracking Constants
+# ============================================================================
+
+PROBNUM = 10
 
 # ============================================================================
 # Simulation Rate Constants

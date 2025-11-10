@@ -6,11 +6,6 @@ This module contains comprehensive tests for the map editor interface functional
 
 import unittest
 from unittest.mock import Mock, patch
-import sys
-import os
-
-# Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 import micropolis.editor as editor
 import micropolis.types as types

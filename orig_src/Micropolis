@@ -1,7 +1,7 @@
 #!/bin/bash
 export SIMHOME=`pwd`
-echo "Starting Micropolis in $SIMHOME ... "
-res/sim $*
+echo "Starting Python Micropolis in $SIMHOME ... "
+python3 Micropolis.py $*
 
 #
 # Micropolis, Unix Version.  This game was released for the Unix platform

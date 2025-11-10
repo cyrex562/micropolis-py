@@ -162,8 +162,15 @@ def get_resource_path(filename: str) -> str:
     Returns:
         Full path to the resource file
     """
-    # Try multiple possible locations for resources
+    # Try multiple possible locations for resources based on new assets/ structure
     possible_paths = [
+        # New assets/ directory structure
+        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', filename),  # hexa.*, snro.*, stri.*, tcl files
+        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'images', filename),  # XPM and image files
+        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'sounds', filename),  # audio files
+        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'dejavu-lgc', filename),  # fonts
+        
+        # Legacy paths for backward compatibility
         os.path.join(os.path.dirname(__file__), '..', '..', 'images', filename),
         os.path.join(os.path.dirname(__file__), '..', '..', 'res', filename),
         os.path.join(os.getcwd(), 'images', filename),
@@ -198,6 +205,135 @@ def load_xpm_surface(filename: str) -> Optional[Any]:
         return surface
     except (pygame.error, FileNotFoundError) as e:
         print(f"Warning: Failed to load XPM file {filename}: {e}")
+        return None
+
+
+def load_hexa_resource(resource_id: int) -> Optional[bytes]:
+    """
+    Load a hexa resource file.
+
+    Ported from MickGetHexa() in g_setup.c.
+
+    Args:
+        resource_id: The resource ID (e.g., SIM_GSMTILE = 388)
+
+    Returns:
+        Raw bytes from the hexa file, or None if failed
+    """
+    filename = f"hexa.{resource_id}"
+    filepath = get_resource_path(filename)
+
+    try:
+        with open(filepath, 'rb') as f:
+            return f.read()
+    except (FileNotFoundError, IOError) as e:
+        print(f"Warning: Failed to load hexa resource {resource_id}: {e}")
+        return None
+
+
+def create_small_tiles_surface() -> Optional[Any]:
+    """
+    Create a pygame surface for small tiles (map view) from hexa resource.
+
+    Ported from the monochrome small tiles loading in GetViewTiles().
+
+    Returns:
+        pygame Surface containing small tile data, or None if failed
+    """
+    if not PYGAME_AVAILABLE or pygame is None:
+        return None
+
+    # Load the hexa resource for small tiles
+    hexa_data = load_hexa_resource(SIM_GSMTILE)
+    if hexa_data is None:
+        return None
+
+    # The hexa data is 4 pixels wide × 3 pixels high × TILE_COUNT tiles
+    # We need to convert this to 4×4 pixels per tile with padding
+    expected_size = 4 * 3 * types.TILE_COUNT  # 11520
+    if len(hexa_data) < expected_size:
+        print(f"Warning: Hexa data too small {len(hexa_data)}, expected at least {expected_size}")
+        return None
+
+    # Use only the expected amount of data, ignore any extra
+    actual_data = hexa_data[:expected_size]
+
+    try:
+        # Create surface for 4×4 tiles: TILE_COUNT tiles × 4×4 pixels × 4 bytes per pixel (RGBA)
+        surface_width = 4  # 4 pixels per tile
+        surface_height = 4 * types.TILE_COUNT  # 4 pixels high per tile × TILE_COUNT tiles
+
+        surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
+
+        # Process each tile
+        data_index = 0
+        for tile in range(types.TILE_COUNT):
+            # Read 3 rows of 4 pixels each from hexa data
+            for y in range(3):
+                for x in range(4):
+                    if data_index < len(actual_data):
+                        pixel_value = actual_data[data_index]
+                        # Convert grayscale to RGBA
+                        color = (pixel_value, pixel_value, pixel_value, 255)
+                        surface.set_at((x, tile * 4 + y), color)
+                        data_index += 1
+
+            # Add padding row (4th row is transparent)
+            for x in range(4):
+                surface.set_at((x, tile * 4 + 3), (0, 0, 0, 0))
+
+        return surface
+
+    except Exception as e:
+        print(f"Error creating small tiles surface: {e}")
+        return None
+
+
+def load_big_tiles_surface(color: bool = True) -> Optional[Any]:
+    """
+    Load big tiles surface for editor view.
+
+    This would normally load from tiles.xpm or tilesbw.xpm, but since we don't have
+    those files, we'll create a placeholder surface for now.
+
+    Args:
+        color: Whether to load color or monochrome tiles
+
+    Returns:
+        pygame Surface for big tiles, or None if failed
+    """
+    if not PYGAME_AVAILABLE or pygame is None:
+        return None
+
+    try:
+        # For now, create a placeholder surface
+        # Big tiles are 16×16 pixels per tile
+        tiles_per_row = 16  # Assume tiles are arranged in a grid
+        rows = (types.TILE_COUNT + tiles_per_row - 1) // tiles_per_row
+
+        surface_width = tiles_per_row * 16
+        surface_height = rows * 16
+
+        surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
+
+        # Fill with a placeholder pattern (checkerboard)
+        for tile_y in range(rows):
+            for tile_x in range(tiles_per_row):
+                tile_index = tile_y * tiles_per_row + tile_x
+                if tile_index >= types.TILE_COUNT:
+                    break
+
+                # Create a simple colored rectangle for each tile
+                color_value = (tile_index * 7) % 256  # Vary color based on tile index
+                tile_color = (color_value, (color_value + 85) % 256, (color_value + 170) % 256, 255)
+
+                pygame.draw.rect(surface, tile_color,
+                               (tile_x * 16, tile_y * 16, 16, 16))
+
+        return surface
+
+    except Exception as e:
+        print(f"Error creating big tiles surface: {e}")
         return None
 
 
@@ -352,43 +488,98 @@ def get_view_tiles(view: Any) -> None:
 
     if is_editor:
         # Load tiles for editor view (16x16 pixels per tile)
-        tiles_filename = "tiles.xpm" if view.x.color else "tilesbw.xpm"
-
         if view.type == view_types.X_Mem_View:
             if view.x.big_tile_image is None:
+                # Try to load from XPM first, then fall back to generated surface
+                tiles_filename = "tiles.xpm" if view.x.color else "tilesbw.xpm"
                 view.x.big_tile_image = load_xpm_surface(tiles_filename)
+
                 if view.x.big_tile_image is None:
-                    print(f"Error: Failed to load big tile image {tiles_filename}")
+                    # Fall back to generated placeholder surface
+                    view.x.big_tile_image = load_big_tiles_surface(view.x.color)
+
+                if view.x.big_tile_image is None:
+                    print("Error: Failed to load big tile image")
                     return
+
             # Extract tile data from the surface
             view.bigtiles = view.x.big_tile_image
 
         elif view.type == view_types.X_Wire_View:
             if view.x.big_tile_pixmap is None:
+                tiles_filename = "tiles.xpm" if view.x.color else "tilesbw.xpm"
                 view.x.big_tile_pixmap = load_xpm_surface(tiles_filename)
+
                 if view.x.big_tile_pixmap is None:
-                    print(f"Error: Failed to load big tile pixmap {tiles_filename}")
+                    # Fall back to generated placeholder surface
+                    view.x.big_tile_pixmap = load_big_tiles_surface(view.x.color)
+
+                if view.x.big_tile_pixmap is None:
+                    print("Error: Failed to load big tile pixmap")
                     return
 
     elif is_map:
-        # Load tiles for map view (3x3 pixels per tile)
+        # Load tiles for map view (3x3 pixels per tile, expanded to 4x4)
         if view.x.small_tile_image is None:
             if view.x.color:
+                # Try to load color tiles from XPM
                 tiles_filename = "tilessm.xpm"
                 view.x.small_tile_image = load_xpm_surface(tiles_filename)
-                if view.x.small_tile_image is None:
-                    print(f"Error: Failed to load small tile image {tiles_filename}")
-                    return
-            else:
-                # For monochrome, create from resource data
-                # This would need to be implemented based on the hexa resource files
-                print("Warning: Monochrome small tiles not implemented yet")
-                return
 
-        # Process the small tile data
-        # This is a complex conversion from the original C code
-        # For now, just store the surface - actual processing would be done during rendering
-        view.smalltiles = view.x.small_tile_image
+                if view.x.small_tile_image is None:
+                    print(f"Warning: Failed to load small tile image {tiles_filename}, using placeholder")
+                    # For now, create a placeholder - we don't have the actual small tile graphics
+                    view.x.small_tile_image = pygame.Surface((4, 3 * types.TILE_COUNT), pygame.SRCALPHA)
+
+            else:
+                # For monochrome, load from hexa resource
+                hexa_data = load_hexa_resource(SIM_GSMTILE)
+                if hexa_data is not None:
+                    # Create XImage-like structure from hexa data
+                    # This mimics the XCreateImage call in the C code
+                    view.x.small_tile_image = pygame.Surface((4, 3 * types.TILE_COUNT), pygame.SRCALPHA)
+
+                    # Fill surface with hexa data (grayscale)
+                    for i, pixel_value in enumerate(hexa_data):
+                        x = i % 4
+                        y = i // 4
+                        if y < 3 * types.TILE_COUNT:
+                            color = (pixel_value, pixel_value, pixel_value, 255)
+                            view.x.small_tile_image.set_at((x, y), color)
+                else:
+                    print("Warning: Failed to load monochrome small tiles")
+                    return
+
+        # Process the small tile data into 4x4 format
+        if view.smalltiles is None:
+            # Convert 4x3 tiles to 4x4 tiles with padding (matching C code logic)
+            pixel_bytes = 4  # RGBA
+            source_surface = view.x.small_tile_image
+
+            # Allocate space for 4x4 tiles
+            view.smalltiles = bytearray(4 * 4 * types.TILE_COUNT * pixel_bytes)
+
+            to_index = 0
+            for tile in range(types.TILE_COUNT):
+                # Copy 3 rows of 4 pixels each
+                for y in range(3):
+                    for x in range(4):
+                        if source_surface is not None:
+                            color = source_surface.get_at((x, tile * 3 + y))
+                            # Store as RGBA bytes
+                            view.smalltiles[to_index] = color[0]  # R
+                            view.smalltiles[to_index + 1] = color[1]  # G
+                            view.smalltiles[to_index + 2] = color[2]  # B
+                            view.smalltiles[to_index + 3] = color[3]  # A
+                        to_index += pixel_bytes
+
+                # Add padding row (4th row is transparent)
+                for x in range(4):
+                    view.smalltiles[to_index] = 0  # R
+                    view.smalltiles[to_index + 1] = 0  # G
+                    view.smalltiles[to_index + 2] = 0  # B
+                    view.smalltiles[to_index + 3] = 0  # A
+                    to_index += pixel_bytes
 
 
 # ============================================================================
@@ -529,7 +720,7 @@ def get_object_surface(object_id: int, frame: int = 0, display: Optional[view_ty
     try:
         if 0 < object_id < len(display.objects) and display.objects[object_id] is not None:
             frames = display.objects[object_id]
-            if 0 <= frame < len(frames):
+            if frames is not None and 0 <= frame < len(frames):
                 return frames[frame]
     except (IndexError, TypeError):
         pass
