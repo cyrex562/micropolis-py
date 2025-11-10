@@ -2,14 +2,18 @@
 audio.py - Sound effect management for Micropolis Python port using pygame mixer
 """
 
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any
+from result import Result, Err, Ok
 
 import pygame.mixer
 
 # Import simulation modules
 from . import types
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # Type Definitions and Constants
@@ -17,31 +21,35 @@ from . import types
 
 # Sound channel constants (matching original TCL interface)
 SOUND_CHANNELS = {
-    'city': 0,      # City-wide sound effects
-    'edit': 1,      # Editor/bulldozer sounds
-    'sprite': 2,    # Sprite/moving object sounds
+    "city": 0,  # City-wide sound effects
+    "edit": 1,  # Editor/bulldozer sounds
+    "sprite": 2,  # Sprite/moving object sounds
 }
 
 # Maximum number of sound channels
 MAX_CHANNELS = 8
 
 # Sound file extensions to try
-SOUND_EXTENSIONS = ['.wav', '.ogg', '.mp3']
+SOUND_EXTENSIONS = [".wav", ".ogg", ".mp3"]
 
 
 # ============================================================================
 # Data Structures
 # ============================================================================
 
+
 @dataclass
 class SoundInfo:
     """
     Information about a loaded sound.
     """
-    sound: pygame.mixer.Sound|None = None
-    channel: pygame.mixer.Channel|None = None
+
+    sound: pygame.mixer.Sound | None = None
+    channel: pygame.mixer.Channel | None = None
     is_looping: bool = False
-    resource_id: str|None = None
+    resource_id: str | None = None
+
+
 # ============================================================================
 # Global Variables
 # ============================================================================
@@ -59,7 +67,8 @@ active_channels: dict[int, SoundInfo] = {}
 # Sound System Functions
 # ============================================================================
 
-def initialize_sound() -> None:
+
+def initialize_sound() -> Result[None, Exception]:
     """
     Initialize the sound system.
 
@@ -69,10 +78,10 @@ def initialize_sound() -> None:
     global SoundInitialized
 
     if SoundInitialized:
-        return
+        return Ok(None)
 
     if not types.UserSoundOn:
-        return
+        return Ok(None)
 
     try:
         # Initialize pygame mixer if not already initialized
@@ -88,14 +97,16 @@ def initialize_sound() -> None:
             active_channels[i] = SoundInfo(channel=channel)
 
         SoundInitialized = True
-        print("Sound system initialized")
+        logger.info("Sound system initialized")
 
     except Exception as e:
-        print(f"Failed to initialize sound system: {e}")
+        logger.exception(f"Failed to initialize sound system: {e}")
         SoundInitialized = False
+        return Err(e)
+    return Ok(None)
 
 
-def shutdown_sound() -> None:
+def shutdown_sound() -> Result[None, Exception]:
     """
     Shut down the sound system.
 
@@ -105,7 +116,7 @@ def shutdown_sound() -> None:
     global SoundInitialized, Dozing
 
     if not SoundInitialized:
-        return
+        return Ok(None)
 
     try:
         _stop_all_channels()
@@ -116,13 +127,16 @@ def shutdown_sound() -> None:
 
         SoundInitialized = False
         Dozing = False
-        print("Sound system shut down")
+        logger.info("Sound system shut down")
 
     except Exception as e:
-        print(f"Error shutting down sound system: {e}")
+        logger.exception(f"Error shutting down sound system: {e}")
+        return Err(e)
+
+    return Ok(None)
 
 
-def make_sound(channel: str, sound_id: str) -> None:
+def make_sound(channel: str, sound_id: str) -> Result[None, Exception]:
     """
     Play a sound on a specific channel.
 
@@ -134,27 +148,32 @@ def make_sound(channel: str, sound_id: str) -> None:
         sound_id: Sound identifier
     """
     if not types.UserSoundOn or not SoundInitialized:
-        return
+        return Ok(None)
 
     try:
         # Get or load the sound
         sound_info = get_sound(sound_id)
-        if not sound_info or not sound_info.sound:
-            print(f"Sound not found: {sound_id}")
-            return
+        if sound_info.is_err():
+            return Err(ValueError(f"failed to get sound by sound_id {sound_id}"))
+        sound_info = sound_info.unwrap()
 
         # Get channel number
         channel_num = SOUND_CHANNELS.get(channel, 0)
 
         # Play the sound
         sound_info.channel = pygame.mixer.Channel(channel_num)
+        if sound_info.sound is None:
+            return Err(ValueError("sound_info sound is None"))
         sound_info.channel.play(sound_info.sound)
 
     except Exception as e:
-        print(f"Error playing sound {sound_id} on channel {channel}: {e}")
+        logger.exception(f"Error playing sound {sound_id} on channel {channel}: {e}")
+        return Err(e)
+
+    return Ok(None)
 
 
-def make_sound_on(view: Any, channel: str, sound_id: str) -> None:
+def make_sound_on(view: Any, channel: str, sound_id: str) -> Result[None, Exception]:
     """
     Play a sound on a specific channel associated with a view.
 
@@ -168,10 +187,10 @@ def make_sound_on(view: Any, channel: str, sound_id: str) -> None:
     """
     # For now, just delegate to make_sound
     # In full implementation, this would position sound based on view
-    make_sound(channel, sound_id)
+    return make_sound(channel, sound_id)
 
 
-def start_bulldozer() -> None:
+def start_bulldozer() -> Result[None, Exception]:
     """
     Start the bulldozer sound loop.
 
@@ -181,20 +200,23 @@ def start_bulldozer() -> None:
     global Dozing
 
     if not types.UserSoundOn or not SoundInitialized:
-        return
+        return Ok(None)
 
     if Dozing:
-        return  # Already playing
+        return Ok(None)  # Already playing
 
     try:
         # Get bulldozer sound
         sound_info = get_sound("bulldozer")
-        if not sound_info or not sound_info.sound:
-            print("Bulldozer sound not found")
-            return
+        if sound_info.is_err():
+            return Err(ValueError("failed to get bulldozer sound"))
+        sound_info = sound_info.unwrap()
+
+        if sound_info.sound is None:
+            return Err(ValueError("sound_info.sound is None"))
 
         # Get edit channel
-        channel_num = SOUND_CHANNELS.get('edit', 1)
+        channel_num = SOUND_CHANNELS.get("edit", 1)
         sound_info.channel = pygame.mixer.Channel(channel_num)
 
         # Start looping
@@ -204,10 +226,13 @@ def start_bulldozer() -> None:
         Dozing = True
 
     except Exception as e:
-        print(f"Error starting bulldozer sound: {e}")
+        logger.exception(f"Error starting bulldozer sound: {e}")
+        return Err(e)
+
+    return Ok(None)
 
 
-def stop_bulldozer() -> None:
+def stop_bulldozer() -> Result[None, Exception]:
     """
     Stop the bulldozer sound loop.
 
@@ -217,21 +242,24 @@ def stop_bulldozer() -> None:
     global Dozing
 
     if not SoundInitialized:
-        return
+        return Ok(None)
 
     try:
         # Stop bulldozer sound on edit channel
-        channel_num = SOUND_CHANNELS.get('edit', 1)
+        channel_num = SOUND_CHANNELS.get("edit", 1)
         channel = pygame.mixer.Channel(channel_num)
         channel.stop()
 
         Dozing = False
 
     except Exception as e:
-        print(f"Error stopping bulldozer sound: {e}")
+        logger.exception(f"Error stopping bulldozer sound: {e}")
+        return Err(e)
+
+    return Ok(None)
 
 
-def sound_off() -> None:
+def sound_off() -> Result[None, Exception]:
     """
     Turn off all sounds.
 
@@ -241,26 +269,29 @@ def sound_off() -> None:
     global Dozing
 
     if not SoundInitialized:
-        return
+        return Ok(None)
 
     try:
         _stop_all_channels()
 
     except Exception as e:
-        print(f"Error turning sound off: {e}")
+        logger.exception(f"Error turning sound off: {e}")
+        return Err(e)
+
+    return Ok(None)
 
 
-def do_start_sound(channel: str, sound_id: str) -> None:
+def do_start_sound(channel: str, sound_id: str) -> Result[None, Exception]:
     """
     Start a sound (internal function).
 
     Ported from DoStartSound() in w_sound.c.
     Internal function for starting sounds.
     """
-    make_sound(channel, sound_id)
+    return make_sound(channel, sound_id)
 
 
-def do_stop_sound(sound_id: str) -> None:
+def do_stop_sound(sound_id: str) -> Result[None, Exception]:
     """
     Stop a specific sound (internal function).
 
@@ -268,7 +299,7 @@ def do_stop_sound(sound_id: str) -> None:
     Internal function for stopping sounds by ID.
     """
     if not SoundInitialized:
-        return
+        return Ok(None)
 
     try:
         # Find and stop the sound by ID
@@ -279,14 +310,18 @@ def do_stop_sound(sound_id: str) -> None:
                 break
 
     except Exception as e:
-        print(f"Error stopping sound {sound_id}: {e}")
+        logger.exception(f"Error stopping sound {sound_id}: {e}")
+        return Err(e)
+
+    return Ok(None)
 
 
 # ============================================================================
 # Sound Resource Management
 # ============================================================================
 
-def get_sound(sound_name: str) -> SoundInfo|None:
+
+def get_sound(sound_name: str) -> Result[SoundInfo, Exception]:
     """
     Get or load a sound by name.
 
@@ -298,17 +333,23 @@ def get_sound(sound_name: str) -> SoundInfo|None:
     """
     # Check cache first
     if sound_name in sound_cache:
-        return sound_cache[sound_name]
+        # result = sound_cache[sound_name]
+        result = sound_cache.get(sound_name, None)
+        if result is None:
+            return Err(ValueError(f"failed to get sound {sound_name} from sound_cache"))
 
     # Try to load the sound
     sound_info = load_sound(sound_name)
-    if sound_info:
-        sound_cache[sound_name] = sound_info
+    if sound_info is None:
+        return Err(ValueError(f"failed to load sound {sound_name}"))
+    sound_info = sound_info.unwrap()
 
-    return sound_info
+    sound_cache[sound_name] = sound_info
+
+    return Ok(sound_info)
 
 
-def load_sound(sound_name: str) -> SoundInfo|None:
+def load_sound(sound_name: str) -> Result[SoundInfo, Exception]:
     """
     Load a sound file from the sounds directory.
 
@@ -328,30 +369,33 @@ def load_sound(sound_name: str) -> SoundInfo|None:
         if os.path.exists(sound_path):
             try:
                 sound = pygame.mixer.Sound(sound_path)
-                return SoundInfo(sound=sound, resource_id=sound_name)
+                result = SoundInfo(sound=sound, resource_id=sound_name)
+                return Ok(result)
             except Exception as e:
-                print(f"Error loading sound {sound_path}: {e}")
-                continue
+                logger.exception(f"Error loading sound {sound_path}: {e}")
+                return Err(e)
 
     # Try alternative naming (some sounds have -hi, -low, etc. suffixes)
     # Handle special cases like "HonkHonk-Med" -> "honkhonk-med.wav"
-    alt_name = sound_name.lower().replace('-', '')
+    alt_name = sound_name.lower().replace("-", "")
     for ext in SOUND_EXTENSIONS:
         sound_path = os.path.join(sound_dir, f"{alt_name}{ext}")
         if os.path.exists(sound_path):
             try:
                 sound = pygame.mixer.Sound(sound_path)
-                return SoundInfo(sound=sound, resource_id=sound_name)
+                result = SoundInfo(sound=sound, resource_id=sound_name)
+                return Ok(result)
             except Exception as e:
-                print(f"Error loading sound {sound_path}: {e}")
-                continue
+                logger.exception(f"Error loading sound {sound_path}: {e}")
+                return Err(e)
 
-    return None
+    return Err(ValueError(f"failed to load sound {sound_name}"))
 
 
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def is_sound_enabled() -> bool:
     """
@@ -389,14 +433,14 @@ def preload_sounds(sound_names: list[str]) -> None:
         get_sound(sound_name)  # This will load and cache the sound
 
 
-def _stop_all_channels() -> None:
+def _stop_all_channels() -> Result[None, Exception]:
     """
     Stop playback on every mixer channel and reset cached state.
     """
     global Dozing
 
     if not SoundInitialized:
-        return
+        return Err(RuntimeError("sound not initialized"))
 
     pygame.mixer.stop()
 
@@ -404,8 +448,8 @@ def _stop_all_channels() -> None:
         if info.channel:
             try:
                 info.channel.stop()
-            except Exception:
-                pass
+            except Exception as e:
+                return Err(e)
             info.is_looping = False
 
     for info in active_channels.values():
@@ -413,16 +457,18 @@ def _stop_all_channels() -> None:
         if channel:
             try:
                 channel.stop()
-            except Exception:
-                pass
+            except Exception as e:
+                return Err(e)
             info.is_looping = False
 
     Dozing = False
+    return Ok(None)
 
 
 # ============================================================================
 # TCL Command Interface (for compatibility)
 # ============================================================================
+
 
 class AudioCommand:
     """
@@ -430,7 +476,7 @@ class AudioCommand:
     """
 
     @staticmethod
-    def handle_command(command: str, *args: str) -> str:
+    def handle_command(command: str, *args: str) -> Result[str, Exception]:
         """
         Handle TCL audio commands.
 
@@ -443,42 +489,45 @@ class AudioCommand:
         """
         if command == "initialize_sound":
             initialize_sound()
-            return ""
+            return Ok("")
 
         elif command == "shutdown_sound":
             shutdown_sound()
-            return ""
+            return Ok("")
 
         elif command == "make_sound":
             if len(args) != 2:
-                raise ValueError("Usage: make_sound <channel> <sound_id>")
+                return Err(ValueError("Usage: make_sound <channel> <sound_id>"))
             make_sound(args[0], args[1])
-            return ""
+            return Ok("")
 
         elif command == "start_bulldozer":
             start_bulldozer()
-            return ""
+            return Ok("")
 
         elif command == "stop_bulldozer":
             stop_bulldozer()
-            return ""
+            return Ok("")
 
         elif command == "sound_off":
             sound_off()
-            return ""
+            return Ok("")
 
         else:
-            raise ValueError(f"Unknown audio command: {command}")
+            return Err(ValueError(f"Unknown audio command: {command}"))
 
 
 # ============================================================================
 # Initialization
 # ============================================================================
 
+
 # Initialize sound system when module is imported
 # (This will be called later by the main application)
 def _init_module():
     """Initialize module-level state."""
-    pass
+    logger.debug("initializing sound system")
+    return Ok(None)
+
 
 _init_module()

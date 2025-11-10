@@ -7,12 +7,17 @@ adapted for Python's automatic memory management while maintaining exact compati
 
 import array
 from . import types
+import logging
+from result import Result, Ok, Err
+
+logger = logging.getLogger(__name__)
 
 # ============================================================================
 # Memory Allocation Functions (Python equivalents)
 # ============================================================================
 
-def initMapArrays() -> int:
+
+def initMapArrays() -> Result[int, Exception]:
     """
     Initialize all map arrays and data structures.
 
@@ -27,27 +32,51 @@ def initMapArrays() -> int:
         # Main map array is already initialized in types.py
         # Here we ensure it's properly sized
         if len(types.Map) != types.WORLD_X or len(types.Map[0]) != types.WORLD_Y:
-            types.Map = [[0 for _ in range(types.WORLD_Y)] for _ in range(types.WORLD_X)]
+            types.Map = [
+                [0 for _ in range(types.WORLD_Y)] for _ in range(types.WORLD_X)
+            ]
 
         # Population density overlay (already initialized in types.py)
-        if len(types.PopDensity) != types.HWLDX or len(types.PopDensity[0]) != types.HWLDY:
-            types.PopDensity = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
+        if (
+            len(types.PopDensity) != types.HWLDX
+            or len(types.PopDensity[0]) != types.HWLDY
+        ):
+            types.PopDensity = [
+                [0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)
+            ]
 
         # Traffic density overlay (already initialized in types.py)
-        if len(types.TrfDensity) != types.HWLDX or len(types.TrfDensity[0]) != types.HWLDY:
-            types.TrfDensity = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
+        if (
+            len(types.TrfDensity) != types.HWLDX
+            or len(types.TrfDensity[0]) != types.HWLDY
+        ):
+            types.TrfDensity = [
+                [0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)
+            ]
 
         # Pollution overlay (already initialized in types.py)
-        if len(types.PollutionMem) != types.HWLDX or len(types.PollutionMem[0]) != types.HWLDY:
-            types.PollutionMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
+        if (
+            len(types.PollutionMem) != types.HWLDX
+            or len(types.PollutionMem[0]) != types.HWLDY
+        ):
+            types.PollutionMem = [
+                [0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)
+            ]
 
         # Land value overlay (already initialized in types.py)
-        if len(types.LandValueMem) != types.HWLDX or len(types.LandValueMem[0]) != types.HWLDY:
-            types.LandValueMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
+        if (
+            len(types.LandValueMem) != types.HWLDX
+            or len(types.LandValueMem[0]) != types.HWLDY
+        ):
+            types.LandValueMem = [
+                [0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)
+            ]
 
         # Crime overlay (already initialized in types.py)
         if len(types.CrimeMem) != types.HWLDX or len(types.CrimeMem[0]) != types.HWLDY:
-            types.CrimeMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
+            types.CrimeMem = [
+                [0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)
+            ]
 
         # Temporary overlays (already initialized in types.py)
         if len(types.tem) != types.HWLDX or len(types.tem[0]) != types.HWLDY:
@@ -72,8 +101,13 @@ def initMapArrays() -> int:
         # Police station coverage (already initialized in types.py)
         if len(types.PoliceMap) != types.SmX or len(types.PoliceMap[0]) != types.SmY:
             types.PoliceMap = [[0 for _ in range(types.SmY)] for _ in range(types.SmX)]
-        if len(types.PoliceMapEffect) != types.SmX or len(types.PoliceMapEffect[0]) != types.SmY:
-            types.PoliceMapEffect = [[0 for _ in range(types.SmY)] for _ in range(types.SmX)]
+        if (
+            len(types.PoliceMapEffect) != types.SmX
+            or len(types.PoliceMapEffect[0]) != types.SmY
+        ):
+            types.PoliceMapEffect = [
+                [0 for _ in range(types.SmY)] for _ in range(types.SmX)
+            ]
 
         # Commercial rate (already initialized in types.py)
         if len(types.ComRate) != types.SmX or len(types.ComRate[0]) != types.SmY:
@@ -111,7 +145,7 @@ def initMapArrays() -> int:
 
         # Power grid (already initialized in types.py as array.array)
         if len(types.PowerMap) != types.PWRMAPSIZE:
-            types.PowerMap = array.array('H', [0] * types.PWRMAPSIZE)
+            types.PowerMap = array.array("H", [0] * types.PWRMAPSIZE)
 
         # History buffers (already initialized in types.py)
         if len(types.History10) != types.HISTORIES:
@@ -144,15 +178,18 @@ def initMapArrays() -> int:
         # Tool configuration (already initialized in types.py as empty lists)
         # These will be populated by other initialization code
 
-        return 0  # Success
+        return Ok(0)  # Success
 
     except Exception as e:
-        print(f"Error initializing map arrays: {e}", file=__import__('sys').stderr)
-        return -1  # Failure
+        # print(f"Error initializing map arrays: {e}", file=__import__("sys").stderr)
+        # return Err(e)  # Failure
+        return Err(e)
+
 
 # ============================================================================
 # Memory Management Utilities
 # ============================================================================
+
 
 def validateArrayDimensions() -> bool:
     """
@@ -215,6 +252,7 @@ def validateArrayDimensions() -> bool:
     except (AssertionError, IndexError):
         return False
 
+
 def resetAllArrays() -> None:
     """
     Reset all global arrays to their initial state (all zeros).
@@ -256,11 +294,12 @@ def resetAllArrays() -> None:
     types.MiscHis = [0] * types.MISCHISTLEN
 
     # Reset power map
-    types.PowerMap = array.array('H', [0] * types.PWRMAPSIZE)
+    types.PowerMap = array.array("H", [0] * types.PWRMAPSIZE)
 
     # Reset sprite offsets
     types.SpriteXOffset = [0] * types.OBJN
     types.SpriteYOffset = [0] * types.OBJN
+
 
 def getMemoryUsage() -> dict:
     """
@@ -272,14 +311,14 @@ def getMemoryUsage() -> dict:
     usage = {}
 
     # Calculate sizes for different array types
-    usage['main_map'] = types.WORLD_X * types.WORLD_Y * 2  # shorts
-    usage['overlays'] = 5 * types.HWLDX * types.HWLDY  # bytes
-    usage['temp_arrays'] = 2 * types.HWLDX * types.HWLDY  # bytes
-    usage['terrain'] = 2 * types.QWX * types.QWY  # bytes
-    usage['small_arrays'] = 7 * types.SmX * types.SmY * 2  # shorts
-    usage['history'] = (6 * types.HISTLEN + types.MISCHISTLEN) * 2  # shorts
-    usage['power_map'] = types.PWRMAPSIZE * 2  # shorts
+    usage["main_map"] = types.WORLD_X * types.WORLD_Y * 2  # shorts
+    usage["overlays"] = 5 * types.HWLDX * types.HWLDY  # bytes
+    usage["temp_arrays"] = 2 * types.HWLDX * types.HWLDY  # bytes
+    usage["terrain"] = 2 * types.QWX * types.QWY  # bytes
+    usage["small_arrays"] = 7 * types.SmX * types.SmY * 2  # shorts
+    usage["history"] = (6 * types.HISTLEN + types.MISCHISTLEN) * 2  # shorts
+    usage["power_map"] = types.PWRMAPSIZE * 2  # shorts
 
-    usage['total'] = sum(usage.values())
+    usage["total"] = sum(usage.values())
 
     return usage

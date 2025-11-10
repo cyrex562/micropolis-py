@@ -42,15 +42,11 @@ root_logger.addHandler(console_handler)
 root_logger.addHandler(file_handler)
 
 # Small startup message
-logging.getLogger(__name__).debug(f"Logging initialized. Console -> rich, File -> {log_file_path}")
-
-# Ensure the src directory is on sys.path when running from a checkout
-PROJECT_SRC = Path(__file__).resolve().parents[1]
-if str(PROJECT_SRC) not in sys.path:
-    sys.path.insert(0, str(PROJECT_SRC))
+logging.getLogger(__name__).debug(
+    f"Logging initialized. Console -> rich, File -> {log_file_path}"
+)
 
 
-    
 if __name__ == "__main__":
     # Run the main function and exit with its return code
     sys.exit(main())

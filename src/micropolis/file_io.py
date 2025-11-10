@@ -14,6 +14,7 @@ from . import types, initialization, simulation, engine
 # Endianness Handling
 # ============================================================================
 
+
 def _swap_shorts(buf: list, length: int) -> None:
     """
     Swap bytes in each short for endianness conversion.
@@ -26,6 +27,7 @@ def _swap_shorts(buf: list, length: int) -> None:
         # Flip bytes in each short: 0xABCD -> 0xCDAB
         buf[i] = ((buf[i] & 0xFF) << 8) | ((buf[i] & 0xFF00) >> 8)
 
+
 def _swap_longs(buf: list, length: int) -> None:
     """
     Swap bytes in each long for endianness conversion.
@@ -37,10 +39,13 @@ def _swap_longs(buf: list, length: int) -> None:
     for i in range(length):
         # Flip bytes in each long: 0xABCDEFGH -> 0xGHEFCDAB
         long_val = buf[i]
-        buf[i] = ((long_val & 0x000000ff) << 24) | \
-                 ((long_val & 0x0000ff00) << 8) | \
-                 ((long_val & 0x00ff0000) >> 8) | \
-                 ((long_val & 0xff000000) >> 24)
+        buf[i] = (
+            ((long_val & 0x000000FF) << 24)
+            | ((long_val & 0x0000FF00) << 8)
+            | ((long_val & 0x00FF0000) >> 8)
+            | ((long_val & 0xFF000000) >> 24)
+        )
+
 
 def _half_swap_longs(buf: list, length: int) -> None:
     """
@@ -53,11 +58,13 @@ def _half_swap_longs(buf: list, length: int) -> None:
     for i in range(length):
         # Flip 16-bit halves: 0xABCDEFGH -> 0xEFCDABGH
         long_val = buf[i]
-        buf[i] = ((long_val & 0x0000ffff) << 16) | ((long_val & 0xffff0000) >> 16)
+        buf[i] = ((long_val & 0x0000FFFF) << 16) | ((long_val & 0xFFFF0000) >> 16)
+
 
 # ============================================================================
 # File I/O Helper Functions
 # ============================================================================
+
 
 def _load_short(buf: list, length: int, file_obj) -> bool:
     """
@@ -78,7 +85,7 @@ def _load_short(buf: list, length: int, file_obj) -> bool:
             return False
 
         # Unpack as little-endian unsigned shorts
-        unpacked = struct.unpack(f'<{length}H', data)
+        unpacked = struct.unpack(f"<{length}H", data)
         buf[:length] = unpacked
 
         # Convert to Mac endianness (big-endian)
@@ -87,6 +94,7 @@ def _load_short(buf: list, length: int, file_obj) -> bool:
         return True
     except (struct.error, OSError):
         return False
+
 
 def _load_long(buf: list, length: int, file_obj) -> bool:
     """
@@ -107,7 +115,7 @@ def _load_long(buf: list, length: int, file_obj) -> bool:
             return False
 
         # Unpack as little-endian longs
-        buf[:] = struct.unpack(f'<{length}l', data)
+        buf[:] = struct.unpack(f"<{length}l", data)
 
         # Convert to Mac endianness (big-endian)
         _swap_longs(buf, length)
@@ -115,6 +123,7 @@ def _load_long(buf: list, length: int, file_obj) -> bool:
         return True
     except (struct.error, OSError):
         return False
+
 
 def _save_short(buf: list, length: int, file_obj) -> bool:
     """
@@ -133,7 +142,7 @@ def _save_short(buf: list, length: int, file_obj) -> bool:
         _swap_shorts(buf, length)
 
         # Pack as big-endian unsigned shorts
-        data = struct.pack(f'>{length}H', *buf[:length])
+        data = struct.pack(f">{length}H", *buf[:length])
 
         # Write to file
         if file_obj.write(data) != len(data):
@@ -146,6 +155,7 @@ def _save_short(buf: list, length: int, file_obj) -> bool:
         return True
     except (struct.error, OSError):
         return False
+
 
 def _save_long(buf: list, length: int, file_obj) -> bool:
     """
@@ -164,7 +174,7 @@ def _save_long(buf: list, length: int, file_obj) -> bool:
         _swap_longs(buf, length)
 
         # Pack as big-endian longs
-        data = struct.pack(f'>{length}l', *buf)
+        data = struct.pack(f">{length}l", *buf)
 
         # Write to file
         if file_obj.write(data) != len(data):
@@ -177,9 +187,11 @@ def _save_long(buf: list, length: int, file_obj) -> bool:
     except (struct.error, OSError):
         return False
 
+
 # ============================================================================
 # City File Loading
 # ============================================================================
+
 
 def _load_file(filename: str, directory: str | None = None) -> bool:
     """
@@ -197,7 +209,7 @@ def _load_file(filename: str, directory: str | None = None) -> bool:
         filepath = os.path.join(directory, filename)
 
     try:
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             # Check file size to determine city type
             f.seek(0, 2)  # Seek to end
             size = f.tell()
@@ -237,6 +249,7 @@ def _load_file(filename: str, directory: str | None = None) -> bool:
     except (OSError, IOError):
         return False
 
+
 def loadFile(filename: str) -> int:
     """
     Load a city file and initialize the simulation state.
@@ -251,7 +264,7 @@ def loadFile(filename: str) -> int:
         return 0
 
     # Extract total funds from MiscHis (stored as two shorts at positions 50-51)
-    total_funds = (types.MiscHis[50] | (types.MiscHis[51] << 16))
+    total_funds = types.MiscHis[50] | (types.MiscHis[51] << 16)
     total_funds_buf = [total_funds]
     _half_swap_longs(total_funds_buf, 1)
     types.TotalFunds = total_funds_buf[0]
@@ -264,24 +277,24 @@ def loadFile(filename: str) -> int:
 
     # Extract game settings from MiscHis
     types.autoBulldoze = types.MiscHis[52]  # Auto bulldoze flag
-    types.autoBudget = types.MiscHis[53]    # Auto budget flag
-    types.autoGo = types.MiscHis[54]        # Auto go flag
-    types.UserSoundOn = types.MiscHis[55]   # Sound on/off flag
-    types.CityTax = types.MiscHis[56]       # City tax rate
-    types.SimSpeed = types.MiscHis[57]      # Simulation speed
+    types.autoBudget = types.MiscHis[53]  # Auto budget flag
+    types.autoGo = types.MiscHis[54]  # Auto go flag
+    types.UserSoundOn = types.MiscHis[55]  # Sound on/off flag
+    types.CityTax = types.MiscHis[56]  # City tax rate
+    types.SimSpeed = types.MiscHis[57]  # Simulation speed
 
     # Extract budget percentages (stored as fixed-point values)
-    police_pct = (types.MiscHis[58] | (types.MiscHis[59] << 16))
+    police_pct = types.MiscHis[58] | (types.MiscHis[59] << 16)
     police_pct_buf = [police_pct]
     _half_swap_longs(police_pct_buf, 1)
     types.policePercent = police_pct_buf[0] / 65536.0
 
-    fire_pct = (types.MiscHis[60] | (types.MiscHis[61] << 16))
+    fire_pct = types.MiscHis[60] | (types.MiscHis[61] << 16)
     fire_pct_buf = [fire_pct]
     _half_swap_longs(fire_pct_buf, 1)
     types.firePercent = fire_pct_buf[0] / 65536.0
 
-    road_pct = (types.MiscHis[62] | (types.MiscHis[63] << 16))
+    road_pct = types.MiscHis[62] | (types.MiscHis[63] << 16)
     road_pct_buf = [road_pct]
     _half_swap_longs(road_pct_buf, 1)
     types.roadPercent = road_pct_buf[0] / 65536.0
@@ -305,14 +318,16 @@ def loadFile(filename: str) -> int:
     types.InitSimLoad = 1
     types.DoInitialEval = 0
     simulation.DoSimInit()
-    engine.InvalidateEditors()
-    engine.InvalidateMaps()
+    engine.invalidate_errors()
+    engine.invalidate_maps()
 
     return 1
+
 
 # ============================================================================
 # City File Saving
 # ============================================================================
+
 
 def saveFile(filename: str) -> int:
     """
@@ -325,7 +340,7 @@ def saveFile(filename: str) -> int:
         1 on success, 0 on failure
     """
     try:
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             # Store total funds in MiscHis (positions 50-51)
             total_funds = types.TotalFunds
             _half_swap_longs([total_funds], 1)
@@ -390,9 +405,11 @@ def saveFile(filename: str) -> int:
     except (OSError, IOError):
         return 0
 
+
 # ============================================================================
 # Scenario Loading
 # ============================================================================
+
 
 def LoadScenario(scenario_id: int) -> None:
     """
@@ -436,8 +453,8 @@ def LoadScenario(scenario_id: int) -> None:
 
     # Reset simulation state
     types.setSkips(0)
-    engine.InvalidateMaps()
-    engine.InvalidateEditors()
+    engine.invalidate_maps()
+    engine.invalidate_errors()
     types.setSpeed(3)
     types.CityTax = 7
 
@@ -448,17 +465,19 @@ def LoadScenario(scenario_id: int) -> None:
     initialization.InitWillStuff()
     initialization.InitFundingLevel()
     types.UpdateFunds()
-    engine.InvalidateEditors()
-    engine.InvalidateMaps()
+    engine.invalidate_errors()
+    engine.invalidate_maps()
     types.InitSimLoad = 1
     types.DoInitialEval = 0
     simulation.DoSimInit()
     types.DidLoadScenario()
     types.Kick()
 
+
 # ============================================================================
 # High-Level City Management
 # ============================================================================
+
 
 def LoadCity(filename: str) -> int:
     """
@@ -478,26 +497,27 @@ def LoadCity(filename: str) -> int:
 
         # Extract city name from filename
         base_name = os.path.basename(filename)
-        if '.' in base_name:
-            base_name = base_name.rsplit('.', 1)[0]
+        if "." in base_name:
+            base_name = base_name.rsplit(".", 1)[0]
 
         # Handle path separators for cross-platform compatibility
-        if '\\' in base_name:
-            base_name = base_name.rsplit('\\', 1)[1]
-        elif '/' in base_name:
-            base_name = base_name.rsplit('/', 1)[1]
+        if "\\" in base_name:
+            base_name = base_name.rsplit("\\", 1)[1]
+        elif "/" in base_name:
+            base_name = base_name.rsplit("/", 1)[1]
 
         types.setCityName(base_name)
 
         # Update UI and simulation state
-        engine.InvalidateMaps()
-        engine.InvalidateEditors()
+        engine.invalidate_maps()
+        engine.invalidate_errors()
         types.DidLoadCity()
         return 1
     else:
         # Handle load failure
         types.DidntLoadCity(f"Unable to load city from file: {filename}")
         return 0
+
 
 def SaveCity() -> None:
     """
@@ -512,6 +532,7 @@ def SaveCity() -> None:
             msg = f"Unable to save city to file: {types.CityFileName}"
             types.DidntSaveCity(msg)
 
+
 def DoSaveCityAs() -> None:
     """
     Prompt user to choose a save filename.
@@ -519,6 +540,7 @@ def DoSaveCityAs() -> None:
     # This would be implemented when UI is available
     # For now, delegate to TCL/Tk interface
     types.Eval("UISaveCityAs")
+
 
 def SaveCityAs(filename: str) -> None:
     """
@@ -534,14 +556,14 @@ def SaveCityAs(filename: str) -> None:
 
     # Extract city name from filename
     base_name = os.path.basename(filename)
-    if '.' in base_name:
-        base_name = base_name.rsplit('.', 1)[0]
+    if "." in base_name:
+        base_name = base_name.rsplit(".", 1)[0]
 
     # Handle path separators
-    if '\\' in base_name:
-        base_name = base_name.rsplit('\\', 1)[1]
-    elif '/' in base_name:
-        base_name = base_name.rsplit('/', 1)[1]
+    if "\\" in base_name:
+        base_name = base_name.rsplit("\\", 1)[1]
+    elif "/" in base_name:
+        base_name = base_name.rsplit("/", 1)[1]
 
     if saveFile(types.CityFileName):
         types.setCityName(base_name)
@@ -550,33 +572,41 @@ def SaveCityAs(filename: str) -> None:
         msg = f"Unable to save city to file: {types.CityFileName}"
         types.DidntSaveCity(msg)
 
+
 # ============================================================================
 # UI Callback Stubs (to be implemented when UI is available)
 # ============================================================================
+
 
 def DidLoadScenario() -> None:
     """Callback when scenario is loaded."""
     types.Eval("UIDidLoadScenario")
 
+
 def DidLoadCity() -> None:
     """Callback when city is loaded."""
     types.Eval("UIDidLoadCity")
+
 
 def DidntLoadCity(msg: str) -> None:
     """Callback when city load fails."""
     types.Eval(f"UIDidntLoadCity {{{msg}}}")
 
+
 def DidSaveCity() -> None:
     """Callback when city is saved."""
     types.Eval("UIDidSaveCity")
+
 
 def DidntSaveCity(msg: str) -> None:
     """Callback when city save fails."""
     types.Eval(f"UIDidntSaveCity {{{msg}}}")
 
+
 # ============================================================================
 # Modern API wrappers
 # ============================================================================
+
 
 def save_city(filename: str) -> bool:
     """
@@ -591,9 +621,11 @@ def load_city(filename: str) -> bool:
     """
     return bool(LoadCity(filename))
 
+
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def validateCityFile(filename: str) -> tuple[bool, str]:
     """
@@ -609,17 +641,20 @@ def validateCityFile(filename: str) -> tuple[bool, str]:
         # Check file size
         size = os.path.getsize(filename)
         if size not in [27120, 99120, 219120]:
-            return False, f"Invalid file size: {size} bytes. Expected 27120, 99120, or 219120."
+            return (
+                False,
+                f"Invalid file size: {size} bytes. Expected 27120, 99120, or 219120.",
+            )
 
         # Try to read the file header to validate format
-        with open(filename, 'rb') as f:
+        with open(filename, "rb") as f:
             # Read first few shorts to check if they're valid
             header_data = f.read(20)  # First 10 shorts
             if len(header_data) != 20:
                 return False, "File too short to be a valid city file."
 
             # Unpack and check for reasonable values
-            header_shorts = struct.unpack('<10H', header_data)
+            header_shorts = struct.unpack("<10H", header_data)
             # Basic sanity check - history values should be non-negative
             if any(x < 0 for x in header_shorts[:6]):  # First 6 history arrays
                 return False, "Invalid history data in file."
@@ -628,6 +663,7 @@ def validateCityFile(filename: str) -> tuple[bool, str]:
 
     except (OSError, IOError, struct.error) as e:
         return False, f"Error reading file: {e}"
+
 
 def getCityFileInfo(filename: str) -> dict | None:
     """
@@ -640,7 +676,7 @@ def getCityFileInfo(filename: str) -> dict | None:
         Dictionary with city info, or None if invalid
     """
     try:
-        with open(filename, 'rb') as f:
+        with open(filename, "rb") as f:
             # Check file size to determine city type
             f.seek(0, 2)
             size = f.tell()
@@ -659,18 +695,18 @@ def getCityFileInfo(filename: str) -> dict | None:
             # Read some basic info from MiscHis
             f.seek(6 * (types.HISTLEN // 2) * 2)  # Skip history arrays
             misc_data = f.read(types.MISCHISTLEN * 2)
-            misc_shorts = struct.unpack(f'<{types.MISCHISTLEN}H', misc_data)
+            misc_shorts = struct.unpack(f"<{types.MISCHISTLEN}H", misc_data)
 
             # Extract basic info
             city_tax = misc_shorts[56]
             sim_speed = misc_shorts[57]
 
             return {
-                'filename': filename,
-                'size': size,
-                'type': city_type,
-                'city_tax': city_tax,
-                'sim_speed': sim_speed,
+                "filename": filename,
+                "size": size,
+                "type": city_type,
+                "city_tax": city_tax,
+                "sim_speed": sim_speed,
             }
 
     except (OSError, IOError, struct.error):
