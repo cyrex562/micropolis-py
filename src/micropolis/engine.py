@@ -1054,14 +1054,15 @@ def main() -> int:
 
     Adapted from main() in sim.c for Python environment.
     """
-    print(f"Welcome to Python Micropolis version {MicropolisVersion}")
-    print("Copyright (C) 2002 by Electronic Arts, Maxis. All rights reserved.")
+    logger.info(f"Welcome to Python Micropolis version {MicropolisVersion}")
+    logger.info("Copyright (C) 2002 by Electronic Arts, Maxis. All rights reserved.")
 
     # Parse command line arguments
-    try:
-        parse_arguments()
-    except SystemExit:
-        return 0  # Return 0 for argument parsing errors
+    # try:
+    #     parse_arguments()
+    # except SystemExit:
+    #     return 0  # Return 0 for argument parsing errors
+    args = parse_arguments()
 
     # Initialize environment
     if not tkMustExit:
