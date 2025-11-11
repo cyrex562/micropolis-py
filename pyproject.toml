@@ -21,12 +21,7 @@ dependencies = [
 where = ["src"]
 
 [dependency-groups]
-dev = [
-    "pytest-cov>=7.0.0",
-    "pytest>=7.4",
-    "pytest-timeout>=2.2",
-    "ruff>=0.1.0",
-]
+dev = ["pytest-cov>=7.0.0", "pytest>=7.4", "pytest-timeout>=2.2", "ruff>=0.1.0"]
 
 [project.scripts]
 micropolis = "micropolis.main:main"
