@@ -12,8 +12,9 @@ This module implements procedural terrain generation algorithms including:
 Based on the original C code from mapgener.c, terragen.c, and terra.c
 """
 
-
 import random
+
+import micropolis.constants
 
 from . import types
 
@@ -30,8 +31,22 @@ BLN = BL + BN  # Burned tree bit
 
 # River smoothing lookup table
 RED_TAB = [
-    13 + BL, 13 + BL, 17 + BL, 15 + BL, 5 + BL, 2, 19 + BL,
-    17 + BL, 9 + BL, 11 + BL, 2, 13 + BL, 7 + BL, 9 + BL, 5 + BL, 2
+    13 + BL,
+    13 + BL,
+    17 + BL,
+    15 + BL,
+    5 + BL,
+    2,
+    19 + BL,
+    17 + BL,
+    9 + BL,
+    11 + BL,
+    2,
+    13 + BL,
+    7 + BL,
+    9 + BL,
+    5 + BL,
+    2,
 ]
 
 # Tree smoothing lookup table
@@ -51,7 +66,7 @@ BR_MATRIX = [
     [3, 2, 2, 2, 2, 2, 2, 2, 3],
     [0, 3, 2, 2, 2, 2, 2, 3, 0],
     [0, 0, 3, 2, 2, 2, 3, 0, 0],
-    [0, 0, 0, 3, 3, 3, 0, 0, 0]
+    [0, 0, 0, 3, 3, 3, 0, 0, 0],
 ]
 
 SR_MATRIX = [
@@ -60,7 +75,7 @@ SR_MATRIX = [
     [3, 2, 2, 2, 2, 3],
     [3, 2, 2, 2, 2, 3],
     [0, 3, 2, 2, 3, 0],
-    [0, 0, 3, 3, 0, 0]
+    [0, 0, 3, 3, 0, 0],
 ]
 
 
@@ -119,7 +134,7 @@ class TerrainGenerator:
         # Update random state
         newv = 0
         for x in range(4, 0, -1):
-            self.random_state[x] = self.random_state[x-1]
+            self.random_state[x] = self.random_state[x - 1]
             newv += self.random_state[x]
         self.random_state[0] = newv
 
@@ -163,7 +178,9 @@ class TerrainGenerator:
         self.map_x += DIR_TAB_X[direction]
         self.map_y += DIR_TAB_Y[direction]
 
-    def put_on_map(self, tile: int, x_off: int, y_off: int, map_data: list[list[int]]) -> bool:
+    def put_on_map(
+        self, tile: int, x_off: int, y_off: int, map_data: list[list[int]]
+    ) -> bool:
         """
         Place a tile on the map with collision detection.
 
@@ -462,7 +479,7 @@ class TerrainGenerator:
 
 
 # Convenience functions for external use
-def generate_terrain(map_data: list[list[int]], seed: int|None = None) -> None:
+def generate_terrain(map_data: list[list[int]], seed: int | None = None) -> None:
     """
     Generate procedural terrain on a map.
 
@@ -499,30 +516,30 @@ def _get_generator() -> TerrainGenerator:
 def ClearMap() -> None:
     """Legacy interface: clear the simulation map to bare terrain."""
     generator = _get_generator()
-    generator.clear_map(types.Map)
-    types.NewMap = 1
+    generator.clear_map(types.map_data)
+    types.new_map = 1
 
 
 def ClearUnnatural() -> None:
     """Remove burned/unnatural tiles (placeholder implementation)."""
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
-            tile = types.Map[x][y]
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
+            tile = types.map_data[x][y]
             if tile & types.BURNBIT:
-                types.Map[x][y] = tile & ~types.BURNBIT
-    types.NewMap = 1
+                types.map_data[x][y] = tile & ~types.BURNBIT
+    types.new_map = 1
 
 
 def SmoothTrees() -> None:
     """Placeholder for tree smoothing to keep legacy APIs available."""
-    types.NewMap = 1
+    types.new_map = 1
 
 
 def SmoothWater() -> None:
     """Placeholder for water smoothing."""
-    types.NewMap = 1
+    types.new_map = 1
 
 
 def SmoothRiver() -> None:
     """Placeholder for river smoothing."""
-    types.NewMap = 1
+    types.new_map = 1

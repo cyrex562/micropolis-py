@@ -6,8 +6,6 @@ responsible for displaying historical data graphs for population, money,
 pollution, crime, and other city statistics.
 """
 
-
-
 import pygame
 
 from . import types
@@ -35,22 +33,27 @@ NewGraph: bool = False
 
 # History names and colors (for pygame rendering)
 HIST_NAMES = [
-    "Residential", "Commercial", "Industrial",
-    "Cash Flow", "Crime", "Pollution"
+    "Residential",
+    "Commercial",
+    "Industrial",
+    "Cash Flow",
+    "Crime",
+    "Pollution",
 ]
 
 HIST_COLORS = [
     (144, 238, 144),  # Light green for residential
-    (0, 0, 139),      # Dark blue for commercial
-    (255, 255, 0),    # Yellow for industrial
-    (0, 100, 0),      # Dark green for cash flow
-    (255, 0, 0),      # Red for crime
-    (128, 128, 0),    # Olive for pollution
+    (0, 0, 139),  # Dark blue for commercial
+    (255, 255, 0),  # Yellow for industrial
+    (0, 100, 0),  # Dark green for cash flow
+    (255, 0, 0),  # Red for crime
+    (128, 128, 0),  # Olive for pollution
 ]
 
 # ============================================================================
 # Graph Data Structures (Adapted for pygame)
 # ============================================================================
+
 
 class SimGraph:
     """
@@ -58,6 +61,7 @@ class SimGraph:
 
     Ported from SimGraph struct in w_graph.c.
     """
+
     def __init__(self):
         self.range: int = 10  # 10 or 120 (years to display)
         self.mask: int = types.ALL_HISTORIES  # Which histories to show
@@ -101,12 +105,14 @@ class SimGraph:
         if visible:
             self.needs_redraw = True
 
+
 # ============================================================================
 # Graph Management
 # ============================================================================
 
 # Global graph instances
 _graphs: list[SimGraph] = []
+
 
 def create_graph() -> SimGraph:
     """
@@ -119,6 +125,7 @@ def create_graph() -> SimGraph:
     _graphs.append(graph)
     return graph
 
+
 def get_graphs() -> list[SimGraph]:
     """
     Get all graph instances.
@@ -127,6 +134,7 @@ def get_graphs() -> list[SimGraph]:
         List of all SimGraph instances
     """
     return _graphs.copy()
+
 
 def remove_graph(graph: SimGraph) -> None:
     """
@@ -137,6 +145,7 @@ def remove_graph(graph: SimGraph) -> None:
     """
     if graph in _graphs:
         _graphs.remove(graph)
+
 
 # ============================================================================
 # Graph Panel State (pygame overlay)
@@ -156,7 +165,10 @@ def set_graph_panel_visible(visible: bool) -> None:
     graph_panel_visible = visible
 
     if visible and pygame is not None:
-        if graph_panel_surface is None or graph_panel_surface.get_size() != graph_panel_size:
+        if (
+            graph_panel_surface is None
+            or graph_panel_surface.get_size() != graph_panel_size
+        ):
             graph_panel_surface = pygame.Surface(graph_panel_size, pygame.SRCALPHA)
         graph_panel_dirty = True
     elif not visible:
@@ -191,7 +203,10 @@ def render_graph_panel() -> pygame.Surface | None:
     if not graph_panel_visible or pygame is None:
         return None
 
-    if graph_panel_surface is None or graph_panel_surface.get_size() != graph_panel_size:
+    if (
+        graph_panel_surface is None
+        or graph_panel_surface.get_size() != graph_panel_size
+    ):
         graph_panel_surface = pygame.Surface(graph_panel_size, pygame.SRCALPHA)
         graph_panel_dirty = True
 
@@ -217,6 +232,7 @@ def render_graph_panel() -> pygame.Surface | None:
 # History Data Management
 # ============================================================================
 
+
 def init_history_data() -> None:
     """
     Initialize history data arrays.
@@ -231,6 +247,7 @@ def init_history_data() -> None:
         History10 = [[0] * 120 for _ in range(types.HISTORIES)]
         History120 = [[0] * 120 for _ in range(types.HISTORIES)]
 
+
 def init_graph_maxima() -> None:
     """
     Initialize graph scaling maxima.
@@ -241,50 +258,51 @@ def init_graph_maxima() -> None:
     global Graph10Max, Graph120Max
 
     # Initialize maxima for 10-year view (last 120 months)
-    types.ResHisMax = 0
-    types.ComHisMax = 0
-    types.IndHisMax = 0
+    types.res_his_max = 0
+    types.com_his__max = 0
+    types.ind_his_max = 0
 
     for x in range(119, -1, -1):
-        if x < len(types.ResHis) and types.ResHis[x] > types.ResHisMax:
-            types.ResHisMax = types.ResHis[x]
-        if x < len(types.ComHis) and types.ComHis[x] > types.ComHisMax:
-            types.ComHisMax = types.ComHis[x]
-        if x < len(types.IndHis) and types.IndHis[x] > types.IndHisMax:
-            types.IndHisMax = types.IndHis[x]
+        if x < len(types.res_his) and types.res_his[x] > types.res_his_max:
+            types.res_his_max = types.res_his[x]
+        if x < len(types.com_his) and types.com_his[x] > types.com_his__max:
+            types.com_his__max = types.com_his[x]
+        if x < len(types.ind_his) and types.ind_his[x] > types.ind_his_max:
+            types.ind_his_max = types.ind_his[x]
 
         # Ensure non-negative values
-        if x < len(types.ResHis) and types.ResHis[x] < 0:
-            types.ResHis[x] = 0
-        if x < len(types.ComHis) and types.ComHis[x] < 0:
-            types.ComHis[x] = 0
-        if x < len(types.IndHis) and types.IndHis[x] < 0:
-            types.IndHis[x] = 0
+        if x < len(types.res_his) and types.res_his[x] < 0:
+            types.res_his[x] = 0
+        if x < len(types.com_his) and types.com_his[x] < 0:
+            types.com_his[x] = 0
+        if x < len(types.ind_his) and types.ind_his[x] < 0:
+            types.ind_his[x] = 0
 
-    Graph10Max = max(types.ResHisMax, types.ComHisMax, types.IndHisMax)
+    Graph10Max = max(types.res_his_max, types.com_his__max, types.ind_his_max)
 
     # Initialize maxima for 120-year view (months 120-239)
-    types.Res2HisMax = 0
-    types.Com2HisMax = 0
-    types.Ind2HisMax = 0
+    types.res_2_his_max = 0
+    types.com_2_his_max = 0
+    types.ind_2_his_max = 0
 
     for x in range(239, 119, -1):
-        if x < len(types.ResHis) and types.ResHis[x] > types.Res2HisMax:
-            types.Res2HisMax = types.ResHis[x]
-        if x < len(types.ComHis) and types.ComHis[x] > types.Com2HisMax:
-            types.Com2HisMax = types.ComHis[x]
-        if x < len(types.IndHis) and types.IndHis[x] > types.Ind2HisMax:
-            types.Ind2HisMax = types.IndHis[x]
+        if x < len(types.res_his) and types.res_his[x] > types.res_2_his_max:
+            types.res_2_his_max = types.res_his[x]
+        if x < len(types.com_his) and types.com_his[x] > types.com_2_his_max:
+            types.com_2_his_max = types.com_his[x]
+        if x < len(types.ind_his) and types.ind_his[x] > types.ind_2_his_max:
+            types.ind_2_his_max = types.ind_his[x]
 
         # Ensure non-negative values
-        if x < len(types.ResHis) and types.ResHis[x] < 0:
-            types.ResHis[x] = 0
-        if x < len(types.ComHis) and types.ComHis[x] < 0:
-            types.ComHis[x] = 0
-        if x < len(types.IndHis) and types.IndHis[x] < 0:
-            types.IndHis[x] = 0
+        if x < len(types.res_his) and types.res_his[x] < 0:
+            types.res_his[x] = 0
+        if x < len(types.com_his) and types.com_his[x] < 0:
+            types.com_his[x] = 0
+        if x < len(types.ind_his) and types.ind_his[x] < 0:
+            types.ind_his[x] = 0
 
-    Graph120Max = max(types.Res2HisMax, types.Com2HisMax, types.Ind2HisMax)
+    Graph120Max = max(types.res_2_his_max, types.com_2_his_max, types.ind_2_his_max)
+
 
 def draw_month(hist: list[int], dest: list[int], scale: float) -> None:
     """
@@ -305,6 +323,7 @@ def draw_month(hist: list[int], dest: list[int], scale: float) -> None:
             val = 255
         dest[119 - x] = val  # Reverse order for display
 
+
 def do_all_graphs() -> None:
     """
     Update all graph history data.
@@ -315,33 +334,39 @@ def do_all_graphs() -> None:
     global AllMax
 
     # Calculate scaling for population graphs (residential, commercial, industrial)
-    AllMax = max(types.ResHisMax, types.ComHisMax, types.IndHisMax)
+    AllMax = max(types.res_his_max, types.com_his__max, types.ind_his_max)
     if AllMax <= 128:
         AllMax = 0
 
     scale_value = 128.0 / AllMax if AllMax else 1.0
 
     # Scale 10-year view data
-    draw_month(types.ResHis, History10[types.RES_HIST], scale_value)
-    draw_month(types.ComHis, History10[types.COM_HIST], scale_value)
-    draw_month(types.IndHis, History10[types.IND_HIST], scale_value)
+    draw_month(types.res_his, History10[types.RES_HIST], scale_value)
+    draw_month(types.com_his, History10[types.COM_HIST], scale_value)
+    draw_month(types.ind_his, History10[types.IND_HIST], scale_value)
 
     # Money, crime, pollution don't get scaled
-    draw_month(types.MoneyHis, History10[types.MONEY_HIST], 1.0)
-    draw_month(types.CrimeHis, History10[types.CRIME_HIST], 1.0)
-    draw_month(types.PollutionHis, History10[types.POLLUTION_HIST], 1.0)
+    draw_month(types.money_his, History10[types.MONEY_HIST], 1.0)
+    draw_month(types.crime_his, History10[types.CRIME_HIST], 1.0)
+    draw_month(types.pollution_his, History10[types.POLLUTION_HIST], 1.0)
 
     # Calculate scaling for 120-year view
-    AllMax = max(types.Res2HisMax, types.Com2HisMax, types.Ind2HisMax)
+    AllMax = max(types.res_2_his_max, types.com_2_his_max, types.ind_2_his_max)
     if AllMax <= 128:
         AllMax = 0
 
     scale_value = 128.0 / AllMax if AllMax else 1.0
 
     # Scale 120-year view data (using months 120-239 from history)
-    res_120 = types.ResHis[120:240] if len(types.ResHis) > 240 else types.ResHis[120:]
-    com_120 = types.ComHis[120:240] if len(types.ComHis) > 240 else types.ComHis[120:]
-    ind_120 = types.IndHis[120:240] if len(types.IndHis) > 240 else types.IndHis[120:]
+    res_120 = (
+        types.res_his[120:240] if len(types.res_his) > 240 else types.res_his[120:]
+    )
+    com_120 = (
+        types.com_his[120:240] if len(types.com_his) > 240 else types.com_his[120:]
+    )
+    ind_120 = (
+        types.ind_his[120:240] if len(types.ind_his) > 240 else types.ind_his[120:]
+    )
 
     # Pad with zeros if necessary
     res_120.extend([0] * (120 - len(res_120)))
@@ -353,9 +378,21 @@ def do_all_graphs() -> None:
     draw_month(ind_120, History120[types.IND_HIST], scale_value)
 
     # Money, crime, pollution for 120-year view
-    money_120 = types.MoneyHis[120:240] if len(types.MoneyHis) > 240 else types.MoneyHis[120:]
-    crime_120 = types.CrimeHis[120:240] if len(types.CrimeHis) > 240 else types.CrimeHis[120:]
-    pollution_120 = types.PollutionHis[120:240] if len(types.PollutionHis) > 240 else types.PollutionHis[120:]
+    money_120 = (
+        types.money_his[120:240]
+        if len(types.money_his) > 240
+        else types.money_his[120:]
+    )
+    crime_120 = (
+        types.crime_his[120:240]
+        if len(types.crime_his) > 240
+        else types.crime_his[120:]
+    )
+    pollution_120 = (
+        types.pollution_his[120:240]
+        if len(types.pollution_his) > 240
+        else types.pollution_his[120:]
+    )
 
     money_120.extend([0] * (120 - len(money_120)))
     crime_120.extend([0] * (120 - len(crime_120)))
@@ -365,9 +402,11 @@ def do_all_graphs() -> None:
     draw_month(crime_120, History120[types.CRIME_HIST], 1.0)
     draw_month(pollution_120, History120[types.POLLUTION_HIST], 1.0)
 
+
 # ============================================================================
 # Graph Rendering (Adapted for pygame)
 # ============================================================================
+
 
 def update_graph(graph: SimGraph) -> None:
     """
@@ -438,34 +477,49 @@ def update_graph(graph: SimGraph) -> None:
     axis_color = (0, 0, 0)
 
     # Horizontal axis
-    pygame.draw.line(graph.surface, axis_color,
-                    (plot_x, plot_y),
-                    (plot_x + plot_width, plot_y), 1)
-    pygame.draw.line(graph.surface, axis_color,
-                    (plot_x, plot_y + plot_height),
-                    (plot_x + plot_width, plot_y + plot_height), 1)
+    pygame.draw.line(
+        graph.surface, axis_color, (plot_x, plot_y), (plot_x + plot_width, plot_y), 1
+    )
+    pygame.draw.line(
+        graph.surface,
+        axis_color,
+        (plot_x, plot_y + plot_height),
+        (plot_x + plot_width, plot_y + plot_height),
+        1,
+    )
 
     # Vertical grid lines (time markers)
-    current_year = (types.CityTime // 48) + types.StartingYear
-    current_month = (types.CityTime // 4) % 12
+    current_year = (types.city_time // 48) + types.starting_year
+    current_month = (types.city_time // 4) % 12
 
     if graph.range == 10:
         # 10-year view: mark every 12 months (1 year)
         for x in range(120 - current_month, -1, -12):
             if x >= 0:
                 line_x = plot_x + int(x * sx)
-                pygame.draw.line(graph.surface, axis_color,
-                               (line_x, plot_y), (line_x, plot_y + plot_height), 1)
+                pygame.draw.line(
+                    graph.surface,
+                    axis_color,
+                    (line_x, plot_y),
+                    (line_x, plot_y + plot_height),
+                    1,
+                )
     else:
         # 120-year view: mark every 120 months (10 years)
         year_marker = 10 * (current_year % 10)
         for x in range(1200 - year_marker, -1, -120):
             if x >= 0:
                 line_x = plot_x + int((x / 10) * sx)  # Adjust for 10x scaling
-                pygame.draw.line(graph.surface, axis_color,
-                               (line_x, plot_y), (line_x, plot_y + plot_height), 1)
+                pygame.draw.line(
+                    graph.surface,
+                    axis_color,
+                    (line_x, plot_y),
+                    (line_x, plot_y + plot_height),
+                    1,
+                )
 
     graph.needs_redraw = False
+
 
 def update_all_graphs() -> None:
     """
@@ -476,19 +530,21 @@ def update_all_graphs() -> None:
     """
     global NewGraph
 
-    if types.CensusChanged:
+    if types.census_changed:
         do_all_graphs()
         NewGraph = True
-        types.CensusChanged = 0
+        types.census_changed = 0
 
     if NewGraph:
         for graph in _graphs:
             graph.needs_redraw = True
         NewGraph = False
 
+
 # ============================================================================
 # Graph Data Access Functions
 # ============================================================================
+
 
 def get_history_data(range_type: int, history_type: int) -> list[int]:
     """
@@ -508,6 +564,7 @@ def get_history_data(range_type: int, history_type: int) -> list[int]:
     else:
         return []
 
+
 def get_history_names() -> list[str]:
     """
     Get list of history names.
@@ -516,6 +573,7 @@ def get_history_names() -> list[str]:
         List of history type names
     """
     return HIST_NAMES.copy()
+
 
 def get_history_colors() -> list[tuple]:
     """
@@ -526,9 +584,11 @@ def get_history_colors() -> list[tuple]:
     """
     return HIST_COLORS.copy()
 
+
 # ============================================================================
 # Initialization
 # ============================================================================
+
 
 def initialize_graphs() -> None:
     """

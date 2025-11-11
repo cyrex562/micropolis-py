@@ -3,6 +3,9 @@ keyboard.py - Keyboard input handling for Micropolis Python port
 """
 
 # Import simulation modules
+import micropolis.constants
+import micropolis.sim_view
+import micropolis.utilities
 from . import types, tools, disasters, messages, sim_control
 
 
@@ -18,6 +21,7 @@ LastKeys: str = "    "
 # Keyboard Functions
 # ============================================================================
 
+
 def reset_last_keys() -> None:
     """
     Reset the last keys buffer.
@@ -26,10 +30,10 @@ def reset_last_keys() -> None:
     """
     global LastKeys
     LastKeys = "    "
-    types.PunishCnt = 0
+    types.punish_cnt = 0
 
 
-def do_key_down(view: 'types.SimView', char_code: str) -> None:
+def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
     """
     Handle key down events.
 
@@ -48,9 +52,9 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
     # Check for cheat codes
     if LastKeys == "fund":
         tools.Spend(-10000)
-        types.PunishCnt += 1  # punish for cheating
-        if types.PunishCnt == 5:
-            types.PunishCnt = 0
+        types.punish_cnt += 1  # punish for cheating
+        if types.punish_cnt == 5:
+            types.punish_cnt = 0
             disasters.MakeEarthquake()
         LastKeys = ""
         return
@@ -69,25 +73,32 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
     elif LastKeys == "nuke":
         messages.make_sound("city", "Explosion-High")
         messages.make_sound("city", "Explosion-Low")
-        for i in range(types.WORLD_X):
-            for j in range(types.WORLD_Y):
-                tile = types.Map[i][j] & types.LOMASK
-                if ((tile >= types.RUBBLE) and
-                    ((tile < types.CHURCH - 4) or
-                     (tile > types.CHURCH + 4))):
-                    if ((tile >= types.HBRIDGE and tile <= types.VBRIDGE) or
-                        (tile >= types.BRWH and tile <= types.LTRFBASE + 1) or
-                        (tile >= types.BRWV and tile <= types.BRWV + 2) or
-                        (tile >= types.BRWXXX1 and tile <= types.BRWXXX1 + 2) or
-                        (tile >= types.BRWXXX2 and tile <= types.BRWXXX2 + 2) or
-                        (tile >= types.BRWXXX3 and tile <= types.BRWXXX3 + 2) or
-                        (tile >= types.BRWXXX4 and tile <= types.BRWXXX4 + 2) or
-                        (tile >= types.BRWXXX5 and tile <= types.BRWXXX5 + 2) or
-                        (tile >= types.BRWXXX6 and tile <= types.BRWXXX6 + 2) or
-                        (tile >= types.BRWXXX7 and tile <= types.BRWXXX7 + 2)):
-                        types.Map[i][j] = types.RIVER
+        for i in range(micropolis.constants.WORLD_X):
+            for j in range(micropolis.constants.WORLD_Y):
+                tile = types.map_data[i][j] & types.LOMASK
+                if (tile >= types.RUBBLE) and (
+                    (tile < types.CHURCH - 4) or (tile > types.CHURCH + 4)
+                ):
+                    if (
+                        (tile >= types.HBRIDGE and tile <= types.VBRIDGE)
+                        or (tile >= types.BRWH and tile <= types.LTRFBASE + 1)
+                        or (tile >= types.BRWV and tile <= types.BRWV + 2)
+                        or (tile >= types.BRWXXX1 and tile <= types.BRWXXX1 + 2)
+                        or (tile >= types.BRWXXX2 and tile <= types.BRWXXX2 + 2)
+                        or (tile >= types.BRWXXX3 and tile <= types.BRWXXX3 + 2)
+                        or (tile >= types.BRWXXX4 and tile <= types.BRWXXX4 + 2)
+                        or (tile >= types.BRWXXX5 and tile <= types.BRWXXX5 + 2)
+                        or (tile >= types.BRWXXX6 and tile <= types.BRWXXX6 + 2)
+                        or (tile >= types.BRWXXX7 and tile <= types.BRWXXX7 + 2)
+                    ):
+                        types.map_data[i][j] = types.RIVER
                     else:
-                        types.Map[i][j] = types.TINYEXP + types.ANIMBIT + types.BULLBIT + types.Rand(2)
+                        types.map_data[i][j] = (
+                            types.TINYEXP
+                            + types.ANIMBIT
+                            + types.BULLBIT
+                            + micropolis.utilities.Rand(2)
+                        )
         LastKeys = ""
         return
 
@@ -99,20 +110,20 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
 
     elif LastKeys == "will":
         # Copy the map so external references (e.g., tests) can observe changes.
-        types.Map = [row[:] for row in types.Map]
+        types.map_data = [row[:] for row in types.map_data]
         n = 500
         for _ in range(n):
             try:
-                x1 = types.Rand(types.WORLD_X - 1)
-                y1 = types.Rand(types.WORLD_Y - 1)
-                x2 = types.Rand(types.WORLD_X - 1)
-                y2 = types.Rand(types.WORLD_Y - 1)
+                x1 = micropolis.utilities.Rand(micropolis.constants.WORLD_X - 1)
+                y1 = micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 1)
+                x2 = micropolis.utilities.Rand(micropolis.constants.WORLD_X - 1)
+                y2 = micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 1)
             except StopIteration:
                 break
 
-            temp = types.Map[x1][y1]
-            types.Map[x1][y1] = types.Map[x2][y2]
-            types.Map[x2][y2] = temp
+            temp = types.map_data[x1][y1]
+            types.map_data[x1][y1] = types.map_data[x2][y2]
+            types.map_data[x2][y2] = temp
         types.Kick()
         LastKeys = ""
         return
@@ -151,7 +162,7 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
 
     elif LastKeys == "patb":
         sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(types.Rand(40) - 20)
+        sim_control.set_heat_flow(micropolis.utilities.Rand(40) - 20)
         sim_control.set_heat_rule(0)
         LastKeys = ""
         types.Kick()
@@ -159,7 +170,7 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
 
     elif LastKeys == "lucb":
         sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(types.Rand(1000) - 500)
+        sim_control.set_heat_flow(micropolis.utilities.Rand(1000) - 500)
         sim_control.set_heat_rule(0)
         LastKeys = ""
         types.Kick()
@@ -170,7 +181,7 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
         return
 
     # Handle tool switching keys
-    if char_code.upper() == 'X':
+    if char_code.upper() == "X":
         # Cycle to next tool
         s = view.tool_state
         s += 1
@@ -178,7 +189,7 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
             s = tools.firstState
         tools.setWandState(view, s)
 
-    elif char_code.upper() == 'Z':
+    elif char_code.upper() == "Z":
         # Cycle to previous tool
         s = view.tool_state
         s -= 1
@@ -186,25 +197,25 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
             s = tools.lastState
         tools.setWandState(view, s)
 
-    elif char_code.upper() == 'B' or char_code == chr(ord('B') - ord('@')):
+    elif char_code.upper() == "B" or char_code == chr(ord("B") - ord("@")):
         # Switch to bulldozer
         if view.tool_state_save == -1:
             view.tool_state_save = view.tool_state
         tools.setWandState(view, tools.dozeState)
 
-    elif char_code.upper() == 'R' or char_code == chr(ord('R') - ord('@')):
+    elif char_code.upper() == "R" or char_code == chr(ord("R") - ord("@")):
         # Switch to roads
         if view.tool_state_save == -1:
             view.tool_state_save = view.tool_state
         tools.setWandState(view, tools.roadState)
 
-    elif char_code.upper() == 'P' or char_code == chr(ord('P') - ord('@')):
+    elif char_code.upper() == "P" or char_code == chr(ord("P") - ord("@")):
         # Switch to power
         if view.tool_state_save == -1:
             view.tool_state_save = view.tool_state
         tools.setWandState(view, tools.wireState)
 
-    elif char_code.upper() == 'T' or char_code == chr(ord('T') - ord('@')):
+    elif char_code.upper() == "T" or char_code == chr(ord("T") - ord("@")):
         # Switch to transit (rail)
         if view.tool_state_save == -1:
             view.tool_state_save = view.tool_state
@@ -213,10 +224,10 @@ def do_key_down(view: 'types.SimView', char_code: str) -> None:
     elif char_code == chr(27):  # ESC key
         # Turn off sound
         types.Eval("UISoundOff")
-        types.Dozing = 0
+        types.dozing = 0
 
 
-def do_key_up(view: 'types.SimView', char_code: str) -> None:
+def do_key_up(view: "micropolis.sim_view.SimView", char_code: str) -> None:
     """
     Handle key up events.
 
@@ -228,14 +239,15 @@ def do_key_up(view: 'types.SimView', char_code: str) -> None:
         char_code: Character code of the released key
     """
     # Check if this is a tool modifier key being released
-    if (char_code.lower() in ['b', 'r', 'p', 't'] or
-        char_code == chr(ord('B') - ord('@')) or
-        char_code == chr(ord('R') - ord('@')) or
-        char_code == chr(ord('P') - ord('@')) or
-        char_code == chr(ord('T') - ord('@')) or
-        char_code.lower() in ['q'] or
-        char_code == chr(ord('Q') - ord('@'))):
-
+    if (
+        char_code.lower() in ["b", "r", "p", "t"]
+        or char_code == chr(ord("B") - ord("@"))
+        or char_code == chr(ord("R") - ord("@"))
+        or char_code == chr(ord("P") - ord("@"))
+        or char_code == chr(ord("T") - ord("@"))
+        or char_code.lower() in ["q"]
+        or char_code == chr(ord("Q") - ord("@"))
+    ):
         if view.tool_state_save != -1:
             tools.setWandState(view, view.tool_state_save)
             view.tool_state_save = -1
@@ -244,6 +256,7 @@ def do_key_up(view: 'types.SimView', char_code: str) -> None:
 # ============================================================================
 # TCL Command Interface
 # ============================================================================
+
 
 class KeyboardCommand:
     """
@@ -282,6 +295,7 @@ class KeyboardCommand:
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def get_last_keys() -> str:
     """

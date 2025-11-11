@@ -10,18 +10,22 @@ view management, and drawing operations.
 from dataclasses import dataclass
 from typing import Any
 
-import pygame
-
-from .types import (
-    COLOR_BLACK,
+from .constants import (
     COLOR_LIGHTBROWN,
     COLOR_WHITE,
     EDITOR_H,
     EDITOR_W,
     WORLD_X,
     WORLD_Y,
-    Sim,
-    SimView,
+)
+
+from .sim import Sim
+
+from .sim_view import SimView
+import pygame
+
+from .constants import (
+    COLOR_BLACK,
 )
 from .view_types import Editor_Class, Map_Class, X_Mem_View
 
@@ -30,25 +34,26 @@ COLOR_INTENSITIES = [
     255,  # COLOR_WHITE
     170,  # COLOR_YELLOW
     127,  # COLOR_ORANGE
-    85,   # COLOR_RED
-    63,   # COLOR_DARKRED
-    76,   # COLOR_DARKBLUE
+    85,  # COLOR_RED
+    63,  # COLOR_DARKRED
+    76,  # COLOR_DARKBLUE
     144,  # COLOR_LIGHTBLUE
     118,  # COLOR_BROWN
-    76,   # COLOR_LIGHTGREEN
-    42,   # COLOR_DARKGREEN
+    76,  # COLOR_LIGHTGREEN
+    42,  # COLOR_DARKGREEN
     118,  # COLOR_OLIVE
     144,  # COLOR_LIGHTBROWN
     191,  # COLOR_LIGHTGRAY
     127,  # COLOR_MEDIUMGRAY
-    63,   # COLOR_DARKGRAY
-    0,    # COLOR_BLACK
+    63,  # COLOR_DARKGRAY
+    0,  # COLOR_BLACK
 ]
 
 
 @dataclass
 class PygameDisplay:
     """Pygame display information and resources."""
+
     screen: pygame.Surface | None = None
     width: int = 0
     height: int = 0
@@ -224,11 +229,11 @@ def view_to_pixel_coords(view: SimView, x: int, y: int) -> tuple[int, int]:
 
     # Clamp to view bounds
     if pixel_x < (view.tile_x << 4):
-        pixel_x = (view.tile_x << 4)
+        pixel_x = view.tile_x << 4
     if pixel_x >= ((view.tile_x + view.tile_width) << 4):
         pixel_x = ((view.tile_x + view.tile_width) << 4) - 1
     if pixel_y < (view.tile_y << 4):
-        pixel_y = (view.tile_y << 4)
+        pixel_y = view.tile_y << 4
     if pixel_y >= ((view.tile_y + view.tile_height) << 4):
         pixel_y = ((view.tile_y + view.tile_height) << 4) - 1
 
@@ -320,7 +325,10 @@ def create_sim_view(title: str, view_class: int, width: int, height: int) -> Sim
 
     # Set up pixels reference (convert pygame colors to int values for compatibility)
     if pygame_display and pygame_display.pixels:
-        view.pixels = [color.r * 256*256 + color.g * 256 + color.b for color in pygame_display.pixels]
+        view.pixels = [
+            color.r * 256 * 256 + color.g * 256 + color.b
+            for color in pygame_display.pixels
+        ]
     else:
         view.pixels = [0] * 16
 
@@ -371,15 +379,22 @@ def resize_sim_view(view: SimView, width: int, height: int) -> None:
         view.m_height = (height + 31) & (~15)
 
         # Create main surface
-        if id(view) not in view_surfaces or view_surfaces[id(view)].get_size() != (view.m_width, view.m_height):
+        if id(view) not in view_surfaces or view_surfaces[id(view)].get_size() != (
+            view.m_width,
+            view.m_height,
+        ):
             view_surfaces[id(view)] = pygame.Surface((view.m_width, view.m_height))
             if pygame_display and pygame_display.pixels:
                 fill_color = pygame_display.pixels[COLOR_LIGHTBROWN]
                 view_surfaces[id(view)].fill(fill_color)
 
         # Create overlay surface for editor
-        if id(view) not in view_overlay_surfaces or view_overlay_surfaces[id(view)].get_size() != (view.m_width, view.m_height):
-            view_overlay_surfaces[id(view)] = pygame.Surface((view.m_width, view.m_height), pygame.SRCALPHA)
+        if id(view) not in view_overlay_surfaces or view_overlay_surfaces[
+            id(view)
+        ].get_size() != (view.m_width, view.m_height):
+            view_overlay_surfaces[id(view)] = pygame.Surface(
+                (view.m_width, view.m_height), pygame.SRCALPHA
+            )
             view_overlay_surfaces[id(view)].fill((0, 0, 0, 0))  # Transparent
 
         if view.class_id == Editor_Class:
@@ -500,7 +515,9 @@ def adjust_pan(view: SimView) -> None:
     view.invalid = True
 
 
-def blit_view_surface(view: SimView, dest_surface: pygame.Surface, dest_x: int, dest_y: int) -> None:
+def blit_view_surface(
+    view: SimView, dest_surface: pygame.Surface, dest_x: int, dest_y: int
+) -> None:
     """
     Blit a view's surface to a destination surface.
 
@@ -524,7 +541,10 @@ def get_display_pixels() -> list[int]:
     """
     if pygame_display and pygame_display.pixels:
         # Convert pygame colors to int values
-        return [color.r * 256*256 + color.g * 256 + color.b for color in pygame_display.pixels]
+        return [
+            color.r * 256 * 256 + color.g * 256 + color.b
+            for color in pygame_display.pixels
+        ]
     return []
 
 
@@ -549,11 +569,11 @@ def get_display_info() -> dict[str, Any]:
         return {}
 
     return {
-        'width': pygame_display.width,
-        'height': pygame_display.height,
-        'depth': pygame_display.depth,
-        'color': pygame_display.color,
-        'initialized': pygame_display.initialized
+        "width": pygame_display.width,
+        "height": pygame_display.height,
+        "depth": pygame_display.depth,
+        "color": pygame_display.color,
+        "initialized": pygame_display.initialized,
     }
 
 
@@ -561,6 +581,7 @@ def get_display_info() -> dict[str, Any]:
 @dataclass
 class Ink:
     """Drawing ink for overlay operations."""
+
     points: list[tuple[int, int]] | None = None
     color: int = COLOR_WHITE
     next_ink: "Ink | None" = None
@@ -593,7 +614,11 @@ def draw_ink(surface: pygame.Surface, ink: Ink) -> None:
     if not ink.points or len(ink.points) < 2:
         return
 
-    if pygame_display and pygame_display.pixels and ink.color < len(pygame_display.pixels):
+    if (
+        pygame_display
+        and pygame_display.pixels
+        and ink.color < len(pygame_display.pixels)
+    ):
         color = pygame_display.pixels[ink.color]
         pygame.draw.lines(surface, color, False, ink.points, 2)
 

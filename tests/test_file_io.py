@@ -11,15 +11,16 @@ import sys
 from micropolis.file_io import loadFile, saveFile, validateCityFile, getCityFileInfo
 from micropolis import types, allocation, initialization
 
+
 def test_file_io():
     """Test basic file I/O functionality"""
 
     # Initialize simulation state
-    allocation.initMapArrays()
+    allocation.init_map_arrays()
     initialization.InitWillStuff()
-    types.ScenarioID = 0
-    types.InitSimLoad = 1
-    types.DoInitialEval = 0
+    types.scenario_id = 0
+    types.init_sim_load = 1
+    types.do_initial_eval = 0
 
     print("Testing file I/O system...")
 
@@ -30,10 +31,10 @@ def test_file_io():
         result = loadFile(test_city)
         if result:
             print("✓ Successfully loaded existing city file")
-            print(f"  City name: {types.CityName}")
-            print(f"  Total funds: {types.TotalFunds}")
-            print(f"  City time: {types.CityTime}")
-            print(f"  City tax: {types.CityTax}")
+            print(f"  City name: {types.city_name}")
+            print(f"  Total funds: {types.total_funds}")
+            print(f"  City time: {types.city_time}")
+            print(f"  City tax: {types.city_tax}")
         else:
             print("✗ Failed to load existing city file")
             return False
@@ -42,7 +43,7 @@ def test_file_io():
         return False
 
     # Test saving to a temporary file
-    with tempfile.NamedTemporaryFile(suffix='.cty', delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".cty", delete=False) as tmp:
         temp_filename = tmp.name
 
     try:
@@ -88,7 +89,7 @@ def test_file_io():
         return False
 
     # Save to another temp file
-    with tempfile.NamedTemporaryFile(suffix='.cty', delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".cty", delete=False) as tmp:
         temp_filename2 = tmp.name
 
     try:

@@ -9,6 +9,7 @@
 import micropolis.macros as macros
 import micropolis.random as random
 import micropolis.types as types
+import micropolis.utilities
 
 # ============================================================================
 # Disaster System Constants
@@ -22,6 +23,7 @@ DISASTER_CHANCES = [10 * 48, 5 * 48, 60]  # Easy, Medium, Hard
 # Main Disaster Control Functions
 # ============================================================================
 
+
 def DoDisasters() -> None:
     """
     Main disaster control function called each simulation step.
@@ -30,20 +32,20 @@ def DoDisasters() -> None:
     Handles scenario-specific disasters and flood countdown.
     """
     # Decrement flood counter
-    if types.FloodCnt:
-        types.FloodCnt -= 1
+    if types.flood_cnt:
+        types.flood_cnt -= 1
 
     # Handle scenario disasters
-    if types.DisasterEvent:
+    if types.disaster_event:
         ScenarioDisaster()
 
     # Get difficulty level (clamp to valid range)
-    x = types.GameLevel
+    x = types.game_level
     if x > 2:
         x = 0
 
     # Skip disasters if disabled
-    if types.NoDisasters:
+    if types.no_disasters:
         return
 
     # Random disaster check
@@ -68,7 +70,7 @@ def DoDisasters() -> None:
             MakeEarthquake()
         elif disaster_type >= 7:
             # Monster disaster (only if pollution is high)
-            if types.PolluteAverage > 60:  # Original uses /* 80 */ 60
+            if types.pollute_average > 60:  # Original uses /* 80 */ 60
                 MakeMonster()
 
 
@@ -79,45 +81,46 @@ def ScenarioDisaster() -> None:
     Different cities have different disaster scenarios that trigger
     at specific times during gameplay.
     """
-    if types.DisasterEvent == 1:
+    if types.disaster_event == 1:
         # Dullsville - no disaster
         pass
-    elif types.DisasterEvent == 2:
+    elif types.disaster_event == 2:
         # San Francisco - earthquake
-        if types.DisasterWait == 1:
+        if types.disaster_wait == 1:
             MakeEarthquake()
-    elif types.DisasterEvent == 3:
+    elif types.disaster_event == 3:
         # Hamburg - fire bombing
         DropFireBombs()
-    elif types.DisasterEvent == 4:
+    elif types.disaster_event == 4:
         # Bern - no disaster
         pass
-    elif types.DisasterEvent == 5:
+    elif types.disaster_event == 5:
         # Tokyo - monster
-        if types.DisasterWait == 1:
+        if types.disaster_wait == 1:
             MakeMonster()
-    elif types.DisasterEvent == 6:
+    elif types.disaster_event == 6:
         # Detroit - no disaster
         pass
-    elif types.DisasterEvent == 7:
+    elif types.disaster_event == 7:
         # Boston - nuclear meltdown
-        if types.DisasterWait == 1:
+        if types.disaster_wait == 1:
             MakeMeltdown()
-    elif types.DisasterEvent == 8:
+    elif types.disaster_event == 8:
         # Rio - periodic floods
-        if (types.DisasterWait % 24) == 0:
+        if (types.disaster_wait % 24) == 0:
             MakeFlood()
 
     # Decrement disaster wait counter
-    if types.DisasterWait:
-        types.DisasterWait -= 1
+    if types.disaster_wait:
+        types.disaster_wait -= 1
     else:
-        types.DisasterEvent = 0
+        types.disaster_event = 0
 
 
 # ============================================================================
 # Fire Disaster Functions
 # ============================================================================
+
 
 def SetFire() -> None:
     """
@@ -128,16 +131,18 @@ def SetFire() -> None:
     for _ in range(40):  # Try up to 40 times to find a suitable location
         x = random.Rand(macros.WORLD_X - 1)
         y = random.Rand(macros.WORLD_Y - 1)
-        tile = types.Map[x][y]
+        tile = types.map_data[x][y]
 
         # Check if tile is arsonable (can be set on fire)
         if not (tile & macros.ZONEBIT):
             tile_base = tile & macros.LOMASK
             if (tile_base > macros.LHTHR) and (tile_base < macros.LASTZONE):
                 # Set tile on fire with animation
-                types.Map[x][y] = macros.FIRE + macros.ANIMBIT + (random.sim_rand() & 7)
-                types.CrashX = x
-                types.CrashY = y
+                types.map_data[x][y] = (
+                    macros.FIRE + macros.ANIMBIT + (random.sim_rand() & 7)
+                )
+                types.crash_x = x
+                types.crash_y = y
                 # Send disaster message (placeholder - would send to UI)
                 # SendMesAt(-20, x, y)
                 return
@@ -153,14 +158,16 @@ def MakeFire() -> None:
     for _ in range(40):  # Try up to 40 times
         x = random.Rand(macros.WORLD_X - 1)
         y = random.Rand(macros.WORLD_Y - 1)
-        tile = types.Map[x][y]
+        tile = types.map_data[x][y]
 
         # Check for flammable tiles (not zoned, has burn bit set)
         if (not (tile & macros.ZONEBIT)) and (tile & macros.BURNBIT):
             tile_base = tile & macros.LOMASK
             if (tile_base > 21) and (tile_base < macros.LASTZONE):
                 # Set tile on fire
-                types.Map[x][y] = macros.FIRE + macros.ANIMBIT + (random.sim_rand() & 7)
+                types.map_data[x][y] = (
+                    macros.FIRE + macros.ANIMBIT + (random.sim_rand() & 7)
+                )
                 # Send disaster message (placeholder)
                 # SendMesAt(20, x, y)
                 return
@@ -172,9 +179,9 @@ def FireBomb() -> None:
 
     Drops a bomb at a random location causing an explosion.
     """
-    types.CrashX = random.Rand(macros.WORLD_X - 1)
-    types.CrashY = random.Rand(macros.WORLD_Y - 1)
-    MakeExplosion(types.CrashX, types.CrashY)
+    types.crash_x = random.Rand(macros.WORLD_X - 1)
+    types.crash_y = random.Rand(macros.WORLD_Y - 1)
+    MakeExplosion(types.crash_x, types.crash_y)
     # Clear messages and send disaster message (placeholder)
     # ClearMes()
     # SendMesAt(-30, CrashX, CrashY)
@@ -195,6 +202,7 @@ def DropFireBombs() -> None:
 # Flood Disaster Functions
 # ============================================================================
 
+
 def MakeFlood() -> None:
     """
     Start a flood disaster near a river edge.
@@ -209,7 +217,7 @@ def MakeFlood() -> None:
         x = random.Rand(macros.WORLD_X - 1)
         y = random.Rand(macros.WORLD_Y - 1)
 
-        tile = types.Map[x][y] & macros.LOMASK
+        tile = types.map_data[x][y] & macros.LOMASK
 
         # Check if tile is river edge (tiles 5-20)
         if (tile > 4) and (tile < 21):
@@ -219,18 +227,21 @@ def MakeFlood() -> None:
                 yy = y + dy[direction]
 
                 if macros.TestBounds(xx, yy):
-                    adjacent_tile = types.Map[xx][yy]
+                    adjacent_tile = types.map_data[xx][yy]
 
                     # Check if adjacent tile is floodable
                     # TILE_IS_FLOODABLE: (c == 0) || ((c & BULLBIT) && (c & BURNBIT))
-                    if (adjacent_tile == 0) or ((adjacent_tile & macros.BULLBIT) and (adjacent_tile & macros.BURNBIT)):
+                    if (adjacent_tile == 0) or (
+                        (adjacent_tile & macros.BULLBIT)
+                        and (adjacent_tile & macros.BURNBIT)
+                    ):
                         # Start flood
-                        types.Map[xx][yy] = macros.FLOOD
-                        types.FloodCnt = 30
+                        types.map_data[xx][yy] = macros.FLOOD
+                        types.flood_cnt = 30
                         # Send disaster message (placeholder)
                         # SendMesAt(-42, xx, yy)
-                        types.FloodX = xx
-                        types.FloodY = yy
+                        types.flood_x = xx
+                        types.flood_y = yy
                         return
 
 
@@ -240,7 +251,7 @@ def DoFlood() -> None:
 
     Called during map scanning to spread floods to adjacent areas.
     """
-    if not types.FloodCnt:
+    if not types.flood_cnt:
         return
 
     # Direction offsets
@@ -250,19 +261,19 @@ def DoFlood() -> None:
     # Spread flood to adjacent tiles (25% chance per direction)
     for direction in range(4):
         if not (random.sim_rand() & 7):  # 1/8 chance
-            xx = types.SMapX + dx[direction]
-            yy = types.SMapY + dy[direction]
+            xx = types.s_map_x + dx[direction]
+            yy = types.s_map_y + dy[direction]
 
             if macros.TestBounds(xx, yy):
-                tile = types.Map[xx][yy]
+                tile = types.map_data[xx][yy]
                 tile_base = tile & macros.LOMASK
 
                 # Check if tile is floodable
                 # TILE_IS_FLOODABLE2: (c & BURNBIT) || (c == 0) || ((t >= WOODS5) && (t < FLOOD))
                 floodable = (
-                    (tile & macros.BURNBIT) or
-                    (tile == 0) or
-                    ((tile_base >= macros.WOODS5) and (tile_base < macros.FLOOD))
+                    (tile & macros.BURNBIT)
+                    or (tile == 0)
+                    or ((tile_base >= macros.WOODS5) and (tile_base < macros.FLOOD))
                 )
 
                 if floodable:
@@ -270,16 +281,17 @@ def DoFlood() -> None:
                         # Fire zone if it's a zoned building
                         FireZone(xx, yy, tile)
                     # Set flood tile with random variation
-                    types.Map[xx][yy] = macros.FLOOD + random.Rand(2)
+                    types.map_data[xx][yy] = macros.FLOOD + random.Rand(2)
     else:
         # Random chance to clear flood (1/16 chance)
         if not (random.sim_rand() & 15):
-            types.Map[types.SMapX][types.SMapY] = 0
+            types.map_data[types.s_map_x][types.s_map_y] = 0
 
 
 # ============================================================================
 # Earthquake Disaster Functions
 # ============================================================================
+
 
 def MakeEarthquake() -> None:
     """
@@ -306,13 +318,17 @@ def MakeEarthquake() -> None:
             continue
 
         # Check if tile is vulnerable to earthquake damage
-        if Vunerable(types.Map[x][y]):
+        if Vunerable(types.map_data[x][y]):
             if z & 0x3:  # 75% chance
                 # Turn into rubble
-                types.Map[x][y] = (macros.RUBBLE + macros.BULLBIT) + (random.sim_rand() & 3)
+                types.map_data[x][y] = (macros.RUBBLE + macros.BULLBIT) + (
+                    random.sim_rand() & 3
+                )
             else:  # 25% chance
                 # Set on fire
-                types.Map[x][y] = macros.FIRE + macros.ANIMBIT + (random.sim_rand() & 7)
+                types.map_data[x][y] = (
+                    macros.FIRE + macros.ANIMBIT + (random.sim_rand() & 7)
+                )
 
 
 def Vunerable(tile: int) -> bool:
@@ -348,13 +364,14 @@ def DoEarthQuake() -> None:
     # Placeholder - would trigger screen shake and sound
     # MakeSound("city", "Explosion-Low")
     # Eval("UIEarthQuake")
-    types.ShakeNow += 1
+    types.shake_now += 1
     # Earthquake timer handling would go here
 
 
 # ============================================================================
 # Monster Disaster Functions
 # ============================================================================
+
 
 def MakeMonster() -> None:
     """
@@ -363,12 +380,12 @@ def MakeMonster() -> None:
     Creates or redirects a monster sprite to attack the city.
     """
     # Try to reuse existing monster sprite
-    sprite = types.GetSprite()
+    sprite = micropolis.utilities.GetSprite()
     if sprite and sprite.type == macros.GOD:
         sprite.sound_count = 1
         sprite.count = 1000
-        sprite.dest_x = types.PolMaxX << 4
-        sprite.dest_y = types.PolMaxY << 4
+        sprite.dest_x = types.pol_max_x << 4
+        sprite.dest_y = types.pol_max_y << 4
         return
 
     # Find suitable spawning location near river
@@ -377,7 +394,7 @@ def MakeMonster() -> None:
         y = random.Rand(macros.WORLD_Y - 10) + 5
 
         # Check for river tile
-        tile = types.Map[x][y]
+        tile = types.map_data[x][y]
         if (tile == macros.RIVER) or (tile == (macros.RIVER + macros.BULLBIT)):
             MonsterHere(x, y)
             return
@@ -395,11 +412,11 @@ def MonsterHere(x: int, y: int) -> None:
         y: World Y coordinate
     """
     # Create monster sprite
-    sprite = types.MakeNewSprite()
+    sprite = micropolis.utilities.MakeNewSprite()
     if sprite:
         sprite.type = macros.GOD
         sprite.x = (x << 4) + 48
-        sprite.y = (y << 4)
+        sprite.y = y << 4
         # Clear messages and send disaster message (placeholder)
         # ClearMes()
         # SendMesAt(-21, x + 5, y)
@@ -409,6 +426,7 @@ def MonsterHere(x: int, y: int) -> None:
 # Tornado Disaster Functions
 # ============================================================================
 
+
 def MakeTornado() -> None:
     """
     Spawn a tornado disaster.
@@ -416,7 +434,7 @@ def MakeTornado() -> None:
     Creates or redirects a tornado sprite to damage the city.
     """
     # Try to reuse existing tornado sprite
-    sprite = types.GetSprite()
+    sprite = micropolis.utilities.GetSprite()
     if sprite and sprite.type == macros.TOR:
         sprite.count = 200
         return
@@ -426,7 +444,7 @@ def MakeTornado() -> None:
     y = random.Rand((macros.WORLD_Y << 4) - 200) + 100
 
     # Create tornado sprite
-    sprite = types.MakeNewSprite()
+    sprite = micropolis.utilities.MakeNewSprite()
     if sprite:
         sprite.type = macros.TOR
         sprite.x = x
@@ -440,6 +458,7 @@ def MakeTornado() -> None:
 # Nuclear Meltdown Functions
 # ============================================================================
 
+
 def MakeMeltdown() -> None:
     """
     Trigger a nuclear meltdown disaster.
@@ -449,7 +468,7 @@ def MakeMeltdown() -> None:
     # Search for nuclear power plant
     for x in range(macros.WORLD_X - 1):
         for y in range(macros.WORLD_Y - 1):
-            tile = types.Map[x][y] & macros.LOMASK
+            tile = types.map_data[x][y] & macros.LOMASK
             if tile == macros.NUCLEAR:
                 DoMeltdown(x, y)
                 return
@@ -464,8 +483,8 @@ def DoMeltdown(sx: int, sy: int) -> None:
         sy: World Y coordinate of nuclear plant
     """
     # Record meltdown location
-    types.MeltX = sx
-    types.MeltY = sy
+    types.melt_x = sx
+    types.melt_y = sy
 
     # Create explosions around the plant
     MakeExplosion(sx - 1, sy - 1)
@@ -477,7 +496,9 @@ def DoMeltdown(sx: int, sy: int) -> None:
     for x in range(sx - 1, sx + 3):
         for y in range(sy - 1, sy + 3):
             if macros.TestBounds(x, y):
-                types.Map[x][y] = macros.FIRE + (random.sim_rand() & 3) + macros.ANIMBIT
+                types.map_data[x][y] = (
+                    macros.FIRE + (random.sim_rand() & 3) + macros.ANIMBIT
+                )
 
     # Spread radiation to surrounding area
     for _ in range(200):
@@ -487,7 +508,7 @@ def DoMeltdown(sx: int, sy: int) -> None:
         if not macros.TestBounds(x, y):
             continue
 
-        tile = types.Map[x][y]
+        tile = types.map_data[x][y]
 
         # Skip zoned areas
         if tile & macros.ZONEBIT:
@@ -495,7 +516,7 @@ def DoMeltdown(sx: int, sy: int) -> None:
 
         # Convert burnable or empty tiles to radiation
         if (tile & macros.BURNBIT) or (tile == 0):
-            types.Map[x][y] = macros.RADTILE
+            types.map_data[x][y] = macros.RADTILE
 
     # Send disaster message (placeholder)
     # ClearMes()
@@ -505,6 +526,7 @@ def DoMeltdown(sx: int, sy: int) -> None:
 # ============================================================================
 # Explosion Functions
 # ============================================================================
+
 
 def MakeExplosion(x: int, y: int) -> None:
     """
@@ -527,7 +549,7 @@ def MakeExplosionAt(x: int, y: int) -> None:
         y: Pixel Y coordinate
     """
     # Create explosion sprite
-    sprite = types.MakeNewSprite()
+    sprite = micropolis.utilities.MakeNewSprite()
     if sprite:
         sprite.type = macros.EXP
         sprite.x = x - 40
@@ -537,6 +559,7 @@ def MakeExplosionAt(x: int, y: int) -> None:
 # ============================================================================
 # Zone Fire Functions
 # ============================================================================
+
 
 def FireZone(x_loc: int, y_loc: int, ch: int) -> None:
     """
@@ -553,7 +576,7 @@ def FireZone(x_loc: int, y_loc: int, ch: int) -> None:
     rate_x = x_loc >> 3
     rate_y = y_loc >> 3
     if rate_x < 15 and rate_y < 13:  # Bounds check
-        types.RateOGMem[rate_x][rate_y] -= 20
+        types.rate_og_mem[rate_x][rate_y] -= 20
 
     # Determine bulldoze area size based on building type
     ch_base = ch & macros.LOMASK
@@ -571,7 +594,7 @@ def FireZone(x_loc: int, y_loc: int, ch: int) -> None:
             yy = y_loc + y
 
             if macros.TestBounds(xx, yy):
-                tile = types.Map[xx][yy] & macros.LOMASK
+                tile = types.map_data[xx][yy] & macros.LOMASK
                 # Bulldoze roads (ROADBASE and above)
                 if tile >= macros.ROADBASE:
-                    types.Map[xx][yy] |= macros.BULLBIT
+                    types.map_data[xx][yy] |= macros.BULLBIT

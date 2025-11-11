@@ -6,7 +6,9 @@ responsible for managing moving objects (cars, disasters, helicopters, etc.)
 in the game world.
 """
 
-
+import micropolis.constants
+import micropolis.sim_sprite
+import micropolis.sim_view
 import pygame
 
 from . import random, types
@@ -39,16 +41,19 @@ CrashX = 0
 CrashY = 0
 
 # Global sprite instances (one per type)
-GlobalSprites: list[types.SimSprite | None] = [None] * types.OBJN
+GlobalSprites: list[micropolis.sim_sprite.SimSprite | None] = [None] * types.OBJN
 
 # Free sprite pool
-FreeSprites: types.SimSprite | None = None
+FreeSprites: micropolis.sim_sprite.SimSprite | None = None
 
 # ============================================================================
 # Sprite Lifecycle Management
 # ============================================================================
 
-def new_sprite(name: str, sprite_type: int, x: int = 0, y: int = 0) -> types.SimSprite:
+
+def new_sprite(
+    name: str, sprite_type: int, x: int = 0, y: int = 0
+) -> micropolis.sim_sprite.SimSprite:
     """
     Create a new sprite.
 
@@ -63,13 +68,13 @@ def new_sprite(name: str, sprite_type: int, x: int = 0, y: int = 0) -> types.Sim
     """
     global FreeSprites
 
-    sprite: types.SimSprite | None = None
+    sprite: micropolis.sim_sprite.SimSprite | None = None
 
     if FreeSprites:
         sprite = FreeSprites
         FreeSprites = sprite.next
     else:
-        sprite = types.SimSprite()
+        sprite = micropolis.sim_sprite.SimSprite()
 
     sprite.name = name
     sprite.type = sprite_type
@@ -84,7 +89,8 @@ def new_sprite(name: str, sprite_type: int, x: int = 0, y: int = 0) -> types.Sim
 
     return sprite
 
-def init_sprite(sprite: types.SimSprite, x: int, y: int) -> None:
+
+def init_sprite(sprite: micropolis.sim_sprite.SimSprite, x: int, y: int) -> None:
     """
     Initialize sprite with default values and type-specific settings.
 
@@ -135,11 +141,11 @@ def init_sprite(sprite: types.SimSprite, x: int, y: int) -> None:
         sprite.y_hot = 0
         if x < (4 << 4):
             sprite.frame = 3
-        elif x >= ((types.WORLD_X - 4) << 4):
+        elif x >= ((micropolis.constants.WORLD_X - 4) << 4):
             sprite.frame = 7
         elif y < (4 << 4):
             sprite.frame = 5
-        elif y >= ((types.WORLD_Y - 4) << 4):
+        elif y >= ((micropolis.constants.WORLD_Y - 4) << 4):
             sprite.frame = 1
         else:
             sprite.frame = 3
@@ -154,19 +160,19 @@ def init_sprite(sprite: types.SimSprite, x: int, y: int) -> None:
         sprite.y_offset = 0
         sprite.x_hot = 40
         sprite.y_hot = 16
-        if x > ((types.WORLD_X << 4) // 2):
-            if y > ((types.WORLD_Y << 4) // 2):
+        if x > ((micropolis.constants.WORLD_X << 4) // 2):
+            if y > ((micropolis.constants.WORLD_Y << 4) // 2):
                 sprite.frame = 10
             else:
                 sprite.frame = 7
         else:
-            if y > ((types.WORLD_Y << 4) // 2):
+            if y > ((micropolis.constants.WORLD_Y << 4) // 2):
                 sprite.frame = 1
             else:
                 sprite.frame = 4
         sprite.count = 1000
-        sprite.dest_x = types.PolMaxX << 4
-        sprite.dest_y = types.PolMaxY << 4
+        sprite.dest_x = types.pol_max_x << 4
+        sprite.dest_y = types.pol_max_y << 4
         sprite.orig_x = sprite.x
         sprite.orig_y = sprite.y
 
@@ -179,8 +185,8 @@ def init_sprite(sprite: types.SimSprite, x: int, y: int) -> None:
         sprite.y_hot = -8
         sprite.frame = 5
         sprite.count = 1500
-        sprite.dest_x = random.Rand((types.WORLD_X << 4) - 1)
-        sprite.dest_y = random.Rand((types.WORLD_Y << 4) - 1)
+        sprite.dest_x = random.Rand((micropolis.constants.WORLD_X << 4) - 1)
+        sprite.dest_y = random.Rand((micropolis.constants.WORLD_Y << 4) - 1)
         sprite.orig_x = x - 30
         sprite.orig_y = y
 
@@ -191,7 +197,7 @@ def init_sprite(sprite: types.SimSprite, x: int, y: int) -> None:
         sprite.y_offset = 0
         sprite.x_hot = 48
         sprite.y_hot = 16
-        if x > ((types.WORLD_X - 20) << 4):
+        if x > ((micropolis.constants.WORLD_X - 20) << 4):
             sprite.x -= 100 + 48
             sprite.dest_x = sprite.x - 200
             sprite.frame = 7
@@ -229,7 +235,8 @@ def init_sprite(sprite: types.SimSprite, x: int, y: int) -> None:
         sprite.frame = 1
         sprite.dir = 1
 
-def destroy_sprite(sprite: types.SimSprite) -> None:
+
+def destroy_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Destroy a sprite and return it to the free pool.
 
@@ -249,7 +256,7 @@ def destroy_sprite(sprite: types.SimSprite) -> None:
     # Remove from simulation sprite list
     if types.sim:
         current = types.sim.sprite
-        prev: types.SimSprite | None = None
+        prev: micropolis.sim_sprite.SimSprite | None = None
         while current:
             if current == sprite:
                 if prev:
@@ -265,6 +272,7 @@ def destroy_sprite(sprite: types.SimSprite) -> None:
     sprite.next = FreeSprites
     FreeSprites = sprite
 
+
 def destroy_all_sprites() -> None:
     """
     Destroy all sprites in the simulation.
@@ -277,7 +285,8 @@ def destroy_all_sprites() -> None:
         sprite.frame = 0
         sprite = sprite.next
 
-def get_sprite(sprite_type: int) -> types.SimSprite | None:
+
+def get_sprite(sprite_type: int) -> micropolis.sim_sprite.SimSprite | None:
     """
     Get the global sprite instance for a type.
 
@@ -292,7 +301,8 @@ def get_sprite(sprite_type: int) -> types.SimSprite | None:
         return None
     return sprite
 
-def make_sprite(sprite_type: int, x: int, y: int) -> types.SimSprite:
+
+def make_sprite(sprite_type: int, x: int, y: int) -> micropolis.sim_sprite.SimSprite:
     """
     Create or reuse a sprite of the given type.
 
@@ -311,7 +321,10 @@ def make_sprite(sprite_type: int, x: int, y: int) -> types.SimSprite:
         init_sprite(sprite, x, y)
     return sprite
 
-def make_new_sprite(sprite_type: int, x: int, y: int) -> types.SimSprite:
+
+def make_new_sprite(
+    sprite_type: int, x: int, y: int
+) -> micropolis.sim_sprite.SimSprite:
     """
     Create a new sprite instance (not reusing global).
 
@@ -325,9 +338,11 @@ def make_new_sprite(sprite_type: int, x: int, y: int) -> types.SimSprite:
     """
     return new_sprite("", sprite_type, x, y)
 
+
 # ============================================================================
 # Sprite Movement and Animation
 # ============================================================================
+
 
 def move_objects() -> None:
     """
@@ -335,7 +350,7 @@ def move_objects() -> None:
     """
     global Cycle
 
-    if not types.SimSpeed:
+    if not types.sim_speed:
         return
 
     Cycle += 1
@@ -374,11 +389,13 @@ def move_objects() -> None:
             else:
                 sprite = sprite.next
 
+
 # ============================================================================
 # Individual Sprite Movement Functions
 # ============================================================================
 
-def do_train_sprite(sprite: types.SimSprite) -> None:
+
+def do_train_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Handle train sprite movement and animation.
 
@@ -406,9 +423,11 @@ def do_train_sprite(sprite: types.SimSprite) -> None:
                 if dir2 == ((sprite.dir + 2) & 3):
                     continue
             c = get_char(sprite.x + Cx[dir2] + 48, sprite.y + Cy[dir2])
-            if ((c >= types.RAILBASE and c <= types.LASTRAIL) or
-                (c == types.RAILVPOWERH) or
-                (c == types.RAILHPOWERV)):
+            if (
+                (c >= types.RAILBASE and c <= types.LASTRAIL)
+                or (c == types.RAILVPOWERH)
+                or (c == types.RAILHPOWERV)
+            ):
                 if (sprite.dir != dir2) and (sprite.dir != 4):
                     if (sprite.dir + dir2) == 3:
                         sprite.frame = 3
@@ -427,7 +446,8 @@ def do_train_sprite(sprite: types.SimSprite) -> None:
             return
         sprite.dir = 4
 
-def do_copter_sprite(sprite: types.SimSprite) -> None:
+
+def do_copter_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Handle helicopter sprite movement and animation.
 
@@ -459,12 +479,12 @@ def do_copter_sprite(sprite: types.SimSprite) -> None:
 
         if not sprite.count:  # land
             get_dir(sprite.x, sprite.y, sprite.orig_x, sprite.orig_y)
-            if types.absDist < 30:
+            if types.abs_dist < 30:
                 sprite.frame = 0
                 return
     else:
         get_dir(sprite.x, sprite.y, sprite.dest_x, sprite.dest_y)
-        if types.absDist < 16:
+        if types.abs_dist < 16:
             sprite.dest_x = sprite.orig_x
             sprite.dest_y = sprite.orig_y
             sprite.control = -1
@@ -472,9 +492,13 @@ def do_copter_sprite(sprite: types.SimSprite) -> None:
     if not sprite.sound_count:  # send report
         x = (sprite.x + 48) >> 5
         y = sprite.y >> 5
-        if (x >= 0 and x < (types.WORLD_X >> 1) and
-            y >= 0 and y < (types.WORLD_Y >> 1)):
-            z = types.TrfDensity[x][y] >> 6
+        if (
+            x >= 0
+            and x < (micropolis.constants.WORLD_X >> 1)
+            and y >= 0
+            and y < (micropolis.constants.WORLD_Y >> 1)
+        ):
+            z = types.trf_density[x][y] >> 6
             if z > 1:
                 z -= 1
             if z > 170 and (random.Rand16() & 7) == 0:
@@ -491,7 +515,8 @@ def do_copter_sprite(sprite: types.SimSprite) -> None:
     sprite.x += CDx[z]
     sprite.y += CDy[z]
 
-def do_airplane_sprite(sprite: types.SimSprite) -> None:
+
+def do_airplane_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Handle airplane sprite movement and animation.
 
@@ -515,19 +540,20 @@ def do_airplane_sprite(sprite: types.SimSprite) -> None:
             z = turn_to(z, d)
             sprite.frame = z
 
-    if types.absDist < 50:  # at destination
-        sprite.dest_x = random.Rand((types.WORLD_X * 16) + 100) - 50
-        sprite.dest_y = random.Rand((types.WORLD_Y * 16) + 100) - 50
+    if types.abs_dist < 50:  # at destination
+        sprite.dest_x = random.Rand((micropolis.constants.WORLD_X * 16) + 100) - 50
+        sprite.dest_y = random.Rand((micropolis.constants.WORLD_Y * 16) + 100) - 50
 
     # Check for disasters
-    if not types.NoDisasters:
+    if not types.no_disasters:
         s = types.sim.sprite if types.sim else None
         explode = False
         while s:
-            if (s.frame != 0 and
-                ((s.type == types.COP) or
-                 (sprite != s and s.type == types.AIR)) and
-                check_sprite_collision(sprite, s)):
+            if (
+                s.frame != 0
+                and ((s.type == types.COP) or (sprite != s and s.type == types.AIR))
+                and check_sprite_collision(sprite, s)
+            ):
                 explode_sprite(s)
                 explode = True
             s = s.next
@@ -539,7 +565,8 @@ def do_airplane_sprite(sprite: types.SimSprite) -> None:
     if sprite_not_in_bounds(sprite):
         sprite.frame = 0
 
-def do_ship_sprite(sprite: types.SimSprite) -> None:
+
+def do_ship_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Handle ship sprite movement and animation.
 
@@ -551,14 +578,22 @@ def do_ship_sprite(sprite: types.SimSprite) -> None:
     BDy = [0, -1, -1, 0, 1, 1, 1, 0, -1]
     BPx = [0, 0, 2, 2, 2, 0, -2, -2, -2]
     BPy = [0, -2, -2, 0, 2, 2, 2, 0, -2]
-    BtClrTab = [types.RIVER, types.CHANNEL, types.POWERBASE, types.POWERBASE + 1,
-                types.RAILBASE, types.RAILBASE + 1, types.BRWH, types.BRWV]
+    BtClrTab = [
+        types.RIVER,
+        types.CHANNEL,
+        types.POWERBASE,
+        types.POWERBASE + 1,
+        types.RAILBASE,
+        types.RAILBASE + 1,
+        types.BRWH,
+        types.BRWV,
+    ]
 
     if sprite.sound_count > 0:
         sprite.sound_count -= 1
     if not sprite.sound_count:
         if (random.Rand16() & 3) == 1:
-            if types.ScenarioID == 2 and random.Rand(10) < 5:  # San Francisco
+            if types.scenario_id == 2 and random.Rand(10) < 5:  # San Francisco
                 # MakeSound("city", "HonkHonk-Low -speed 80")
                 pass
             else:
@@ -575,7 +610,7 @@ def do_ship_sprite(sprite: types.SimSprite) -> None:
             return
         tem = random.Rand16() & 7
         pem = tem  # Initialize pem
-        t = 0      # Initialize t to default value
+        t = 0  # Initialize t to default value
         for pem in range(tem, tem + 8):
             z = (pem & 7) + 1
 
@@ -584,9 +619,13 @@ def do_ship_sprite(sprite: types.SimSprite) -> None:
             x = ((sprite.x + (48 - 1)) >> 4) + BDx[z]
             y = (sprite.y >> 4) + BDy[z]
             if test_bounds(x, y):
-                t = types.Map[x][y] & types.LOMASK
-                if ((t == types.CHANNEL) or (t == types.BRWH) or (t == types.BRWV) or
-                    try_other(t, sprite.dir, z)):
+                t = types.map_data[x][y] & types.LOMASK
+                if (
+                    (t == types.CHANNEL)
+                    or (t == types.BRWH)
+                    or (t == types.BRWV)
+                    or try_other(t, sprite.dir, z)
+                ):
                     sprite.new_dir = z
                     sprite.frame = turn_to(sprite.frame, sprite.new_dir)
                     sprite.dir = z + 4
@@ -612,7 +651,8 @@ def do_ship_sprite(sprite: types.SimSprite) -> None:
         if z == 7:
             explode_sprite(sprite)
 
-def do_monster_sprite(sprite: types.SimSprite) -> None:
+
+def do_monster_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Handle monster sprite movement and animation.
 
@@ -644,7 +684,7 @@ def do_monster_sprite(sprite: types.SimSprite) -> None:
             else:
                 z -= 1
             c = get_dir(sprite.x, sprite.y, sprite.dest_x, sprite.dest_y)
-            if types.absDist < 18:
+            if types.abs_dist < 18:
                 sprite.control = -1
                 sprite.count = 1000
                 sprite.flag = 1
@@ -683,7 +723,7 @@ def do_monster_sprite(sprite: types.SimSprite) -> None:
                 else:
                     z -= 1
                 get_dir(sprite.x, sprite.y, sprite.dest_x, sprite.dest_y)
-                if types.absDist < 60:
+                if types.abs_dist < 60:
                     if sprite.flag == 0:
                         sprite.flag = 1
                         sprite.dest_x = sprite.orig_x
@@ -727,7 +767,7 @@ def do_monster_sprite(sprite: types.SimSprite) -> None:
         else:
             z -= 1
 
-    z = (((d * 3) + z) + 1)
+    z = ((d * 3) + z) + 1
     if z > 16:
         z = 16
     sprite.frame = z
@@ -738,22 +778,31 @@ def do_monster_sprite(sprite: types.SimSprite) -> None:
     if sprite.count > 0:
         sprite.count -= 1
     c = get_char(sprite.x + sprite.x_hot, sprite.y + sprite.y_hot)
-    if (c == -1) or ((c == types.RIVER) and (sprite.count != 0) and (sprite.control == -1)):
+    if (c == -1) or (
+        (c == types.RIVER) and (sprite.count != 0) and (sprite.control == -1)
+    ):
         sprite.frame = 0  # kill zilla
 
     # Check collisions with other sprites
     s = types.sim.sprite if types.sim else None
     while s:
-        if (s.frame != 0 and
-            ((s.type == types.AIR) or (s.type == types.COP) or
-             (s.type == types.SHI) or (s.type == types.TRA)) and
-            check_sprite_collision(sprite, s)):
+        if (
+            s.frame != 0
+            and (
+                (s.type == types.AIR)
+                or (s.type == types.COP)
+                or (s.type == types.SHI)
+                or (s.type == types.TRA)
+            )
+            and check_sprite_collision(sprite, s)
+        ):
             explode_sprite(s)
         s = s.next
 
     destroy(sprite.x + 48, sprite.y + 16)
 
-def do_tornado_sprite(sprite: types.SimSprite) -> None:
+
+def do_tornado_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Handle tornado sprite movement and animation.
 
@@ -785,10 +834,16 @@ def do_tornado_sprite(sprite: types.SimSprite) -> None:
     # Check collisions with other sprites
     s = types.sim.sprite if types.sim else None
     while s:
-        if (s.frame != 0 and
-            ((s.type == types.AIR) or (s.type == types.COP) or
-             (s.type == types.SHI) or (s.type == types.TRA)) and
-            check_sprite_collision(sprite, s)):
+        if (
+            s.frame != 0
+            and (
+                (s.type == types.AIR)
+                or (s.type == types.COP)
+                or (s.type == types.SHI)
+                or (s.type == types.TRA)
+            )
+            and check_sprite_collision(sprite, s)
+        ):
             explode_sprite(s)
         s = s.next
 
@@ -803,7 +858,8 @@ def do_tornado_sprite(sprite: types.SimSprite) -> None:
 
     destroy(sprite.x + 48, sprite.y + 40)
 
-def do_explosion_sprite(sprite: types.SimSprite) -> None:
+
+def do_explosion_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Handle explosion sprite animation.
 
@@ -827,7 +883,8 @@ def do_explosion_sprite(sprite: types.SimSprite) -> None:
         start_fire(sprite.x + 48 + 8, sprite.y + 32)
         return
 
-def do_bus_sprite(sprite: types.SimSprite) -> None:
+
+def do_bus_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Handle bus sprite movement and animation.
 
@@ -867,9 +924,13 @@ def do_bus_sprite(sprite: types.SimSprite) -> None:
     else:  # cruise at traffic speed
         tx = (sprite.x + sprite.x_hot) >> 5
         ty = (sprite.y + sprite.y_hot) >> 5
-        if (tx >= 0 and tx < (types.WORLD_X >> 1) and
-            ty >= 0 and ty < (types.WORLD_Y >> 1)):
-            z = types.TrfDensity[tx][ty] >> 6
+        if (
+            tx >= 0
+            and tx < (micropolis.constants.WORLD_X >> 1)
+            and ty >= 0
+            and ty < (micropolis.constants.WORLD_Y >> 1)
+        ):
+            z = types.trf_density[tx][ty] >> 6
             if z > 1:
                 z -= 1
         else:
@@ -913,13 +974,13 @@ def do_bus_sprite(sprite: types.SimSprite) -> None:
                 elif z > 0:
                     dy = 1
             elif sprite.dir == 2:  # down
-                z = ((tx << 4)) - (sprite.x + sprite.x_hot)
+                z = (tx << 4) - (sprite.x + sprite.x_hot)
                 if z < 0:
                     dx = -1
                 elif z > 0:
                     dx = 1
             elif sprite.dir == 3:  # left
-                z = ((ty << 4)) - (sprite.y + sprite.y_hot)
+                z = (ty << 4) - (sprite.y + sprite.y_hot)
                 if z < 0:
                     dy = -1
                 elif z > 0:
@@ -930,23 +991,23 @@ def do_bus_sprite(sprite: types.SimSprite) -> None:
     oty = (sprite.y + sprite.y_hot + (Dy[sprite.dir] * 8)) >> 4
     if otx < 0:
         otx = 0
-    elif otx >= types.WORLD_X:
-        otx = types.WORLD_X - 1
+    elif otx >= micropolis.constants.WORLD_X:
+        otx = micropolis.constants.WORLD_X - 1
     if oty < 0:
         oty = 0
-    elif oty >= types.WORLD_Y:
-        oty = types.WORLD_Y - 1
+    elif oty >= micropolis.constants.WORLD_Y:
+        oty = micropolis.constants.WORLD_Y - 1
 
     tx = (sprite.x + sprite.x_hot + dx + (Dx[sprite.dir] * 8)) >> 4
     ty = (sprite.y + sprite.y_hot + dy + (Dy[sprite.dir] * 8)) >> 4
     if tx < 0:
         tx = 0
-    elif tx >= types.WORLD_X:
-        tx = types.WORLD_X - 1
+    elif tx >= micropolis.constants.WORLD_X:
+        tx = micropolis.constants.WORLD_X - 1
     if ty < 0:
         ty = 0
-    elif ty >= types.WORLD_Y:
-        ty = types.WORLD_Y - 1
+    elif ty >= micropolis.constants.WORLD_Y:
+        ty = micropolis.constants.WORLD_Y - 1
 
     if (tx != otx) or (ty != oty):
         z = can_drive_on(tx, ty)
@@ -982,23 +1043,29 @@ def do_bus_sprite(sprite: types.SimSprite) -> None:
     sprite.x += dx
     sprite.y += dy
 
-    if not types.NoDisasters:
+    if not types.no_disasters:
         s = types.sim.sprite if types.sim else None
         explode = False
         while s:
-            if (sprite != s and s.frame != 0 and
-                ((s.type == types.BUS) or
-                 ((s.type == types.TRA) and (s.frame != 5))) and
-                check_sprite_collision(sprite, s)):
+            if (
+                sprite != s
+                and s.frame != 0
+                and (
+                    (s.type == types.BUS) or ((s.type == types.TRA) and (s.frame != 5))
+                )
+                and check_sprite_collision(sprite, s)
+            ):
                 explode_sprite(s)
                 explode = True
             s = s.next
         if explode:
             explode_sprite(sprite)
 
+
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def get_char(x: int, y: int) -> int:
     """
@@ -1016,7 +1083,8 @@ def get_char(x: int, y: int) -> int:
     if not test_bounds(x, y):
         return -1
     else:
-        return types.Map[x][y] & types.LOMASK
+        return types.map_data[x][y] & types.LOMASK
+
 
 def turn_to(p: int, d: int) -> int:
     """
@@ -1047,6 +1115,7 @@ def turn_to(p: int, d: int) -> int:
         p = 8
     return p
 
+
 def try_other(tpoo: int, told: int, tnew: int) -> int:
     """
     Check if sprite can turn to new direction on special tiles.
@@ -1064,12 +1133,17 @@ def try_other(tpoo: int, told: int, tnew: int) -> int:
         z -= 8
     if tnew != z:
         return 0
-    if ((tpoo == types.POWERBASE) or (tpoo == types.POWERBASE + 1) or
-        (tpoo == types.RAILBASE) or (tpoo == types.RAILBASE + 1)):
+    if (
+        (tpoo == types.POWERBASE)
+        or (tpoo == types.POWERBASE + 1)
+        or (tpoo == types.RAILBASE)
+        or (tpoo == types.RAILBASE + 1)
+    ):
         return 1
     return 0
 
-def sprite_not_in_bounds(sprite: types.SimSprite) -> int:
+
+def sprite_not_in_bounds(sprite: micropolis.sim_sprite.SimSprite) -> int:
     """
     Check if sprite is outside world bounds.
 
@@ -1082,11 +1156,15 @@ def sprite_not_in_bounds(sprite: types.SimSprite) -> int:
     x = sprite.x + sprite.x_hot
     y = sprite.y + sprite.y_hot
 
-    if ((x < 0) or (y < 0) or
-        (x >= (types.WORLD_X << 4)) or
-        (y >= (types.WORLD_Y << 4))):
+    if (
+        (x < 0)
+        or (y < 0)
+        or (x >= (micropolis.constants.WORLD_X << 4))
+        or (y >= (micropolis.constants.WORLD_Y << 4))
+    ):
         return 1
     return 0
+
 
 def get_dir(org_x: int, org_y: int, des_x: int, des_y: int) -> int:
     """
@@ -1119,7 +1197,7 @@ def get_dir(org_x: int, org_y: int, des_x: int, des_y: int) -> int:
 
     abs_disp_x = abs(disp_x)
     abs_disp_y = abs(disp_y)
-    types.absDist = abs_disp_x + abs_disp_y
+    types.abs_dist = abs_disp_x + abs_disp_y
 
     if (abs_disp_x << 1) < abs_disp_y:
         z += 1
@@ -1130,6 +1208,7 @@ def get_dir(org_x: int, org_y: int, des_x: int, des_y: int) -> int:
         z = 0
 
     return Gdtab[z]
+
 
 def get_dis(x1: int, y1: int, x2: int, y2: int) -> int:
     """
@@ -1155,7 +1234,10 @@ def get_dis(x1: int, y1: int, x2: int, y2: int) -> int:
 
     return disp_x + disp_y
 
-def check_sprite_collision(s1: types.SimSprite, s2: types.SimSprite) -> int:
+
+def check_sprite_collision(
+    s1: micropolis.sim_sprite.SimSprite, s2: micropolis.sim_sprite.SimSprite
+) -> int:
     """
     Check if two sprites are colliding.
 
@@ -1166,11 +1248,15 @@ def check_sprite_collision(s1: types.SimSprite, s2: types.SimSprite) -> int:
     Returns:
         1 if colliding, 0 otherwise
     """
-    if ((s1.frame != 0) and (s2.frame != 0) and
-        get_dis(s1.x + s1.x_hot, s1.y + s1.y_hot,
-                s2.x + s2.x_hot, s2.y + s2.y_hot) < 30):
+    if (
+        (s1.frame != 0)
+        and (s2.frame != 0)
+        and get_dis(s1.x + s1.x_hot, s1.y + s1.y_hot, s2.x + s2.x_hot, s2.y + s2.y_hot)
+        < 30
+    ):
         return 1
     return 0
+
 
 def can_drive_on(x: int, y: int) -> int:
     """
@@ -1186,17 +1272,25 @@ def can_drive_on(x: int, y: int) -> int:
     if not test_bounds(x, y):
         return 0
 
-    tile = types.Map[x][y] & types.LOMASK
+    tile = types.map_data[x][y] & types.LOMASK
 
-    if (((tile >= types.ROADBASE) and (tile <= types.LASTROAD) and
-         (tile != types.BRWH) and (tile != types.BRWV)) or
-        (tile == types.HRAILROAD) or (tile == types.VRAILROAD)):
+    if (
+        (
+            (tile >= types.ROADBASE)
+            and (tile <= types.LASTROAD)
+            and (tile != types.BRWH)
+            and (tile != types.BRWV)
+        )
+        or (tile == types.HRAILROAD)
+        or (tile == types.VRAILROAD)
+    ):
         return 1
 
     if (tile == types.DIRT) or tally(tile):  # tally function not implemented yet
         return -1
 
     return 0
+
 
 def test_bounds(x: int, y: int) -> bool:
     """
@@ -1209,7 +1303,10 @@ def test_bounds(x: int, y: int) -> bool:
     Returns:
         True if in bounds, False otherwise
     """
-    return 0 <= x < types.WORLD_X and 0 <= y < types.WORLD_Y
+    return (
+        0 <= x < micropolis.constants.WORLD_X and 0 <= y < micropolis.constants.WORLD_Y
+    )
+
 
 def tally(tile: int) -> bool:
     """
@@ -1224,9 +1321,11 @@ def tally(tile: int) -> bool:
     # Placeholder - would need implementation from original C code
     return False
 
+
 # ============================================================================
 # Sprite Generation Functions
 # ============================================================================
+
 
 def generate_train(x: int, y: int) -> None:
     """
@@ -1236,10 +1335,9 @@ def generate_train(x: int, y: int) -> None:
         x: X coordinate
         y: Y coordinate
     """
-    if (types.TotalPop > 20 and
-        get_sprite(types.TRA) is None and
-        not random.Rand(25)):
+    if types.total_pop > 20 and get_sprite(types.TRA) is None and not random.Rand(25):
         make_sprite(types.TRA, (x << 4) + TRA_GROOVE_X, (y << 4) + TRA_GROOVE_Y)
+
 
 def generate_bus(x: int, y: int) -> None:
     """
@@ -1249,33 +1347,35 @@ def generate_bus(x: int, y: int) -> None:
         x: X coordinate
         y: Y coordinate
     """
-    if (get_sprite(types.BUS) is None and not random.Rand(25)):
+    if get_sprite(types.BUS) is None and not random.Rand(25):
         make_sprite(types.BUS, (x << 4) + BUS_GROOVE_X, (y << 4) + BUS_GROOVE_Y)
+
 
 def generate_ship() -> None:
     """
     Generate a ship sprite in a channel.
     """
     if not (random.Rand16() & 3):
-        for x in range(4, types.WORLD_X - 2):
-            if types.Map[x][0] == types.CHANNEL:
+        for x in range(4, micropolis.constants.WORLD_X - 2):
+            if types.map_data[x][0] == types.CHANNEL:
                 make_ship_here(x, 0)
                 return
     if not (random.Rand16() & 3):
-        for y in range(1, types.WORLD_Y - 2):
-            if types.Map[0][y] == types.CHANNEL:
+        for y in range(1, micropolis.constants.WORLD_Y - 2):
+            if types.map_data[0][y] == types.CHANNEL:
                 make_ship_here(0, y)
                 return
     if not (random.Rand16() & 3):
-        for x in range(4, types.WORLD_X - 2):
-            if types.Map[x][types.WORLD_Y - 1] == types.CHANNEL:
-                make_ship_here(x, types.WORLD_Y - 1)
+        for x in range(4, micropolis.constants.WORLD_X - 2):
+            if types.map_data[x][micropolis.constants.WORLD_Y - 1] == types.CHANNEL:
+                make_ship_here(x, micropolis.constants.WORLD_Y - 1)
                 return
     if not (random.Rand16() & 3):
-        for y in range(1, types.WORLD_Y - 2):
-            if types.Map[types.WORLD_X - 1][y] == types.CHANNEL:
-                make_ship_here(types.WORLD_X - 1, y)
+        for y in range(1, micropolis.constants.WORLD_Y - 2):
+            if types.map_data[micropolis.constants.WORLD_X - 1][y] == types.CHANNEL:
+                make_ship_here(micropolis.constants.WORLD_X - 1, y)
                 return
+
 
 def make_ship_here(x: int, y: int, z: int = 0) -> None:
     """
@@ -1288,6 +1388,7 @@ def make_ship_here(x: int, y: int, z: int = 0) -> None:
     """
     make_sprite(types.SHI, (x << 4) - (48 - 1), (y << 4))
 
+
 def make_monster() -> None:
     """
     Generate a monster sprite.
@@ -1299,13 +1400,15 @@ def make_monster() -> None:
         return
 
     for z in range(300):
-        x = random.Rand(types.WORLD_X - 20) + 10
-        y = random.Rand(types.WORLD_Y - 10) + 5
-        if ((types.Map[x][y] == types.RIVER) or
-            (types.Map[x][y] == types.RIVER + types.BULLBIT)):
+        x = random.Rand(micropolis.constants.WORLD_X - 20) + 10
+        y = random.Rand(micropolis.constants.WORLD_Y - 10) + 5
+        if (types.map_data[x][y] == types.RIVER) or (
+            types.map_data[x][y] == types.RIVER + types.BULLBIT
+        ):
             monster_here(x, y)
             return
     monster_here(60, 50)
+
 
 def monster_here(x: int, y: int) -> None:
     """
@@ -1318,6 +1421,7 @@ def monster_here(x: int, y: int) -> None:
     make_sprite(types.GOD, (x << 4) + 48, (y << 4))
     # ClearMes() - message system not implemented
     # SendMesAt(-21, x + 5, y)
+
 
 def generate_copter(x: int, y: int) -> None:
     """
@@ -1332,6 +1436,7 @@ def generate_copter(x: int, y: int) -> None:
 
     make_sprite(types.COP, (x << 4), (y << 4) + 30)
 
+
 def generate_plane(x: int, y: int) -> None:
     """
     Generate an airplane sprite.
@@ -1345,6 +1450,7 @@ def generate_plane(x: int, y: int) -> None:
 
     make_sprite(types.AIR, (x << 4) + 48, (y << 4) + 12)
 
+
 def make_tornado() -> None:
     """
     Generate a tornado sprite.
@@ -1354,12 +1460,14 @@ def make_tornado() -> None:
         sprite.count = 200
         return
 
-    x = random.Rand((types.WORLD_X << 4) - 800) + 400
-    y = random.Rand((types.WORLD_Y << 4) - 200) + 100
+    x = random.Rand((micropolis.constants.WORLD_X << 4) - 800) + 400
+    y = random.Rand((micropolis.constants.WORLD_Y << 4) - 200) + 100
     make_sprite(types.TOR, x, y)
     # ClearMes() - message system not implemented
 
+
 # Legacy API compatibility ----------------------------------------------------
+
 
 def GenerateTrain(x: int, y: int) -> None:
     """Compatibility wrapper for legacy camel-case API."""
@@ -1390,13 +1498,14 @@ def MakeExplosionAt(x: int, y: int) -> None:
     make_explosion_at(x, y)
 
 
-def GetSprite(sprite_type: int) -> types.SimSprite | None:
+def GetSprite(sprite_type: int) -> micropolis.sim_sprite.SimSprite | None:
     return get_sprite(sprite_type)
 
 
-def MakeSprite(sprite_type: int, x: int, y: int) -> types.SimSprite:
+def MakeSprite(sprite_type: int, x: int, y: int) -> micropolis.sim_sprite.SimSprite:
     return make_sprite(sprite_type, x, y)
     # SendMesAt(-22, (x >> 4) + 3, (y >> 4) + 2)
+
 
 def make_explosion(x: int, y: int) -> None:
     """
@@ -1406,9 +1515,14 @@ def make_explosion(x: int, y: int) -> None:
         x: X coordinate
         y: Y coordinate
     """
-    if (x >= 0 and x < types.WORLD_X and
-        y >= 0 and y < types.WORLD_Y):
+    if (
+        x >= 0
+        and x < micropolis.constants.WORLD_X
+        and y >= 0
+        and y < micropolis.constants.WORLD_Y
+    ):
         make_explosion_at((x << 4) + 8, (y << 4) + 8)
+
 
 def make_explosion_at(x: int, y: int) -> None:
     """
@@ -1420,11 +1534,13 @@ def make_explosion_at(x: int, y: int) -> None:
     """
     make_new_sprite(types.EXP, x - 40, y - 16)
 
+
 # ============================================================================
 # Sprite Destruction and Effects
 # ============================================================================
 
-def explode_sprite(sprite: types.SimSprite) -> None:
+
+def explode_sprite(sprite: micropolis.sim_sprite.SimSprite) -> None:
     """
     Explode a sprite and create appropriate effects.
 
@@ -1466,6 +1582,7 @@ def explode_sprite(sprite: types.SimSprite) -> None:
     # MakeSound("city", "Explosion-High")
     return
 
+
 def destroy(x: int, y: int) -> None:
     """
     Destroy tiles at the given location.
@@ -1478,21 +1595,24 @@ def destroy(x: int, y: int) -> None:
     tile_y = y >> 4
     if not test_bounds(tile_x, tile_y):
         return
-    z = types.Map[tile_x][tile_y]
+    z = types.map_data[tile_x][tile_y]
     t = z & types.LOMASK
     if t >= types.TREEBASE:
         if not (z & types.BURNBIT):
-            if ((t >= types.ROADBASE) and (t <= types.LASTROAD)):
-                types.Map[tile_x][tile_y] = types.RIVER
+            if (t >= types.ROADBASE) and (t <= types.LASTROAD):
+                types.map_data[tile_x][tile_y] = types.RIVER
             return
         if z & types.ZONEBIT:
             # OFireZone(tile_x, tile_y, z)  # Not implemented yet
             if t > types.RZB:
                 make_explosion_at(x, y)
         if check_wet(t):
-            types.Map[tile_x][tile_y] = types.RIVER
+            types.map_data[tile_x][tile_y] = types.RIVER
         else:
-            types.Map[tile_x][tile_y] = (types.SOMETINYEXP - 3) | types.BULLBIT | types.ANIMBIT
+            types.map_data[tile_x][tile_y] = (
+                (types.SOMETINYEXP - 3) | types.BULLBIT | types.ANIMBIT
+            )
+
 
 def check_wet(x: int) -> int:
     """
@@ -1504,12 +1624,18 @@ def check_wet(x: int) -> int:
     Returns:
         1 if wet, 0 otherwise
     """
-    if ((x == types.POWERBASE) or (x == types.POWERBASE + 1) or
-        (x == types.RAILBASE) or (x == types.RAILBASE + 1) or
-        (x == types.BRWH) or (x == types.BRWV)):
+    if (
+        (x == types.POWERBASE)
+        or (x == types.POWERBASE + 1)
+        or (x == types.RAILBASE)
+        or (x == types.RAILBASE + 1)
+        or (x == types.BRWH)
+        or (x == types.BRWV)
+    ):
         return 1
     else:
         return 0
+
 
 def start_fire(x: int, y: int) -> None:
     """
@@ -1521,22 +1647,28 @@ def start_fire(x: int, y: int) -> None:
     """
     tile_x = x >> 4
     tile_y = y >> 4
-    if ((tile_x >= types.WORLD_X) or (tile_y >= types.WORLD_Y) or
-        (tile_x < 0) or (tile_y < 0)):
+    if (
+        (tile_x >= micropolis.constants.WORLD_X)
+        or (tile_y >= micropolis.constants.WORLD_Y)
+        or (tile_x < 0)
+        or (tile_y < 0)
+    ):
         return
-    z = types.Map[tile_x][tile_y]
+    z = types.map_data[tile_x][tile_y]
     t = z & types.LOMASK
-    if ((not (z & types.BURNBIT)) and (t != 0)):
+    if (not (z & types.BURNBIT)) and (t != 0):
         return
     if z & types.ZONEBIT:
         return
-    types.Map[tile_x][tile_y] = types.FIRE + (random.Rand16() & 3) + types.ANIMBIT
+    types.map_data[tile_x][tile_y] = types.FIRE + (random.Rand16() & 3) + types.ANIMBIT
+
 
 # ============================================================================
 # Rendering Functions (Pygame Adaptation)
 # ============================================================================
 
-def draw_objects(view: types.SimView) -> None:
+
+def draw_objects(view: micropolis.sim_view.SimView) -> None:
     """
     Draw all sprites in the view.
 
@@ -1551,7 +1683,10 @@ def draw_objects(view: types.SimView) -> None:
         draw_sprite(view, sprite)
         sprite = sprite.next
 
-def draw_sprite(view: types.SimView, sprite: types.SimSprite) -> None:
+
+def draw_sprite(
+    view: micropolis.sim_view.SimView, sprite: micropolis.sim_sprite.SimSprite
+) -> None:
     """
     Draw a single sprite in the view.
 
@@ -1563,10 +1698,16 @@ def draw_sprite(view: types.SimView, sprite: types.SimSprite) -> None:
         return
 
     # Calculate screen position (for future pygame rendering)
-    x = (sprite.x - ((view.tile_x << 4) - view.screen_x) +  # noqa: F841
-         sprite.x_offset)
-    y = (sprite.y - ((view.tile_y << 4) - view.screen_y) +  # noqa: F841
-         sprite.y_offset)
+    x = (
+        sprite.x
+        - ((view.tile_x << 4) - view.screen_x)  # noqa: F841
+        + sprite.x_offset
+    )
+    y = (
+        sprite.y
+        - ((view.tile_y << 4) - view.screen_y)  # noqa: F841
+        + sprite.y_offset
+    )
 
     # Placeholder for pygame rendering
     # In full implementation, this would:
@@ -1577,9 +1718,11 @@ def draw_sprite(view: types.SimView, sprite: types.SimSprite) -> None:
     # For now, just mark that rendering would happen here
     pass
 
+
 # ============================================================================
 # TCL Command Interface
 # ============================================================================
+
 
 class SpriteCommand:
     """
@@ -1587,7 +1730,8 @@ class SpriteCommand:
 
     Provides TCL-compatible commands for querying and modifying sprite properties.
     """
-    def __init__(self, sprite: types.SimSprite):
+
+    def __init__(self, sprite: micropolis.sim_sprite.SimSprite):
         """
         Initialize sprite command interface.
 
@@ -1660,9 +1804,11 @@ class SpriteCommand:
         else:
             raise ValueError(f"Unknown sprite command: {command}")
 
+
 # ============================================================================
 # Initialization
 # ============================================================================
+
 
 def initialize_sprite_system() -> None:
     """

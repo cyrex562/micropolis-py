@@ -6,6 +6,7 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Any
+from micropolis.context import AppContext
 from result import Result, Err, Ok
 
 import pygame.mixer
@@ -68,19 +69,19 @@ active_channels: dict[int, SoundInfo] = {}
 # ============================================================================
 
 
-def initialize_sound() -> Result[None, Exception]:
+def initialize_sound(context: AppContext) -> Result[None, Exception]:
     """
     Initialize the sound system.
 
     Ported from InitializeSound() in w_sound.c.
     Initializes pygame mixer and sets up sound channels.
     """
-    global SoundInitialized
-
-    if SoundInitialized:
+    if context.sound_initialized:
+        logger.warning("Sound system already initialized")
         return Ok(None)
 
-    if not types.UserSoundOn:
+    if not context.user_sound_on:
+        logger.info("User sound is disabled")
         return Ok(None)
 
     try:
@@ -96,12 +97,12 @@ def initialize_sound() -> Result[None, Exception]:
             channel = pygame.mixer.Channel(i)
             active_channels[i] = SoundInfo(channel=channel)
 
-        SoundInitialized = True
+        context.sound_initialized = True
         logger.info("Sound system initialized")
 
     except Exception as e:
         logger.exception(f"Failed to initialize sound system: {e}")
-        SoundInitialized = False
+        context.sound_initialized = False
         return Err(e)
     return Ok(None)
 
@@ -147,7 +148,7 @@ def make_sound(channel: str, sound_id: str) -> Result[None, Exception]:
         channel: Sound channel name (e.g., "city", "edit")
         sound_id: Sound identifier
     """
-    if not types.UserSoundOn or not SoundInitialized:
+    if not types.user_sound_on or not SoundInitialized:
         return Ok(None)
 
     try:
@@ -199,7 +200,7 @@ def start_bulldozer() -> Result[None, Exception]:
     """
     global Dozing
 
-    if not types.UserSoundOn or not SoundInitialized:
+    if not types.user_sound_on or not SoundInitialized:
         return Ok(None)
 
     if Dozing:
@@ -404,7 +405,7 @@ def is_sound_enabled() -> bool:
     Returns:
         True if sound is enabled and initialized
     """
-    return SoundInitialized and bool(types.UserSoundOn)
+    return SoundInitialized and bool(types.user_sound_on)
 
 
 def get_channel_count() -> int:

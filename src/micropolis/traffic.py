@@ -10,6 +10,7 @@
 import micropolis.macros as macros
 import micropolis.random as random
 import micropolis.types as types
+import micropolis.utilities
 
 # ============================================================================
 # Traffic Generation Constants
@@ -21,6 +22,7 @@ MAXDIS = 30  # Maximum distance to try driving
 # ============================================================================
 # Traffic Generation Functions
 # ============================================================================
+
 
 def MakeTraf(Zt: int) -> int:
     """
@@ -36,12 +38,12 @@ def MakeTraf(Zt: int) -> int:
         1 if traffic passed, 0 if failed, -1 if no road found
     """
     # Save current position
-    xtem = types.SMapX
-    ytem = types.SMapY
+    xtem = types.s_map_x
+    ytem = types.s_map_y
 
     # Set zone source type
-    types.Zsource = Zt
-    types.PosStackN = 0
+    types.z_source = Zt
+    types.pos_stack_num = 0
 
     # Check for telecommuting (currently disabled in original)
     # if (not random.Rand(2)) and FindPTele():
@@ -53,12 +55,12 @@ def MakeTraf(Zt: int) -> int:
         if TryDrive():
             # If successful, increment traffic density
             SetTrafMem()
-            types.SMapX = xtem
-            types.SMapY = ytem
+            types.s_map_x = xtem
+            types.s_map_y = ytem
             return 1  # traffic passed
         else:
-            types.SMapX = xtem
-            types.SMapY = ytem
+            types.s_map_x = xtem
+            types.s_map_y = ytem
             return 0  # traffic failed
     else:
         return -1  # no road found
@@ -72,50 +74,50 @@ def SetTrafMem() -> None:
     Occasionally spawns police cars for high traffic areas.
     """
 
-    for x in range(types.PosStackN, 0, -1):
+    for x in range(types.pos_stack_num, 0, -1):
         PullPos()
-        if macros.TestBounds(types.SMapX, types.SMapY):
-            z = types.Map[types.SMapX][types.SMapY] & macros.LOMASK
+        if macros.TestBounds(types.s_map_x, types.s_map_y):
+            z = types.map_data[types.s_map_x][types.s_map_y] & macros.LOMASK
             if (z >= macros.ROADBASE) and (z < macros.POWERBASE):
                 # Update traffic density (downsampled to 60x50 grid)
-                density_x = types.SMapX >> 1
-                density_y = types.SMapY >> 1
-                z = types.TrfDensity[density_x][density_y]
+                density_x = types.s_map_x >> 1
+                density_y = types.s_map_y >> 1
+                z = types.trf_density[density_x][density_y]
                 z += 50
                 if (z > 240) and (not random.Rand(5)):
                     z = 240
                     # Set police car destination
-                    types.TrafMaxX = types.SMapX << 4
-                    types.TrafMaxY = types.SMapY << 4
+                    types.traf_max_x = types.s_map_x << 4
+                    types.traf_max_y = types.s_map_y << 4
                     # Try to assign police car sprite
-                    sprite = types.GetSprite()
+                    sprite = micropolis.utilities.GetSprite()
                     if sprite and (sprite.control == -1):
-                        sprite.dest_x = types.TrafMaxX
-                        sprite.dest_y = types.TrafMaxY
-                types.TrfDensity[density_x][density_y] = z
+                        sprite.dest_x = types.traf_max_x
+                        sprite.dest_y = types.traf_max_y
+                types.trf_density[density_x][density_y] = z
 
 
 def PushPos() -> None:
     """
     Push current position onto the position stack.
     """
-    types.PosStackN += 1
+    types.pos_stack_num += 1
     # Ensure stacks are large enough
-    while len(types.SMapXStack) <= types.PosStackN:
-        types.SMapXStack.append(0)
-    while len(types.SMapYStack) <= types.PosStackN:
-        types.SMapYStack.append(0)
-    types.SMapXStack[types.PosStackN] = types.SMapX
-    types.SMapYStack[types.PosStackN] = types.SMapY
+    while len(types.s_map_x_stack) <= types.pos_stack_num:
+        types.s_map_x_stack.append(0)
+    while len(types.s_map_y_stack) <= types.pos_stack_num:
+        types.s_map_y_stack.append(0)
+    types.s_map_x_stack[types.pos_stack_num] = types.s_map_x
+    types.s_map_y_stack[types.pos_stack_num] = types.s_map_y
 
 
 def PullPos() -> None:
     """
     Pull position from the position stack.
     """
-    types.SMapX = types.SMapXStack[types.PosStackN]
-    types.SMapY = types.SMapYStack[types.PosStackN]
-    types.PosStackN -= 1
+    types.s_map_x = types.s_map_x_stack[types.pos_stack_num]
+    types.s_map_y = types.s_map_y_stack[types.pos_stack_num]
+    types.pos_stack_num -= 1
 
 
 def FindPRoad() -> bool:
@@ -132,12 +134,12 @@ def FindPRoad() -> bool:
     PerimY = [-2, -2, -2, -1, 0, 1, 2, 2, 2, 1, 0, -1]
 
     for z in range(12):
-        tx = types.SMapX + PerimX[z]
-        ty = types.SMapY + PerimY[z]
+        tx = types.s_map_x + PerimX[z]
+        ty = types.s_map_y + PerimY[z]
         if macros.TestBounds(tx, ty):
-            if RoadTest(types.Map[tx][ty]):
-                types.SMapX = tx
-                types.SMapY = ty
+            if RoadTest(types.map_data[tx][ty]):
+                types.s_map_x = tx
+                types.s_map_y = ty
                 return True
     return False
 
@@ -156,10 +158,10 @@ def FindPTele() -> bool:
     PerimY = [-2, -2, -2, -1, 0, 1, 2, 2, 2, 1, 0, -1]
 
     for z in range(12):
-        tx = types.SMapX + PerimX[z]
-        ty = types.SMapY + PerimY[z]
+        tx = types.s_map_x + PerimX[z]
+        ty = types.s_map_y + PerimY[z]
         if macros.TestBounds(tx, ty):
-            tile = types.Map[tx][ty] & macros.LOMASK
+            tile = types.map_data[tx][ty] & macros.LOMASK
             if (tile >= macros.TELEBASE) and (tile <= macros.TELELAST):
                 return True
     return False
@@ -174,15 +176,15 @@ def TryDrive() -> bool:
     Returns:
         True if destination reached, False if failed
     """
-    types.LDir = 5  # Reset last direction
+    types.l_dir = 5  # Reset last direction
 
     for z in range(MAXDIS):
         if TryGo(z):
             if DriveDone():
                 return True  # Destination reached
         else:
-            if types.PosStackN:  # Dead end, backup
-                types.PosStackN -= 1
+            if types.pos_stack_num:  # Dead end, backup
+                types.pos_stack_num -= 1
                 z += 3  # Skip ahead
             else:
                 return False  # Give up at start
@@ -207,11 +209,11 @@ def TryGo(z: int) -> bool:
     rdir = random.sim_rand() & 3
     for x in range(rdir, rdir + 4):
         realdir = x & 3
-        if realdir == types.LDir:
+        if realdir == types.l_dir:
             continue  # Skip last direction
         if RoadTest(GetFromMap(realdir)):
             MoveMapSim(realdir)
-            types.LDir = (realdir + 2) & 3  # Set new last direction
+            types.l_dir = (realdir + 2) & 3  # Set new last direction
             if z & 1:  # Save position every other move
                 PushPos()
             return True
@@ -229,17 +231,17 @@ def GetFromMap(x: int) -> int:
         Tile ID if in bounds, False (0) otherwise
     """
     if x == 0:  # North
-        if types.SMapY > 0:
-            return types.Map[types.SMapX][types.SMapY - 1] & macros.LOMASK
+        if types.s_map_y > 0:
+            return types.map_data[types.s_map_x][types.s_map_y - 1] & macros.LOMASK
     elif x == 1:  # East
-        if types.SMapX < (macros.WORLD_X - 1):
-            return types.Map[types.SMapX + 1][types.SMapY] & macros.LOMASK
+        if types.s_map_x < (macros.WORLD_X - 1):
+            return types.map_data[types.s_map_x + 1][types.s_map_y] & macros.LOMASK
     elif x == 2:  # South
-        if types.SMapY < (macros.WORLD_Y - 1):
-            return types.Map[types.SMapX][types.SMapY + 1] & macros.LOMASK
+        if types.s_map_y < (macros.WORLD_Y - 1):
+            return types.map_data[types.s_map_x][types.s_map_y + 1] & macros.LOMASK
     elif x == 3:  # West
-        if types.SMapX > 0:
-            return types.Map[types.SMapX - 1][types.SMapY] & macros.LOMASK
+        if types.s_map_x > 0:
+            return types.map_data[types.s_map_x - 1][types.s_map_y] & macros.LOMASK
 
     return 0  # False
 
@@ -252,13 +254,13 @@ def MoveMapSim(realdir: int) -> None:
         realdir: Direction to move (0=north, 1=east, 2=south, 3=west)
     """
     if realdir == 0:  # North
-        types.SMapY -= 1
+        types.s_map_y -= 1
     elif realdir == 1:  # East
-        types.SMapX += 1
+        types.s_map_x += 1
     elif realdir == 2:  # South
-        types.SMapY += 1
+        types.s_map_y += 1
     elif realdir == 3:  # West
-        types.SMapX -= 1
+        types.s_map_x -= 1
 
 
 def DriveDone() -> bool:
@@ -277,24 +279,24 @@ def DriveDone() -> bool:
     TARGL = [macros.COMBASE, macros.LHTHR, macros.LHTHR]  # Low range
     TARGH = [macros.NUCLEAR, macros.PORT, macros.COMBASE]  # High range
 
-    L = TARGL[types.Zsource]
-    H = TARGH[types.Zsource]
+    L = TARGL[types.z_source]
+    H = TARGH[types.z_source]
 
     # Check all 4 adjacent tiles
-    if types.SMapY > 0:
-        z = types.Map[types.SMapX][types.SMapY - 1] & macros.LOMASK
+    if types.s_map_y > 0:
+        z = types.map_data[types.s_map_x][types.s_map_y - 1] & macros.LOMASK
         if (z >= L) and (z <= H):
             return True
-    if types.SMapX < (macros.WORLD_X - 1):
-        z = types.Map[types.SMapX + 1][types.SMapY] & macros.LOMASK
+    if types.s_map_x < (macros.WORLD_X - 1):
+        z = types.map_data[types.s_map_x + 1][types.s_map_y] & macros.LOMASK
         if (z >= L) and (z <= H):
             return True
-    if types.SMapY < (macros.WORLD_Y - 1):
-        z = types.Map[types.SMapX][types.SMapY + 1] & macros.LOMASK
+    if types.s_map_y < (macros.WORLD_Y - 1):
+        z = types.map_data[types.s_map_x][types.s_map_y + 1] & macros.LOMASK
         if (z >= L) and (z <= H):
             return True
-    if types.SMapX > 0:
-        z = types.Map[types.SMapX - 1][types.SMapY] & macros.LOMASK
+    if types.s_map_x > 0:
+        z = types.map_data[types.s_map_x - 1][types.s_map_y] & macros.LOMASK
         if (z >= L) and (z <= H):
             return True
 
@@ -325,12 +327,12 @@ def AverageTrf() -> int:
     """
     Compute an average of the traffic density overlay.
     """
-    if not types.TrfDensity:
+    if not types.trf_density:
         return 0
 
     total = 0
     count = 0
-    for row in types.TrfDensity:
+    for row in types.trf_density:
         total += sum(row)
         count += len(row)
 

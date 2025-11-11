@@ -6,11 +6,14 @@ responsible for setting up the initial simulation state and resetting components
 """
 
 import time
+
+import micropolis.constants
 from . import types, random, allocation, simulation
 
 # ============================================================================
 # Initialization Functions
 # ============================================================================
+
 
 def RandomlySeedRand() -> None:
     """
@@ -24,6 +27,7 @@ def RandomlySeedRand() -> None:
     random.sim_srand(current_time)
     random.sim_srandom(current_time)
 
+
 def InitGraphMax() -> None:
     """
     Initialize graph maximum values.
@@ -31,16 +35,17 @@ def InitGraphMax() -> None:
     Sets up the maximum values for graphs based on current game level.
     """
     # Initialize history graph maximums
-    types.ResHisMax = 0
-    types.ComHisMax = 0
-    types.IndHisMax = 0
+    types.res_his_max = 0
+    types.com_his__max = 0
+    types.ind_his_max = 0
 
     # Initialize graph display maximums
-    types.Graph10Max = 0
-    types.Graph120Max = 0
-    types.Res2HisMax = 0
-    types.Com2HisMax = 0
-    types.Ind2HisMax = 0
+    types.graph_10_max = 0
+    types.graph_12_max = 0
+    types.res_2_his_max = 0
+    types.com_2_his_max = 0
+    types.ind_2_his_max = 0
+
 
 def DestroyAllSprites() -> None:
     """
@@ -53,6 +58,7 @@ def DestroyAllSprites() -> None:
         types.sim.sprite = None
         types.sim.sprites = 0
 
+
 def ResetLastKeys() -> None:
     """
     Reset keyboard state tracking.
@@ -63,6 +69,7 @@ def ResetLastKeys() -> None:
     # For now, it's a placeholder
     pass
 
+
 def DoNewGame() -> None:
     """
     Initialize a new game state.
@@ -70,25 +77,26 @@ def DoNewGame() -> None:
     Sets up initial game parameters for starting a new city.
     """
     # Set initial game level and scenario
-    types.GameLevel = 0
-    types.ScenarioID = 0
-    types.StartupGameLevel = 0
+    types.game_level = 0
+    types.scenario_id = 0
+    types.startup_game_level = 0
 
     # Initialize city name and file
-    types.CityName = "Micropolis"
-    types.CityFileName = ""
-    types.StartupName = ""
+    types.city_name = "Micropolis"
+    types.city_file_name = ""
+    types.startup_name = ""
 
     # Set initial difficulty and disaster settings
-    types.NoDisasters = 0
-    types.autoBulldoze = 1
-    types.autoBudget = 1
-    types.autoGo = 0
+    types.no_disasters = 0
+    types.auto_bulldoze = 1
+    types.auto_budget = 1
+    types.auto_go = 0
 
     # Initialize tool settings
-    types.PendingTool = -1
-    types.PendingX = 0
-    types.PendingY = 0
+    types.pending_tool = -1
+    types.pending_x = 0
+    types.pending_y = 0
+
 
 def DoUpdateHeads() -> None:
     """
@@ -99,6 +107,7 @@ def DoUpdateHeads() -> None:
     # This would update UI components when they're implemented
     # For now, it's a placeholder
     pass
+
 
 def InitWillStuff() -> None:
     """
@@ -114,73 +123,73 @@ def InitWillStuff() -> None:
     InitGraphMax()
 
     # Initialize effect values
-    types.RoadEffect = 32
-    types.PoliceEffect = 1000
-    types.FireEffect = 1000
+    types.road_effect = 32
+    types.police_effect = 1000
+    types.fire_effect = 1000
 
     # Initialize city statistics
-    types.CityScore = 500
-    types.CityPop = -1
+    types.city_score = 500
+    types.city_pop = -1
 
     # Initialize time tracking
-    types.LastCityTime = -1
-    types.LastCityYear = -1
-    types.LastCityMonth = -1
-    types.LastFunds = -1
+    types.last_city_time = -1
+    types.last_city_year = -1
+    types.last_city_month = -1
+    types.last_funds = -1
 
     # Initialize population tracking
-    types.LastR = -999999
-    types.LastC = -999999
-    types.LastI = -999999
+    types.last_r = -999999
+    types.last_c = -999999
+    types.last_i = -999999
 
     # Initialize override and tool settings
-    types.OverRide = 0
-    types.PendingTool = -1
+    types.over_ride = 0
+    types.pending_tool = -1
 
     # Initialize message system
-    types.MesNum = 0
-    types.MessagePort = 0
+    types.mes_num = 0
+    types.message_port = 0
 
     # Initialize financial tracking
-    types.RoadFund = 0
-    types.PoliceFund = 0
-    types.FireFund = 0
+    types.road_fund = 0
+    types.police_fund = 0
+    types.fire_fund = 0
 
     # Initialize update flags
-    types.UpdateDelayed = 0
-    types.ValveFlag = 1
+    types.update_delayed = 0
+    types.valve_flag = 1
 
     # Destroy all sprites
     DestroyAllSprites()
 
     # Initialize disaster system
-    types.DisasterEvent = 0
-    types.TaxFlag = 0
+    types.disaster_event = 0
+    types.tax_flag = 0
 
     # Clear overlay arrays
-    for x in range(types.HWLDX):
-        for y in range(types.HWLDY):
-            types.PopDensity[x][y] = 0
-            types.TrfDensity[x][y] = 0
-            types.PollutionMem[x][y] = 0
-            types.LandValueMem[x][y] = 0
-            types.CrimeMem[x][y] = 0
+    for x in range(micropolis.constants.HWLDX):
+        for y in range(micropolis.constants.HWLDY):
+            types.pop_density[x][y] = 0
+            types.trf_density[x][y] = 0
+            types.pollution_mem[x][y] = 0
+            types.land_value_mem[x][y] = 0
+            types.crime_mem[x][y] = 0
 
     # Clear terrain memory
-    for x in range(types.QWX):
-        for y in range(types.QWY):
-            types.TerrainMem[x][y] = 0
+    for x in range(micropolis.constants.QWX):
+        for y in range(micropolis.constants.QWY):
+            types.terrain_mem[x][y] = 0
 
     # Clear small arrays
-    for x in range(types.SmX):
-        for y in range(types.SmY):
-            types.RateOGMem[x][y] = 0
-            types.FireRate[x][y] = 0
-            types.ComRate[x][y] = 0
-            types.PoliceMap[x][y] = 0
-            types.PoliceMapEffect[x][y] = 0
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
+            types.rate_og_mem[x][y] = 0
+            types.fire_rate[x][y] = 0
+            types.com_rate[x][y] = 0
+            types.police_map[x][y] = 0
+            types.police_map_effect[x][y] = 0
             # Note: FireRate is set twice in original C code, keeping both
-            types.FireRate[x][y] = 0
+            types.fire_rate[x][y] = 0
 
     # Reset keyboard state
     ResetLastKeys()
@@ -190,6 +199,7 @@ def InitWillStuff() -> None:
 
     # Update display headers
     DoUpdateHeads()
+
 
 def ResetMapState() -> None:
     """
@@ -202,8 +212,9 @@ def ResetMapState() -> None:
 
     view = types.sim.map
     while view:
-        view.map_state = types.ALMAP
+        view.map_state = micropolis.constants.ALMAP
         view = view.next
+
 
 def ResetEditorState() -> None:
     """
@@ -216,13 +227,15 @@ def ResetEditorState() -> None:
 
     view = types.sim.editor
     while view:
-        view.tool_state = types.dozeState
+        view.tool_state = types.DOZE_STATE
         view.tool_state_save = -1
         view = view.next
+
 
 # ============================================================================
 # Additional Initialization Helpers
 # ============================================================================
+
 
 def InitializeSimulation() -> bool:
     """
@@ -236,9 +249,9 @@ def InitializeSimulation() -> bool:
     """
     try:
         # Initialize memory arrays
-        result = allocation.initMapArrays()
+        result = allocation.init_map_arrays()
         if result != 0:
-            print("Failed to initialize map arrays", file=__import__('sys').stderr)
+            print("Failed to initialize map arrays", file=__import__("sys").stderr)
             return False
 
         # Initialize simulation state
@@ -251,7 +264,10 @@ def InitializeSimulation() -> bool:
         return True
 
     except Exception as e:
-        print(f"Error during simulation initialization: {e}", file=__import__('sys').stderr)
+        print(
+            f"Error during simulation initialization: {e}",
+            file=__import__("sys").stderr,
+        )
         return False
 
 
@@ -264,8 +280,8 @@ def InitGame() -> None:
 
     InitFundingLevel()
     simulation.DoSimInit()
-    types.InitSimLoad = 2
-    types.DoInitialEval = 0
+    types.init_sim_load = 2
+    types.do_initial_eval = 0
 
 
 def ResetSimulation() -> None:
@@ -278,6 +294,7 @@ def ResetSimulation() -> None:
     ResetMapState()
     ResetEditorState()
 
+
 def InitFundingLevel() -> None:
     """
     Initialize funding levels for city services.
@@ -285,23 +302,23 @@ def InitFundingLevel() -> None:
     Sets up the initial budget allocations for police, fire, and road services.
     """
     # Set default funding levels
-    types.roadPercent = 1.0
-    types.policePercent = 0.0
-    types.firePercent = 0.0
+    types.road_percent = 1.0
+    types.police_percent = 0.0
+    types.fire_percent = 0.0
 
     # Set maximum values
-    types.roadMaxValue = 100
-    types.policeMaxValue = 100
-    types.fireMaxValue = 100
+    types.road_max_value = 100
+    types.police_max_value = 100
+    types.fire_max_value = 100
 
     # Set effects
-    types.RoadEffect = 32
-    types.PoliceEffect = 1000
-    types.FireEffect = 1000
+    types.road_effect = 32
+    types.police_effect = 1000
+    types.fire_effect = 1000
 
     # Initialize tax and fund values
-    types.CityTax = 7
-    types.RoadFund = 0
-    types.PoliceFund = 0
-    types.FireFund = 0
-    types.TaxFund = 0
+    types.city_tax = 7
+    types.road_fund = 0
+    types.police_fund = 0
+    types.fire_fund = 0
+    types.tax_fund = 0

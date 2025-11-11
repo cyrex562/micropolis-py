@@ -6,7 +6,6 @@ responsible for displaying the current game date (month and year) with
 animation effects for time progression.
 """
 
-
 import pygame
 
 from . import types
@@ -17,13 +16,23 @@ from . import types
 
 # Month names (from w_update.c)
 MONTH_NAMES = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
 ]
 
 # Default colors (adapted from TCL config)
 DEFAULT_BG_COLOR = (176, 176, 176)  # #b0b0b0
-DEFAULT_FG_COLOR = (0, 0, 0)        # Black text
+DEFAULT_FG_COLOR = (0, 0, 0)  # Black text
 DEFAULT_GRAY_COLOR = (128, 128, 128)  # Dark gray for animation
 
 # Default font settings
@@ -34,8 +43,8 @@ DEFAULT_FONT_NAME = None  # Use system default
 BORDER_WIDTH = 2
 PAD_X = 1
 PAD_Y = 1
-MONTH_TAB_CHARS = 7   # Character positions for month alignment
-YEAR_TAB_CHARS = 13   # Character positions for year alignment
+MONTH_TAB_CHARS = 7  # Character positions for month alignment
+YEAR_TAB_CHARS = 13  # Character positions for year alignment
 
 # Animation timing (milliseconds)
 DATE_UPDATE_TIME = 200
@@ -44,6 +53,7 @@ DATE_UPDATE_TIME = 200
 # Date Display Widget
 # ============================================================================
 
+
 class SimDate:
     """
     Date display widget adapted for pygame.
@@ -51,6 +61,7 @@ class SimDate:
     Ported from SimDate struct in w_date.c.
     Displays current game date with animation effects.
     """
+
     def __init__(self):
         # Core date state
         self.reset: bool = True
@@ -81,7 +92,7 @@ class SimDate:
 
         # Animation state
         self.animation_months: list[int] = []  # Months to show in gray during animation
-        self.animation_years: list[int] = []   # Years to show in gray during animation
+        self.animation_years: list[int] = []  # Years to show in gray during animation
         self.animation_timer: int = 0
 
     def set_position(self, x: int, y: int) -> None:
@@ -136,8 +147,8 @@ class SimDate:
         """
         # Calculate current date from CityTime
         # CityTime increments every game tick, 48 ticks = 1 year, 4 ticks = 1 month
-        current_year = (types.CityTime // 48) + types.StartingYear
-        current_month = (types.CityTime // 4) % 12
+        current_year = (types.city_time // 48) + types.starting_year
+        current_month = (types.city_time // 4) % 12
 
         # Check if date has changed
         if current_year != self.last_year or current_month != self.last_month:
@@ -267,18 +278,24 @@ class SimDate:
         for anim_month in self.animation_months:
             month_text = MONTH_NAMES[anim_month]
             month_surf = self.font.render(month_text, True, DEFAULT_GRAY_COLOR)
-            self.surface.blit(month_surf, (text_x + month_x, text_y - self.font.get_ascent()))
+            self.surface.blit(
+                month_surf, (text_x + month_x, text_y - self.font.get_ascent())
+            )
 
         # Draw animated years (in gray)
         for anim_year in self.animation_years:
             year_text = str(anim_year)
             year_surf = self.font.render(year_text, True, DEFAULT_GRAY_COLOR)
-            self.surface.blit(year_surf, (text_x + year_x, text_y - self.font.get_ascent()))
+            self.surface.blit(
+                year_surf, (text_x + year_x, text_y - self.font.get_ascent())
+            )
 
         # Draw current month and year (in black)
         month_text = MONTH_NAMES[self.month]
         month_surf = self.font.render(month_text, True, DEFAULT_FG_COLOR)
-        self.surface.blit(month_surf, (text_x + month_x, text_y - self.font.get_ascent()))
+        self.surface.blit(
+            month_surf, (text_x + month_x, text_y - self.font.get_ascent())
+        )
 
         year_text = str(self.year)
         year_surf = self.font.render(year_text, True, DEFAULT_FG_COLOR)
@@ -297,12 +314,14 @@ class SimDate:
             self.render()
         return self.surface
 
+
 # ============================================================================
 # Date Display Management
 # ============================================================================
 
 # Global date display instances
 _date_displays: list[SimDate] = []
+
 
 def create_date_display() -> SimDate:
     """
@@ -315,6 +334,7 @@ def create_date_display() -> SimDate:
     _date_displays.append(date_display)
     return date_display
 
+
 def get_date_displays() -> list[SimDate]:
     """
     Get all date display instances.
@@ -323,6 +343,7 @@ def get_date_displays() -> list[SimDate]:
         List of all SimDate instances
     """
     return _date_displays.copy()
+
 
 def remove_date_display(date_display: SimDate) -> None:
     """
@@ -334,9 +355,11 @@ def remove_date_display(date_display: SimDate) -> None:
     if date_display in _date_displays:
         _date_displays.remove(date_display)
 
+
 # ============================================================================
 # Date Display Updates
 # ============================================================================
+
 
 def update_date_displays() -> None:
     """
@@ -349,9 +372,11 @@ def update_date_displays() -> None:
         if date_display.needs_redraw:
             date_display.render()
 
+
 # ============================================================================
 # TCL Command Compatibility (Adapted for pygame)
 # ============================================================================
+
 
 def configure_date_display(date_display: SimDate, **kwargs) -> None:
     """
@@ -362,51 +387,52 @@ def configure_date_display(date_display: SimDate, **kwargs) -> None:
         **kwargs: Configuration options
     """
     # Handle configuration options
-    if 'font' in kwargs:
+    if "font" in kwargs:
         # Font configuration (simplified for pygame)
         pass
 
-    if 'background' in kwargs:
+    if "background" in kwargs:
         # Background color (simplified)
         pass
 
-    if 'borderwidth' in kwargs:
+    if "borderwidth" in kwargs:
         try:
-            date_display.border_width = int(kwargs['borderwidth'])
+            date_display.border_width = int(kwargs["borderwidth"])
         except ValueError:
             pass
 
-    if 'padx' in kwargs:
+    if "padx" in kwargs:
         try:
-            date_display.pad_x = int(kwargs['padx'])
+            date_display.pad_x = int(kwargs["padx"])
         except ValueError:
             pass
 
-    if 'pady' in kwargs:
+    if "pady" in kwargs:
         try:
-            date_display.pad_y = int(kwargs['pady'])
+            date_display.pad_y = int(kwargs["pady"])
         except ValueError:
             pass
 
-    if 'width' in kwargs:
+    if "width" in kwargs:
         try:
-            date_display.width = int(kwargs['width'])
+            date_display.width = int(kwargs["width"])
         except ValueError:
             pass
 
-    if 'monthtab' in kwargs:
+    if "monthtab" in kwargs:
         try:
-            date_display.month_tab = int(kwargs['monthtab'])
+            date_display.month_tab = int(kwargs["monthtab"])
         except ValueError:
             pass
 
-    if 'yeartab' in kwargs:
+    if "yeartab" in kwargs:
         try:
-            date_display.year_tab = int(kwargs['yeartab'])
+            date_display.year_tab = int(kwargs["yeartab"])
         except ValueError:
             pass
 
     date_display.needs_redraw = True
+
 
 def get_date_position(date_display: SimDate) -> tuple:
     """
@@ -420,6 +446,7 @@ def get_date_position(date_display: SimDate) -> tuple:
     """
     return date_display.w_x, date_display.w_y
 
+
 def set_date_position(date_display: SimDate, x: int, y: int) -> None:
     """
     Set date display position.
@@ -430,6 +457,7 @@ def set_date_position(date_display: SimDate, x: int, y: int) -> None:
         y: Y coordinate
     """
     date_display.set_position(x, y)
+
 
 def get_date_size(date_display: SimDate) -> tuple:
     """
@@ -443,6 +471,7 @@ def get_date_size(date_display: SimDate) -> tuple:
     """
     return date_display.w_width, date_display.w_height
 
+
 def set_date_size(date_display: SimDate, width: int, height: int) -> None:
     """
     Set date display size.
@@ -453,6 +482,7 @@ def set_date_size(date_display: SimDate, width: int, height: int) -> None:
         height: Height
     """
     date_display.set_size(width, height)
+
 
 def get_date_visible(date_display: SimDate) -> bool:
     """
@@ -466,6 +496,7 @@ def get_date_visible(date_display: SimDate) -> bool:
     """
     return date_display.visible
 
+
 def set_date_visible(date_display: SimDate, visible: bool) -> None:
     """
     Set date display visibility.
@@ -476,6 +507,7 @@ def set_date_visible(date_display: SimDate, visible: bool) -> None:
     """
     date_display.set_visible(visible)
 
+
 def reset_date_display(date_display: SimDate) -> None:
     """
     Reset date display.
@@ -484,6 +516,7 @@ def reset_date_display(date_display: SimDate) -> None:
         date_display: Date display instance
     """
     date_display.reset_display()
+
 
 def set_date(date_display: SimDate, month: int, year: int) -> None:
     """
@@ -496,9 +529,11 @@ def set_date(date_display: SimDate, month: int, year: int) -> None:
     """
     date_display.set_date(month, year)
 
+
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def get_current_month_name() -> str:
     """
@@ -507,8 +542,9 @@ def get_current_month_name() -> str:
     Returns:
         Month name abbreviation
     """
-    current_month = (types.CityTime // 4) % 12
+    current_month = (types.city_time // 4) % 12
     return MONTH_NAMES[current_month]
+
 
 def get_current_year() -> int:
     """
@@ -517,7 +553,8 @@ def get_current_year() -> int:
     Returns:
         Current year
     """
-    return (types.CityTime // 48) + types.StartingYear
+    return (types.city_time // 48) + types.starting_year
+
 
 def format_date_string() -> str:
     """
@@ -530,9 +567,11 @@ def format_date_string() -> str:
     year = get_current_year()
     return f"{month_name} {year}"
 
+
 # ============================================================================
 # Initialization
 # ============================================================================
+
 
 def initialize_date_displays() -> None:
     """

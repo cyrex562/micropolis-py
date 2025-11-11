@@ -38,8 +38,8 @@ EvalChanged: int = 0
 flagBlink: int = 0
 
 # Game startup state
-Startup: int = 0
-StartupName: str | None = None
+startup: int = 0
+startup_name: str | None = None
 
 # Timing variables
 start_time: float | None = None
@@ -123,7 +123,7 @@ def GameStarted() -> None:
     from .file_io import LoadCity
     from .tkinter_bridge import eval_command
 
-    global Startup, StartupName, start_time
+    global startup, startup_name, start_time
 
     # Invalidate views to force redraw
     invalidate_maps()
@@ -402,7 +402,7 @@ def GetStartupMode() -> int:
     Returns:
         Current startup mode
     """
-    return Startup
+    return startup
 
 
 def SetStartupMode(mode: int) -> None:
@@ -412,7 +412,7 @@ def SetStartupMode(mode: int) -> None:
     Args:
         mode: New startup mode
     """
-    global Startup
+    global startup
     Startup = mode
 
 
@@ -423,7 +423,7 @@ def GetStartupName() -> str | None:
     Returns:
         Startup city name or None
     """
-    return StartupName
+    return startup_name
 
 
 def SetStartupName(name: str | None) -> None:
@@ -433,7 +433,7 @@ def SetStartupName(name: str | None) -> None:
     Args:
         name: Startup city name
     """
-    global StartupName
+    global startup_name
     StartupName = name
 
 

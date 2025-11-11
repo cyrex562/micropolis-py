@@ -8,6 +8,8 @@ It handles the binary city file format with proper endianness conversion and dat
 
 import os
 import struct
+
+import micropolis.constants
 from . import types, initialization, simulation, engine
 
 # ============================================================================
@@ -219,30 +221,34 @@ def _load_file(filename: str, directory: str | None = None) -> bool:
                 return False  # Invalid file size
 
             # Load history data
-            if not _load_short(types.ResHis, types.HISTLEN // 2, f):
+            if not _load_short(types.res_his, types.HISTLEN // 2, f):
                 return False
-            if not _load_short(types.ComHis, types.HISTLEN // 2, f):
+            if not _load_short(types.com_his, types.HISTLEN // 2, f):
                 return False
-            if not _load_short(types.IndHis, types.HISTLEN // 2, f):
+            if not _load_short(types.ind_his, types.HISTLEN // 2, f):
                 return False
-            if not _load_short(types.CrimeHis, types.HISTLEN // 2, f):
+            if not _load_short(types.crime_his, types.HISTLEN // 2, f):
                 return False
-            if not _load_short(types.PollutionHis, types.HISTLEN // 2, f):
+            if not _load_short(types.pollution_his, types.HISTLEN // 2, f):
                 return False
-            if not _load_short(types.MoneyHis, types.HISTLEN // 2, f):
+            if not _load_short(types.money_his, types.HISTLEN // 2, f):
                 return False
-            if not _load_short(types.MiscHis, types.MISCHISTLEN // 2, f):
+            if not _load_short(types.misc_his, types.MISCHISTLEN // 2, f):
                 return False
 
             # Load main map data
             map_data = []
-            if not _load_short(map_data, types.WORLD_X * types.WORLD_Y, f):
+            if not _load_short(
+                map_data, micropolis.constants.WORLD_X * micropolis.constants.WORLD_Y, f
+            ):
                 return False
 
             # Convert flat array to 2D map
-            for x in range(types.WORLD_X):
-                for y in range(types.WORLD_Y):
-                    types.Map[x][y] = map_data[x * types.WORLD_Y + y]
+            for x in range(micropolis.constants.WORLD_X):
+                for y in range(micropolis.constants.WORLD_Y):
+                    types.map_data[x][y] = map_data[
+                        x * micropolis.constants.WORLD_Y + y
+                    ]
 
             return True
 
@@ -264,59 +270,59 @@ def loadFile(filename: str) -> int:
         return 0
 
     # Extract total funds from MiscHis (stored as two shorts at positions 50-51)
-    total_funds = types.MiscHis[50] | (types.MiscHis[51] << 16)
+    total_funds = types.misc_his[50] | (types.misc_his[51] << 16)
     total_funds_buf = [total_funds]
     _half_swap_longs(total_funds_buf, 1)
-    types.TotalFunds = total_funds_buf[0]
+    types.total_funds = total_funds_buf[0]
 
     # Extract city time from MiscHis (position 8)
-    city_time = types.MiscHis[8]
+    city_time = types.misc_his[8]
     city_time_buf = [city_time]
     _half_swap_longs(city_time_buf, 1)
-    types.CityTime = city_time_buf[0]
+    types.city_time = city_time_buf[0]
 
     # Extract game settings from MiscHis
-    types.autoBulldoze = types.MiscHis[52]  # Auto bulldoze flag
-    types.autoBudget = types.MiscHis[53]  # Auto budget flag
-    types.autoGo = types.MiscHis[54]  # Auto go flag
-    types.UserSoundOn = types.MiscHis[55]  # Sound on/off flag
-    types.CityTax = types.MiscHis[56]  # City tax rate
-    types.SimSpeed = types.MiscHis[57]  # Simulation speed
+    types.auto_bulldoze = types.misc_his[52]  # Auto bulldoze flag
+    types.auto_budget = types.misc_his[53]  # Auto budget flag
+    types.auto_go = types.misc_his[54]  # Auto go flag
+    types.user_sound_on = types.misc_his[55]  # Sound on/off flag
+    types.city_tax = types.misc_his[56]  # City tax rate
+    types.sim_speed = types.misc_his[57]  # Simulation speed
 
     # Extract budget percentages (stored as fixed-point values)
-    police_pct = types.MiscHis[58] | (types.MiscHis[59] << 16)
+    police_pct = types.misc_his[58] | (types.misc_his[59] << 16)
     police_pct_buf = [police_pct]
     _half_swap_longs(police_pct_buf, 1)
-    types.policePercent = police_pct_buf[0] / 65536.0
+    types.police_percent = police_pct_buf[0] / 65536.0
 
-    fire_pct = types.MiscHis[60] | (types.MiscHis[61] << 16)
+    fire_pct = types.misc_his[60] | (types.misc_his[61] << 16)
     fire_pct_buf = [fire_pct]
     _half_swap_longs(fire_pct_buf, 1)
-    types.firePercent = fire_pct_buf[0] / 65536.0
+    types.fire_percent = fire_pct_buf[0] / 65536.0
 
-    road_pct = types.MiscHis[62] | (types.MiscHis[63] << 16)
+    road_pct = types.misc_his[62] | (types.misc_his[63] << 16)
     road_pct_buf = [road_pct]
     _half_swap_longs(road_pct_buf, 1)
-    types.roadPercent = road_pct_buf[0] / 65536.0
+    types.road_percent = road_pct_buf[0] / 65536.0
 
     # Validate and clamp values
-    if types.CityTime < 0:
-        types.CityTime = 0
-    if types.CityTax > 20 or types.CityTax < 0:
-        types.CityTax = 7
-    if types.SimSpeed < 0 or types.SimSpeed > 3:
-        types.SimSpeed = 3
+    if types.city_time < 0:
+        types.city_time = 0
+    if types.city_tax > 20 or types.city_tax < 0:
+        types.city_tax = 7
+    if types.sim_speed < 0 or types.sim_speed > 3:
+        types.sim_speed = 3
 
     # Update simulation state
-    types.setSpeed(types.SimSpeed)
+    types.setSpeed(types.sim_speed)
     types.setSkips(0)
 
     # Initialize funding and evaluation
     initialization.InitFundingLevel()
     initialization.InitWillStuff()
-    types.ScenarioID = 0
-    types.InitSimLoad = 1
-    types.DoInitialEval = 0
+    types.scenario_id = 0
+    types.init_sim_load = 1
+    types.do_initial_eval = 0
     simulation.DoSimInit()
     engine.invalidate_errors()
     engine.invalidate_maps()
@@ -342,62 +348,64 @@ def saveFile(filename: str) -> int:
     try:
         with open(filename, "wb") as f:
             # Store total funds in MiscHis (positions 50-51)
-            total_funds = types.TotalFunds
+            total_funds = types.total_funds
             _half_swap_longs([total_funds], 1)
-            types.MiscHis[50] = total_funds & 0xFFFF
-            types.MiscHis[51] = (total_funds >> 16) & 0xFFFF
+            types.misc_his[50] = total_funds & 0xFFFF
+            types.misc_his[51] = (total_funds >> 16) & 0xFFFF
 
             # Store city time in MiscHis (position 8)
-            city_time = types.CityTime
+            city_time = types.city_time
             _half_swap_longs([city_time], 1)
-            types.MiscHis[8] = city_time & 0xFFFF
+            types.misc_his[8] = city_time & 0xFFFF
 
             # Store game settings in MiscHis
-            types.MiscHis[52] = types.autoBulldoze
-            types.MiscHis[53] = types.autoBudget
-            types.MiscHis[54] = types.autoGo
-            types.MiscHis[55] = types.UserSoundOn
-            types.MiscHis[57] = types.SimSpeed
-            types.MiscHis[56] = types.CityTax
+            types.misc_his[52] = types.auto_bulldoze
+            types.misc_his[53] = types.auto_budget
+            types.misc_his[54] = types.auto_go
+            types.misc_his[55] = types.user_sound_on
+            types.misc_his[57] = types.sim_speed
+            types.misc_his[56] = types.city_tax
 
             # Store budget percentages as fixed-point values
-            police_pct = int(types.policePercent * 65536)
+            police_pct = int(types.police_percent * 65536)
             _half_swap_longs([police_pct], 1)
-            types.MiscHis[58] = police_pct & 0xFFFF
-            types.MiscHis[59] = (police_pct >> 16) & 0xFFFF
+            types.misc_his[58] = police_pct & 0xFFFF
+            types.misc_his[59] = (police_pct >> 16) & 0xFFFF
 
-            fire_pct = int(types.firePercent * 65536)
+            fire_pct = int(types.fire_percent * 65536)
             _half_swap_longs([fire_pct], 1)
-            types.MiscHis[60] = fire_pct & 0xFFFF
-            types.MiscHis[61] = (fire_pct >> 16) & 0xFFFF
+            types.misc_his[60] = fire_pct & 0xFFFF
+            types.misc_his[61] = (fire_pct >> 16) & 0xFFFF
 
-            road_pct = int(types.roadPercent * 65536)
+            road_pct = int(types.road_percent * 65536)
             _half_swap_longs([road_pct], 1)
-            types.MiscHis[62] = road_pct & 0xFFFF
-            types.MiscHis[63] = (road_pct >> 16) & 0xFFFF
+            types.misc_his[62] = road_pct & 0xFFFF
+            types.misc_his[63] = (road_pct >> 16) & 0xFFFF
 
             # Convert 2D map to flat array for saving
             map_data = []
-            for x in range(types.WORLD_X):
-                for y in range(types.WORLD_Y):
-                    map_data.append(types.Map[x][y])
+            for x in range(micropolis.constants.WORLD_X):
+                for y in range(micropolis.constants.WORLD_Y):
+                    map_data.append(types.map_data[x][y])
 
             # Save all data sections
-            if not _save_short(types.ResHis, types.HISTLEN // 2, f):
+            if not _save_short(types.res_his, types.HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.ComHis, types.HISTLEN // 2, f):
+            if not _save_short(types.com_his, types.HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.IndHis, types.HISTLEN // 2, f):
+            if not _save_short(types.ind_his, types.HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.CrimeHis, types.HISTLEN // 2, f):
+            if not _save_short(types.crime_his, types.HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.PollutionHis, types.HISTLEN // 2, f):
+            if not _save_short(types.pollution_his, types.HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.MoneyHis, types.HISTLEN // 2, f):
+            if not _save_short(types.money_his, types.HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.MiscHis, types.MISCHISTLEN // 2, f):
+            if not _save_short(types.misc_his, types.MISCHISTLEN // 2, f):
                 return 0
-            if not _save_short(map_data, types.WORLD_X * types.WORLD_Y, f):
+            if not _save_short(
+                map_data, micropolis.constants.WORLD_X * micropolis.constants.WORLD_Y, f
+            ):
                 return 0
 
             return 1
@@ -419,8 +427,8 @@ def LoadScenario(scenario_id: int) -> None:
         scenario_id: Scenario number (1-8)
     """
     # Clear current city file name
-    if types.CityFileName:
-        types.CityFileName = ""
+    if types.city_file_name:
+        types.city_file_name = ""
 
     # Set game level to 0 (scenarios override difficulty)
     types.SetGameLevel(0)
@@ -444,8 +452,8 @@ def LoadScenario(scenario_id: int) -> None:
     name, fname, year, month, funds = scenarios[scenario_id]
 
     # Set scenario parameters
-    types.ScenarioID = scenario_id
-    types.CityTime = ((year - 1900) * 48) + month
+    types.scenario_id = scenario_id
+    types.city_time = ((year - 1900) * 48) + month
     types.SetFunds(funds)
 
     # Set city name
@@ -456,10 +464,10 @@ def LoadScenario(scenario_id: int) -> None:
     engine.invalidate_maps()
     engine.invalidate_errors()
     types.setSpeed(3)
-    types.CityTax = 7
+    types.city_tax = 7
 
     # Load scenario file
-    _load_file(fname, types.ResourceDir)
+    _load_file(fname, types.resource_dir)
 
     # Initialize simulation
     initialization.InitWillStuff()
@@ -467,8 +475,8 @@ def LoadScenario(scenario_id: int) -> None:
     types.UpdateFunds()
     engine.invalidate_errors()
     engine.invalidate_maps()
-    types.InitSimLoad = 1
-    types.DoInitialEval = 0
+    types.init_sim_load = 1
+    types.do_initial_eval = 0
     simulation.DoSimInit()
     types.DidLoadScenario()
     types.Kick()
@@ -491,9 +499,9 @@ def LoadCity(filename: str) -> int:
     """
     if loadFile(filename):
         # Store filename
-        if types.CityFileName:
-            types.CityFileName = ""
-        types.CityFileName = filename
+        if types.city_file_name:
+            types.city_file_name = ""
+        types.city_file_name = filename
 
         # Extract city name from filename
         base_name = os.path.basename(filename)
@@ -523,13 +531,13 @@ def SaveCity() -> None:
     """
     Save the current city, prompting for filename if needed.
     """
-    if not types.CityFileName:
+    if not types.city_file_name:
         types.DoSaveCityAs()
     else:
-        if saveFile(types.CityFileName):
+        if saveFile(types.city_file_name):
             types.DidSaveCity()
         else:
-            msg = f"Unable to save city to file: {types.CityFileName}"
+            msg = f"Unable to save city to file: {types.city_file_name}"
             types.DidntSaveCity(msg)
 
 
@@ -550,9 +558,9 @@ def SaveCityAs(filename: str) -> None:
         filename: Target filename
     """
     # Store filename
-    if types.CityFileName:
-        types.CityFileName = ""
-    types.CityFileName = filename
+    if types.city_file_name:
+        types.city_file_name = ""
+    types.city_file_name = filename
 
     # Extract city name from filename
     base_name = os.path.basename(filename)
@@ -565,11 +573,11 @@ def SaveCityAs(filename: str) -> None:
     elif "/" in base_name:
         base_name = base_name.rsplit("/", 1)[1]
 
-    if saveFile(types.CityFileName):
+    if saveFile(types.city_file_name):
         types.setCityName(base_name)
         types.DidSaveCity()
     else:
-        msg = f"Unable to save city to file: {types.CityFileName}"
+        msg = f"Unable to save city to file: {types.city_file_name}"
         types.DidntSaveCity(msg)
 
 

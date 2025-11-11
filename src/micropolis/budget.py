@@ -51,6 +51,7 @@ def update_heads() -> None:
 # Budget Initialization
 # ============================================================================
 
+
 def init_funding_level() -> None:
     """
     Initialize funding levels to default values.
@@ -61,11 +62,11 @@ def init_funding_level() -> None:
     global fire_percent, fire_value, police_percent, police_value
     global road_percent, road_value
 
-    fire_percent = 1.0    # 1.0
+    fire_percent = 1.0  # 1.0
     fire_value = 0
     police_percent = 1.0  # 1.0
     police_value = 0
-    road_percent = 1.0    # 1.0
+    road_percent = 1.0  # 1.0
     road_value = 0
 
     draw_budget_window()
@@ -75,6 +76,7 @@ def init_funding_level() -> None:
 # ============================================================================
 # Budget Calculation Functions
 # ============================================================================
+
 
 def do_budget() -> None:
     """
@@ -111,14 +113,14 @@ def do_budget_now(from_menu: bool) -> None:
     global fire_percent, police_percent, road_percent
 
     # Calculate requested amounts based on percentages
-    fire_int = int(types.FireFund * fire_percent)
-    police_int = int(types.PoliceFund * police_percent)
-    road_int = int(types.RoadFund * road_percent)
+    fire_int = int(types.fire_fund * fire_percent)
+    police_int = int(types.police_fund * police_percent)
+    road_int = int(types.road_fund * road_percent)
 
     total = fire_int + police_int + road_int
 
     # Available funds
-    yum_ducets = types.TaxFund + types.TotalFunds
+    yum_ducets = types.tax_fund + types.total_funds
 
     if yum_ducets > total:
         # Enough money for all requests
@@ -141,7 +143,7 @@ def do_budget_now(from_menu: bool) -> None:
                 else:
                     police_value = yum_ducets
                     if yum_ducets > 0:
-                        police_percent = yum_ducets / types.PoliceFund
+                        police_percent = yum_ducets / types.police_fund
                     else:
                         police_percent = 0.0
             else:
@@ -149,13 +151,13 @@ def do_budget_now(from_menu: bool) -> None:
                 police_value = 0
                 police_percent = 0.0
                 if yum_ducets > 0:
-                    fire_percent = yum_ducets / types.FireFund
+                    fire_percent = yum_ducets / types.fire_fund
                 else:
                     fire_percent = 0.0
         else:
             road_value = yum_ducets
             if yum_ducets > 0:
-                road_percent = yum_ducets / types.RoadFund
+                road_percent = yum_ducets / types.road_fund
             else:
                 road_percent = 0.0
 
@@ -173,15 +175,15 @@ def do_budget_now(from_menu: bool) -> None:
         road_percent = 1.0
 
     # Set maximum values
-    fire_max_value = types.FireFund
-    police_max_value = types.PoliceFund
-    road_max_value = types.RoadFund
+    fire_max_value = types.fire_fund
+    police_max_value = types.police_fund
+    road_max_value = types.road_fund
 
     draw_curr_percents()
 
     # Handle auto-budget vs manual budget
-    if (not types.autoBudget) or from_menu:
-        if not types.autoBudget:
+    if (not types.auto_budget) or from_menu:
+        if not types.auto_budget:
             # TODO: append current year to budget string in UI
             pass
 
@@ -189,28 +191,28 @@ def do_budget_now(from_menu: bool) -> None:
 
         if not from_menu:
             # Apply the budget allocations
-            types.FireSpend = fire_value
-            types.PoliceSpend = police_value
-            types.RoadSpend = road_value
+            types.fire_spend = fire_value
+            types.police_spend = police_value
+            types.road_spend = road_value
 
-            total = types.FireSpend + types.PoliceSpend + types.RoadSpend
-            more_dough = types.TaxFund - total
+            total = types.fire_spend + types.police_spend + types.road_spend
+            more_dough = types.tax_fund - total
             spend(-more_dough)
     else:
         # Auto-budget mode and not from menu
         if yum_ducets > total:
-            more_dough = types.TaxFund - total
+            more_dough = types.tax_fund - total
             spend(-more_dough)
-            types.FireSpend = types.FireFund
-            types.PoliceSpend = types.PoliceFund
-            types.RoadSpend = types.RoadFund
+            types.fire_spend = types.fire_fund
+            types.police_spend = types.police_fund
+            types.road_spend = types.road_fund
             draw_budget_window()
             draw_curr_percents()
             update_heads()
         else:
             # Not enough money for auto-budget, disable it
-            types.autoBudget = 0  # XXX: force auto-budget off
-            types.MustUpdateOptions = 1
+            types.auto_budget = 0  # XXX: force auto-budget off
+            types.must_update_options = 1
             messages.clear_mes()
             messages.send_mes(29)  # "Not enough funds for auto-budget"
             # Go back to manual budget
@@ -220,6 +222,7 @@ def do_budget_now(from_menu: bool) -> None:
 # ============================================================================
 # Budget UI Functions (Adapted for pygame)
 # ============================================================================
+
 
 def draw_budget_window() -> None:
     """
@@ -242,7 +245,7 @@ def really_draw_budget_window() -> None:
     global must_draw_budget_window
 
     # Calculate cash flow
-    cash_flow = types.TaxFund - fire_value - police_value - road_value
+    cash_flow = types.tax_fund - fire_value - police_value - road_value
     cash_flow2 = cash_flow
 
     # Format cash flow string
@@ -253,9 +256,9 @@ def really_draw_budget_window() -> None:
         flow_str = f"+${cash_flow:,}"  # For future UI integration
 
     # Format other values (for future UI integration)
-    previous_str = f"${types.TotalFunds:,}"
-    current_str = f"${cash_flow2 + types.TotalFunds:,}"
-    collected_str = f"${types.TaxFund:,}"
+    previous_str = f"${types.total_funds:,}"
+    current_str = f"${cash_flow2 + types.total_funds:,}"
+    collected_str = f"${types.tax_fund:,}"
 
     # In pygame version, this would send data to UI
     # For now, just mark as drawn
@@ -339,8 +342,10 @@ def show_budget_window_and_start_waiting() -> None:
 # Budget UI Data Functions
 # ============================================================================
 
-def set_budget(flow_str: str, previous_str: str, current_str: str,
-               collected_str: str, tax: int) -> None:
+
+def set_budget(
+    flow_str: str, previous_str: str, current_str: str, collected_str: str, tax: int
+) -> None:
     """
     Set budget display data.
 
@@ -352,9 +357,17 @@ def set_budget(flow_str: str, previous_str: str, current_str: str,
     pass
 
 
-def set_budget_values(road_got: str, road_want: str, road_percent_int: int,
-                     police_got: str, police_want: str, police_percent_int: int,
-                     fire_got: str, fire_want: str, fire_percent_int: int) -> None:
+def set_budget_values(
+    road_got: str,
+    road_want: str,
+    road_percent_int: int,
+    police_got: str,
+    police_want: str,
+    police_percent_int: int,
+    fire_got: str,
+    fire_want: str,
+    fire_percent_int: int,
+) -> None:
     """
     Set budget values display data.
 
@@ -368,20 +381,22 @@ def set_budget_values(road_got: str, road_want: str, road_percent_int: int,
 # Utility Functions
 # ============================================================================
 
+
 def spend(amount: int) -> None:
     """
     Spend money from city funds.
 
     Ported from Spend() function referenced in w_budget.c.
     """
-    types.TotalFunds -= amount
-    types.MustUpdateFunds = 1
+    types.total_funds -= amount
+    types.must_update_funds = 1
     kick()
 
 
 # ============================================================================
 # Budget Accessor Functions
 # ============================================================================
+
 
 def get_road_percent() -> float:
     """Get road funding percentage."""
@@ -450,19 +465,20 @@ def get_fire_max_value() -> int:
 # TCL Command Interface Functions
 # ============================================================================
 
-def auto_budget(enabled: bool|None = None) -> int:
+
+def auto_budget(enabled: bool | None = None) -> int:
     """
     Get or set auto-budget mode.
 
     Ported from SimCmdAutoBudget in w_sim.c.
     """
     if enabled is not None:
-        types.autoBudget = enabled
-        types.MustUpdateOptions = 1
+        types.auto_budget = enabled
+        types.must_update_options = 1
         kick()
         update_budget()
 
-    return types.autoBudget
+    return types.auto_budget
 
 
 def do_budget_command() -> None:

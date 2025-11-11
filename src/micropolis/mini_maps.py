@@ -13,17 +13,19 @@ Key features:
 - Support for multiple color depths and rendering modes
 """
 
-
-
 from collections.abc import Callable
 from typing import Any
+
+import micropolis.constants
+import micropolis.sim_view
 from . import macros, types
 
 # ============================================================================
 # Small Map Rendering Functions
 # ============================================================================
 
-def drawAll(view: types.SimView) -> None:
+
+def drawAll(view: micropolis.sim_view.SimView) -> None:
     """
     Draw all tiles in the small overview map.
 
@@ -35,7 +37,7 @@ def drawAll(view: types.SimView) -> None:
     _draw_filtered_map(view, None)
 
 
-def drawRes(view: types.SimView) -> None:
+def drawRes(view: micropolis.sim_view.SimView) -> None:
     """
     Draw only residential zones in the small overview map.
 
@@ -44,6 +46,7 @@ def drawRes(view: types.SimView) -> None:
     Args:
         view: The view to draw into
     """
+
     def filter_func(col: int, row: int, tile: int) -> int:
         if tile > 422:
             return 0
@@ -52,7 +55,7 @@ def drawRes(view: types.SimView) -> None:
     _draw_filtered_map(view, filter_func)
 
 
-def drawCom(view: types.SimView) -> None:
+def drawCom(view: micropolis.sim_view.SimView) -> None:
     """
     Draw only commercial zones in the small overview map.
 
@@ -61,6 +64,7 @@ def drawCom(view: types.SimView) -> None:
     Args:
         view: The view to draw into
     """
+
     def filter_func(col: int, row: int, tile: int) -> int:
         if (tile > 609) or ((tile >= 232) and (tile < 423)):
             return 0
@@ -69,7 +73,7 @@ def drawCom(view: types.SimView) -> None:
     _draw_filtered_map(view, filter_func)
 
 
-def drawInd(view: types.SimView) -> None:
+def drawInd(view: micropolis.sim_view.SimView) -> None:
     """
     Draw only industrial zones in the small overview map.
 
@@ -78,18 +82,21 @@ def drawInd(view: types.SimView) -> None:
     Args:
         view: The view to draw into
     """
+
     def filter_func(col: int, row: int, tile: int) -> int:
-        if (((tile >= 240) and (tile <= 611)) or
-            ((tile >= 693) and (tile <= 851)) or
-            ((tile >= 860) and (tile <= 883)) or
-            (tile >= 932)):
+        if (
+            ((tile >= 240) and (tile <= 611))
+            or ((tile >= 693) and (tile <= 851))
+            or ((tile >= 860) and (tile <= 883))
+            or (tile >= 932)
+        ):
             return 0
         return tile
 
     _draw_filtered_map(view, filter_func)
 
 
-def drawLilTransMap(view: types.SimView) -> None:
+def drawLilTransMap(view: micropolis.sim_view.SimView) -> None:
     """
     Draw transportation network (roads/rails) in the small overview map.
 
@@ -98,17 +105,16 @@ def drawLilTransMap(view: types.SimView) -> None:
     Args:
         view: The view to draw into
     """
+
     def filter_func(col: int, row: int, tile: int) -> int:
-        if ((tile >= 240) or
-            ((tile >= 207) and tile <= 220) or
-            (tile == 223)):
+        if (tile >= 240) or ((tile >= 207) and tile <= 220) or (tile == 223):
             return 0
         return tile
 
     _draw_filtered_map(view, filter_func)
 
 
-def drawPower(view: types.SimView) -> None:
+def drawPower(view: micropolis.sim_view.SimView) -> None:
     """
     Draw power grid status in the small overview map.
 
@@ -120,9 +126,9 @@ def drawPower(view: types.SimView) -> None:
         view: The view to draw into
     """
     # Color definitions
-    UNPOWERED = types.COLOR_LIGHTBLUE
-    POWERED = types.COLOR_RED
-    CONDUCTIVE = types.COLOR_LIGHTGRAY
+    UNPOWERED = micropolis.constants.COLOR_LIGHTBLUE
+    POWERED = micropolis.constants.COLOR_RED
+    CONDUCTIVE = micropolis.constants.COLOR_LIGHTGRAY
 
     # Get pixel values for current color mode
     if view.x and view.x.color:
@@ -145,16 +151,18 @@ def drawPower(view: types.SimView) -> None:
         image_base = view.data8  # type: ignore
 
     # Process each tile
-    for col in range(types.WORLD_X):
+    for col in range(micropolis.constants.WORLD_X):
         # Calculate image buffer offset (for pygame integration)
         if image_base and isinstance(image_base, bytes):
             # For testing, skip actual buffer manipulation
             image = None
         else:
-            image = image_base  # For pygame surfaces, this would be calculated differently
+            image = (
+                image_base  # For pygame surfaces, this would be calculated differently
+            )
 
-        for row in range(types.WORLD_Y):
-            tile = types.Map[col][row]
+        for row in range(micropolis.constants.WORLD_Y):
+            tile = types.map_data[col][row]
 
             if (tile & macros.LOMASK) >= types.TILE_COUNT:
                 tile -= types.TILE_COUNT
@@ -190,10 +198,10 @@ def drawPower(view: types.SimView) -> None:
 
             # Move to next row (3 pixels down)
             if image:
-                image += (3 * line_bytes)
+                image += 3 * line_bytes
 
 
-def drawDynamic(view: types.SimView) -> None:
+def drawDynamic(view: micropolis.sim_view.SimView) -> None:
     """
     Draw tiles based on dynamic filtering criteria.
 
@@ -202,6 +210,7 @@ def drawDynamic(view: types.SimView) -> None:
     Args:
         view: The view to draw into
     """
+
     def filter_func(col: int, row: int, tile: int) -> int:
         if tile > 63:
             if not dynamicFilter(col, row):
@@ -215,7 +224,11 @@ def drawDynamic(view: types.SimView) -> None:
 # Helper Functions
 # ============================================================================
 
-def _draw_filtered_map(view: types.SimView, filter_func: Callable[[int, int, int], int]|None = None) -> None:
+
+def _draw_filtered_map(
+    view: micropolis.sim_view.SimView,
+    filter_func: Callable[[int, int, int], int] | None = None,
+) -> None:
     """
     Generic function to draw a filtered small map.
 
@@ -234,16 +247,18 @@ def _draw_filtered_map(view: types.SimView, filter_func: Callable[[int, int, int
         image_base = view.data8  # type: ignore
 
     # Process each tile
-    for col in range(types.WORLD_X):
+    for col in range(micropolis.constants.WORLD_X):
         # Calculate image buffer offset (for pygame integration)
         if image_base and isinstance(image_base, bytes):
             # For testing, skip actual buffer manipulation
             image = None
         else:
-            image = image_base  # For pygame surfaces, this would be calculated differently
+            image = (
+                image_base  # For pygame surfaces, this would be calculated differently
+            )
 
-        for row in range(types.WORLD_Y):
-            tile = types.Map[col][row]
+        for row in range(micropolis.constants.WORLD_Y):
+            tile = types.map_data[col][row]
 
             if (tile & macros.LOMASK) >= types.TILE_COUNT:
                 tile -= types.TILE_COUNT
@@ -261,8 +276,13 @@ def _draw_filtered_map(view: types.SimView, filter_func: Callable[[int, int, int
             # In pygame, this would update the surface position
 
 
-def _render_small_tile(view: types.SimView, image: Any|None, tile: int,
-                      line_bytes: int, pixel_bytes: int) -> None:
+def _render_small_tile(
+    view: micropolis.sim_view.SimView,
+    image: Any | None,
+    tile: int,
+    line_bytes: int,
+    pixel_bytes: int,
+) -> None:
     """
     Render a 4x4 small tile to the display buffer.
 
@@ -291,8 +311,13 @@ def _render_small_tile(view: types.SimView, image: Any|None, tile: int,
     # This would need pygame surface integration for actual rendering
 
 
-def _render_solid_color(view: types.SimView, image: Any|None, color: int,
-                       line_bytes: int, pixel_bytes: int) -> None:
+def _render_solid_color(
+    view: micropolis.sim_view.SimView,
+    image: Any | None,
+    color: int,
+    line_bytes: int,
+    pixel_bytes: int,
+) -> None:
     """
     Render a solid color block (3x3 pixels) to the display buffer.
 
@@ -331,51 +356,84 @@ def dynamicFilter(col: int, row: int) -> int:
     c = col >> 1
 
     # Population density filter
-    if not ((types.DynamicData[0] > types.DynamicData[1]) or
-            ((x := types.PopDensity[c][r]) >= types.DynamicData[0] and
-             x <= types.DynamicData[1])):
+    if not (
+        (types.dynamic_data[0] > types.dynamic_data[1])
+        or (
+            (x := types.pop_density[c][r]) >= types.dynamic_data[0]
+            and x <= types.dynamic_data[1]
+        )
+    ):
         return 0
 
     # Rate of growth filter
-    if not ((types.DynamicData[2] > types.DynamicData[3]) or
-            ((x := types.RateOGMem[c >> 2][r >> 2]) >= ((2 * types.DynamicData[2]) - 256) and
-             x <= ((2 * types.DynamicData[3]) - 256))):
+    if not (
+        (types.dynamic_data[2] > types.dynamic_data[3])
+        or (
+            (x := types.rate_og_mem[c >> 2][r >> 2])
+            >= ((2 * types.dynamic_data[2]) - 256)
+            and x <= ((2 * types.dynamic_data[3]) - 256)
+        )
+    ):
         return 0
 
     # Traffic density filter
-    if not ((types.DynamicData[4] > types.DynamicData[5]) or
-            ((x := types.TrfDensity[c][r]) >= types.DynamicData[4] and
-             x <= types.DynamicData[5])):
+    if not (
+        (types.dynamic_data[4] > types.dynamic_data[5])
+        or (
+            (x := types.trf_density[c][r]) >= types.dynamic_data[4]
+            and x <= types.dynamic_data[5]
+        )
+    ):
         return 0
 
     # Pollution filter
-    if not ((types.DynamicData[6] > types.DynamicData[7]) or
-            ((x := types.PollutionMem[c][r]) >= types.DynamicData[6] and
-             x <= types.DynamicData[7])):
+    if not (
+        (types.dynamic_data[6] > types.dynamic_data[7])
+        or (
+            (x := types.pollution_mem[c][r]) >= types.dynamic_data[6]
+            and x <= types.dynamic_data[7]
+        )
+    ):
         return 0
 
     # Crime filter
-    if not ((types.DynamicData[8] > types.DynamicData[9]) or
-            ((x := types.CrimeMem[c][r]) >= types.DynamicData[8] and
-             x <= types.DynamicData[9])):
+    if not (
+        (types.dynamic_data[8] > types.dynamic_data[9])
+        or (
+            (x := types.crime_mem[c][r]) >= types.dynamic_data[8]
+            and x <= types.dynamic_data[9]
+        )
+    ):
         return 0
 
     # Land value filter
-    if not ((types.DynamicData[10] > types.DynamicData[11]) or
-            ((x := types.LandValueMem[c][r]) >= types.DynamicData[10] and
-             x <= types.DynamicData[11])):
+    if not (
+        (types.dynamic_data[10] > types.dynamic_data[11])
+        or (
+            (x := types.land_value_mem[c][r]) >= types.dynamic_data[10]
+            and x <= types.dynamic_data[11]
+        )
+    ):
         return 0
 
     # Police effect filter
-    if not ((types.DynamicData[12] > types.DynamicData[13]) or
-            ((x := types.PoliceMapEffect[c >> 2][r >> 2]) >= types.DynamicData[12] and
-             x <= types.DynamicData[13])):
+    if not (
+        (types.dynamic_data[12] > types.dynamic_data[13])
+        or (
+            (x := types.police_map_effect[c >> 2][r >> 2]) >= types.dynamic_data[12]
+            and x <= types.dynamic_data[13]
+        )
+    ):
         return 0
 
     # Fire rate filter
-    if not ((types.DynamicData[14] > types.DynamicData[15]) or
-            ((x := types.FireRate[c >> 2][r >> 2]) >= types.DynamicData[14] and
-             x <= types.DynamicData[15])):
+    if not (
+        (types.dynamic_data[14] > types.dynamic_data[15])
+        or (
+            (x := types.fire_rate[c >> 2][r >> 2]) >= types.dynamic_data[14]
+            and x <= types.dynamic_data[15]
+        )
+    ):
         return 0
 
     return 1

@@ -28,124 +28,233 @@ STIPPLE_WIDTH = 16
 STIPPLE_HEIGHT = 16
 
 # Stipple pattern bitmaps (from g_setup.c)
-GRAY25_BITS = bytes([
-    0x77, 0x77,
-    0xdd, 0xdd,
-    0x77, 0x77,
-    0xdd, 0xdd,
-    0x77, 0x77,
-    0xdd, 0xdd,
-    0x77, 0x77,
-    0xdd, 0xdd,
-    0x77, 0x77,
-    0xdd, 0xdd,
-    0x77, 0x77,
-    0xdd, 0xdd,
-    0x77, 0x77,
-    0xdd, 0xdd,
-    0x77, 0x77,
-    0xdd, 0xdd,
-])
+GRAY25_BITS = bytes(
+    [
+        0x77,
+        0x77,
+        0xDD,
+        0xDD,
+        0x77,
+        0x77,
+        0xDD,
+        0xDD,
+        0x77,
+        0x77,
+        0xDD,
+        0xDD,
+        0x77,
+        0x77,
+        0xDD,
+        0xDD,
+        0x77,
+        0x77,
+        0xDD,
+        0xDD,
+        0x77,
+        0x77,
+        0xDD,
+        0xDD,
+        0x77,
+        0x77,
+        0xDD,
+        0xDD,
+        0x77,
+        0x77,
+        0xDD,
+        0xDD,
+    ]
+)
 
-GRAY50_BITS = bytes([
-    0x55, 0x55,
-    0xaa, 0xaa,
-    0x55, 0x55,
-    0xaa, 0xaa,
-    0x55, 0x55,
-    0xaa, 0xaa,
-    0x55, 0x55,
-    0xaa, 0xaa,
-    0x55, 0x55,
-    0xaa, 0xaa,
-    0x55, 0x55,
-    0xaa, 0xaa,
-    0x55, 0x55,
-    0xaa, 0xaa,
-    0x55, 0x55,
-    0xaa, 0xaa,
-])
+GRAY50_BITS = bytes(
+    [
+        0x55,
+        0x55,
+        0xAA,
+        0xAA,
+        0x55,
+        0x55,
+        0xAA,
+        0xAA,
+        0x55,
+        0x55,
+        0xAA,
+        0xAA,
+        0x55,
+        0x55,
+        0xAA,
+        0xAA,
+        0x55,
+        0x55,
+        0xAA,
+        0xAA,
+        0x55,
+        0x55,
+        0xAA,
+        0xAA,
+        0x55,
+        0x55,
+        0xAA,
+        0xAA,
+        0x55,
+        0x55,
+        0xAA,
+        0xAA,
+    ]
+)
 
-GRAY75_BITS = bytes([
-    0x88, 0x88,
-    0x22, 0x22,
-    0x88, 0x88,
-    0x22, 0x22,
-    0x88, 0x88,
-    0x22, 0x22,
-    0x88, 0x88,
-    0x22, 0x22,
-    0x88, 0x88,
-    0x22, 0x22,
-    0x88, 0x88,
-    0x22, 0x22,
-    0x88, 0x88,
-    0x22, 0x22,
-    0x88, 0x88,
-    0x22, 0x22,
-])
+GRAY75_BITS = bytes(
+    [
+        0x88,
+        0x88,
+        0x22,
+        0x22,
+        0x88,
+        0x88,
+        0x22,
+        0x22,
+        0x88,
+        0x88,
+        0x22,
+        0x22,
+        0x88,
+        0x88,
+        0x22,
+        0x22,
+        0x88,
+        0x88,
+        0x22,
+        0x22,
+        0x88,
+        0x88,
+        0x22,
+        0x22,
+        0x88,
+        0x88,
+        0x22,
+        0x22,
+        0x88,
+        0x88,
+        0x22,
+        0x22,
+    ]
+)
 
-VERT_BITS = bytes([
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-    0xaa, 0xaa,
-])
+VERT_BITS = bytes(
+    [
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+        0xAA,
+    ]
+)
 
-HORIZ_BITS = bytes([
-    0xff, 0xff,
-    0x00, 0x00,
-    0xff, 0xff,
-    0x00, 0x00,
-    0xff, 0xff,
-    0x00, 0x00,
-    0xff, 0xff,
-    0x00, 0x00,
-    0xff, 0xff,
-    0x00, 0x00,
-    0xff, 0xff,
-    0x00, 0x00,
-    0xff, 0xff,
-    0x00, 0x00,
-    0xff, 0xff,
-    0x00, 0x00,
-])
+HORIZ_BITS = bytes(
+    [
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+        0xFF,
+        0xFF,
+        0x00,
+        0x00,
+    ]
+)
 
-DIAG_BITS = bytes([
-    0x55, 0x55,
-    0xee, 0xee,
-    0x55, 0x55,
-    0xba, 0xbb,
-    0x55, 0x55,
-    0xee, 0xee,
-    0x55, 0x55,
-    0xba, 0xbb,
-    0x55, 0x55,
-    0xee, 0xee,
-    0x55, 0x55,
-    0xba, 0xbb,
-    0x55, 0x55,
-    0xee, 0xee,
-    0x55, 0x55,
-    0xba, 0xbb,
-])
+DIAG_BITS = bytes(
+    [
+        0x55,
+        0x55,
+        0xEE,
+        0xEE,
+        0x55,
+        0x55,
+        0xBA,
+        0xBB,
+        0x55,
+        0x55,
+        0xEE,
+        0xEE,
+        0x55,
+        0x55,
+        0xBA,
+        0xBB,
+        0x55,
+        0x55,
+        0xEE,
+        0xEE,
+        0x55,
+        0x55,
+        0xBA,
+        0xBB,
+        0x55,
+        0x55,
+        0xEE,
+        0xEE,
+        0x55,
+        0x55,
+        0xBA,
+        0xBB,
+    ]
+)
 
 
 # ============================================================================
 # Graphics Loading Functions
 # ============================================================================
+
 
 def get_resource_path(filename: str) -> str:
     """
@@ -160,17 +269,24 @@ def get_resource_path(filename: str) -> str:
     # Try multiple possible locations for resources based on new assets/ structure
     possible_paths = [
         # New assets/ directory structure
-        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', filename),  # hexa.*, snro.*, stri.*, tcl files
-        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'images', filename),  # XPM and image files
-        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'sounds', filename),  # audio files
-        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'dejavu-lgc', filename),  # fonts
-        
+        os.path.join(
+            os.path.dirname(__file__), "..", "..", "assets", filename
+        ),  # hexa.*, snro.*, stri.*, tcl files
+        os.path.join(
+            os.path.dirname(__file__), "..", "..", "assets", "images", filename
+        ),  # XPM and image files
+        os.path.join(
+            os.path.dirname(__file__), "..", "..", "assets", "sounds", filename
+        ),  # audio files
+        os.path.join(
+            os.path.dirname(__file__), "..", "..", "assets", "dejavu-lgc", filename
+        ),  # fonts
         # Legacy paths for backward compatibility
-        os.path.join(os.path.dirname(__file__), '..', '..', 'images', filename),
-        os.path.join(os.path.dirname(__file__), '..', '..', 'assets', filename),
-        os.path.join(os.getcwd(), 'images', filename),
-        os.path.join(os.getcwd(), 'assets', filename),
-        filename  # Try current directory as fallback
+        os.path.join(os.path.dirname(__file__), "..", "..", "images", filename),
+        os.path.join(os.path.dirname(__file__), "..", "..", "assets", filename),
+        os.path.join(os.getcwd(), "images", filename),
+        os.path.join(os.getcwd(), "assets", filename),
+        filename,  # Try current directory as fallback
     ]
 
     for path in possible_paths:
@@ -216,7 +332,7 @@ def load_hexa_resource(resource_id: int) -> bytes | None:
     filepath = get_resource_path(filename)
 
     try:
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             return f.read()
     except (FileNotFoundError, IOError) as e:
         print(f"Warning: Failed to load hexa resource {resource_id}: {e}")
@@ -232,7 +348,7 @@ def create_small_tiles_surface() -> Any | None:
     Returns:
         pygame Surface containing small tile data, or None if failed
     """
-     # Load the hexa resource for small tiles
+    # Load the hexa resource for small tiles
     hexa_data = load_hexa_resource(SIM_GSMTILE)
     if hexa_data is None:
         return None
@@ -241,7 +357,9 @@ def create_small_tiles_surface() -> Any | None:
     # We need to convert this to 4×4 pixels per tile with padding
     expected_size = 4 * 3 * types.TILE_COUNT  # 11520
     if len(hexa_data) < expected_size:
-        print(f"Warning: Hexa data too small {len(hexa_data)}, expected at least {expected_size}")
+        print(
+            f"Warning: Hexa data too small {len(hexa_data)}, expected at least {expected_size}"
+        )
         return None
 
     # Use only the expected amount of data, ignore any extra
@@ -250,7 +368,9 @@ def create_small_tiles_surface() -> Any | None:
     try:
         # Create surface for 4×4 tiles: TILE_COUNT tiles × 4×4 pixels × 4 bytes per pixel (RGBA)
         surface_width = 4  # 4 pixels per tile
-        surface_height = 4 * types.TILE_COUNT  # 4 pixels high per tile × TILE_COUNT tiles
+        surface_height = (
+            4 * types.TILE_COUNT
+        )  # 4 pixels high per tile × TILE_COUNT tiles
 
         surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
 
@@ -292,7 +412,6 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
         pygame Surface for big tiles, or None if failed
     """
 
-
     try:
         # For now, create a placeholder surface
         # Big tiles are 16×16 pixels per tile
@@ -313,10 +432,16 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
 
                 # Create a simple colored rectangle for each tile
                 color_value = (tile_index * 7) % 256  # Vary color based on tile index
-                tile_color = (color_value, (color_value + 85) % 256, (color_value + 170) % 256, 255)
+                tile_color = (
+                    color_value,
+                    (color_value + 85) % 256,
+                    (color_value + 170) % 256,
+                    255,
+                )
 
-                pygame.draw.rect(surface, tile_color,
-                               (tile_x * 16, tile_y * 16, 16, 16))
+                pygame.draw.rect(
+                    surface, tile_color, (tile_x * 16, tile_y * 16, 16, 16)
+                )
 
         return surface
 
@@ -325,8 +450,9 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
         return None
 
 
-def create_stipple_surface(bits: bytes, width: int = STIPPLE_WIDTH,
-                          height: int = STIPPLE_HEIGHT) -> Any | None:
+def create_stipple_surface(
+    bits: bytes, width: int = STIPPLE_WIDTH, height: int = STIPPLE_HEIGHT
+) -> Any | None:
     """
     Create a pygame surface from stipple pattern bits.
 
@@ -351,7 +477,10 @@ def create_stipple_surface(bits: bytes, width: int = STIPPLE_WIDTH,
                     for bit in range(8):
                         if x + bit < width:
                             pixel_value = 255 if (byte_val & (1 << (7 - bit))) else 0
-                            surface.set_at((x + bit, y), (pixel_value, pixel_value, pixel_value, 255))
+                            surface.set_at(
+                                (x + bit, y),
+                                (pixel_value, pixel_value, pixel_value, 255),
+                            )
 
         return surface
     except Exception as e:
@@ -359,7 +488,7 @@ def create_stipple_surface(bits: bytes, width: int = STIPPLE_WIDTH,
         return None
 
 
-def get_object_surfaces(object_id: int, frames: int) -> list[Any]|None:
+def get_object_surfaces(object_id: int, frames: int) -> list[Any] | None:
     """
     Load object sprite surfaces for a given object type.
 
@@ -413,7 +542,6 @@ def get_pixmaps(display: view_types.XDisplay) -> None:
         display: XDisplay structure to initialize
     """
 
-
     # Create stipple patterns if not already created
     if display.gray25_stipple is None:
         display.gray25_stipple = create_stipple_surface(GRAY25_BITS)
@@ -433,9 +561,9 @@ def get_pixmaps(display: view_types.XDisplay) -> None:
         object_frames = {
             types.TRA: 5,  # Train: 5 frames
             types.COP: 8,  # Police helicopter: 8 frames
-            types.AIR: 11, # Airplanes: 11 frames
+            types.AIR: 11,  # Airplanes: 11 frames
             types.SHI: 8,  # Ships: 8 frames
-            types.GOD: 16, # God: 16 frames
+            types.GOD: 16,  # God: 16 frames
             types.TOR: 3,  # Tornado: 3 frames
             types.EXP: 6,  # Explosion: 6 frames
             types.BUS: 4,  # Bus: 4 frames
@@ -504,9 +632,13 @@ def get_view_tiles(view: Any) -> None:
                 view.x.small_tile_image = load_xpm_surface(tiles_filename)
 
                 if view.x.small_tile_image is None:
-                    print(f"Warning: Failed to load small tile image {tiles_filename}, using placeholder")
+                    print(
+                        f"Warning: Failed to load small tile image {tiles_filename}, using placeholder"
+                    )
                     # For now, create a placeholder - we don't have the actual small tile graphics
-                    view.x.small_tile_image = pygame.Surface((4, 3 * types.TILE_COUNT), pygame.SRCALPHA)
+                    view.x.small_tile_image = pygame.Surface(
+                        (4, 3 * types.TILE_COUNT), pygame.SRCALPHA
+                    )
 
             else:
                 # For monochrome, load from hexa resource
@@ -514,7 +646,9 @@ def get_view_tiles(view: Any) -> None:
                 if hexa_data is not None:
                     # Create XImage-like structure from hexa data
                     # This mimics the XCreateImage call in the C code
-                    view.x.small_tile_image = pygame.Surface((4, 3 * types.TILE_COUNT), pygame.SRCALPHA)
+                    view.x.small_tile_image = pygame.Surface(
+                        (4, 3 * types.TILE_COUNT), pygame.SRCALPHA
+                    )
 
                     # Fill surface with hexa data (grayscale)
                     for i, pixel_value in enumerate(hexa_data):
@@ -563,6 +697,7 @@ def get_view_tiles(view: Any) -> None:
 # Initialization Functions
 # ============================================================================
 
+
 def init_graphics() -> bool:
     """
     Initialize the graphics system.
@@ -571,18 +706,17 @@ def init_graphics() -> bool:
         True if initialization successful, False otherwise
     """
 
-
     try:
         # Initialize pygame if not already done
         if not pygame.get_init():
             pygame.init()
 
         # Get the main display
-        if not hasattr(types, 'MainDisplay') or types.MainDisplay is None:
-            types.MainDisplay = view_types.MakeNewXDisplay()
+        if not hasattr(types, "MainDisplay") or types.main_display is None:
+            types.main_display = view_types.MakeNewXDisplay()
 
         # Initialize pixmaps for the main display
-        get_pixmaps(types.MainDisplay)
+        get_pixmaps(types.main_display)
 
         return True
 
@@ -602,10 +736,9 @@ def init_view_graphics(view: Any) -> bool:
         True if successful, False otherwise
     """
 
-
     try:
         # Ensure the view has a display
-        if not hasattr(view, 'x') or view.x is None:
+        if not hasattr(view, "x") or view.x is None:
             print("Error: View has no display")
             return False
 
@@ -632,6 +765,7 @@ def cleanup_graphics() -> None:
 # Utility Functions
 # ============================================================================
 
+
 def get_tile_surface(tile_id: int, view: Any) -> Any | None:
     """
     Get the surface for a specific tile.
@@ -644,9 +778,8 @@ def get_tile_surface(tile_id: int, view: Any) -> Any | None:
         pygame Surface for the tile, or None if not found
     """
 
-
     try:
-        if view_types.IsEditorView(view) and hasattr(view, 'bigtiles'):
+        if view_types.IsEditorView(view) and hasattr(view, "bigtiles"):
             # Extract 16x16 tile from the big tiles image
             tiles_per_row = view.bigtiles.get_width() // 16
             tile_x = (tile_id % tiles_per_row) * 16
@@ -656,7 +789,7 @@ def get_tile_surface(tile_id: int, view: Any) -> Any | None:
             tile_surface.blit(view.bigtiles, (0, 0), (tile_x, tile_y, 16, 16))
             return tile_surface
 
-        elif view_types.IsMapView(view) and hasattr(view, 'smalltiles'):
+        elif view_types.IsMapView(view) and hasattr(view, "smalltiles"):
             # Extract 4x4 tile from the small tiles image (3x3 pixels + 1 padding)
             tiles_per_row = view.smalltiles.get_width() // 4
             tile_x = (tile_id % tiles_per_row) * 4
@@ -672,7 +805,9 @@ def get_tile_surface(tile_id: int, view: Any) -> Any | None:
     return None
 
 
-def get_object_surface(object_id: int, frame: int = 0, display: view_types.XDisplay|None = None) -> Any | None:
+def get_object_surface(
+    object_id: int, frame: int = 0, display: view_types.XDisplay | None = None
+) -> Any | None:
     """
     Get the surface for a specific object sprite.
 
@@ -685,13 +820,16 @@ def get_object_surface(object_id: int, frame: int = 0, display: view_types.XDisp
         pygame Surface for the object sprite, or None if not found
     """
     if display is None:
-        display = types.MainDisplay
+        display = types.main_display
 
     if display is None or display.objects is None:
         return None
 
     try:
-        if 0 < object_id < len(display.objects) and display.objects[object_id] is not None:
+        if (
+            0 < object_id < len(display.objects)
+            and display.objects[object_id] is not None
+        ):
             frames = display.objects[object_id]
             if frames is not None and 0 <= frame < len(frames):
                 return frames[frame]
@@ -705,6 +843,7 @@ def get_object_surface(object_id: int, frame: int = 0, display: view_types.XDisp
 # Validation Functions
 # ============================================================================
 
+
 def validate_graphics_setup() -> bool:
     """
     Validate that graphics have been properly initialized.
@@ -713,13 +852,12 @@ def validate_graphics_setup() -> bool:
         True if graphics are properly set up, False otherwise
     """
 
-
     try:
         # Check main display
-        if not hasattr(types, 'MainDisplay') or types.MainDisplay is None:
+        if not hasattr(types, "MainDisplay") or types.main_display is None:
             return False
 
-        display = types.MainDisplay
+        display = types.main_display
 
         # Check stipple patterns
         stipples = [
@@ -728,7 +866,7 @@ def validate_graphics_setup() -> bool:
             display.gray75_stipple,
             display.vert_stipple,
             display.horiz_stipple,
-            display.diag_stipple
+            display.diag_stipple,
         ]
 
         for stipple in stipples:
@@ -740,7 +878,9 @@ def validate_graphics_setup() -> bool:
             return False
 
         # Check that at least one object has sprites loaded
-        has_objects = any(obj is not None for obj in display.objects[1:] if obj is not None)
+        has_objects = any(
+            obj is not None for obj in display.objects[1:] if obj is not None
+        )
         if not has_objects:
             return False
 

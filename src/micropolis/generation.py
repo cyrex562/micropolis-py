@@ -7,6 +7,8 @@ responsible for creating new city maps with rivers, lakes, trees, and terrain
 features using procedural generation algorithms.
 """
 
+import micropolis.constants
+import micropolis.utilities
 from . import types, macros
 
 
@@ -22,23 +24,24 @@ Dir: int = 0
 LastDir: int = 0
 
 # Generation parameters (can be set externally)
-TreeLevel: int = -1      # Level for tree creation (-1 = random, 0 = none, >0 = amount)
-LakeLevel: int = -1      # Level for lake creation (-1 = random, 0 = none, >0 = amount)
-CurveLevel: int = -1     # Level for river curviness (-1 = random, 0 = none, >0 = amount)
-CreateIsland: int = -1   # Island creation (-1 = 10% chance, 0 = never, 1 = always)
+TreeLevel: int = -1  # Level for tree creation (-1 = random, 0 = none, >0 = amount)
+LakeLevel: int = -1  # Level for lake creation (-1 = random, 0 = none, >0 = amount)
+CurveLevel: int = -1  # Level for river curviness (-1 = random, 0 = none, >0 = amount)
+CreateIsland: int = -1  # Island creation (-1 = 10% chance, 0 = never, 1 = always)
 
 # ============================================================================
 # Terrain Constants
 # ============================================================================
 
-WATER_LOW = types.RIVER      # 2
+WATER_LOW = types.RIVER  # 2
 WATER_HIGH = types.LASTRIVEDGE  # 20
-WOODS_LOW = types.TREEBASE   # 21
+WOODS_LOW = types.TREEBASE  # 21
 WOODS_HIGH = 39  # UNUSED_TRASH2 (woods tile range end)
 
 # ============================================================================
 # Main Generation Functions
 # ============================================================================
+
 
 def GenerateNewCity() -> None:
     """
@@ -47,7 +50,7 @@ def GenerateNewCity() -> None:
     Ported from GenerateNewCity() in s_gen.c.
     Main entry point for city generation.
     """
-    GenerateSomeCity(types.Rand16())
+    GenerateSomeCity(micropolis.utilities.Rand16())
 
 
 def GenerateSomeCity(r: int) -> None:
@@ -61,7 +64,7 @@ def GenerateSomeCity(r: int) -> None:
         r: Random seed for reproducible generation
     """
     # Clear any existing city file reference
-    types.CityFileName = ""
+    types.city_file_name = ""
 
     # Record start time (placeholder for timing)
     # gettimeofday(&start_time, NULL);
@@ -70,10 +73,10 @@ def GenerateSomeCity(r: int) -> None:
     GenerateMap(r)
 
     # Reset simulation state
-    types.ScenarioID = 0
-    types.CityTime = 0
-    types.InitSimLoad = 2
-    types.DoInitialEval = 0
+    types.scenario_id = 0
+    types.city_time = 0
+    types.init_sim_load = 2
+    types.do_initial_eval = 0
 
     # Initialize simulation components (placeholders for now)
     # types.InitWillStuff()
@@ -103,8 +106,8 @@ def ERand(limit: int) -> int:
     Returns:
         Random number between 0 and limit-1
     """
-    z = types.Rand(limit)
-    x = types.Rand(limit)
+    z = micropolis.utilities.Rand(limit)
+    x = micropolis.utilities.Rand(limit)
     return z if z < x else x
 
 
@@ -120,11 +123,12 @@ def GenerateMap(r: int) -> None:
     """
     # Seed the random number generator
     import random as python_random
+
     python_random.seed(r)
 
     # Island generation logic
     if CreateIsland < 0:
-        if types.Rand(100) < 10:  # 10% chance for island
+        if micropolis.utilities.Rand(100) < 10:  # 10% chance for island
             MakeIsland()
             return
     elif CreateIsland == 1:
@@ -148,12 +152,14 @@ def GenerateMap(r: int) -> None:
 
     # Randomize the seed again for additional randomness
     import random as python_random
+
     python_random.seed()
 
 
 # ============================================================================
 # Map Clearing Functions
 # ============================================================================
+
 
 def ClearMap() -> None:
     """
@@ -162,9 +168,9 @@ def ClearMap() -> None:
     Ported from ClearMap() in s_gen.c.
     Sets all map cells to DIRT.
     """
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
-            types.Map[x][y] = types.DIRT
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
+            types.map_data[x][y] = types.DIRT
 
 
 def ClearUnnatural() -> None:
@@ -174,10 +180,10 @@ def ClearUnnatural() -> None:
     Ported from ClearUnnatural() in s_gen.c.
     Removes any tiles above WOODS (buildings, roads, etc.).
     """
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
-            if types.Map[x][y] > types.WOODS:
-                types.Map[x][y] = types.DIRT
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
+            if types.map_data[x][y] > types.WOODS:
+                types.map_data[x][y] = types.DIRT
 
 
 # ============================================================================
@@ -185,6 +191,7 @@ def ClearUnnatural() -> None:
 # ============================================================================
 
 RADIUS = 18
+
 
 def MakeNakedIsland() -> None:
     """
@@ -195,38 +202,38 @@ def MakeNakedIsland() -> None:
     river branches extending toward the edges.
     """
     # Fill entire map with river
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
-            types.Map[x][y] = types.RIVER
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
+            types.map_data[x][y] = types.RIVER
 
     # Create central land area
-    for x in range(5, types.WORLD_X - 5):
-        for y in range(5, types.WORLD_Y - 5):
-            types.Map[x][y] = types.DIRT
+    for x in range(5, micropolis.constants.WORLD_X - 5):
+        for y in range(5, micropolis.constants.WORLD_Y - 5):
+            types.map_data[x][y] = types.DIRT
 
     # Add river branches horizontally
-    for x in range(0, types.WORLD_X - 5, 2):
+    for x in range(0, micropolis.constants.WORLD_X - 5, 2):
         global MapX, MapY
         MapX = x
         MapY = ERand(RADIUS)
         BRivPlop()
-        MapY = (types.WORLD_Y - 10) - ERand(RADIUS)
+        MapY = (micropolis.constants.WORLD_Y - 10) - ERand(RADIUS)
         BRivPlop()
         MapY = 0
         SRivPlop()
-        MapY = (types.WORLD_Y - 6)
+        MapY = micropolis.constants.WORLD_Y - 6
         SRivPlop()
 
     # Add river branches vertically
-    for y in range(0, types.WORLD_Y - 5, 2):
+    for y in range(0, micropolis.constants.WORLD_Y - 5, 2):
         MapY = y
         MapX = ERand(RADIUS)
         BRivPlop()
-        MapX = (types.WORLD_X - 10) - ERand(RADIUS)
+        MapX = (micropolis.constants.WORLD_X - 10) - ERand(RADIUS)
         BRivPlop()
         MapX = 0
         SRivPlop()
-        MapX = (types.WORLD_X - 6)
+        MapX = micropolis.constants.WORLD_X - 6
         SRivPlop()
 
 
@@ -246,6 +253,7 @@ def MakeIsland() -> None:
 # Lake Generation
 # ============================================================================
 
+
 def MakeLakes() -> None:
     """
     Generate lakes on the map.
@@ -254,20 +262,20 @@ def MakeLakes() -> None:
     Places multiple lake clusters using river placement functions.
     """
     if LakeLevel < 0:
-        Lim1 = types.Rand(10)
+        Lim1 = micropolis.utilities.Rand(10)
     else:
         Lim1 = LakeLevel // 2
 
     for t in range(Lim1):
-        x = types.Rand(types.WORLD_X - 21) + 10
-        y = types.Rand(types.WORLD_Y - 20) + 10
-        Lim2 = types.Rand(12) + 2
+        x = micropolis.utilities.Rand(micropolis.constants.WORLD_X - 21) + 10
+        y = micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 20) + 10
+        Lim2 = micropolis.utilities.Rand(12) + 2
 
         for z in range(Lim2):
             global MapX, MapY
-            MapX = x - 6 + types.Rand(12)
-            MapY = y - 6 + types.Rand(12)
-            if types.Rand(4):
+            MapX = x - 6 + micropolis.utilities.Rand(12)
+            MapY = y - 6 + micropolis.utilities.Rand(12)
+            if micropolis.utilities.Rand(4):
                 SRivPlop()
             else:
                 BRivPlop()
@@ -277,6 +285,7 @@ def MakeLakes() -> None:
 # River Generation
 # ============================================================================
 
+
 def GetRandStart() -> None:
     """
     Choose a random starting position for river generation.
@@ -285,8 +294,8 @@ def GetRandStart() -> None:
     Sets XStart, YStart, MapX, MapY to a random position in the central area.
     """
     global XStart, YStart, MapX, MapY
-    XStart = 40 + types.Rand(types.WORLD_X - 80)
-    YStart = 33 + types.Rand(types.WORLD_Y - 67)
+    XStart = 40 + micropolis.utilities.Rand(micropolis.constants.WORLD_X - 80)
+    YStart = 33 + micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 67)
     MapX = XStart
     MapY = YStart
 
@@ -302,8 +311,7 @@ def MoveMap(dir: int) -> None:
         dir: Direction to move (0-7, where 0=north, 2=east, 4=south, 6=west)
     """
     global MapX, MapY
-    DirTab = [[0, 1, 1, 1, 0, -1, -1, -1],
-              [-1, -1, 0, 1, 1, 1, 0, -1]]
+    DirTab = [[0, 1, 1, 1, 0, -1, -1, -1], [-1, -1, 0, 1, 1, 1, 0, -1]]
     dir = dir & 7
     MapX += DirTab[0][dir]
     MapY += DirTab[1][dir]
@@ -317,7 +325,7 @@ def DoRivers() -> None:
     Creates rivers starting from the center and extending in different directions.
     """
     global LastDir, Dir, MapX, MapY
-    LastDir = types.Rand(3)
+    LastDir = micropolis.utilities.Rand(3)
     Dir = LastDir
     DoBRiv()
 
@@ -329,7 +337,7 @@ def DoRivers() -> None:
 
     MapX = XStart
     MapY = YStart
-    LastDir = types.Rand(3)
+    LastDir = micropolis.utilities.Rand(3)
     DoSRiv()
 
 
@@ -351,12 +359,12 @@ def DoBRiv() -> None:
 
     while macros.TestBounds(MapX + 4, MapY + 4):
         BRivPlop()
-        if types.Rand(r1) < 10:
+        if micropolis.utilities.Rand(r1) < 10:
             Dir = LastDir
         else:
-            if types.Rand(r2) > 90:
+            if micropolis.utilities.Rand(r2) > 90:
                 Dir += 1
-            if types.Rand(r2) > 90:
+            if micropolis.utilities.Rand(r2) > 90:
                 Dir -= 1
         MoveMap(Dir)
 
@@ -379,12 +387,12 @@ def DoSRiv() -> None:
 
     while macros.TestBounds(MapX + 3, MapY + 3):
         SRivPlop()
-        if types.Rand(r1) < 10:
+        if micropolis.utilities.Rand(r1) < 10:
             Dir = LastDir
         else:
-            if types.Rand(r2) > 90:
+            if micropolis.utilities.Rand(r2) > 90:
                 Dir += 1
-            if types.Rand(r2) > 90:
+            if micropolis.utilities.Rand(r2) > 90:
                 Dir -= 1
         MoveMap(Dir)
 
@@ -410,7 +418,7 @@ def PutOnMap(Mchar: int, Xoff: int, Yoff: int) -> None:
     if not macros.TestBounds(Xloc, Yloc):
         return
 
-    temp = types.Map[Xloc][Yloc]
+    temp = types.map_data[Xloc][Yloc]
     if temp:
         temp = temp & types.LOMASK
         if temp == types.RIVER:
@@ -419,7 +427,7 @@ def PutOnMap(Mchar: int, Xoff: int, Yoff: int) -> None:
         if temp == types.CHANNEL:
             return
 
-    types.Map[Xloc][Yloc] = Mchar
+    types.map_data[Xloc][Yloc] = Mchar
 
 
 def BRivPlop() -> None:
@@ -438,7 +446,7 @@ def BRivPlop() -> None:
         [3, 2, 2, 2, 2, 2, 2, 2, 3],
         [0, 3, 2, 2, 2, 2, 2, 3, 0],
         [0, 0, 3, 2, 2, 2, 3, 0, 0],
-        [0, 0, 0, 3, 3, 3, 0, 0, 0]
+        [0, 0, 0, 3, 3, 3, 0, 0, 0],
     ]
 
     for x in range(9):
@@ -459,7 +467,7 @@ def SRivPlop() -> None:
         [3, 2, 2, 2, 2, 3],
         [3, 2, 2, 2, 2, 3],
         [0, 3, 2, 2, 3, 0],
-        [0, 0, 3, 3, 0, 0]
+        [0, 0, 3, 3, 0, 0],
     ]
 
     for x in range(6):
@@ -470,6 +478,7 @@ def SRivPlop() -> None:
 # ============================================================================
 # Tree Generation
 # ============================================================================
+
 
 def TreeSplash(xloc: int, yloc: int) -> None:
     """
@@ -485,20 +494,20 @@ def TreeSplash(xloc: int, yloc: int) -> None:
     global MapX, MapY
 
     if TreeLevel < 0:
-        dis = types.Rand(150) + 50
+        dis = micropolis.utilities.Rand(150) + 50
     else:
-        dis = types.Rand(100 + (TreeLevel * 2)) + 50
+        dis = micropolis.utilities.Rand(100 + (TreeLevel * 2)) + 50
 
     MapX = xloc
     MapY = yloc
 
     for z in range(dis):
-        dir = types.Rand(7)
+        dir = micropolis.utilities.Rand(7)
         MoveMap(dir)
         if not macros.TestBounds(MapX, MapY):
             return
-        if (types.Map[MapX][MapY] & types.LOMASK) == types.DIRT:
-            types.Map[MapX][MapY] = types.WOODS + types.BLBNBIT
+        if (types.map_data[MapX][MapY] & types.LOMASK) == types.DIRT:
+            types.map_data[MapX][MapY] = types.WOODS + types.BLBNBIT
 
 
 def DoTrees() -> None:
@@ -509,13 +518,13 @@ def DoTrees() -> None:
     Creates multiple tree clusters at random locations.
     """
     if TreeLevel < 0:
-        Amount = types.Rand(100) + 50
+        Amount = micropolis.utilities.Rand(100) + 50
     else:
         Amount = TreeLevel + 3
 
     for x in range(Amount):
-        xloc = types.Rand(types.WORLD_X - 1)
-        yloc = types.Rand(types.WORLD_Y - 1)
+        xloc = micropolis.utilities.Rand(micropolis.constants.WORLD_X - 1)
+        yloc = micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 1)
         TreeSplash(xloc, yloc)
 
     SmoothTrees()
@@ -525,6 +534,7 @@ def DoTrees() -> None:
 # ============================================================================
 # Terrain Smoothing Functions
 # ============================================================================
+
 
 def SmoothRiver() -> None:
     """
@@ -536,30 +546,48 @@ def SmoothRiver() -> None:
     DX = [-1, 0, 1, 0]
     DY = [0, 1, 0, -1]
     REdTab = [
-        13 + types.BULLBIT, 13 + types.BULLBIT, 17 + types.BULLBIT, 15 + types.BULLBIT,
-        5 + types.BULLBIT, 2, 19 + types.BULLBIT, 17 + types.BULLBIT,
-        9 + types.BULLBIT, 11 + types.BULLBIT, 2, 13 + types.BULLBIT,
-        7 + types.BULLBIT, 9 + types.BULLBIT, 5 + types.BULLBIT, 2
+        13 + types.BULLBIT,
+        13 + types.BULLBIT,
+        17 + types.BULLBIT,
+        15 + types.BULLBIT,
+        5 + types.BULLBIT,
+        2,
+        19 + types.BULLBIT,
+        17 + types.BULLBIT,
+        9 + types.BULLBIT,
+        11 + types.BULLBIT,
+        2,
+        13 + types.BULLBIT,
+        7 + types.BULLBIT,
+        9 + types.BULLBIT,
+        5 + types.BULLBIT,
+        2,
     ]
 
-    for MapX in range(types.WORLD_X):
-        for MapY in range(types.WORLD_Y):
-            if types.Map[MapX][MapY] == types.REDGE:
+    for MapX in range(micropolis.constants.WORLD_X):
+        for MapY in range(micropolis.constants.WORLD_Y):
+            if types.map_data[MapX][MapY] == types.REDGE:
                 bitindex = 0
                 for z in range(4):
                     bitindex = bitindex << 1
                     Xtem = MapX + DX[z]
                     Ytem = MapY + DY[z]
-                    if (macros.TestBounds(Xtem, Ytem) and
-                        ((types.Map[Xtem][Ytem] & types.LOMASK) != types.DIRT) and
-                        (((types.Map[Xtem][Ytem] & types.LOMASK) < WOODS_LOW) or
-                         ((types.Map[Xtem][Ytem] & types.LOMASK) > WOODS_HIGH))):
+                    if (
+                        macros.TestBounds(Xtem, Ytem)
+                        and ((types.map_data[Xtem][Ytem] & types.LOMASK) != types.DIRT)
+                        and (
+                            ((types.map_data[Xtem][Ytem] & types.LOMASK) < WOODS_LOW)
+                            or (
+                                (types.map_data[Xtem][Ytem] & types.LOMASK) > WOODS_HIGH
+                            )
+                        )
+                    ):
                         bitindex += 1
 
                 temp = REdTab[bitindex & 15]
-                if (temp != types.RIVER) and types.Rand(1):
+                if (temp != types.RIVER) and micropolis.utilities.Rand(1):
                     temp += 1
-                types.Map[MapX][MapY] = temp
+                types.map_data[MapX][MapY] = temp
 
 
 def IsTree(cell: int) -> bool:
@@ -587,20 +615,19 @@ def SmoothTrees() -> None:
     """
     DX = [-1, 0, 1, 0]
     DY = [0, 1, 0, -1]
-    TEdTab = [0, 0, 0, 34,
-              0, 0, 36, 35,
-              0, 32, 0, 33,
-              30, 31, 29, 37]
+    TEdTab = [0, 0, 0, 34, 0, 0, 36, 35, 0, 32, 0, 33, 30, 31, 29, 37]
 
-    for MapX in range(types.WORLD_X):
-        for MapY in range(types.WORLD_Y):
-            if IsTree(types.Map[MapX][MapY]):
+    for MapX in range(micropolis.constants.WORLD_X):
+        for MapY in range(micropolis.constants.WORLD_Y):
+            if IsTree(types.map_data[MapX][MapY]):
                 bitindex = 0
                 for z in range(4):
                     bitindex = bitindex << 1
                     Xtem = MapX + DX[z]
                     Ytem = MapY + DY[z]
-                    if macros.TestBounds(Xtem, Ytem) and IsTree(types.Map[Xtem][Ytem]):
+                    if macros.TestBounds(Xtem, Ytem) and IsTree(
+                        types.map_data[Xtem][Ytem]
+                    ):
                         bitindex += 1
 
                 temp = TEdTab[bitindex & 15]
@@ -608,9 +635,9 @@ def SmoothTrees() -> None:
                     if temp != types.WOODS:
                         if (MapX + MapY) & 1:
                             temp = temp - 8
-                    types.Map[MapX][MapY] = temp + types.BLBNBIT
+                    types.map_data[MapX][MapY] = temp + types.BLBNBIT
                 else:
-                    types.Map[MapX][MapY] = temp
+                    types.map_data[MapX][MapY] = temp
 
 
 def SmoothWater() -> None:
@@ -621,71 +648,104 @@ def SmoothWater() -> None:
     Complex algorithm that adjusts water tiles based on neighboring terrain.
     """
     # First pass: Mark river edges
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
             # If water:
-            if (WATER_LOW <= (types.Map[x][y] & types.LOMASK) <= WATER_HIGH):
+            if WATER_LOW <= (types.map_data[x][y] & types.LOMASK) <= WATER_HIGH:
                 # Check neighbors for non-water
                 if x > 0:
-                    if not (WATER_LOW <= (types.Map[x - 1][y] & types.LOMASK) <= WATER_HIGH):
-                        types.Map[x][y] = types.REDGE
+                    if not (
+                        WATER_LOW
+                        <= (types.map_data[x - 1][y] & types.LOMASK)
+                        <= WATER_HIGH
+                    ):
+                        types.map_data[x][y] = types.REDGE
                         continue
-                if x < (types.WORLD_X - 1):
-                    if not (WATER_LOW <= (types.Map[x + 1][y] & types.LOMASK) <= WATER_HIGH):
-                        types.Map[x][y] = types.REDGE
+                if x < (micropolis.constants.WORLD_X - 1):
+                    if not (
+                        WATER_LOW
+                        <= (types.map_data[x + 1][y] & types.LOMASK)
+                        <= WATER_HIGH
+                    ):
+                        types.map_data[x][y] = types.REDGE
                         continue
                 if y > 0:
-                    if not (WATER_LOW <= (types.Map[x][y - 1] & types.LOMASK) <= WATER_HIGH):
-                        types.Map[x][y] = types.REDGE
+                    if not (
+                        WATER_LOW
+                        <= (types.map_data[x][y - 1] & types.LOMASK)
+                        <= WATER_HIGH
+                    ):
+                        types.map_data[x][y] = types.REDGE
                         continue
-                if y < (types.WORLD_Y - 1):
-                    if not (WATER_LOW <= (types.Map[x][y + 1] & types.LOMASK) <= WATER_HIGH):
-                        types.Map[x][y] = types.REDGE
+                if y < (micropolis.constants.WORLD_Y - 1):
+                    if not (
+                        WATER_LOW
+                        <= (types.map_data[x][y + 1] & types.LOMASK)
+                        <= WATER_HIGH
+                    ):
+                        types.map_data[x][y] = types.REDGE
                         continue
 
     # Second pass: Convert isolated water to river
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
             # If water which is not a channel:
-            if ((types.Map[x][y] & types.LOMASK) != types.CHANNEL and
-                WATER_LOW <= (types.Map[x][y] & types.LOMASK) <= WATER_HIGH):
+            if (types.map_data[x][y] & types.LOMASK) != types.CHANNEL and WATER_LOW <= (
+                types.map_data[x][y] & types.LOMASK
+            ) <= WATER_HIGH:
                 # Check if all neighbors are water
                 is_isolated = True
                 if x > 0:
-                    if not (WATER_LOW <= (types.Map[x - 1][y] & types.LOMASK) <= WATER_HIGH):
+                    if not (
+                        WATER_LOW
+                        <= (types.map_data[x - 1][y] & types.LOMASK)
+                        <= WATER_HIGH
+                    ):
                         is_isolated = False
-                if x < (types.WORLD_X - 1):
-                    if not (WATER_LOW <= (types.Map[x + 1][y] & types.LOMASK) <= WATER_HIGH):
+                if x < (micropolis.constants.WORLD_X - 1):
+                    if not (
+                        WATER_LOW
+                        <= (types.map_data[x + 1][y] & types.LOMASK)
+                        <= WATER_HIGH
+                    ):
                         is_isolated = False
                 if y > 0:
-                    if not (WATER_LOW <= (types.Map[x][y - 1] & types.LOMASK) <= WATER_HIGH):
+                    if not (
+                        WATER_LOW
+                        <= (types.map_data[x][y - 1] & types.LOMASK)
+                        <= WATER_HIGH
+                    ):
                         is_isolated = False
-                if y < (types.WORLD_Y - 1):
-                    if not (WATER_LOW <= (types.Map[x][y + 1] & types.LOMASK) <= WATER_HIGH):
+                if y < (micropolis.constants.WORLD_Y - 1):
+                    if not (
+                        WATER_LOW
+                        <= (types.map_data[x][y + 1] & types.LOMASK)
+                        <= WATER_HIGH
+                    ):
                         is_isolated = False
 
                 if is_isolated:
-                    types.Map[x][y] = types.RIVER
+                    types.map_data[x][y] = types.RIVER
 
     # Third pass: Adjust woods near water
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
             # If woods:
-            if WOODS_LOW <= (types.Map[x][y] & types.LOMASK) <= WOODS_HIGH:
+            if WOODS_LOW <= (types.map_data[x][y] & types.LOMASK) <= WOODS_HIGH:
                 # Check if adjacent to water
                 if x > 0:
-                    if types.Map[x - 1][y] in (types.RIVER, types.CHANNEL):
-                        types.Map[x][y] = types.REDGE
+                    if types.map_data[x - 1][y] in (types.RIVER, types.CHANNEL):
+                        types.map_data[x][y] = types.REDGE
                         continue
-                if x < (types.WORLD_X - 1):
-                    if types.Map[x + 1][y] in (types.RIVER, types.CHANNEL):
-                        types.Map[x][y] = types.REDGE
+                if x < (micropolis.constants.WORLD_X - 1):
+                    if types.map_data[x + 1][y] in (types.RIVER, types.CHANNEL):
+                        types.map_data[x][y] = types.REDGE
                         continue
                 if y > 0:
-                    if types.Map[x][y - 1] in (types.RIVER, types.CHANNEL):
-                        types.Map[x][y] = types.REDGE
+                    if types.map_data[x][y - 1] in (types.RIVER, types.CHANNEL):
+                        types.map_data[x][y] = types.REDGE
                         continue
-                if y < (types.WORLD_Y - 1):
-                    if types.Map[x][y + 1] in (types.RIVER, types.CHANNEL):
-                        types.Map[x][y] = types.REDGE
+                if y < (micropolis.constants.WORLD_Y - 1):
+                    if types.map_data[x][y + 1] in (types.RIVER, types.CHANNEL):
+                        types.map_data[x][y] = types.REDGE
                         continue

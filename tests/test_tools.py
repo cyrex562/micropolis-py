@@ -10,6 +10,8 @@ from unittest.mock import Mock, patch
 import sys
 import os
 
+import micropolis.constants
+
 from tests.assertions import Assertions
 
 # Add src to path for imports
@@ -60,19 +62,19 @@ class TestToolConstants(Assertions):
     def test_tool_sizes(self):
         """Test tool size array for different building footprints."""
         self.assertEqual(tools.toolSize[tools.residentialState], 3)  # 3x3
-        self.assertEqual(tools.toolSize[tools.commercialState], 3)   # 3x3
-        self.assertEqual(tools.toolSize[tools.industrialState], 3)   # 3x3
-        self.assertEqual(tools.toolSize[tools.stadiumState], 4)      # 4x4
-        self.assertEqual(tools.toolSize[tools.airportState], 6)      # 6x6
-        self.assertEqual(tools.toolSize[tools.queryState], 1)        # 1x1
-        self.assertEqual(tools.toolSize[tools.chalkState], 0)        # Freeform
+        self.assertEqual(tools.toolSize[tools.commercialState], 3)  # 3x3
+        self.assertEqual(tools.toolSize[tools.industrialState], 3)  # 3x3
+        self.assertEqual(tools.toolSize[tools.stadiumState], 4)  # 4x4
+        self.assertEqual(tools.toolSize[tools.airportState], 6)  # 6x6
+        self.assertEqual(tools.toolSize[tools.queryState], 1)  # 1x1
+        self.assertEqual(tools.toolSize[tools.chalkState], 0)  # Freeform
 
     def test_tool_offsets(self):
         """Test tool offset array for proper positioning."""
         self.assertEqual(tools.toolOffset[tools.residentialState], 1)  # Center offset
-        self.assertEqual(tools.toolOffset[tools.stadiumState], 1)      # Center offset
-        self.assertEqual(tools.toolOffset[tools.airportState], 1)      # Center offset
-        self.assertEqual(tools.toolOffset[tools.queryState], 0)        # No offset
+        self.assertEqual(tools.toolOffset[tools.stadiumState], 1)  # Center offset
+        self.assertEqual(tools.toolOffset[tools.airportState], 1)  # Center offset
+        self.assertEqual(tools.toolOffset[tools.queryState], 0)  # No offset
 
 
 class TestUtilityFunctions(Assertions):
@@ -81,47 +83,60 @@ class TestUtilityFunctions(Assertions):
     def setUp(self):
         """Set up test fixtures."""
         # Initialize a small test map
-        types.Map = [[0 for _ in range(10)] for _ in range(10)]
-        types.TotalFunds = 10000  # Plenty of money for tests
+        types.map_data = [[0 for _ in range(10)] for _ in range(10)]
+        types.total_funds = 10000  # Plenty of money for tests
 
     def test_tally_bulldozable_tiles(self):
         """Test tally function identifies bulldozable tiles."""
         # Test bulldozable tiles
         bulldozable_tiles = [
-            types.FIRSTRIVEDGE, types.LASTTREE, types.RUBBLE,
-            types.FLOOD, types.RADTILE, types.FIRE
+            types.FIRSTRIVEDGE,
+            types.LASTTREE,
+            types.RUBBLE,
+            types.FLOOD,
+            types.RADTILE,
+            types.FIRE,
         ]
 
         for tile in bulldozable_tiles:
             with self.subTest(tile=tile):
-                self.assertEqual(tools.tally(tile), 1, f"Tile {tile} should be bulldozable")
+                self.assertEqual(
+                    tools.tally(tile), 1, f"Tile {tile} should be bulldozable"
+                )
 
         # Test non-bulldozable tiles
         non_bulldozable = [types.DIRT, types.RESBASE]
         for tile in non_bulldozable:
             with self.subTest(tile=tile):
-                self.assertEqual(tools.tally(tile), 0, f"Tile {tile} should not be bulldozable")
+                self.assertEqual(
+                    tools.tally(tile), 0, f"Tile {tile} should not be bulldozable"
+                )
 
     def test_checkSize_building_sizes(self):
         """Test checkSize identifies correct building sizes."""
         # 3x3 buildings
         three_by_three = [
-            types.RESBASE - 1, types.COMBASE - 1, types.INDBASE - 1,
-            types.LASTPOWERPLANT + 1, types.POLICESTATION + 4
+            types.RESBASE - 1,
+            types.COMBASE - 1,
+            types.INDBASE - 1,
+            types.LASTPOWERPLANT + 1,
+            types.POLICESTATION + 4,
         ]
 
         for tile in three_by_three:
             with self.subTest(tile=tile):
-                self.assertEqual(tools.checkSize(tile), 3, f"Tile {tile} should be size 3")
+                self.assertEqual(
+                    tools.checkSize(tile), 3, f"Tile {tile} should be size 3"
+                )
 
         # 4x4 buildings
-        four_by_four = [
-            types.PORTBASE, types.COALBASE, types.STADIUMBASE
-        ]
+        four_by_four = [types.PORTBASE, types.COALBASE, types.STADIUMBASE]
 
         for tile in four_by_four:
             with self.subTest(tile=tile):
-                self.assertEqual(tools.checkSize(tile), 4, f"Tile {tile} should be size 4")
+                self.assertEqual(
+                    tools.checkSize(tile), 4, f"Tile {tile} should be size 4"
+                )
 
         # Other sizes
         self.assertEqual(tools.checkSize(types.DIRT), 0)
@@ -163,9 +178,9 @@ class TestBuildingPlacement(Assertions):
     def setUp(self):
         """Set up test fixtures."""
         # Initialize a larger test map
-        types.Map = [[0 for _ in range(20)] for _ in range(20)]
-        types.TotalFunds = 10000
-        types.autoBulldoze = 0  # Disable auto-bulldoze for these tests
+        types.map_data = [[0 for _ in range(20)] for _ in range(20)]
+        types.total_funds = 10000
+        types.auto_bulldoze = 0  # Disable auto-bulldoze for these tests
 
         # Create mock view
         self.mock_view = Mock()
@@ -173,44 +188,58 @@ class TestBuildingPlacement(Assertions):
 
     def test_check3x3_clear_area(self):
         """Test 3x3 building placement on clear area."""
-        result = tools.check3x3(self.mock_view, 5, 5, types.RESBASE, tools.residentialState)
+        result = tools.check3x3(
+            self.mock_view, 5, 5, types.RESBASE, tools.residentialState
+        )
         self.assertEqual(result, 1)
 
         # Check that building was placed
-        self.assertEqual(types.Map[5][5] & types.LOMASK, types.RESBASE + 4)  # Center tile
-        self.assertTrue(types.Map[5][5] & types.ZONEBIT)
-        self.assertEqual(types.Map[4][4] & types.LOMASK, types.RESBASE)  # Corner tile
+        self.assertEqual(
+            types.map_data[5][5] & types.LOMASK, types.RESBASE + 4
+        )  # Center tile
+        self.assertTrue(types.map_data[5][5] & types.ZONEBIT)
+        self.assertEqual(
+            types.map_data[4][4] & types.LOMASK, types.RESBASE
+        )  # Corner tile
 
     def test_check3x3_insufficient_funds(self):
         """Test 3x3 building placement with insufficient funds."""
-        types.TotalFunds = 50  # Less than cost of 100
-        result = tools.check3x3(self.mock_view, 5, 5, types.RESBASE, tools.residentialState)
+        types.total_funds = 50  # Less than cost of 100
+        result = tools.check3x3(
+            self.mock_view, 5, 5, types.RESBASE, tools.residentialState
+        )
         self.assertEqual(result, -2)
 
     def test_check3x3_occupied_area(self):
         """Test 3x3 building placement on occupied area."""
         # Place something in the area first
-        types.Map[5][5] = types.RESBASE  # Non-bulldozable tile
+        types.map_data[5][5] = types.RESBASE  # Non-bulldozable tile
 
-        result = tools.check3x3(self.mock_view, 5, 5, types.RESBASE, tools.residentialState)
+        result = tools.check3x3(
+            self.mock_view, 5, 5, types.RESBASE, tools.residentialState
+        )
         self.assertEqual(result, -1)
 
     def test_check4x4_with_animation(self):
         """Test 4x4 building placement with animation flag."""
-        result = tools.check4x4(self.mock_view, 5, 5, types.COALBASE, 1, tools.powerState)
+        result = tools.check4x4(
+            self.mock_view, 5, 5, types.COALBASE, 1, tools.powerState
+        )
         self.assertEqual(result, 1)
 
         # Check center tile has animation bit
-        self.assertTrue(types.Map[5][6] & types.ANIMBIT)  # Smoke tile
+        self.assertTrue(types.map_data[5][6] & types.ANIMBIT)  # Smoke tile
 
     def test_check6x6_airport(self):
         """Test 6x6 airport placement."""
-        result = tools.check6x6(self.mock_view, 8, 8, types.AIRPORTBASE, tools.airportState)
+        result = tools.check6x6(
+            self.mock_view, 8, 8, types.AIRPORTBASE, tools.airportState
+        )
         self.assertEqual(result, 1)
 
         # Check center tile
-        self.assertEqual(types.Map[8][8] & types.LOMASK, types.AIRPORTBASE + 7)
-        self.assertTrue(types.Map[8][8] & types.ZONEBIT)
+        self.assertEqual(types.map_data[8][8] & types.LOMASK, types.AIRPORTBASE + 7)
+        self.assertTrue(types.map_data[8][8] & types.ZONEBIT)
 
 
 class TestIndividualTools(Assertions):
@@ -218,76 +247,76 @@ class TestIndividualTools(Assertions):
 
     def setUp(self):
         """Set up test fixtures."""
-        types.Map = [[0 for _ in range(20)] for _ in range(20)]
-        types.TotalFunds = 10000
+        types.map_data = [[0 for _ in range(20)] for _ in range(20)]
+        types.total_funds = 10000
 
         self.mock_view = Mock()
         self.mock_view.super_user = False
 
-    @patch('micropolis.tools.MakeSound')
+    @patch("micropolis.tools.MakeSound")
     def test_residential_tool(self, mock_sound):
         """Test residential zone placement."""
         result = tools.residential_tool(self.mock_view, 5, 5)
         self.assertEqual(result, 1)
-        self.assertTrue(types.Map[5][5] & types.ZONEBIT)
+        self.assertTrue(types.map_data[5][5] & types.ZONEBIT)
 
-    @patch('micropolis.tools.MakeSound')
+    @patch("micropolis.tools.MakeSound")
     def test_commercial_tool(self, mock_sound):
         """Test commercial zone placement."""
         result = tools.commercial_tool(self.mock_view, 5, 5)
         self.assertEqual(result, 1)
-        self.assertTrue(types.Map[5][5] & types.ZONEBIT)
+        self.assertTrue(types.map_data[5][5] & types.ZONEBIT)
 
-    @patch('micropolis.tools.MakeSound')
+    @patch("micropolis.tools.MakeSound")
     def test_industrial_tool(self, mock_sound):
         """Test industrial zone placement."""
         result = tools.industrial_tool(self.mock_view, 5, 5)
         self.assertEqual(result, 1)
-        self.assertTrue(types.Map[5][5] & types.ZONEBIT)
+        self.assertTrue(types.map_data[5][5] & types.ZONEBIT)
 
-    @patch('micropolis.tools.DidTool')
+    @patch("micropolis.tools.DidTool")
     def test_road_tool(self, mock_did_tool):
         """Test road placement."""
         result = tools.road_tool(self.mock_view, 5, 5)
         self.assertEqual(result, 1)
-        self.assertEqual(types.Map[5][5] & types.LOMASK, types.ROADBASE)
+        self.assertEqual(types.map_data[5][5] & types.LOMASK, types.ROADBASE)
 
-    @patch('micropolis.tools.DidTool')
+    @patch("micropolis.tools.DidTool")
     def test_rail_tool(self, mock_did_tool):
         """Test rail placement."""
         result = tools.rail_tool(self.mock_view, 5, 5)
         self.assertEqual(result, 1)
-        self.assertEqual(types.Map[5][5] & types.LOMASK, types.RAILBASE)
+        self.assertEqual(types.map_data[5][5] & types.LOMASK, types.RAILBASE)
 
-    @patch('micropolis.tools.DidTool')
+    @patch("micropolis.tools.DidTool")
     def test_wire_tool(self, mock_did_tool):
         """Test power line placement."""
         result = tools.wire_tool(self.mock_view, 5, 5)
         self.assertEqual(result, 1)
-        self.assertEqual(types.Map[5][5] & types.LOMASK, types.POWERBASE)
-        self.assertTrue(types.Map[5][5] & types.CONDBIT)
+        self.assertEqual(types.map_data[5][5] & types.LOMASK, types.POWERBASE)
+        self.assertTrue(types.map_data[5][5] & types.CONDBIT)
 
     def test_park_tool(self):
         """Test park placement."""
         result = tools.park_tool(self.mock_view, 5, 5)
         self.assertEqual(result, 1)
         # Park should be either WOODS2, WOODS3, WOODS4, or FOUNTAIN
-        tile = types.Map[5][5] & types.LOMASK
+        tile = types.map_data[5][5] & types.LOMASK
         self.assertIn(tile, [types.WOODS2, types.WOODS3, types.WOODS4, types.FOUNTAIN])
 
-    @patch('micropolis.tools.DidTool')
+    @patch("micropolis.tools.DidTool")
     def test_query_tool(self, mock_did_tool):
         """Test query tool zone status."""
         # Place a residential zone
         tools.residential_tool(self.mock_view, 5, 5)
 
-        with patch('micropolis.tools.doZoneStatus') as mock_zone_status:
+        with patch("micropolis.tools.doZoneStatus") as mock_zone_status:
             result = tools.query_tool(self.mock_view, 5, 5)
             self.assertEqual(result, 1)
             mock_zone_status.assert_called_once_with(5, 5)
 
-    @patch('micropolis.tools.MakeSound')
-    @patch('micropolis.tools.put3x3Rubble')
+    @patch("micropolis.tools.MakeSound")
+    @patch("micropolis.tools.put3x3Rubble")
     def test_bulldozer_tool_zone(self, mock_rubble, mock_sound):
         """Test bulldozer on zone building."""
         # Place a residential zone first
@@ -304,56 +333,71 @@ class TestQueryTool(Assertions):
 
     def setUp(self):
         """Set up test fixtures."""
-        types.Map = [[0 for _ in range(20)] for _ in range(20)]
-        types.PopDensity = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.LandValueMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.CrimeMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.PollutionMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.RateOGMem = [[0 for _ in range(types.SmY)] for _ in range(types.SmX)]
+        types.map_data = [[0 for _ in range(20)] for _ in range(20)]
+        types.pop_density = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.land_value_mem = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.crime_mem = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.pollution_mem = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.rate_og_mem = [
+            [0 for _ in range(micropolis.constants.SM_Y)]
+            for _ in range(micropolis.constants.SM_X)
+        ]
 
     def test_getDensityStr_population(self):
         """Test population density string calculation."""
-        types.PopDensity[2][2] = 0  # Low density
+        types.pop_density[2][2] = 0  # Low density
         result = tools.getDensityStr(0, 5, 5)  # 5>>1 = 2
         self.assertEqual(result, 0)  # Low density
 
-        types.PopDensity[2][2] = 128  # High density
+        types.pop_density[2][2] = 128  # High density
         result = tools.getDensityStr(0, 5, 5)
         self.assertEqual(result, 2)  # High density
 
     def test_getDensityStr_land_value(self):
         """Test land value density string calculation."""
-        types.LandValueMem[2][2] = 20  # Low value
+        types.land_value_mem[2][2] = 20  # Low value
         result = tools.getDensityStr(1, 5, 5)
         self.assertEqual(result, 4)  # Low value
 
-        types.LandValueMem[2][2] = 100  # High value
+        types.land_value_mem[2][2] = 100  # High value
         result = tools.getDensityStr(1, 5, 5)
         self.assertEqual(result, 6)  # High value
 
     def test_getDensityStr_crime(self):
         """Test crime density string calculation."""
-        types.CrimeMem[2][2] = 0  # Low crime
+        types.crime_mem[2][2] = 0  # Low crime
         result = tools.getDensityStr(2, 5, 5)
         self.assertEqual(result, 8)  # Low crime
 
-        types.CrimeMem[2][2] = 128  # High crime
+        types.crime_mem[2][2] = 128  # High crime
         result = tools.getDensityStr(2, 5, 5)
         self.assertEqual(result, 10)  # High crime
 
     def test_getDensityStr_pollution(self):
         """Test pollution density string calculation."""
-        types.PollutionMem[2][2] = 32  # Some pollution
+        types.pollution_mem[2][2] = 32  # Some pollution
         result = tools.getDensityStr(3, 5, 5)
         self.assertEqual(result, 13)  # Some pollution
 
-        types.PollutionMem[2][2] = 200  # High pollution
+        types.pollution_mem[2][2] = 200  # High pollution
         result = tools.getDensityStr(3, 5, 5)
         self.assertEqual(result, 15)  # High pollution
 
     def test_getDensityStr_growth(self):
         """Test growth rate density string calculation."""
-        types.RateOGMem[1][1] = -50  # Negative growth
+        types.rate_og_mem[1][1] = -50  # Negative growth
         result = tools.getDensityStr(4, 4, 4)  # 4>>3 = 0.5 -> 0, 4>>3 = 0.5 -> 0
         # This might need adjustment based on actual coordinates
         # For now, just test that it returns a valid result
@@ -401,14 +445,16 @@ class TestDrawingTools(Assertions):
         self.assertEqual(ink.right, 15)
         self.assertEqual(ink.bottom, 25)
 
-    @patch('micropolis.tools.DidTool')
+    @patch("micropolis.tools.DidTool")
     def test_chalk_tool(self, mock_did_tool):
         """Test chalk tool application."""
-        result = tools.ChalkTool(self.mock_view, 10, 20, types.COLOR_WHITE, True)
+        result = tools.ChalkTool(
+            self.mock_view, 10, 20, micropolis.constants.COLOR_WHITE, True
+        )
         self.assertEqual(result, 1)
         mock_did_tool.assert_called_with(self.mock_view, "Chlk", 10, 20)
 
-    @patch('micropolis.tools.DidTool')
+    @patch("micropolis.tools.DidTool")
     def test_eraser_tool(self, mock_did_tool):
         """Test eraser tool application."""
         result = tools.EraserTool(self.mock_view, 10, 20, True)
@@ -421,8 +467,8 @@ class TestToolApplication(Assertions):
 
     def setUp(self):
         """Set up test fixtures."""
-        types.Map = [[0 for _ in range(20)] for _ in range(20)]
-        types.TotalFunds = 10000
+        types.map_data = [[0 for _ in range(20)] for _ in range(20)]
+        types.total_funds = 10000
 
         self.mock_view = Mock()
         self.mock_view.super_user = False
@@ -430,7 +476,9 @@ class TestToolApplication(Assertions):
 
     def test_do_tool_residential(self):
         """Test do_tool with residential tool."""
-        result = tools.do_tool(self.mock_view, tools.residentialState, 80, 80, True)  # 80>>4 = 5
+        result = tools.do_tool(
+            self.mock_view, tools.residentialState, 80, 80, True
+        )  # 80>>4 = 5
         self.assertEqual(result, 1)
 
     def test_current_tool(self):
@@ -438,16 +486,16 @@ class TestToolApplication(Assertions):
         result = tools.current_tool(self.mock_view, 80, 80, True)
         self.assertEqual(result, 1)
 
-    @patch('micropolis.messages.clear_mes')
-    @patch('micropolis.messages.send_mes')
-    @patch('micropolis.tools.MakeSoundOn')
+    @patch("micropolis.messages.clear_mes")
+    @patch("micropolis.messages.send_mes")
+    @patch("micropolis.tools.MakeSoundOn")
     def test_tool_down_out_of_bounds(self, mock_sound, mock_send_mes, mock_clear_mes):
         """Test ToolDown with out of bounds coordinates."""
         tools.ToolDown(self.mock_view, -10, -10)
         mock_clear_mes.assert_called_once()
         mock_send_mes.assert_called_with(34)  # Out of jurisdiction
 
-    @patch('micropolis.tools.current_tool')
+    @patch("micropolis.tools.current_tool")
     def test_tool_down_success(self, mock_current_tool):
         """Test successful ToolDown."""
         mock_current_tool.return_value = 1
@@ -460,7 +508,7 @@ class TestToolApplication(Assertions):
         self.mock_view.last_x = 80
         self.mock_view.last_y = 80
 
-        with patch('micropolis.tools.current_tool') as mock_current_tool:
+        with patch("micropolis.tools.current_tool") as mock_current_tool:
             result = tools.ToolDrag(self.mock_view, 88, 88)  # 8 pixels away
             mock_current_tool.assert_called_with(self.mock_view, 88, 88, 0)
             self.assertEqual(result, 1)
@@ -472,9 +520,12 @@ class TestIntegration(Assertions):
     def setUp(self):
         """Set up integration test fixtures."""
         # Reset global state
-        types.Map = [[0 for _ in range(types.WORLD_Y)] for _ in range(types.WORLD_X)]
-        types.TotalFunds = 10000
-        types.autoBulldoze = True
+        types.map_data = [
+            [0 for _ in range(micropolis.constants.WORLD_Y)]
+            for _ in range(micropolis.constants.WORLD_X)
+        ]
+        types.total_funds = 10000
+        types.auto_bulldoze = True
 
         self.mock_view = Mock()
         self.mock_view.super_user = False
@@ -511,19 +562,23 @@ class TestIntegration(Assertions):
         # Build a residential zone
         result = tools.residential_tool(self.mock_view, 10, 10)
         self.assertEqual(result, 1)
-        original_funds = types.TotalFunds
+        original_funds = types.total_funds
 
         # Bulldoze it
-        with patch('micropolis.tools.MakeSound'), \
-             patch('micropolis.tools.put3x3Rubble'):
+        with (
+            patch("micropolis.tools.MakeSound"),
+            patch("micropolis.tools.put3x3Rubble"),
+        ):
             result = tools.bulldozer_tool(self.mock_view, 10, 10)
             self.assertEqual(result, 1)
-            self.assertEqual(types.TotalFunds, original_funds - 1)  # Cost of bulldozing
+            self.assertEqual(
+                types.total_funds, original_funds - 1
+            )  # Cost of bulldozing
 
         # Clear the area (since rubble creation is patched)
         for x in range(8, 13):
             for y in range(8, 13):
-                types.Map[x][y] = 0
+                types.map_data[x][y] = 0
 
         # Rebuild on the same spot
         result = tools.residential_tool(self.mock_view, 10, 10)
@@ -538,9 +593,8 @@ class TestIntegration(Assertions):
         # Verify the building footprint
         for x in range(14, 20):  # 6x6 area centered on 15,15
             for y in range(14, 20):
-                tile = types.Map[x][y]
+                tile = types.map_data[x][y]
                 if x == 15 and y == 15:  # Center
                     self.assertTrue(tile & types.ZONEBIT)
                 else:
                     self.assertTrue(tile & types.BNCNBIT)
-

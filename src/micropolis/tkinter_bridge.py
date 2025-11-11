@@ -22,14 +22,14 @@ from .audio import make_sound
 from .disasters import DoEarthQuake
 from .engine import sim_loop, sim_update
 from .types import Eval as TypesEval
-from .types import SimView
+from .sim_view import SimView
 
 Sim = None  # Optional override for tests
 
 
 # Global state (equivalent to w_tk.c globals)
 tk_main_interp = None  # Simplified - no TCL interpreter
-main_window = None     # Pygame screen surface
+main_window = None  # Pygame screen surface
 update_delayed = False
 auto_scroll_edge = 16
 auto_scroll_step = 16
@@ -64,6 +64,7 @@ def _current_sim():
 
 class TkTimer:
     """Simplified timer class to replace TK timers."""
+
     def __init__(self, delay_ms: int, callback: Callable, data=None):
         self.delay_ms = delay_ms
         self.callback = callback
@@ -214,6 +215,7 @@ def eval_command(cmd: str) -> int:
 
 # Timer management functions
 
+
 def start_micropolis_timer() -> None:
     """Start the simulation timer."""
     global sim_timer_token, sim_timer_idle, sim_timer_set
@@ -249,7 +251,7 @@ def _calculate_sim_delay() -> int:
     delay = types.sim_delay
 
     # Adjust for special conditions (earthquake, etc.)
-    if types.ShakeNow or types.NeedRest > 0:
+    if types.shake_now or types.need_rest > 0:
         delay = max(delay, 50000)
 
     # Convert to milliseconds, ensuring at least 1
@@ -263,10 +265,10 @@ def _sim_timer_callback() -> None:
     sim_timer_token = None
     sim_timer_set = False
 
-    if types.NeedRest > 0:
-        types.NeedRest -= 1
+    if types.need_rest > 0:
+        types.need_rest -= 1
 
-    if types.SimSpeed:
+    if types.sim_speed:
         sim_loop(True)  # Changed from 1 to True
         start_micropolis_timer()
     else:
@@ -288,7 +290,7 @@ def do_earthquake() -> None:
 
     make_sound("city", "Explosion-Low")
     eval_command("UIEarthQuake")
-    types.ShakeNow = 1
+    types.shake_now = 1
 
     # Start earthquake timer
     pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, earthquake_delay)
@@ -300,7 +302,7 @@ def stop_earthquake() -> None:
     """Stop earthquake effect."""
     global earthquake_timer_set, earthquake_timer_token
 
-    types.ShakeNow = 0
+    types.shake_now = 0
     pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, 0)
     earthquake_timer_set = False
     earthquake_timer_token = None
@@ -312,6 +314,7 @@ def _earthquake_timer_callback() -> None:
 
 
 # Stdin processing for Sugar integration
+
 
 def start_stdin_processing() -> None:
     """Start stdin processing thread for Sugar integration."""
@@ -359,6 +362,7 @@ def _process_stdin_commands() -> None:
 
 # Update management
 
+
 def kick() -> None:
     """Kick start an update cycle."""
     global update_delayed
@@ -379,6 +383,7 @@ def _do_delayed_update() -> None:
 
 
 # View management coordination
+
 
 def invalidate_maps() -> None:
     """Invalidate all map views."""
@@ -434,6 +439,7 @@ def _eventually_redraw_view(view: SimView) -> None:
 
 # Auto-scroll functionality (simplified)
 
+
 def start_auto_scroll(view: SimView, x: int, y: int) -> None:
     """Start auto-scrolling for a view (simplified implementation)."""
     if view.tool_mode == 0:
@@ -441,10 +447,10 @@ def start_auto_scroll(view: SimView, x: int, y: int) -> None:
 
     # Check if cursor is near edge
     edge_triggered = (
-        x < auto_scroll_edge or
-        x > (view.w_width - auto_scroll_edge) or
-        y < auto_scroll_edge or
-        y > (view.w_height - auto_scroll_edge)
+        x < auto_scroll_edge
+        or x > (view.w_width - auto_scroll_edge)
+        or y < auto_scroll_edge
+        or y > (view.w_height - auto_scroll_edge)
     )
 
     if edge_triggered:

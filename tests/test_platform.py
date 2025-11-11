@@ -5,21 +5,44 @@ Tests pygame platform functionality including display management,
 coordinate conversion, view management, and drawing operations.
 """
 
+from micropolis.constants import COLOR_WHITE
+from micropolis.sim import Sim
+from micropolis.sim_view import SimView
 import pytest
 import pygame
 from unittest.mock import Mock, patch
 
 from micropolis.platform import (
-    initialize_platform, shutdown_platform, set_display_mode,
-    view_to_tile_coords, view_to_pixel_coords, update_flush,
-    create_sim_view, resize_sim_view, destroy_sim_view,
-    pan_view_by, pan_view_to, blit_view_surface,
-    get_display_pixels, is_platform_initialized, get_display_info,
-    new_ink, start_ink, add_ink, draw_ink, erase_overlay,
-    catch_error, do_stop_micropolis, do_timeout_listen, make_new_sim,
-    PygameDisplay, Ink, view_surfaces, view_overlay_surfaces
+    initialize_platform,
+    shutdown_platform,
+    set_display_mode,
+    view_to_tile_coords,
+    view_to_pixel_coords,
+    update_flush,
+    create_sim_view,
+    resize_sim_view,
+    destroy_sim_view,
+    pan_view_by,
+    pan_view_to,
+    blit_view_surface,
+    get_display_pixels,
+    is_platform_initialized,
+    get_display_info,
+    new_ink,
+    start_ink,
+    add_ink,
+    draw_ink,
+    erase_overlay,
+    catch_error,
+    do_stop_micropolis,
+    do_timeout_listen,
+    make_new_sim,
+    PygameDisplay,
+    Ink,
+    view_surfaces,
+    view_overlay_surfaces,
 )
-from micropolis.types import SimView, Sim, COLOR_WHITE, COLOR_BLACK
+from micropolis.constants import COLOR_BLACK
 from micropolis.view_types import Map_Class, Editor_Class
 
 
@@ -28,20 +51,20 @@ class TestPlatformInitialization:
 
     def test_initialize_platform_success(self):
         """Test successful platform initialization."""
-        with patch('pygame.init') as mock_init:
+        with patch("pygame.init") as mock_init:
             result = initialize_platform()
             assert result is True
             mock_init.assert_called_once()
 
     def test_initialize_platform_failure(self):
         """Test platform initialization failure."""
-        with patch('pygame.init', side_effect=Exception("Init failed")):
+        with patch("pygame.init", side_effect=Exception("Init failed")):
             result = initialize_platform()
             assert result is False
 
     def test_shutdown_platform(self):
         """Test platform shutdown."""
-        with patch('pygame.quit') as mock_quit:
+        with patch("pygame.quit") as mock_quit:
             shutdown_platform()
             mock_quit.assert_called_once()
 
@@ -51,7 +74,7 @@ class TestPlatformInitialization:
         assert is_platform_initialized() is False
 
         # After initialization
-        with patch('pygame.init'):
+        with patch("pygame.init"):
             initialize_platform()
             assert is_platform_initialized() is True
 
@@ -66,7 +89,7 @@ class TestDisplayManagement:
     def test_set_display_mode_success(self):
         """Test successful display mode setting."""
         initialize_platform()
-        with patch('pygame.display.set_mode') as mock_set_mode:
+        with patch("pygame.display.set_mode") as mock_set_mode:
             mock_surface = Mock()
             mock_set_mode.return_value = mock_surface
 
@@ -77,7 +100,7 @@ class TestDisplayManagement:
     def test_set_display_mode_failure(self):
         """Test display mode setting failure."""
         initialize_platform()
-        with patch('pygame.display.set_mode', side_effect=Exception("Set mode failed")):
+        with patch("pygame.display.set_mode", side_effect=Exception("Set mode failed")):
             result = set_display_mode(800, 600)
             assert result is False
 
@@ -92,11 +115,11 @@ class TestDisplayManagement:
         """Test getting display information."""
         info = get_display_info()
         assert isinstance(info, dict)
-        assert 'width' in info
-        assert 'height' in info
-        assert 'depth' in info
-        assert 'color' in info
-        assert 'initialized' in info
+        assert "width" in info
+        assert "height" in info
+        assert "depth" in info
+        assert "color" in info
+        assert "initialized" in info
 
 
 class TestCoordinateConversion:

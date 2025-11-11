@@ -30,7 +30,7 @@ def animate_tiles() -> None:
     # Iterate through all tiles in the world map
     for x in range(macros.WORLD_X):
         for y in range(macros.WORLD_Y):
-            tile_value = types.Map[x][y]
+            tile_value = types.map_data[x][y]
 
             # Check if this tile should be animated
             if tile_value & macros.ANIMBIT:
@@ -49,12 +49,13 @@ def animate_tiles() -> None:
                     new_tile_index = tile_index  # Fallback for invalid indices
 
                 # Restore the flags and update the tile
-                types.Map[x][y] = new_tile_index | tile_flags
+                types.map_data[x][y] = new_tile_index | tile_flags
 
 
 # ============================================================================
 # Animation Statistics and Debugging
 # ============================================================================
+
 
 def count_animated_tiles() -> int:
     """
@@ -66,7 +67,7 @@ def count_animated_tiles() -> int:
     count = 0
     for x in range(macros.WORLD_X):
         for y in range(macros.WORLD_Y):
-            if types.Map[x][y] & macros.ANIMBIT:
+            if types.map_data[x][y] & macros.ANIMBIT:
                 count += 1
     return count
 
@@ -81,12 +82,12 @@ def get_animated_tile_positions() -> list[tuple[int, int]]:
     positions = []
     for x in range(macros.WORLD_X):
         for y in range(macros.WORLD_Y):
-            if types.Map[x][y] & macros.ANIMBIT:
+            if types.map_data[x][y] & macros.ANIMBIT:
                 positions.append((x, y))
     return positions
 
 
-def get_animation_info(x: int, y: int) -> dict[str, Any]|None:
+def get_animation_info(x: int, y: int) -> dict[str, Any] | None:
     """
     Get detailed animation information for a specific tile.
 
@@ -100,7 +101,7 @@ def get_animation_info(x: int, y: int) -> dict[str, Any]|None:
     if not macros.TestBounds(x, y):
         return None
 
-    tile_value = types.Map[x][y]
+    tile_value = types.map_data[x][y]
 
     if not (tile_value & macros.ANIMBIT):
         return None
@@ -109,11 +110,11 @@ def get_animation_info(x: int, y: int) -> dict[str, Any]|None:
     tile_flags = tile_value & macros.ALLBITS
 
     return {
-        'position': (x, y),
-        'tile_value': tile_value,
-        'tile_index': tile_index,
-        'tile_flags': tile_flags,
-        'is_animated': True,
-        'category': animation.get_animation_category(tile_index),
-        'sync_value': animation.get_animation_sync(tile_index)
+        "position": (x, y),
+        "tile_value": tile_value,
+        "tile_index": tile_index,
+        "tile_flags": tile_flags,
+        "is_animated": True,
+        "category": animation.get_animation_category(tile_index),
+        "sync_value": animation.get_animation_sync(tile_index),
     }

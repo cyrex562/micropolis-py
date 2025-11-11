@@ -1,13 +1,13 @@
-from pydantic import Field
+from pathlib import Path
+from typing import Literal, Type
+
+from pydantic import DirectoryPath, Field, FilePath
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
     TomlConfigSettingsSource,
 )
-
-
-from typing import Literal, Type
 
 
 class AppConfig(BaseSettings):
@@ -46,9 +46,18 @@ class AppConfig(BaseSettings):
         default=False, description="Use networking mode (no shared memory)"
     )
     multiplayer: bool = Field(default=False, description="Enable multiplayer mode")
-    filename: str | None = Field(
+    filename: FilePath | None = Field(
         default=None, description="City file to load (.cty) or new city name"
     )
+    home: DirectoryPath = Field(
+        default=Path("."),
+        description="Home directory for save files and configurations",
+    )
+    resource_dir: DirectoryPath = Field(
+        default=Path("./assets"),
+        description="Directory containing game resources",
+    )
+    
 
     model_config = SettingsConfigDict(toml_file="./config.toml")
 

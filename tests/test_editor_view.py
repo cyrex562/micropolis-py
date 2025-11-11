@@ -8,6 +8,8 @@ from unittest.mock import patch
 import sys
 import os
 
+import micropolis.constants
+
 from tests.assertions import Assertions
 
 # Add the src directory to the path
@@ -37,16 +39,19 @@ class TestEditorView(Assertions):
         self.view.x.color = 1  # Color mode
 
         # Initialize tile data
-        self.view.bigtiles = b'\x00' * (types.TILE_COUNT * 256 * 4)  # Mock tile data
+        self.view.bigtiles = b"\x00" * (types.TILE_COUNT * 256 * 4)  # Mock tile data
 
         # Initialize tile cache
         editor_view.initialize_editor_tiles(self.view)
 
         # Set up some test map data
-        types.Map = [[0 for _ in range(types.WORLD_Y)] for _ in range(types.WORLD_X)]
+        types.map_data = [
+            [0 for _ in range(micropolis.constants.WORLD_Y)]
+            for _ in range(micropolis.constants.WORLD_X)
+        ]
         for x in range(20):
             for y in range(20):
-                types.Map[x][y] = macros.RESBASE  # Residential zone
+                types.map_data[x][y] = macros.RESBASE  # Residential zone
 
     def tearDown(self):
         """Clean up test fixtures"""
@@ -54,7 +59,7 @@ class TestEditorView(Assertions):
 
     def test_drawBeegMaps(self):
         """Test drawBeegMaps function"""
-        with patch('micropolis.engine.sim_update_editors') as mock_update:
+        with patch("micropolis.engine.sim_update_editors") as mock_update:
             editor_view.drawBeegMaps()
             mock_update.assert_called_once()
 
@@ -82,7 +87,7 @@ class TestEditorView(Assertions):
 
     def test_DoUpdateEditor(self):
         """Test DoUpdateEditor function"""
-        with patch('micropolis.editor_view.MemDrawBeegMapRect') as mock_draw:
+        with patch("micropolis.editor_view.MemDrawBeegMapRect") as mock_draw:
             editor_view.DoUpdateEditor(self.view)
             self.assertFalse(self.view.invalid)  # Should mark as valid
             mock_draw.assert_called_once()
@@ -90,7 +95,7 @@ class TestEditorView(Assertions):
     def test_DoUpdateEditor_invisible(self):
         """Test DoUpdateEditor with invisible view"""
         self.view.visible = False
-        with patch('micropolis.editor_view.MemDrawBeegMapRect') as mock_draw:
+        with patch("micropolis.editor_view.MemDrawBeegMapRect") as mock_draw:
             editor_view.DoUpdateEditor(self.view)
             mock_draw.assert_not_called()
 
@@ -135,10 +140,12 @@ class TestEditorView(Assertions):
     def test_lightning_bolt_animation(self):
         """Test lightning bolt animation for unpowered zones"""
         # Set up unpowered residential zone
-        types.Map[15][15] = macros.RESBASE | macros.ZONEBIT  # Residential zone, unpowered
+        types.map_data[15][15] = (
+            macros.RESBASE | macros.ZONEBIT
+        )  # Residential zone, unpowered
 
         # Test with blinking on
-        types.flagBlink = -1  # Negative means blinking
+        types.flag_blink = -1  # Negative means blinking
         editor_view.MemDrawBeegMapRect(self.view, 15, 15, 1, 1)
         # Should be called with lightning bolt tile
 
@@ -148,12 +155,12 @@ class TestEditorView(Assertions):
         self.view.dynamic_filter = 1
 
         # Set up dynamic data for filtering
-        types.DynamicData = [0] * 32
-        types.DynamicData[0] = 0   # Pop min
-        types.DynamicData[1] = 100 # Pop max
+        types.dynamic_data = [0] * 32
+        types.dynamic_data[0] = 0  # Pop min
+        types.dynamic_data[1] = 100  # Pop max
 
         # Set up population density
-        types.PopDensity[15][15] = 50  # Within range
+        types.pop_density[15][15] = 50  # Within range
 
         editor_view.MemDrawBeegMapRect(self.view, 15, 15, 1, 1)
         # Should apply filtering
@@ -165,8 +172,7 @@ class TestEditorView(Assertions):
             self.view.tiles[0][0] = macros.RESBASE
 
         # Draw the same tile again
-        types.Map[10][10] = macros.RESBASE
+        types.map_data[10][10] = macros.RESBASE
 
         # Just test that the function doesn't crash
         editor_view.MemDrawBeegMapRect(self.view, 10, 10, 1, 1)
-

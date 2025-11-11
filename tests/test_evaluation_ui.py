@@ -100,7 +100,7 @@ class TestCurrentYear(Assertions):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.types_patcher = patch('micropolis.evaluation_ui.types')
+        self.types_patcher = patch("micropolis.evaluation_ui.types")
         self.mock_types = self.types_patcher.start()
         self.mock_types.StartingYear = 1900
 
@@ -132,18 +132,23 @@ class TestEvaluationDisplay(Assertions):
     def setUp(self):
         """Set up test fixtures"""
         # Mock evaluation module
-        self.eval_patcher = patch('micropolis.evaluation_ui.evaluation')
+        self.eval_patcher = patch("micropolis.evaluation_ui.evaluation")
         self.mock_eval = self.eval_patcher.start()
 
         # Mock types module
-        self.types_patcher = patch('micropolis.evaluation_ui.types')
+        self.types_patcher = patch("micropolis.evaluation_ui.types")
         self.mock_types = self.types_patcher.start()
 
         # Set up mock data
         self.mock_eval.CityYes = 75
         self.mock_eval.CityNo = 25
         self.mock_eval.ProblemVotes = [10, 20, 5, 15, 8, 12, 3]
-        self.mock_eval.ProblemOrder = [1, 3, 0, 5]  # Pollution, Taxes, Crime, Unemployment
+        self.mock_eval.ProblemOrder = [
+            1,
+            3,
+            0,
+            5,
+        ]  # Pollution, Taxes, Crime, Unemployment
         self.mock_eval.CityPop = 50000
         self.mock_eval.deltaCityPop = 2500
         self.mock_eval.CityAssValue = 1000000
@@ -157,8 +162,8 @@ class TestEvaluationDisplay(Assertions):
         self.eval_patcher.stop()
         self.types_patcher.stop()
 
-    @patch('micropolis.evaluation_ui.current_year')
-    @patch('micropolis.evaluation_ui.set_evaluation')
+    @patch("micropolis.evaluation_ui.current_year")
+    @patch("micropolis.evaluation_ui.set_evaluation")
     def test_do_score_card(self, mock_set_eval, mock_current_year):
         """Test score card generation"""
         mock_current_year.return_value = 1950
@@ -175,60 +180,77 @@ class TestEvaluationDisplay(Assertions):
         self.assertEqual(args[17], "City Evaluation  1950")  # title
 
         # Check score and change
-        self.assertEqual(args[0], "25")   # changed
+        self.assertEqual(args[0], "25")  # changed
         self.assertEqual(args[1], "750")  # score
 
         # Check problem names (should be in order: Pollution, Taxes, Crime, Unemployment)
         self.assertEqual(args[2], "**POLLUTION**")  # ps0 - marked as bold
-        self.assertEqual(args[3], "TAXES")          # ps1
-        self.assertEqual(args[4], "CRIME")          # ps2
-        self.assertEqual(args[5], "UNEMPLOYMENT")   # ps3
+        self.assertEqual(args[3], "TAXES")  # ps1
+        self.assertEqual(args[4], "CRIME")  # ps2
+        self.assertEqual(args[5], "UNEMPLOYMENT")  # ps3
 
         # Check problem votes
-        self.assertEqual(args[6], "20%")   # pv0 - Pollution
-        self.assertEqual(args[7], "15%")   # pv1 - Taxes
-        self.assertEqual(args[8], "10%")   # pv2 - Crime
-        self.assertEqual(args[9], "12%")   # pv3 - Unemployment
+        self.assertEqual(args[6], "20%")  # pv0 - Pollution
+        self.assertEqual(args[7], "15%")  # pv1 - Taxes
+        self.assertEqual(args[8], "10%")  # pv2 - Crime
+        self.assertEqual(args[9], "12%")  # pv3 - Unemployment
 
         # Check population stats
         self.assertEqual(args[10], "50000")  # pop
-        self.assertEqual(args[11], "2500")   # delta
+        self.assertEqual(args[11], "2500")  # delta
 
         # Check assessed value (formatted)
         self.assertEqual(args[12], "$1,000,000")  # assessed_dollars
 
         # Check city class and level
-        self.assertEqual(args[13], "CITY")    # cityclass
+        self.assertEqual(args[13], "CITY")  # cityclass
         self.assertEqual(args[14], "Medium")  # citylevel
 
         # Check approval ratings
         self.assertEqual(args[15], "75%")  # goodyes
         self.assertEqual(args[16], "25%")  # goodno
 
-    @patch('micropolis.evaluation_ui.draw_evaluation')
+    @patch("micropolis.evaluation_ui.draw_evaluation")
     def test_set_evaluation(self, mock_draw_eval):
         """Test set_evaluation function"""
         evaluation_ui.set_evaluation(
-            "25", "750", "POLLUTION", "TAXES", "CRIME", "UNEMPLOYMENT",
-            "20%", "15%", "10%", "12%", "50000", "2500", "$1,000,000",
-            "CITY", "Medium", "75%", "25%", "City Evaluation  1950"
+            "25",
+            "750",
+            "POLLUTION",
+            "TAXES",
+            "CRIME",
+            "UNEMPLOYMENT",
+            "20%",
+            "15%",
+            "10%",
+            "12%",
+            "50000",
+            "2500",
+            "$1,000,000",
+            "CITY",
+            "Medium",
+            "75%",
+            "25%",
+            "City Evaluation  1950",
         )
 
         # Check that evaluation data was stored
         data = evaluation_ui.get_evaluation_data()
         self.assertIsNotNone(data)
-        self.assertEqual(data['title'], "City Evaluation  1950")
-        self.assertEqual(data['score'], "750")
-        self.assertEqual(data['changed'], "25")
-        self.assertEqual(data['problems'], ["POLLUTION", "TAXES", "CRIME", "UNEMPLOYMENT"])
-        self.assertEqual(data['problem_votes'], ["20%", "15%", "10%", "12%"])
-        self.assertEqual(data['population'], "50000")
-        self.assertEqual(data['population_delta'], "2500")
-        self.assertEqual(data['assessed_value'], "$1,000,000")
-        self.assertEqual(data['city_class'], "CITY")
-        self.assertEqual(data['city_level'], "Medium")
-        self.assertEqual(data['approval_rating'], "75%")
-        self.assertEqual(data['disapproval_rating'], "25%")
+        self.assertEqual(data["title"], "City Evaluation  1950")
+        self.assertEqual(data["score"], "750")
+        self.assertEqual(data["changed"], "25")
+        self.assertEqual(
+            data["problems"], ["POLLUTION", "TAXES", "CRIME", "UNEMPLOYMENT"]
+        )
+        self.assertEqual(data["problem_votes"], ["20%", "15%", "10%", "12%"])
+        self.assertEqual(data["population"], "50000")
+        self.assertEqual(data["population_delta"], "2500")
+        self.assertEqual(data["assessed_value"], "$1,000,000")
+        self.assertEqual(data["city_class"], "CITY")
+        self.assertEqual(data["city_level"], "Medium")
+        self.assertEqual(data["approval_rating"], "75%")
+        self.assertEqual(data["disapproval_rating"], "25%")
 
         # Check that draw_evaluation was called
         mock_draw_eval.assert_called_once()
@@ -240,26 +262,26 @@ class TestEvaluationUIState(Assertions):
     def test_change_eval(self):
         """Test change_eval function"""
         # Reset EvalChanged
-        types.EvalChanged = 0
+        types.eval_changed = 0
 
         evaluation_ui.change_eval()
 
-        self.assertEqual(types.EvalChanged, 1)
+        self.assertEqual(types.eval_changed, 1)
 
-    @patch('micropolis.evaluation_ui.do_score_card')
+    @patch("micropolis.evaluation_ui.do_score_card")
     def test_score_doer_with_change(self, mock_do_score):
         """Test score_doer when evaluation has changed"""
-        types.EvalChanged = 1
+        types.eval_changed = 1
 
         evaluation_ui.score_doer()
 
         mock_do_score.assert_called_once()
-        self.assertEqual(types.EvalChanged, 0)
+        self.assertEqual(types.eval_changed, 0)
 
-    @patch('micropolis.evaluation_ui.do_score_card')
+    @patch("micropolis.evaluation_ui.do_score_card")
     def test_score_doer_without_change(self, mock_do_score):
         """Test score_doer when evaluation has not changed"""
-        types.EvalChanged = 0
+        types.eval_changed = 0
 
         evaluation_ui.score_doer()
 
@@ -307,8 +329,8 @@ class TestDrawingFunctions(Assertions):
 class TestCommandInterface(Assertions):
     """Test TCL command interface functions"""
 
-    @patch('micropolis.evaluation_ui.do_score_card')
-    @patch('micropolis.sim_control.kick')
+    @patch("micropolis.evaluation_ui.do_score_card")
+    @patch("micropolis.sim_control.kick")
     def test_do_score_card_command(self, mock_kick, mock_do_score):
         """Test do_score_card_command"""
         evaluation_ui.do_score_card_command()
@@ -316,16 +338,16 @@ class TestCommandInterface(Assertions):
         mock_do_score.assert_called_once()
         mock_kick.assert_called_once()
 
-    @patch('micropolis.sim_control.kick')
+    @patch("micropolis.sim_control.kick")
     def test_change_eval_command(self, mock_kick):
         """Test change_eval_command"""
         evaluation_ui.change_eval_command()
 
-        self.assertEqual(types.EvalChanged, 1)
+        self.assertEqual(types.eval_changed, 1)
         mock_kick.assert_called_once()
 
-    @patch('micropolis.evaluation_ui.update_evaluation')
-    @patch('micropolis.sim_control.kick')
+    @patch("micropolis.evaluation_ui.update_evaluation")
+    @patch("micropolis.sim_control.kick")
     def test_update_evaluation_command(self, mock_kick, mock_update_eval):
         """Test update_evaluation_command"""
         evaluation_ui.update_evaluation_command()
@@ -347,7 +369,7 @@ class TestEvaluationDataAccess(Assertions):
 
     def test_get_evaluation_data_after_setting(self):
         """Test getting evaluation data after it has been set"""
-        test_data = {'title': 'Test', 'score': '100'}
+        test_data = {"title": "Test", "score": "100"}
         evaluation_ui._evaluation_data = test_data
 
         data = evaluation_ui.get_evaluation_data()
@@ -373,9 +395,10 @@ class TestEvaluationPanel(Assertions):
             self.assertIsNone(evaluation_ui.get_evaluation_surface())
 
     def test_get_surface_with_pygame(self):
-        with patch.object(evaluation_ui, "PYGAME_AVAILABLE", True), patch.object(
-            evaluation_ui, "pygame"
-        ) as mock_pygame:
+        with (
+            patch.object(evaluation_ui, "PYGAME_AVAILABLE", True),
+            patch.object(evaluation_ui, "pygame") as mock_pygame,
+        ):
             mock_pygame.SRCALPHA = 0
             mock_surface = MagicMock()
             mock_pygame.Surface.return_value = mock_surface

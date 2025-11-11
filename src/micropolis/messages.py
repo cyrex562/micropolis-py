@@ -37,14 +37,16 @@ def load_message_strings() -> None:
         return
 
     # Path to the message strings file
-    stri_file = os.path.join(os.path.dirname(__file__), '..', '..', 'assets', 'stri.301')
+    stri_file = os.path.join(
+        os.path.dirname(__file__), "..", "..", "assets", "stri.301"
+    )
 
     try:
-        with open(stri_file, 'r', encoding='utf-8') as f:
-            MESSAGE_STRINGS = [line.rstrip('\n') for line in f.readlines()]
+        with open(stri_file, "r", encoding="utf-8") as f:
+            MESSAGE_STRINGS = [line.rstrip("\n") for line in f.readlines()]
     except FileNotFoundError:
         # Fallback: create empty strings if file not found
-        MESSAGE_STRINGS = [''] * 61
+        MESSAGE_STRINGS = [""] * 61
         print(f"Warning: Could not load message strings from {stri_file}")
 
 
@@ -92,7 +94,7 @@ def make_sound(channel: str, sound_name: str) -> None:
     # Import audio module here to avoid circular imports
     from . import audio
 
-    if types.Sound and types.UserSoundOn:
+    if types.sound and types.user_sound_on:
         audio.make_sound(channel, sound_name)
 
 
@@ -105,21 +107,21 @@ def send_messages() -> None:
 
     Ported from SendMessages() in s_msg.c.
     """
-    if types.ScenarioID and types.ScoreType and types.ScoreWait:
-        types.ScoreWait -= 1
-        if not types.ScoreWait:
-            do_scenario_score(types.ScoreType)
+    if types.scenario_id and types.score_type and types.score_wait:
+        types.score_wait -= 1
+        if not types.score_wait:
+            do_scenario_score(types.score_type)
 
     check_growth()
 
-    total_z_pop = types.ResZPop + types.ComZPop + types.IndZPop
-    power_pop = types.NuclearPop + types.CoalPop
+    total_z_pop = types.res_z_pop + types.ComZPop + types.IndZPop
+    power_pop = types.nuclear_pop + types.coal_pop
 
-    z = types.CityTime & 63
+    z = types.city_time & 63
 
     # Check various conditions based on city time
     if z == 1:
-        if (total_z_pop >> 2) >= types.ResZPop:
+        if (total_z_pop >> 2) >= types.res_z_pop:
             send_mes(1)  # need Res
     elif z == 5:
         if (total_z_pop >> 3) >= types.ComZPop:
@@ -128,64 +130,64 @@ def send_messages() -> None:
         if (total_z_pop >> 3) >= types.IndZPop:
             send_mes(3)  # need Ind
     elif z == 14:
-        if (total_z_pop > 10) and ((total_z_pop << 1) > types.RoadTotal):
+        if (total_z_pop > 10) and ((total_z_pop << 1) > types.road_total):
             send_mes(4)  # need roads
     elif z == 18:
-        if (total_z_pop > 50) and (total_z_pop > types.RailTotal):
+        if (total_z_pop > 50) and (total_z_pop > types.rail_total):
             send_mes(5)  # need rail
     elif z == 22:
         if (total_z_pop > 10) and (power_pop == 0):
             send_mes(6)  # need Power
     elif z == 26:
-        if (types.ResPop > 500) and (types.StadiumPop == 0):
+        if (types.res_pop > 500) and (types.stadium_pop == 0):
             send_mes(7)  # need Stad
-            types.ResCap = 1
+            types.res_cap = 1
         else:
-            types.ResCap = 0
+            types.res_cap = 0
     elif z == 28:
-        if (types.IndPop > 70) and (types.PortPop == 0):
+        if (types.ind_pop > 70) and (types.port_pop == 0):
             send_mes(8)  # need Seaport
-            types.IndCap = 1
+            types.ind_cap = 1
         else:
-            types.IndCap = 0
+            types.ind_cap = 0
     elif z == 30:
-        if (types.ComPop > 100) and (types.APortPop == 0):
+        if (types.com_pop > 100) and (types.airport_pop == 0):
             send_mes(9)  # need Airport
-            types.ComCap = 1
+            types.com_cap = 1
         else:
-            types.ComCap = 0
+            types.com_cap = 0
     elif z == 32:
         # dec score for unpowered zones
-        tm = types.unPwrdZCnt + types.PwrdZCnt
+        tm = types.un_pwrd_z_cnt + types.pwrd_z_cnt
         if tm:
-            if (types.PwrdZCnt / tm) < 0.7:
+            if (types.pwrd_z_cnt / tm) < 0.7:
                 send_mes(15)  # brownouts
     elif z == 35:
-        if types.PolluteAverage > 60:  # Note: was 80, but adjusted for gameplay
+        if types.pollute_average > 60:  # Note: was 80, but adjusted for gameplay
             send_mes(-10)  # pollution alert
     elif z == 42:
-        if types.CrimeAverage > 100:
+        if types.crime_average > 100:
             send_mes(-11)  # crime alert
     elif z == 45:
-        if (types.TotalPop > 60) and (types.FireStPop == 0):
+        if (types.total_pop > 60) and (types.fire_st_pop == 0):
             send_mes(13)  # need fire station
     elif z == 48:
-        if (types.TotalPop > 60) and (types.PolicePop == 0):
+        if (types.total_pop > 60) and (types.police_pop == 0):
             send_mes(14)  # need police station
     elif z == 51:
-        if types.CityTax > 12:
+        if types.city_tax > 12:
             send_mes(16)  # high taxes
     elif z == 54:
-        if (types.RoadEffect < 20) and (types.RoadTotal > 30):
+        if (types.road_effect < 20) and (types.road_total > 30):
             send_mes(17)  # road deterioration
     elif z == 57:
-        if (types.FireEffect < 700) and (types.TotalPop > 20):
+        if (types.fire_effect < 700) and (types.total_pop > 20):
             send_mes(18)  # fire funding needed
     elif z == 60:
-        if (types.PoliceEffect < 700) and (types.TotalPop > 20):
+        if (types.police_effect < 700) and (types.total_pop > 20):
             send_mes(19)  # police funding needed
     elif z == 63:
-        if types.TrafficAverage > 60:
+        if types.traffic_average > 60:
             send_mes(-12)  # traffic jam
 
 
@@ -198,27 +200,29 @@ def check_growth() -> None:
 
     Ported from CheckGrowth() in s_msg.c.
     """
-    if not (types.CityTime & 3):
+    if not (types.city_time & 3):
         z = 0
-        this_city_pop = ((types.ResPop) + (types.ComPop * 8) + (types.IndPop * 8)) * 20
+        this_city_pop = (
+            (types.res_pop) + (types.com_pop * 8) + (types.ind_pop * 8)
+        ) * 20
 
-        if types.LastCityPop:
-            if (types.LastCityPop < 2000) and (this_city_pop >= 2000):
+        if types.last_city_pop:
+            if (types.last_city_pop < 2000) and (this_city_pop >= 2000):
                 z = 35  # Town
-            elif (types.LastCityPop < 10000) and (this_city_pop >= 10000):
+            elif (types.last_city_pop < 10000) and (this_city_pop >= 10000):
                 z = 36  # City
-            elif (types.LastCityPop < 50000) and (this_city_pop >= 50000):
+            elif (types.last_city_pop < 50000) and (this_city_pop >= 50000):
                 z = 37  # Capital
-            elif (types.LastCityPop < 100000) and (this_city_pop >= 100000):
+            elif (types.last_city_pop < 100000) and (this_city_pop >= 100000):
                 z = 38  # Metropolis
-            elif (types.LastCityPop < 500000) and (this_city_pop >= 500000):
+            elif (types.last_city_pop < 500000) and (this_city_pop >= 500000):
                 z = 39  # Megalopolis
 
-        if z and (z != types.LastCategory):
+        if z and (z != types.last_category):
             send_mes(-z)  # Negative for picture messages
-            types.LastCategory = z
+            types.last_category = z
 
-        types.LastCityPop = this_city_pop
+        types.last_city_pop = this_city_pop
 
 
 def do_scenario_score(type_val: int) -> None:
@@ -233,28 +237,28 @@ def do_scenario_score(type_val: int) -> None:
     z = -200  # you lose
 
     if type_val == 1:  # Dullsville
-        if types.CityClass >= 4:
+        if types.city_class >= 4:
             z = -100  # you win
     elif type_val == 2:  # San Francisco
-        if types.CityClass >= 4:
+        if types.city_class >= 4:
             z = -100
     elif type_val == 3:  # Hamburg
-        if types.CityClass >= 4:
+        if types.city_class >= 4:
             z = -100
     elif type_val == 4:  # Bern
-        if types.TrafficAverage < 80:
+        if types.traffic_average < 80:
             z = -100
     elif type_val == 5:  # Tokyo
-        if types.CityScore > 500:
+        if types.city_score > 500:
             z = -100
     elif type_val == 6:  # Detroit
-        if types.CrimeAverage < 60:
+        if types.crime_average < 60:
             z = -100
     elif type_val == 7:  # Boston
-        if types.CityScore > 500:
+        if types.city_score > 500:
             z = -100
     elif type_val == 8:  # Rio de Janeiro
-        if types.CityScore > 500:
+        if types.city_score > 500:
             z = -100
 
     clear_mes()
@@ -272,10 +276,10 @@ def clear_mes() -> None:
 
     Ported from ClearMes() in s_msg.c.
     """
-    types.MessagePort = 0
-    types.MesX = 0
-    types.MesY = 0
-    types.LastPicNum = 0
+    types.message_port = 0
+    types.mes_x = 0
+    types.mes_y = 0
+    types.last_pic_num = 0
 
 
 def send_mes(mnum: int) -> int:
@@ -291,17 +295,17 @@ def send_mes(mnum: int) -> int:
     Ported from SendMes() in s_msg.c.
     """
     if mnum < 0:
-        if mnum != types.LastPicNum:
-            types.MessagePort = mnum
-            types.MesX = 0
-            types.MesY = 0
-            types.LastPicNum = mnum
+        if mnum != types.last_pic_num:
+            types.message_port = mnum
+            types.mes_x = 0
+            types.mes_y = 0
+            types.last_pic_num = mnum
             return 1
     else:
-        if not types.MessagePort:
-            types.MessagePort = mnum
-            types.MesX = 0
-            types.MesY = 0
+        if not types.message_port:
+            types.message_port = mnum
+            types.mes_x = 0
+            types.mes_y = 0
             return 1
     return 0
 
@@ -318,8 +322,8 @@ def send_mes_at(mnum: int, x: int, y: int) -> None:
     Ported from SendMesAt() in s_msg.c.
     """
     if send_mes(mnum):
-        types.MesX = x
-        types.MesY = y
+        types.mes_x = x
+        types.mes_y = y
 
 
 def do_message() -> None:
@@ -335,25 +339,27 @@ def do_message() -> None:
     pict_id = 0
     first_time = False
 
-    if types.MessagePort:
-        types.MesNum = types.MessagePort
-        types.MessagePort = 0
-        types.LastMesTime = tick_count()
+    if types.message_port:
+        types.mes_num = types.message_port
+        types.message_port = 0
+        types.last_mes_time = tick_count()
         first_time = True
     else:
         first_time = False
-        if types.MesNum == 0:
+        if types.mes_num == 0:
             return
-        if types.MesNum < 0:
-            types.MesNum = -types.MesNum
-            types.LastMesTime = tick_count()
-        elif (tick_count() - types.LastMesTime) > (60 * 30 * 1000):  # 30 minutes in ms
-            types.MesNum = 0
+        if types.mes_num < 0:
+            types.mes_num = -types.mes_num
+            types.last_mes_time = tick_count()
+        elif (tick_count() - types.last_mes_time) > (
+            60 * 30 * 1000
+        ):  # 30 minutes in ms
+            types.mes_num = 0
             return
 
     if first_time:
         # Play sound effects based on message type
-        abs_mes_num = abs(types.MesNum)
+        abs_mes_num = abs(types.mes_num)
         if abs_mes_num == 12:
             if random.Rand(5) == 1:
                 make_sound("city", "HonkHonk-Med")
@@ -375,29 +381,29 @@ def do_message() -> None:
         elif abs_mes_num == 44:
             make_sound("city", "Siren")
 
-    if types.MesNum >= 0:
-        if types.MesNum == 0:
+    if types.mes_num >= 0:
+        if types.mes_num == 0:
             return
 
-        if types.MesNum > 60:
-            types.MesNum = 0
+        if types.mes_num > 60:
+            types.mes_num = 0
             return
 
-        message_str = get_message_string(types.MesNum)
+        message_str = get_message_string(types.mes_num)
 
-        if types.MesX or types.MesY:
+        if types.mes_x or types.mes_y:
             # TODO: draw goto button
             pass
 
-        if types.autoGo and (types.MesX or types.MesY):
-            do_auto_goto(types.MesX, types.MesY, message_str)
-            types.MesX = 0
-            types.MesY = 0
+        if types.auto_go and (types.mes_x or types.mes_y):
+            do_auto_goto(types.mes_x, types.mes_y, message_str)
+            types.mes_x = 0
+            types.mes_y = 0
         else:
             set_message_field(message_str)
 
     else:  # picture message
-        pict_id = -types.MesNum
+        pict_id = -types.mes_num
 
         if pict_id < 43:
             message_str = get_message_string(pict_id)
@@ -406,12 +412,12 @@ def do_message() -> None:
 
         do_show_picture(pict_id)
 
-        types.MessagePort = pict_id  # resend text message
+        types.message_port = pict_id  # resend text message
 
-        if types.autoGo and (types.MesX or types.MesY):
-            do_auto_goto(types.MesX, types.MesY, message_str)
-            types.MesX = 0
-            types.MesY = 0
+        if types.auto_go and (types.mes_x or types.mes_y):
+            do_auto_goto(types.mes_x, types.mes_y, message_str)
+            types.mes_x = 0
+            types.mes_y = 0
 
 
 def do_auto_goto(x: int, y: int, msg: str) -> None:
@@ -441,14 +447,13 @@ def set_message_field(msg: str) -> None:
     """
     global HaveLastMessage, LastMessage
 
-    if not hasattr(types, 'HaveLastMessage'):
-        types.HaveLastMessage = 0
-        types.LastMessage = ""
+    if not hasattr(types, "HaveLastMessage"):
+        types.have_last_message = 0
+        types.last_message = ""
 
-    if (not types.HaveLastMessage or
-        types.LastMessage != msg):
-        types.LastMessage = msg
-        types.HaveLastMessage = 1
+    if not types.have_last_message or types.last_message != msg:
+        types.last_message = msg
+        types.have_last_message = 1
         cmd = f"UISetMessage {{{msg}}}"
         types.Eval(cmd)
 
@@ -493,4 +498,4 @@ def monster_speed() -> int:
 
     Ported from MonsterSpeed() in s_msg.c.
     """
-    return (random.Rand(40) + 70)
+    return random.Rand(40) + 70

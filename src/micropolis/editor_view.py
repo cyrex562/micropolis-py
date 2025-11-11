@@ -12,13 +12,18 @@ Key features:
 - Support for different color depths and rendering modes
 """
 
+import micropolis.constants
+import micropolis.sim_view
 import pygame
+from result import Ok, Result
 
 from . import engine, graphics_setup, macros, map_view, types
+from .sim_view import SimView
 
 # ============================================================================
 # Editor View Rendering Functions
 # ============================================================================
+
 
 def drawBeegMaps() -> None:
     """
@@ -29,7 +34,7 @@ def drawBeegMaps() -> None:
     engine.sim_update_editors()
 
 
-def MemDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> None:
+def MemDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
     """
     Draw a rectangle of tiles in the editor view using memory buffer.
 
@@ -42,13 +47,13 @@ def MemDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> N
     """
     # Clip to view boundaries
     if x < view.tile_x:
-        w -= (view.tile_x - x)
+        w -= view.tile_x - x
         if w <= 0:
             return
         x = view.tile_x
 
     if y < view.tile_y:
-        h -= (view.tile_y - y)
+        h -= view.tile_y - y
         if h <= 0:
             return
         y = view.tile_y
@@ -76,8 +81,15 @@ def MemDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> N
         _draw_mono_editor_rect(view, x, y, w, h, line_bytes)
 
 
-def _draw_color_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
-                           line_bytes: int, pixel_bytes: int) -> None:
+def _draw_color_editor_rect(
+    view: SimView,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    line_bytes: int,
+    pixel_bytes: int,
+) -> None:
     """
     Draw editor rectangle in color mode.
 
@@ -88,12 +100,12 @@ def _draw_color_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
         line_bytes: Bytes per line in display buffer
         pixel_bytes: Bytes per pixel
     """
-    surface = _ensure_view_surface(view)
+    surface = ensure_view_surface(view)
     if surface is None:
         return
 
     have = view.tiles
-    blink = (types.flagBlink <= 0)
+    blink = types.flag_blink <= 0
 
     for col in range(w):
         tile_x = x + col
@@ -104,7 +116,7 @@ def _draw_color_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
             tile_y = y + row
             local_row = tile_y - view.tile_y
 
-            tile = types.Map[tile_x][tile_y]
+            tile = types.map_data[tile_x][tile_y]
             if (tile & macros.LOMASK) >= types.TILE_COUNT:
                 tile -= types.TILE_COUNT
 
@@ -113,8 +125,11 @@ def _draw_color_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
             else:
                 tile &= macros.LOMASK
 
-            if (tile > 63 and view.dynamic_filter != 0 and
-                    not map_view.dynamicFilter(tile_x, tile_y)):
+            if (
+                tile > 63
+                and view.dynamic_filter != 0
+                and not map_view.dynamicFilter(tile_x, tile_y)
+            ):
                 tile = 0
 
             if ha and ha[local_row] == tile:
@@ -128,8 +143,9 @@ def _draw_color_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
             _blit_tile(view, tile, dest_x, dest_y)
 
 
-def _draw_mono_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
-                          line_bytes: int) -> None:
+def _draw_mono_editor_rect(
+    view: SimView, x: int, y: int, w: int, h: int, line_bytes: int
+) -> None:
     """
     Draw editor rectangle in monochrome mode.
 
@@ -139,12 +155,12 @@ def _draw_mono_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
         w, h: Width and height in tiles
         line_bytes: Bytes per line in display buffer
     """
-    surface = _ensure_view_surface(view)
+    surface = ensure_view_surface(view)
     if surface is None:
         return
 
     have = view.tiles
-    blink = (types.flagBlink <= 0)
+    blink = types.flag_blink <= 0
 
     for col in range(w):
         tile_x = x + col
@@ -155,7 +171,7 @@ def _draw_mono_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
             tile_y = y + row
             local_row = tile_y - view.tile_y
 
-            tile = types.Map[tile_x][tile_y]
+            tile = types.map_data[tile_x][tile_y]
             if (tile & macros.LOMASK) >= types.TILE_COUNT:
                 tile -= types.TILE_COUNT
 
@@ -175,7 +191,7 @@ def _draw_mono_editor_rect(view: types.SimView, x: int, y: int, w: int, h: int,
             _blit_tile(view, tile, dest_x, dest_y)
 
 
-def _blit_tile(view: types.SimView, tile: int, dest_x: int, dest_y: int) -> None:
+def _blit_tile(view: SimView, tile: int, dest_x: int, dest_y: int) -> None:
     """Blit a single tile surface into the editor view."""
     if view.surface is None:
         return None
@@ -185,7 +201,7 @@ def _blit_tile(view: types.SimView, tile: int, dest_x: int, dest_y: int) -> None
         view.surface.blit(tile_surface, (dest_x, dest_y))
 
 
-def WireDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> None:
+def WireDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
     """
     Draw a rectangle of tiles using wire protocol (X11).
 
@@ -200,13 +216,13 @@ def WireDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> 
     """
     # Clip to view boundaries (same as MemDrawBeegMapRect)
     if x < view.tile_x:
-        w -= (view.tile_x - x)
+        w -= view.tile_x - x
         if w <= 0:
             return
         x = view.tile_x
 
     if y < view.tile_y:
-        h -= (view.tile_y - y)
+        h -= view.tile_y - y
         if h <= 0:
             return
         y = view.tile_y
@@ -229,13 +245,13 @@ def WireDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> 
     have = view.tiles
 
     # Blinking state for lightning bolt
-    blink = (types.flagBlink <= 0)
+    blink = types.flag_blink <= 0
 
     # Process each column
     for col in range(w):
         # Calculate local column index within view
         local_col = col + (x - view.tile_x)
-        
+
         # Get tile cache for this column
         ha = have[local_col] if have else None
 
@@ -243,9 +259,9 @@ def WireDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> 
         for row in range(h):
             # Calculate local row index within view
             local_row = row + (y - view.tile_y)
-            
+
             # Get tile from map
-            tile = types.Map[map_x][map_y + row]
+            tile = types.map_data[map_x][map_y + row]
             if (tile & macros.LOMASK) >= types.TILE_COUNT:
                 tile -= types.TILE_COUNT
 
@@ -272,7 +288,8 @@ def WireDrawBeegMapRect(view: types.SimView, x: int, y: int, w: int, h: int) -> 
 # Pygame Integration Functions
 # ============================================================================
 
-def DoUpdateEditor(view: types.SimView) -> None:
+
+def DoUpdateEditor(view: SimView) -> None:
     """
     Update an editor view for pygame rendering.
 
@@ -304,25 +321,25 @@ def DoUpdateEditor(view: types.SimView) -> None:
 # Utility Functions
 # ============================================================================
 
-def initialize_editor_tiles(view: types.SimView) -> None:
+
+def initialize_editor_tiles(view: SimView) -> Result[None, Exception]:
     """
     Initialize tile cache for editor view.
 
     Args:
         view: The editor view to initialize
     """
-    if not view:
-        return
 
     # Initialize tile cache as 2D array
     # view.tiles is short **tiles in C (array of arrays)
     view.tiles = []
     for i in range(view.tile_width):
         view.tiles.append([-1] * view.tile_height)  # -1 indicates uninitialized
-    _ensure_view_surface(view)
+    ensure_view_surface(view)
+    return Ok(None)
 
 
-def cleanup_editor_tiles(view: types.SimView) -> None:
+def cleanup_editor_tiles(view: SimView) -> None:
     """
     Clean up tile cache for editor view.
 
@@ -333,7 +350,7 @@ def cleanup_editor_tiles(view: types.SimView) -> None:
         view.tiles.clear()
 
 
-def invalidate_editor_view(view: types.SimView) -> None:
+def invalidate_editor_view(view: SimView) -> None:
     """
     Mark editor view as needing redraw.
 
@@ -349,14 +366,14 @@ def invalidate_editor_view(view: types.SimView) -> None:
                     col[i] = -1
 
 
-def _ensure_view_surface(view: types.SimView) -> pygame.Surface:
+def ensure_view_surface(view: SimView) -> pygame.Surface:
     """Create a pygame surface for the editor view when missing."""
     surface = getattr(view, "surface", None)
     if surface is not None:
         return surface
 
-    width = view.width or (view.tile_width or types.WORLD_X) * 16
-    height = view.height or (view.tile_height or types.WORLD_Y) * 16
+    width = view.width or (view.tile_width or micropolis.constants.WORLD_X) * 16
+    height = view.height or (view.tile_height or micropolis.constants.WORLD_Y) * 16
 
     view.width = width
     view.height = height

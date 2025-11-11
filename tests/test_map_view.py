@@ -9,6 +9,7 @@ Tests the map overview rendering functionality including:
 - Map procedure setup
 """
 
+import micropolis.constants
 import pygame
 from unittest.mock import Mock, MagicMock
 
@@ -17,6 +18,7 @@ from micropolis import map_view, types, macros
 
 from tests.assertions import Assertions
 
+
 class TestMapView(Assertions):
     """Test cases for map view functionality"""
 
@@ -24,14 +26,16 @@ class TestMapView(Assertions):
         """Set up test fixtures"""
         # Initialize pygame for surface operations
         pygame.init()
-        self.test_surface = pygame.Surface((360, 300))  # 120x100 world at 3x3 pixels per tile
+        self.test_surface = pygame.Surface(
+            (360, 300)
+        )  # 120x100 world at 3x3 pixels per tile
 
         # Create a mock view object
         self.mock_view = Mock()
         self.mock_view.surface = self.test_surface
         self.mock_view.m_width = 360
         self.mock_view.m_height = 300
-        self.mock_view.map_state = types.ALMAP
+        self.mock_view.map_state = micropolis.constants.ALMAP
 
         # Mock X11 display for compatibility
         self.mock_view.x = Mock()
@@ -39,16 +43,43 @@ class TestMapView(Assertions):
         self.mock_view.pixels = [0] * 16  # Mock color palette
 
         # Initialize some basic map data
-        types.Map = [[0 for _ in range(types.WORLD_Y)] for _ in range(types.WORLD_X)]
-        types.PopDensity = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.TrfDensity = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.PollutionMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.CrimeMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.LandValueMem = [[0 for _ in range(types.HWLDY)] for _ in range(types.HWLDX)]
-        types.RateOGMem = [[0 for _ in range(types.SmY)] for _ in range(types.SmX)]
-        types.FireRate = [[0 for _ in range(types.SmY)] for _ in range(types.SmX)]
-        types.PoliceMapEffect = [[0 for _ in range(types.SmY)] for _ in range(types.SmX)]
-        types.DynamicData = [0] * 32
+        types.map_data = [
+            [0 for _ in range(micropolis.constants.WORLD_Y)]
+            for _ in range(micropolis.constants.WORLD_X)
+        ]
+        types.pop_density = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.trf_density = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.pollution_mem = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.crime_mem = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.land_value_mem = [
+            [0 for _ in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.rate_og_mem = [
+            [0 for _ in range(micropolis.constants.SM_Y)]
+            for _ in range(micropolis.constants.SM_X)
+        ]
+        types.fire_rate = [
+            [0 for _ in range(micropolis.constants.SM_Y)]
+            for _ in range(micropolis.constants.SM_X)
+        ]
+        types.police_map_effect = [
+            [0 for _ in range(micropolis.constants.SM_Y)]
+            for _ in range(micropolis.constants.SM_X)
+        ]
+        types.dynamic_data = [0] * 32
 
     def tearDown(self):
         """Clean up test fixtures"""
@@ -75,8 +106,12 @@ class TestMapView(Assertions):
 
         # Check specific values
         self.assertEqual(map_view.valMap[map_view.VAL_NONE], -1)
-        self.assertEqual(map_view.valMap[map_view.VAL_LOW], types.COLOR_LIGHTGRAY)
-        self.assertEqual(map_view.valMap[map_view.VAL_VERYHIGH], types.COLOR_RED)
+        self.assertEqual(
+            map_view.valMap[map_view.VAL_LOW], micropolis.constants.COLOR_LIGHTGRAY
+        )
+        self.assertEqual(
+            map_view.valMap[map_view.VAL_VERYHIGH], micropolis.constants.COLOR_RED
+        )
 
         self.assertEqual(map_view.valGrayMap[map_view.VAL_NONE], -1)
         self.assertEqual(map_view.valGrayMap[map_view.VAL_LOW], 31)
@@ -84,11 +119,11 @@ class TestMapView(Assertions):
 
     def test_mapProcs_setup(self):
         """Test that map procedures are properly set up"""
-        self.assertEqual(len(map_view.mapProcs), types.NMAPS)
-        self.assertIsNotNone(map_view.mapProcs[types.ALMAP])
-        self.assertIsNotNone(map_view.mapProcs[types.REMAP])
-        self.assertIsNotNone(map_view.mapProcs[types.PDMAP])
-        self.assertIsNotNone(map_view.mapProcs[types.DYMAP])
+        self.assertEqual(len(map_view.mapProcs), micropolis.constants.NMAPS)
+        self.assertIsNotNone(map_view.mapProcs[micropolis.constants.ALMAP])
+        self.assertIsNotNone(map_view.mapProcs[micropolis.constants.REMAP])
+        self.assertIsNotNone(map_view.mapProcs[micropolis.constants.PDMAP])
+        self.assertIsNotNone(map_view.mapProcs[micropolis.constants.DYMAP])
 
     def test_maybeDrawRect_none_value(self):
         """Test that maybeDrawRect skips VAL_NONE"""
@@ -124,9 +159,9 @@ class TestMapView(Assertions):
     def test_drawAll(self):
         """Test drawing the full map view"""
         # Set up some test map data
-        types.Map[0][0] = macros.RESBASE  # Residential tile
-        types.Map[1][0] = macros.COMBASE  # Commercial tile
-        types.Map[2][0] = macros.INDBASE  # Industrial tile
+        types.map_data[0][0] = macros.RESBASE  # Residential tile
+        types.map_data[1][0] = macros.COMBASE  # Commercial tile
+        types.map_data[2][0] = macros.INDBASE  # Industrial tile
 
         # This should work without errors
         map_view.drawAll(self.mock_view)
@@ -137,8 +172,8 @@ class TestMapView(Assertions):
     def test_drawRes(self):
         """Test drawing residential zones only"""
         # Set up mixed zone types
-        types.Map[0][0] = macros.RESBASE  # Residential
-        types.Map[1][0] = macros.COMBASE  # Commercial (should be filtered)
+        types.map_data[0][0] = macros.RESBASE  # Residential
+        types.map_data[1][0] = macros.COMBASE  # Commercial (should be filtered)
 
         map_view.drawRes(self.mock_view)
 
@@ -148,8 +183,8 @@ class TestMapView(Assertions):
     def test_drawCom(self):
         """Test drawing commercial zones only"""
         # Set up mixed zone types
-        types.Map[0][0] = macros.RESBASE  # Residential (should be filtered)
-        types.Map[1][0] = macros.COMBASE  # Commercial
+        types.map_data[0][0] = macros.RESBASE  # Residential (should be filtered)
+        types.map_data[1][0] = macros.COMBASE  # Commercial
 
         map_view.drawCom(self.mock_view)
 
@@ -159,8 +194,8 @@ class TestMapView(Assertions):
     def test_drawInd(self):
         """Test drawing industrial zones only"""
         # Set up mixed zone types
-        types.Map[0][0] = macros.RESBASE  # Residential (should be filtered)
-        types.Map[1][0] = macros.INDBASE  # Industrial
+        types.map_data[0][0] = macros.RESBASE  # Residential (should be filtered)
+        types.map_data[1][0] = macros.INDBASE  # Industrial
 
         map_view.drawInd(self.mock_view)
 
@@ -170,8 +205,10 @@ class TestMapView(Assertions):
     def test_drawPower(self):
         """Test drawing power grid view"""
         # Set up powered and unpowered zones
-        types.Map[0][0] = macros.RESBASE | macros.ZONEBIT | macros.PWRBIT  # Powered residential
-        types.Map[1][0] = macros.RESBASE | macros.ZONEBIT  # Unpowered residential
+        types.map_data[0][0] = (
+            macros.RESBASE | macros.ZONEBIT | macros.PWRBIT
+        )  # Powered residential
+        types.map_data[1][0] = macros.RESBASE | macros.ZONEBIT  # Unpowered residential
 
         map_view.drawPower(self.mock_view)
 
@@ -181,7 +218,7 @@ class TestMapView(Assertions):
     def test_drawPopDensity(self):
         """Test drawing population density overlay"""
         # Set up population density data
-        types.PopDensity[0][0] = 100  # Medium density
+        types.pop_density[0][0] = 100  # Medium density
 
         map_view.drawPopDensity(self.mock_view)
 
@@ -191,7 +228,7 @@ class TestMapView(Assertions):
     def test_drawRateOfGrowth(self):
         """Test drawing rate of growth overlay"""
         # Set up growth rate data
-        types.RateOGMem[0][0] = 50  # Positive growth
+        types.rate_og_mem[0][0] = 50  # Positive growth
 
         map_view.drawRateOfGrowth(self.mock_view)
 
@@ -201,7 +238,7 @@ class TestMapView(Assertions):
     def test_drawTrafMap(self):
         """Test drawing traffic density overlay"""
         # Set up traffic density data
-        types.TrfDensity[0][0] = 75  # Medium traffic
+        types.trf_density[0][0] = 75  # Medium traffic
 
         map_view.drawTrafMap(self.mock_view)
 
@@ -211,7 +248,7 @@ class TestMapView(Assertions):
     def test_drawPolMap(self):
         """Test drawing pollution overlay"""
         # Set up pollution data
-        types.PollutionMem[0][0] = 50  # Some pollution
+        types.pollution_mem[0][0] = 50  # Some pollution
 
         map_view.drawPolMap(self.mock_view)
 
@@ -221,7 +258,7 @@ class TestMapView(Assertions):
     def test_drawCrimeMap(self):
         """Test drawing crime overlay"""
         # Set up crime data
-        types.CrimeMem[0][0] = 25  # Low crime
+        types.crime_mem[0][0] = 25  # Low crime
 
         map_view.drawCrimeMap(self.mock_view)
 
@@ -231,7 +268,7 @@ class TestMapView(Assertions):
     def test_drawLandMap(self):
         """Test drawing land value overlay"""
         # Set up land value data
-        types.LandValueMem[0][0] = 150  # High value
+        types.land_value_mem[0][0] = 150  # High value
 
         map_view.drawLandMap(self.mock_view)
 
@@ -241,7 +278,7 @@ class TestMapView(Assertions):
     def test_drawFireRadius(self):
         """Test drawing fire station coverage"""
         # Set up fire coverage data
-        types.FireRate[0][0] = 30  # Some coverage
+        types.fire_rate[0][0] = 30  # Some coverage
 
         map_view.drawFireRadius(self.mock_view)
 
@@ -251,7 +288,7 @@ class TestMapView(Assertions):
     def test_drawPoliceRadius(self):
         """Test drawing police station coverage"""
         # Set up police coverage data
-        types.PoliceMapEffect[0][0] = 40  # Some coverage
+        types.police_map_effect[0][0] = 40  # Some coverage
 
         map_view.drawPoliceRadius(self.mock_view)
 
@@ -261,32 +298,32 @@ class TestMapView(Assertions):
     def test_dynamicFilter(self):
         """Test dynamic filtering logic"""
         # Set up test data that should pass all filters
-        types.PopDensity[0][0] = 50
-        types.RateOGMem[0][0] = 128  # 2 * 50 + 128 = 228, but adjusted for scaling
-        types.TrfDensity[0][0] = 50
-        types.PollutionMem[0][0] = 50
-        types.CrimeMem[0][0] = 50
-        types.LandValueMem[0][0] = 50
-        types.PoliceMapEffect[0][0] = 50
-        types.FireRate[0][0] = 50
+        types.pop_density[0][0] = 50
+        types.rate_og_mem[0][0] = 128  # 2 * 50 + 128 = 228, but adjusted for scaling
+        types.trf_density[0][0] = 50
+        types.pollution_mem[0][0] = 50
+        types.crime_mem[0][0] = 50
+        types.land_value_mem[0][0] = 50
+        types.police_map_effect[0][0] = 50
+        types.fire_rate[0][0] = 50
 
         # Set dynamic data to accept these values
-        types.DynamicData[0] = 0    # Pop min
-        types.DynamicData[1] = 100  # Pop max
-        types.DynamicData[2] = 50   # Rate min (adjusted)
-        types.DynamicData[3] = 200  # Rate max (adjusted)
-        types.DynamicData[4] = 0    # Traffic min
-        types.DynamicData[5] = 100  # Traffic max
-        types.DynamicData[6] = 0    # Pollution min
-        types.DynamicData[7] = 100  # Pollution max
-        types.DynamicData[8] = 0    # Crime min
-        types.DynamicData[9] = 100  # Crime max
-        types.DynamicData[10] = 0   # Land value min
-        types.DynamicData[11] = 100 # Land value max
-        types.DynamicData[12] = 0   # Police min
-        types.DynamicData[13] = 100 # Police max
-        types.DynamicData[14] = 0   # Fire min
-        types.DynamicData[15] = 100 # Fire max
+        types.dynamic_data[0] = 0  # Pop min
+        types.dynamic_data[1] = 100  # Pop max
+        types.dynamic_data[2] = 50  # Rate min (adjusted)
+        types.dynamic_data[3] = 200  # Rate max (adjusted)
+        types.dynamic_data[4] = 0  # Traffic min
+        types.dynamic_data[5] = 100  # Traffic max
+        types.dynamic_data[6] = 0  # Pollution min
+        types.dynamic_data[7] = 100  # Pollution max
+        types.dynamic_data[8] = 0  # Crime min
+        types.dynamic_data[9] = 100  # Crime max
+        types.dynamic_data[10] = 0  # Land value min
+        types.dynamic_data[11] = 100  # Land value max
+        types.dynamic_data[12] = 0  # Police min
+        types.dynamic_data[13] = 100  # Police max
+        types.dynamic_data[14] = 0  # Fire min
+        types.dynamic_data[15] = 100  # Fire max
 
         # Test filtering
         result = map_view.dynamicFilter(0, 0)
@@ -295,12 +332,12 @@ class TestMapView(Assertions):
     def test_drawDynamic(self):
         """Test drawing dynamic filter view"""
         # Set up test data
-        types.Map[0][0] = 100  # Non-terrain tile
-        types.PopDensity[0][0] = 50
+        types.map_data[0][0] = 100  # Non-terrain tile
+        types.pop_density[0][0] = 50
 
         # Configure dynamic data to show this tile
-        types.DynamicData[0] = 0
-        types.DynamicData[1] = 100
+        types.dynamic_data[0] = 0
+        types.dynamic_data[1] = 100
 
         map_view.drawDynamic(self.mock_view)
 
@@ -310,7 +347,11 @@ class TestMapView(Assertions):
     def test_MemDrawMap(self):
         """Test main map drawing dispatcher"""
         # Test with different map states
-        for map_state in [types.ALMAP, types.REMAP, types.PDMAP]:
+        for map_state in [
+            micropolis.constants.ALMAP,
+            micropolis.constants.REMAP,
+            micropolis.constants.PDMAP,
+        ]:
             self.mock_view.map_state = map_state
             map_view.MemDrawMap(self.mock_view)
 

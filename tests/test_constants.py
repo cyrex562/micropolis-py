@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from micropolis import constants
 
+import src.micropolis.mac_compat
+
 
 def test_quad_type_definition():
     """QUAD should be aliased to int for portability."""
@@ -22,7 +24,7 @@ def test_basic_mac_types_exist():
 
 def test_resource_dataclass_fields():
     """Resource dataclass should preserve initialization data."""
-    resource = constants.Resource(buf=b"test", size=4, name="TEST", id=123)
+    resource = src.micropolis.mac_compat.Resource(buf=b"test", size=4, name="TEST", id=123)
     assert resource.buf == b"test"
     assert resource.size == 4
     assert resource.name == "TEST"
@@ -32,11 +34,11 @@ def test_resource_dataclass_fields():
 
 def test_resource_management_stubs_return_safe_defaults():
     """Placeholder resource APIs must return harmless defaults."""
-    assert constants.NewPtr(100) is None
-    assert constants.GetResource("TILE", 1) is None
-    assert constants.ResourceSize(None) == 0
-    assert constants.ResourceName(None) == ""
-    assert constants.ResourceID(None) == 0
+    assert src.micropolis.mac_compat.NewPtr(100) is None
+    assert src.micropolis.mac_compat.GetResource("TILE", 1) is None
+    assert src.micropolis.mac_compat.ResourceSize(None) == 0
+    assert src.micropolis.mac_compat.ResourceName(None) == ""
+    assert src.micropolis.mac_compat.ResourceID(None) == 0
 
 
 def test_resource_type_catalog_contains_expected_entries():

@@ -10,6 +10,9 @@ through TCL commands in the original implementation.
 import random
 import time
 
+import micropolis.constants
+import micropolis.utilities
+
 
 # Import simulation modules
 from . import (
@@ -34,7 +37,7 @@ _sim_speed: int = 3  # Default simulation speed (0-7)
 _sim_paused: bool = False
 _sim_delay: int = 10  # Delay between simulation steps in milliseconds
 _sim_skips: int = 0  # Number of simulation steps to skip
-_sim_skip: int = 0   # Current skip counter
+_sim_skip: int = 0  # Current skip counter
 
 # Game state
 _game_started: bool = False
@@ -62,6 +65,7 @@ _sugar_mode: bool = False
 # Simulation Speed and Timing Functions
 # ============================================================================
 
+
 def get_sim_speed() -> int:
     """Get the current simulation speed (0-7)"""
     return _sim_speed
@@ -72,7 +76,7 @@ def set_sim_speed(speed: int) -> None:
     global _sim_speed
     if 0 <= speed <= 7:
         _sim_speed = speed
-        types.SimSpeed = speed
+        types.sim_speed = speed
         kick()  # Trigger UI updates
 
 
@@ -172,6 +176,7 @@ def set_heat_rule(rule: int) -> None:
 # Game State Management
 # ============================================================================
 
+
 def is_game_started() -> bool:
     """Check if game has started"""
     return _game_started
@@ -249,20 +254,21 @@ def set_city_name(name: str) -> None:
 
 def get_city_file_name() -> str | None:
     """Get current city file name"""
-    return types.CityFileName
+    return types.city_file_name
 
 
 def set_city_file_name(filename: str | None) -> None:
     """Set city file name"""
-    if types.CityFileName:
+    if types.city_file_name:
         # Free old filename if needed
         pass
-    types.CityFileName = filename
+    types.city_file_name = filename
 
 
 # ============================================================================
 # Disaster Control Functions
 # ============================================================================
+
 
 def make_fire() -> None:
     """Start a fire disaster"""
@@ -315,10 +321,10 @@ def make_explosion(x: int, y: int) -> None:
 def set_monster_goal(x: int, y: int) -> bool:
     """Set monster movement goal"""
     # Find monster sprite and set destination
-    sprite = types.GetSprite(types.GOD)
+    sprite = micropolis.utilities.GetSprite(types.GOD)
     if sprite is None:
         make_monster()
-        sprite = types.GetSprite(types.GOD)
+        sprite = micropolis.utilities.GetSprite(types.GOD)
         if sprite is None:
             return False
 
@@ -331,11 +337,11 @@ def set_monster_goal(x: int, y: int) -> bool:
 
 def set_helicopter_goal(x: int, y: int) -> bool:
     """Set helicopter movement goal"""
-    sprite = types.GetSprite(types.COP)
+    sprite = micropolis.utilities.GetSprite(types.COP)
     if sprite is None:
         # Generate helicopter at position
         types.GenerateCopter(x, y)
-        sprite = types.GetSprite(types.COP)
+        sprite = micropolis.utilities.GetSprite(types.COP)
         if sprite is None:
             return False
 
@@ -349,10 +355,10 @@ def set_monster_direction(direction: int) -> bool:
     if not (-1 <= direction <= 7):
         return False
 
-    sprite = types.GetSprite(types.GOD)
+    sprite = micropolis.utilities.GetSprite(types.GOD)
     if sprite is None:
         make_monster()
-        sprite = types.GetSprite(types.GOD)
+        sprite = micropolis.utilities.GetSprite(types.GOD)
         if sprite is None:
             return False
 
@@ -364,77 +370,78 @@ def set_monster_direction(direction: int) -> bool:
 # Budget and Finance Functions
 # ============================================================================
 
+
 def get_total_funds() -> int:
     """Get total city funds"""
-    return types.TotalFunds
+    return types.total_funds
 
 
 def set_total_funds(funds: int) -> None:
     """Set total city funds"""
     if funds >= 0:
-        types.TotalFunds = funds
-        types.MustUpdateFunds = 1
+        types.total_funds = funds
+        types.must_update_funds = 1
         kick()
 
 
 def get_tax_rate() -> int:
     """Get current tax rate (0-20)"""
-    return types.CityTax
+    return types.city_tax
 
 
 def set_tax_rate(tax: int) -> None:
     """Set tax rate (0-20)"""
     if 0 <= tax <= 20:
-        types.CityTax = tax
+        types.city_tax = tax
         # drawBudgetWindow() equivalent would update UI
         kick()
 
 
 def get_fire_fund_percentage() -> int:
     """Get fire department funding percentage"""
-    return int(types.firePercent * 100.0)
+    return int(types.fire_percent * 100.0)
 
 
 def set_fire_fund_percentage(percent: int) -> None:
     """Set fire department funding percentage (0-100)"""
     if 0 <= percent <= 100:
-        types.firePercent = percent / 100.0
-        types.FireSpend = (types.fireMaxValue * percent) // 100
+        types.fire_percent = percent / 100.0
+        types.fire_spend = (types.fire_max_value * percent) // 100
         types.UpdateFundEffects()
         kick()
 
 
 def get_police_fund_percentage() -> int:
     """Get police department funding percentage"""
-    return int(types.policePercent * 100.0)
+    return int(types.police_percent * 100.0)
 
 
 def set_police_fund_percentage(percent: int) -> None:
     """Set police department funding percentage (0-100)"""
     if 0 <= percent <= 100:
-        types.policePercent = percent / 100.0
-        types.PoliceSpend = (types.policeMaxValue * percent) // 100
+        types.police_percent = percent / 100.0
+        types.police_spend = (types.police_max_value * percent) // 100
         types.UpdateFundEffects()
         kick()
 
 
 def get_road_fund_percentage() -> int:
     """Get road department funding percentage"""
-    return int(types.roadPercent * 100.0)
+    return int(types.road_percent * 100.0)
 
 
 def set_road_fund_percentage(percent: int) -> None:
     """Set road department funding percentage (0-100)"""
     if 0 <= percent <= 100:
-        types.roadPercent = percent / 100.0
-        types.RoadSpend = (types.roadMaxValue * percent) // 100
+        types.road_percent = percent / 100.0
+        types.road_spend = (types.road_max_value * percent) // 100
         types.UpdateFundEffects()
         kick()
 
 
 def get_game_level() -> int:
     """Get current game difficulty level (0-2)"""
-    return types.GameLevel
+    return types.game_level
 
 
 def set_game_level(level: int) -> None:
@@ -462,8 +469,8 @@ def set_auto_budget(enabled: bool) -> None:
     """Set auto-budget setting"""
     global _auto_budget
     _auto_budget = enabled
-    types.autoBudget = enabled
-    types.MustUpdateOptions = 1
+    types.auto_budget = enabled
+    types.must_update_options = 1
     kick()
     evaluation.UpdateBudget()
 
@@ -477,8 +484,8 @@ def set_auto_goto(enabled: bool) -> None:
     """Set auto-goto setting"""
     global _auto_goto
     _auto_goto = enabled
-    types.autoGo = enabled
-    types.MustUpdateOptions = 1
+    types.auto_go = enabled
+    types.must_update_options = 1
     kick()
 
 
@@ -491,14 +498,15 @@ def set_auto_bulldoze(enabled: bool) -> None:
     """Set auto-bulldoze setting"""
     global _auto_bulldoze
     _auto_bulldoze = enabled
-    types.autoBulldoze = enabled
-    types.MustUpdateOptions = 1
+    types.auto_bulldoze = enabled
+    types.must_update_options = 1
     kick()
 
 
 # ============================================================================
 # Configuration Options
 # ============================================================================
+
 
 def get_disasters_enabled() -> bool:
     """Get disasters enabled setting"""
@@ -509,8 +517,8 @@ def set_disasters_enabled(enabled: bool) -> None:
     """Set disasters enabled setting"""
     global _no_disasters
     _no_disasters = not enabled
-    types.NoDisasters = _no_disasters
-    types.MustUpdateOptions = 1
+    types.no_disasters = _no_disasters
+    types.must_update_options = 1
     kick()
 
 
@@ -523,8 +531,8 @@ def set_sound_enabled(enabled: bool) -> None:
     """Set sound enabled setting"""
     global _user_sound_on
     _user_sound_on = enabled
-    types.UserSoundOn = enabled
-    types.MustUpdateOptions = 1
+    types.user_sound_on = enabled
+    types.must_update_options = 1
     kick()
 
 
@@ -542,8 +550,8 @@ def set_do_animation(enabled: bool) -> None:
     """Set animation enabled setting"""
     global _do_animation
     _do_animation = enabled
-    types.DoAnimation = enabled
-    types.MustUpdateOptions = 1
+    types.do_animation = enabled
+    types.must_update_options = 1
     kick()
 
 
@@ -556,8 +564,8 @@ def set_do_messages(enabled: bool) -> None:
     """Set messages enabled setting"""
     global _do_messages
     _do_messages = enabled
-    types.DoMessages = enabled
-    types.MustUpdateOptions = 1
+    types.do_messages = enabled
+    types.must_update_options = 1
     kick()
 
 
@@ -570,14 +578,15 @@ def set_do_notices(enabled: bool) -> None:
     """Set notices enabled setting"""
     global _do_notices
     _do_notices = enabled
-    types.DoNotices = enabled
-    types.MustUpdateOptions = 1
+    types.do_notices = enabled
+    types.must_update_options = 1
     kick()
 
 
 # ============================================================================
 # Bulldozer Control
 # ============================================================================
+
 
 def start_bulldozer() -> None:
     """Start bulldozer tool"""
@@ -595,24 +604,25 @@ def stop_bulldozer() -> None:
 # Map and Terrain Functions
 # ============================================================================
 
+
 def get_tile(x: int, y: int) -> int:
     """Get tile value at coordinates"""
-    if 0 <= x < types.WORLD_X and 0 <= y < types.WORLD_Y:
-        return types.Map[x][y]
+    if 0 <= x < micropolis.constants.WORLD_X and 0 <= y < micropolis.constants.WORLD_Y:
+        return types.map_data[x][y]
     return 0
 
 
 def set_tile(x: int, y: int, tile: int) -> None:
     """Set tile value at coordinates"""
-    if 0 <= x < types.WORLD_X and 0 <= y < types.WORLD_Y:
-        types.Map[x][y] = tile
+    if 0 <= x < micropolis.constants.WORLD_X and 0 <= y < micropolis.constants.WORLD_Y:
+        types.map_data[x][y] = tile
 
 
 def fill_map(tile: int) -> None:
     """Fill entire map with tile value"""
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
-            types.Map[x][y] = tile
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
+            types.map_data[x][y] = tile
 
 
 def erase_overlay() -> None:
@@ -655,9 +665,10 @@ def smooth_river() -> None:
 # City Statistics and Information
 # ============================================================================
 
+
 def get_land_value() -> int:
     """Get average land value"""
-    return types.LVAverage
+    return types.lv_average
 
 
 def get_traffic_average() -> int:
@@ -667,7 +678,7 @@ def get_traffic_average() -> int:
 
 def get_crime_average() -> int:
     """Get average crime rate"""
-    return types.CrimeAverage
+    return types.crime_average
 
 
 def get_unemployment_rate() -> int:
@@ -682,68 +693,69 @@ def get_fire_coverage() -> int:
 
 def get_pollution_average() -> int:
     """Get average pollution level"""
-    return types.PolluteAverage
+    return types.pollute_average
 
 
 def get_population_center() -> tuple[int, int]:
     """Get population center coordinates"""
-    return ((types.CCx << 4) + 8, (types.CCy << 4) + 8)
+    return ((types.cc_x << 4) + 8, (types.cc_y << 4) + 8)
 
 
 def get_pollution_center() -> tuple[int, int]:
     """Get pollution center coordinates"""
-    return ((types.PolMaxX << 4) + 8, (types.PolMaxY << 4) + 8)
+    return ((types.pol_max_x << 4) + 8, (types.pol_max_y << 4) + 8)
 
 
 def get_crime_center() -> tuple[int, int]:
     """Get crime center coordinates"""
-    return ((types.CrimeMaxX << 4) + 8, (types.CrimeMaxY << 4) + 8)
+    return ((types.crime_max_x << 4) + 8, (types.crime_max_y << 4) + 8)
 
 
 def get_traffic_center() -> tuple[int, int]:
     """Get traffic center coordinates"""
-    return (types.TrafMaxX, types.TrafMaxY)
+    return (types.traf_max_x, types.traf_max_y)
 
 
 def get_flood_center() -> tuple[int, int]:
     """Get flood center coordinates"""
-    return ((types.FloodX << 4) + 8, (types.FloodY << 4) + 8)
+    return ((types.flood_x << 4) + 8, (types.flood_y << 4) + 8)
 
 
 def get_crash_center() -> tuple[int, int]:
     """Get airplane crash center coordinates"""
-    return ((types.CrashX << 4) + 8, (types.CrashY << 4) + 8)
+    return ((types.crash_x << 4) + 8, (types.crash_y << 4) + 8)
 
 
 def get_meltdown_center() -> tuple[int, int]:
     """Get nuclear meltdown center coordinates"""
-    return ((types.MeltX << 4) + 8, (types.MeltY << 4) + 8)
+    return ((types.melt_x << 4) + 8, (types.melt_y << 4) + 8)
 
 
 # ============================================================================
 # Dynamic Data and Performance
 # ============================================================================
 
+
 def get_dynamic_data(index: int) -> int:
     """Get dynamic data value at index"""
     if 0 <= index < 32:
-        return types.DynamicData[index]
+        return types.dynamic_data[index]
     return 0
 
 
 def set_dynamic_data(index: int, value: int) -> None:
     """Set dynamic data value at index"""
     if 0 <= index < 32:
-        types.DynamicData[index] = value
-        types.NewMapFlags[types.DYMAP] = 1
+        types.dynamic_data[index] = value
+        types.new_map_flags[micropolis.constants.DYMAP] = 1
         kick()
 
 
 def reset_dynamic_data() -> None:
     """Reset dynamic data to defaults"""
     for i in range(16):
-        types.DynamicData[i] = 99999 if (i & 1) else -99999
-    types.NewMapFlags[types.DYMAP] = 1
+        types.dynamic_data[i] = 99999 if (i & 1) else -99999
+    types.new_map_flags[micropolis.constants.DYMAP] = 1
     kick()
 
 
@@ -770,85 +782,86 @@ def get_performance_timing() -> bool:
 # Utility Functions
 # ============================================================================
 
+
 def get_world_size() -> tuple[int, int]:
     """Get world dimensions"""
-    return (types.WORLD_X, types.WORLD_Y)
+    return (micropolis.constants.WORLD_X, micropolis.constants.WORLD_Y)
 
 
 def get_override() -> int:
     """Get override setting"""
-    return types.OverRide
+    return types.over_ride
 
 
 def set_override(value: int) -> None:
     """Set override setting"""
-    types.OverRide = value
+    types.over_ride = value
 
 
 def get_expensive() -> int:
     """Get expensive setting"""
-    return types.Expensive
+    return types.expensive
 
 
 def set_expensive(value: int) -> None:
     """Set expensive setting"""
-    types.Expensive = value
+    types.expensive = value
 
 
 def get_players() -> int:
     """Get number of players"""
-    return types.Players
+    return types.players
 
 
 def set_players(count: int) -> None:
     """Set number of players"""
-    types.Players = count
+    types.players = count
 
 
 def get_votes() -> int:
     """Get votes count"""
-    return types.Votes
+    return types.votes
 
 
 def set_votes(count: int) -> None:
     """Set votes count"""
-    types.Votes = count
+    types.votes = count
 
 
 def get_bob_height() -> int:
     """Get bob height for animations"""
-    return types.BobHeight
+    return types.bob_height
 
 
 def set_bob_height(height: int) -> None:
     """Set bob height for animations"""
-    types.BobHeight = height
+    types.bob_height = height
 
 
 def get_pending_tool() -> int:
     """Get pending tool"""
-    return types.PendingTool
+    return types.pending_tool
 
 
 def set_pending_tool(tool: int) -> None:
     """Set pending tool"""
-    types.PendingTool = tool
+    types.pending_tool = tool
 
 
 def get_pending_position() -> tuple[int, int]:
     """Get pending tool position"""
-    return (types.PendingX, types.PendingY)
+    return (types.pending_x, types.pending_y)
 
 
 def set_pending_position(x: int, y: int) -> None:
     """Set pending tool position"""
-    types.PendingX = x
-    types.PendingY = y
+    types.pending_x = x
+    types.pending_y = y
 
 
 def get_displays() -> str:
     """Get displays information"""
-    return types.Displays or ""
+    return types.displays or ""
 
 
 def get_multi_player_mode() -> bool:
@@ -870,12 +883,13 @@ def set_need_rest(need_rest: bool) -> None:
     """Set need rest flag"""
     global _need_rest
     _need_rest = need_rest
-    types.NeedRest = need_rest
+    types.need_rest = need_rest
 
 
 def get_platform() -> str:
     """Get platform string"""
     import platform
+
     system = platform.system().lower()
     if system == "windows":
         return "msdos"  # For compatibility
@@ -885,7 +899,7 @@ def get_platform() -> str:
 
 def get_version() -> str:
     """Get Micropolis version"""
-    return types.MicropolisVersion
+    return types.micropolis_version
 
 
 def get_random_number(max_val: int | None = None) -> int:
@@ -917,6 +931,7 @@ def really_quit() -> None:
 # ============================================================================
 # UI Update Triggers
 # ============================================================================
+
 
 def kick() -> None:
     """Trigger UI updates (equivalent to TCL Kick)"""
@@ -988,68 +1003,70 @@ def do_budget_from_menu() -> None:
 # Terrain Generation Parameters
 # ============================================================================
 
+
 def get_lake_level() -> int:
     """Get lake level for city generation"""
-    return types.LakeLevel
+    return types.lake_level
 
 
 def set_lake_level(level: int) -> None:
     """Set lake level for city generation"""
-    types.LakeLevel = level
+    types.lake_level = level
 
 
 def get_tree_level() -> int:
     """Get tree level for city generation"""
-    return types.TreeLevel
+    return types.tree_level
 
 
 def set_tree_level(level: int) -> None:
     """Set tree level for city generation"""
-    types.TreeLevel = level
+    types.tree_level = level
 
 
 def get_curve_level() -> int:
     """Get curve level for city generation"""
-    return types.CurveLevel
+    return types.curve_level
 
 
 def set_curve_level(level: int) -> None:
     """Set curve level for city generation"""
-    types.CurveLevel = level
+    types.curve_level = level
 
 
 def get_create_island() -> int:
     """Get create island setting"""
-    return types.CreateIsland
+    return types.create_island
 
 
 def set_create_island(island: int) -> None:
     """Set create island setting"""
-    types.CreateIsland = island
+    types.create_island = island
 
 
 # ============================================================================
 # Display and Rendering Options
 # ============================================================================
 
+
 def get_do_overlay() -> int:
     """Get overlay display setting"""
-    return types.DoOverlay
+    return types.do_overlay
 
 
 def set_do_overlay(overlay: int) -> None:
     """Set overlay display setting"""
-    types.DoOverlay = overlay
+    types.do_overlay = overlay
 
 
 def get_don_dither() -> int:
     """Get dithering setting"""
-    return types.DonDither
+    return types.don_dither
 
 
 def set_don_dither(dither: int) -> None:
     """Set dithering setting"""
-    types.DonDither = dither
+    types.don_dither = dither
 
 
 def get_flush_style() -> int:
@@ -1076,9 +1093,11 @@ def set_collapse_motion(motion: int) -> None:
 # Web and External Functions (Stub implementations)
 # ============================================================================
 
+
 def open_web_browser(url: str) -> int:
     """Open URL in web browser (stub)"""
     import webbrowser
+
     try:
         webbrowser.open(url)
         return 0
@@ -1089,12 +1108,14 @@ def open_web_browser(url: str) -> int:
 def quote_url(url: str) -> str:
     """URL encode a string (stub)"""
     import urllib.parse
+
     return urllib.parse.quote(url)
 
 
 # ============================================================================
 # Initialization
 # ============================================================================
+
 
 def initialize_sim_control() -> None:
     """Initialize simulation control module"""

@@ -128,7 +128,7 @@ class NetworkManager:
                 if ready and self.running:
                     try:
                         data, addr = self.listen_socket.recvfrom(1024)
-                        if data and self.packet_callback:
+                        if data and self.packet_callback is not None:
                             # Call callback with socket fileno, address, and data
                             self.packet_callback(
                                 self.listen_socket.fileno(),

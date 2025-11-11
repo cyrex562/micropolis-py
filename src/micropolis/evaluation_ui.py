@@ -6,8 +6,6 @@ responsible for displaying city evaluation results, scores, and statistics
 in a pygame-compatible format.
 """
 
-
-
 import pygame
 
 from . import evaluation, sim_control, types
@@ -16,17 +14,18 @@ from . import evaluation, sim_control, types
 # City Classification and Level Strings
 # ============================================================================
 
-CITY_CLASS_STRINGS = [
-    "VILLAGE", "TOWN", "CITY", "CAPITAL", "METROPOLIS", "MEGALOPOLIS"
-]
+CITY_CLASS_STRINGS = ["VILLAGE", "TOWN", "CITY", "CAPITAL", "METROPOLIS", "MEGALOPOLIS"]
 
-CITY_LEVEL_STRINGS = [
-    "Easy", "Medium", "Hard"
-]
+CITY_LEVEL_STRINGS = ["Easy", "Medium", "Hard"]
 
 PROBLEM_STRINGS = [
-    "CRIME", "POLLUTION", "HOUSING COSTS", "TAXES",
-    "TRAFFIC", "UNEMPLOYMENT", "FIRES"
+    "CRIME",
+    "POLLUTION",
+    "HOUSING COSTS",
+    "TAXES",
+    "TRAFFIC",
+    "UNEMPLOYMENT",
+    "FIRES",
 ]
 
 # ============================================================================
@@ -44,6 +43,7 @@ _evaluation_surface: pygame.Surface | None = None
 # Utility Functions
 # ============================================================================
 
+
 def current_year() -> int:
     """
     Get the current game year.
@@ -51,7 +51,7 @@ def current_year() -> int:
     Ported from CurrentYear() in w_util.c.
     Returns the current year based on CityTime.
     """
-    return (types.CityTime // 48) + types.StartingYear
+    return (types.city_time // 48) + types.starting_year
 
 
 def make_dollar_decimal_str(num_str: str, dollar_str: str, max_len: int = 32) -> str:
@@ -83,8 +83,8 @@ def make_dollar_decimal_str(num_str: str, dollar_str: str, max_len: int = 32) ->
             left_most_set = 3
 
         num_of_commas = (num_of_digits - 1) // 3
-        
-        result = ['$']  # Start with dollar sign
+
+        result = ["$"]  # Start with dollar sign
 
         # Add first group (before first comma)
         num_index = 0
@@ -95,18 +95,19 @@ def make_dollar_decimal_str(num_str: str, dollar_str: str, max_len: int = 32) ->
 
         # Add remaining groups with commas
         for _ in range(num_of_commas):
-            result.append(',')
+            result.append(",")
             for _ in range(3):
                 if num_index < len(num_str):
                     result.append(num_str[num_index])
                     num_index += 1
 
-        return ''.join(result)
+        return "".join(result)
 
 
 # ============================================================================
 # Evaluation Display Functions
 # ============================================================================
+
 
 def do_score_card() -> None:
     """
@@ -126,7 +127,9 @@ def do_score_card() -> None:
     prob_percentages = []
     for i in range(4):
         if evaluation.ProblemVotes[evaluation.ProblemOrder[i]]:
-            prob_percentages.append(f"{evaluation.ProblemVotes[evaluation.ProblemOrder[i]]}%")
+            prob_percentages.append(
+                f"{evaluation.ProblemVotes[evaluation.ProblemOrder[i]]}%"
+            )
         else:
             prob_percentages.append("")
 
@@ -156,13 +159,24 @@ def do_score_card() -> None:
 
     # Send evaluation data to UI
     set_evaluation(
-        changed, score,
-        problem_names[0], problem_names[1], problem_names[2], problem_names[3],
-        prob_percentages[0], prob_percentages[1], prob_percentages[2], prob_percentages[3],
-        pop, delta, assessed_dollars,
+        changed,
+        score,
+        problem_names[0],
+        problem_names[1],
+        problem_names[2],
+        problem_names[3],
+        prob_percentages[0],
+        prob_percentages[1],
+        prob_percentages[2],
+        prob_percentages[3],
+        pop,
+        delta,
+        assessed_dollars,
         CITY_CLASS_STRINGS[evaluation.CityClass],
-        CITY_LEVEL_STRINGS[types.GameLevel],
-        goodyes, goodno, title
+        CITY_LEVEL_STRINGS[types.game_level],
+        goodyes,
+        goodno,
+        title,
     )
 
 
@@ -173,7 +187,7 @@ def change_eval() -> None:
     Ported from ChangeEval() in w_eval.c.
     Sets flag to trigger evaluation display update.
     """
-    types.EvalChanged = 1
+    types.eval_changed = 1
 
 
 def score_doer() -> None:
@@ -183,17 +197,31 @@ def score_doer() -> None:
     Ported from scoreDoer() in w_eval.c.
     Called from UI update loop to refresh evaluation display.
     """
-    if types.EvalChanged:
+    if types.eval_changed:
         do_score_card()
-        types.EvalChanged = 0
+        types.eval_changed = 0
 
 
-def set_evaluation(changed: str, score: str,
-                  ps0: str, ps1: str, ps2: str, ps3: str,
-                  pv0: str, pv1: str, pv2: str, pv3: str,
-                  pop: str, delta: str, assessed_dollars: str,
-                  cityclass: str, citylevel: str,
-                  goodyes: str, goodno: str, title: str) -> None:
+def set_evaluation(
+    changed: str,
+    score: str,
+    ps0: str,
+    ps1: str,
+    ps2: str,
+    ps3: str,
+    pv0: str,
+    pv1: str,
+    pv2: str,
+    pv3: str,
+    pop: str,
+    delta: str,
+    assessed_dollars: str,
+    cityclass: str,
+    citylevel: str,
+    goodyes: str,
+    goodno: str,
+    title: str,
+) -> None:
     """
     Send evaluation data to the UI system.
 
@@ -219,18 +247,18 @@ def set_evaluation(changed: str, score: str,
 
     global _evaluation_data
     _evaluation_data = {
-        'title': title,
-        'score': score,
-        'changed': changed,
-        'problems': [ps0, ps1, ps2, ps3],
-        'problem_votes': [pv0, pv1, pv2, pv3],
-        'population': pop,
-        'population_delta': delta,
-        'assessed_value': assessed_dollars,
-        'city_class': cityclass,
-        'city_level': citylevel,
-        'approval_rating': goodyes,
-        'disapproval_rating': goodno
+        "title": title,
+        "score": score,
+        "changed": changed,
+        "problems": [ps0, ps1, ps2, ps3],
+        "problem_votes": [pv0, pv1, pv2, pv3],
+        "population": pop,
+        "population_delta": delta,
+        "assessed_value": assessed_dollars,
+        "city_class": cityclass,
+        "city_level": citylevel,
+        "approval_rating": goodyes,
+        "disapproval_rating": goodno,
     }
 
     # Mark for redraw
@@ -240,6 +268,7 @@ def set_evaluation(changed: str, score: str,
 # ============================================================================
 # UI Drawing Functions (Adapted for pygame)
 # ============================================================================
+
 
 def draw_evaluation() -> None:
     """
@@ -332,7 +361,10 @@ def get_evaluation_surface() -> pygame.Surface | None:
     if not _evaluation_panel_visible:
         return None
 
-    if _evaluation_surface is None or _evaluation_surface.get_size() != _evaluation_panel_size:
+    if (
+        _evaluation_surface is None
+        or _evaluation_surface.get_size() != _evaluation_panel_size
+    ):
         _create_evaluation_surface()
 
     if _evaluation_panel_dirty:
@@ -390,6 +422,7 @@ def get_problem_string(problem_idx: int) -> str:
 # TCL Command Interface Functions
 # ============================================================================
 
+
 def do_score_card_command() -> None:
     """
     Execute score card display.
@@ -427,10 +460,10 @@ def update_evaluation_command() -> None:
 # Internal helpers
 # ============================================================================
 
+
 def _create_evaluation_surface() -> None:
     """Create the pygame surface for evaluation data."""
     global _evaluation_surface, _evaluation_panel_dirty
-
 
     width, height = _evaluation_panel_size
     _evaluation_surface = pygame.Surface((width, height), pygame.SRCALPHA)
@@ -440,7 +473,7 @@ def _create_evaluation_surface() -> None:
 def _render_evaluation_surface() -> None:
     """Render evaluation data into the pygame surface."""
     global _evaluation_panel_dirty
-    if not (_evaluation_panel_visible  and _evaluation_surface):
+    if not (_evaluation_panel_visible and _evaluation_surface):
         _evaluation_panel_dirty = False
         return
 

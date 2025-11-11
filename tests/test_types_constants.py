@@ -7,83 +7,267 @@ from sim.h, macros.h, and mac.h headers. Ensures algorithmic fidelity by
 validating all constants used in simulation logic.
 """
 
+from micropolis.constants import (
+    ALMAP,
+    CENSUSRATE,
+    COLOR_BLACK,
+    COLOR_BROWN,
+    COLOR_DARKBLUE,
+    COLOR_DARKGRAY,
+    COLOR_DARKGREEN,
+    COLOR_DARKRED,
+    COLOR_LIGHTBLUE,
+    COLOR_LIGHTBROWN,
+    COLOR_LIGHTGRAY,
+    COLOR_LIGHTGREEN,
+    COLOR_MEDIUMGRAY,
+    COLOR_OLIVE,
+    COLOR_ORANGE,
+    COLOR_RED,
+    COLOR_WHITE,
+    COLOR_YELLOW,
+    COMAP,
+    CRMAP,
+    DYMAP,
+    FIMAP,
+    HWLDX,
+    HWLDY,
+    INMAP,
+    LVMAP,
+    NMAPS,
+    PDMAP,
+    PLMAP,
+    POMAP,
+    PRMAP,
+    QWX,
+    QWY,
+    RDMAP,
+    REMAP,
+    RGMAP,
+    SM_X,
+    SM_Y,
+    TAXFREQ,
+    TDMAP,
+    VALVERATE,
+    WORLD_X,
+    WORLD_Y,
+)
 import pytest
 from src.micropolis.types import (
     # World dimensions
-    WORLD_X, WORLD_Y, HWLDX, HWLDY, QWX, QWY, SmX, SmY,
-    # Power grid
-    PWRMAPSIZE, POWERMAPLEN,
+    PWRMAPSIZE,
+    POWERMAPLEN,
     # Colors
-    COLOR_WHITE, COLOR_YELLOW, COLOR_ORANGE, COLOR_RED, COLOR_DARKRED,
-    COLOR_DARKBLUE, COLOR_LIGHTBLUE, COLOR_BROWN, COLOR_LIGHTGREEN,
-    COLOR_DARKGREEN, COLOR_OLIVE, COLOR_LIGHTBROWN, COLOR_LIGHTGRAY,
-    COLOR_MEDIUMGRAY, COLOR_DARKGRAY, COLOR_BLACK,
-    # Status bits
-    PWRBIT, CONDBIT, BURNBIT, BULLBIT, ANIMBIT, ZONEBIT,
-    ALLBITS, LOMASK, BLBNBIT, BLBNCNBIT, BNCNBIT, ASCBIT, REGBIT,
+    PWRBIT,
+    CONDBIT,
+    BURNBIT,
+    BULLBIT,
+    ANIMBIT,
+    ZONEBIT,
+    ALLBITS,
+    LOMASK,
+    BLBNBIT,
+    BLBNCNBIT,
+    BNCNBIT,
+    ASCBIT,
+    REGBIT,
     # Objects
-    TRA, COP, AIR, SHI, GOD, TOR, EXP, BUS, OBJN,
+    TRA,
+    COP,
+    AIR,
+    SHI,
+    GOD,
+    TOR,
+    EXP,
+    BUS,
+    OBJN,
     # Graph histories
-    RES_HIST, COM_HIST, IND_HIST, MONEY_HIST, CRIME_HIST, POLLUTION_HIST,
-    HISTORIES, ALL_HISTORIES,
+    RES_HIST,
+    COM_HIST,
+    IND_HIST,
+    MONEY_HIST,
+    CRIME_HIST,
+    POLLUTION_HIST,
+    HISTORIES,
+    ALL_HISTORIES,
     # Terrain tiles
-    DIRT, RIVER, REDGE, CHANNEL, FIRSTRIVEDGE, LASTRIVEDGE,
-    TREEBASE, LASTTREE, WOODS, WOODS2, WOODS3, WOODS4, WOODS5,
-    RUBBLE, LASTRUBBLE, FLOOD, LASTFLOOD, RADTILE, FIRE, FIREBASE, LASTFIRE,
+    DIRT,
+    RIVER,
+    REDGE,
+    CHANNEL,
+    FIRSTRIVEDGE,
+    LASTRIVEDGE,
+    TREEBASE,
+    LASTTREE,
+    WOODS,
+    WOODS2,
+    WOODS3,
+    WOODS4,
+    WOODS5,
+    RUBBLE,
+    LASTRUBBLE,
+    FLOOD,
+    LASTFLOOD,
+    RADTILE,
+    FIRE,
+    FIREBASE,
+    LASTFIRE,
     # Road tiles
-    ROADBASE, HBRIDGE, VBRIDGE, ROADS, INTERSECTION, HROADPOWER, VROADPOWER,
-    BRWH, LTRFBASE, BRWV, HTRFBASE, LASTROAD,
+    ROADBASE,
+    HBRIDGE,
+    VBRIDGE,
+    ROADS,
+    INTERSECTION,
+    HROADPOWER,
+    VROADPOWER,
+    BRWH,
+    LTRFBASE,
+    BRWV,
+    HTRFBASE,
+    LASTROAD,
     # Bridge extension tiles
-    BRWXXX1, BRWXXX2, BRWXXX3, BRWXXX4, BRWXXX5, BRWXXX6, BRWXXX7,
+    BRWXXX1,
+    BRWXXX2,
+    BRWXXX3,
+    BRWXXX4,
+    BRWXXX5,
+    BRWXXX6,
+    BRWXXX7,
     # Power tiles
-    POWERBASE, HPOWER, VPOWER, LHPOWER, LVPOWER, RAILHPOWERV, RAILVPOWERH, LASTPOWER,
+    POWERBASE,
+    HPOWER,
+    VPOWER,
+    LHPOWER,
+    LVPOWER,
+    RAILHPOWERV,
+    RAILVPOWERH,
+    LASTPOWER,
     # Rail tiles
-    RAILBASE, HRAIL, VRAIL, LHRAIL, LVRAIL, HRAILROAD, VRAILROAD, LASTRAIL,
+    RAILBASE,
+    HRAIL,
+    VRAIL,
+    LHRAIL,
+    LVRAIL,
+    HRAILROAD,
+    VRAILROAD,
+    LASTRAIL,
     # Residential tiles
-    RESBASE, FREEZ, HOUSE, LHTHR, HHTHR, RZB, HOSPITAL, CHURCH,
+    RESBASE,
+    FREEZ,
+    HOUSE,
+    LHTHR,
+    HHTHR,
+    RZB,
+    HOSPITAL,
+    CHURCH,
     # Commercial tiles
-    COMBASE, COMCLR, CZB,
+    COMBASE,
+    COMCLR,
+    CZB,
     # Industrial tiles
-    INDBASE, INDCLR, LASTIND, IND1, IZB, IND2, IND3, IND4, IND5,
-    IND6, IND7, IND8, IND9,
+    INDBASE,
+    INDCLR,
+    LASTIND,
+    IND1,
+    IZB,
+    IND2,
+    IND3,
+    IND4,
+    IND5,
+    IND6,
+    IND7,
+    IND8,
+    IND9,
     # Port tiles
-    PORTBASE, PORT, LASTPORT,
+    PORTBASE,
+    PORT,
+    LASTPORT,
     # Airport tiles
-    AIRPORTBASE, RADAR, AIRPORT,
+    AIRPORTBASE,
+    RADAR,
+    AIRPORT,
     # Power plant tiles
-    COALBASE, POWERPLANT, LASTPOWERPLANT,
+    COALBASE,
+    POWERPLANT,
+    LASTPOWERPLANT,
     # Service tiles
-    FIRESTBASE, FIRESTATION, POLICESTBASE, POLICESTATION,
-    STADIUMBASE, STADIUM, FULLSTADIUM,
+    FIRESTBASE,
+    FIRESTATION,
+    POLICESTBASE,
+    POLICESTATION,
+    STADIUMBASE,
+    STADIUM,
+    FULLSTADIUM,
     # Nuclear tiles
-    NUCLEARBASE, NUCLEAR, LASTZONE,
+    NUCLEARBASE,
+    NUCLEAR,
+    LASTZONE,
     # Special effect tiles
-    LIGHTNINGBOLT, HBRDG0, HBRDG1, HBRDG2, HBRDG3,
-    RADAR0, RADAR1, RADAR2, RADAR3, RADAR4, RADAR5, RADAR6, RADAR7,
+    LIGHTNINGBOLT,
+    HBRDG0,
+    HBRDG1,
+    HBRDG2,
+    HBRDG3,
+    RADAR0,
+    RADAR1,
+    RADAR2,
+    RADAR3,
+    RADAR4,
+    RADAR5,
+    RADAR6,
+    RADAR7,
     FOUNTAIN,
     # Industrial extensions
-    INDBASE2, TELEBASE, TELELAST, SMOKEBASE, TINYEXP, SOMETINYEXP, LASTTINYEXP,
+    INDBASE2,
+    TELEBASE,
+    TELELAST,
+    SMOKEBASE,
+    TINYEXP,
+    SOMETINYEXP,
+    LASTTINYEXP,
     # Smoke effects
-    COALSMOKE1, COALSMOKE2, COALSMOKE3, COALSMOKE4,
+    COALSMOKE1,
+    COALSMOKE2,
+    COALSMOKE3,
+    COALSMOKE4,
     # Stadium effects
-    FOOTBALLGAME1, FOOTBALLGAME2,
+    FOOTBALLGAME1,
+    FOOTBALLGAME2,
     # Bridge tiles
-    VBRDG0, VBRDG1, VBRDG2, VBRDG3,
+    VBRDG0,
+    VBRDG1,
+    VBRDG2,
+    VBRDG3,
     # Total tile count
     TILE_COUNT,
     # Tool states
-    residentialState, commercialState, industrialState, fireState, queryState,
-    policeState, wireState, dozeState, rrState, roadState, chalkState,
-    eraserState, stadiumState, parkState, seaportState, powerState,
-    nuclearState, airportState, networkState, firstState, lastState,
+    residentialState,
+    commercialState,
+    industrialState,
+    fireState,
+    queryState,
+    policeState,
+    wireState,
+    DOZE_STATE,
+    rrState,
+    roadState,
+    chalkState,
+    eraserState,
+    stadiumState,
+    parkState,
+    seaportState,
+    powerState,
+    nuclearState,
+    airportState,
+    networkState,
+    firstState,
+    lastState,
     # State categories
-    STATE_CMD, STATE_TILES, STATE_OVERLAYS, STATE_GRAPHS,
+    STATE_CMD,
+    STATE_TILES,
+    STATE_OVERLAYS,
+    STATE_GRAPHS,
     # Map types
-    ALMAP, REMAP, COMAP, INMAP, PRMAP, RDMAP, PDMAP, RGMAP,
-    TDMAP, PLMAP, CRMAP, LVMAP, FIMAP, POMAP, DYMAP, NMAPS,
-    # Simulation rates
-    VALVERATE, CENSUSRATE, TAXFREQ,
-    # Problem count
     PROBNUM,
 )
 
@@ -112,10 +296,12 @@ class TestWorldDimensions:
 
     def test_small_dimensions(self):
         """Verify small map dimensions (8x8 blocks)"""
-        assert SmX == WORLD_X // 8, f"SmX should be {WORLD_X // 8}, got {SmX}"
-        assert SmY == (WORLD_Y + 7) // 8, f"SmY should be {(WORLD_Y + 7) // 8}, got {SmY}"
-        assert SmX == 15, f"SmX should be 15, got {SmX}"
-        assert SmY == 13, f"SmY should be 13, got {SmY}"
+        assert SM_X == WORLD_X // 8, f"SmX should be {WORLD_X // 8}, got {SM_X}"
+        assert SM_Y == (WORLD_Y + 7) // 8, (
+            f"SmY should be {(WORLD_Y + 7) // 8}, got {SM_Y}"
+        )
+        assert SM_X == 15, f"SmX should be 15, got {SM_X}"
+        assert SM_Y == 13, f"SmY should be 13, got {SM_Y}"
 
 
 class TestPowerGridConstants:
@@ -127,8 +313,12 @@ class TestPowerGridConstants:
         power_map_row = (WORLD_X + 15) // 16
         expected_pwrmapsize = power_map_row * WORLD_Y
 
-        assert PWRMAPSIZE == expected_pwrmapsize, f"PWRMAPSIZE should be {expected_pwrmapsize}, got {PWRMAPSIZE}"
-        assert PWRMAPSIZE == 800, f"PWRMAPSIZE should be 800, got {PWRMAPSIZE}"  # (120+15)//16 * 100 = 8*100 = 800
+        assert PWRMAPSIZE == expected_pwrmapsize, (
+            f"PWRMAPSIZE should be {expected_pwrmapsize}, got {PWRMAPSIZE}"
+        )
+        assert PWRMAPSIZE == 800, (
+            f"PWRMAPSIZE should be 800, got {PWRMAPSIZE}"
+        )  # (120+15)//16 * 100 = 8*100 = 800
 
         # Actually, let me recalculate: (120 + 15) // 16 = 135 // 16 = 8, 8 * 100 = 800
         # But the C code shows PWRMAPSIZE = (POWERMAPROW * WORLD_Y) and POWERMAPLEN = 1700
@@ -171,23 +361,25 @@ class TestStatusBits:
         """Verify individual status bits"""
         assert PWRBIT == 32768  # 0x8000, bit 15
         assert CONDBIT == 16384  # 0x4000, bit 14
-        assert BURNBIT == 8192   # 0x2000, bit 13
-        assert BULLBIT == 4096   # 0x1000, bit 12
-        assert ANIMBIT == 2048   # 0x0800, bit 11
-        assert ZONEBIT == 1024   # 0x0400, bit 10
+        assert BURNBIT == 8192  # 0x2000, bit 13
+        assert BULLBIT == 4096  # 0x1000, bit 12
+        assert ANIMBIT == 2048  # 0x0800, bit 11
+        assert ZONEBIT == 1024  # 0x0400, bit 10
 
     def test_bit_masks(self):
         """Verify bit mask constants"""
         assert ALLBITS == 64512  # 0xFC00 - mask for upper 6 bits
-        assert LOMASK == 1023    # 0x03FF - mask for low 10 bits
+        assert LOMASK == 1023  # 0x03FF - mask for low 10 bits
 
     def test_combined_bits(self):
         """Verify combined status bit constants"""
         assert BLBNBIT == (BULLBIT + BURNBIT)
         assert BLBNCNBIT == (BULLBIT + BURNBIT + CONDBIT)
         assert BNCNBIT == (BURNBIT + CONDBIT)
-        assert ASCBIT == (ANIMBIT | CONDBIT | BURNBIT)  # Animation + conductive + burning
-        assert REGBIT == (CONDBIT | BURNBIT)            # Conductive + burning
+        assert ASCBIT == (
+            ANIMBIT | CONDBIT | BURNBIT
+        )  # Animation + conductive + burning
+        assert REGBIT == (CONDBIT | BURNBIT)  # Conductive + burning
 
 
 class TestObjectConstants:
@@ -432,7 +624,7 @@ class TestToolStateConstants:
         assert queryState == 4
         assert policeState == 5
         assert wireState == 6
-        assert dozeState == 7
+        assert DOZE_STATE == 7
         assert rrState == 8
         assert roadState == 9
         assert chalkState == 10
@@ -467,16 +659,16 @@ class TestMapTypeConstants:
 
     def test_map_types(self):
         """Verify map type constants"""
-        assert ALMAP == 0   # all
-        assert REMAP == 1   # residential
-        assert COMAP == 2   # commercial
-        assert INMAP == 3   # industrial
-        assert PRMAP == 4   # power
-        assert RDMAP == 5   # road
-        assert PDMAP == 6   # population density
-        assert RGMAP == 7   # rate of growth
-        assert TDMAP == 8   # traffic density
-        assert PLMAP == 9   # pollution
+        assert ALMAP == 0  # all
+        assert REMAP == 1  # residential
+        assert COMAP == 2  # commercial
+        assert INMAP == 3  # industrial
+        assert PRMAP == 4  # power
+        assert RDMAP == 5  # road
+        assert PDMAP == 6  # population density
+        assert RGMAP == 7  # rate of growth
+        assert TDMAP == 8  # traffic density
+        assert PLMAP == 9  # pollution
         assert CRMAP == 10  # crime
         assert LVMAP == 11  # land value
         assert FIMAP == 12  # fire radius
@@ -543,8 +735,8 @@ class TestTileRanges:
         assert POWERBASE < LASTPOWER
         assert RAILBASE < LASTRAIL
         assert RESBASE < HOSPITAL  # Residential range
-        assert COMBASE < CZB       # Commercial range
-        assert INDBASE < LASTIND   # Industrial range
+        assert COMBASE < CZB  # Commercial range
+        assert INDBASE < LASTIND  # Industrial range
         assert PORTBASE < LASTPORT
         assert AIRPORTBASE < AIRPORT
         assert COALBASE < LASTPOWERPLANT
@@ -557,4 +749,3 @@ class TestTileRanges:
         assert TELEBASE < TELELAST
         assert SMOKEBASE < TINYEXP
         assert TINYEXP < LASTTINYEXP
-

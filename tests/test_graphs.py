@@ -111,15 +111,15 @@ class TestHistoryData:
     def test_init_graph_maxima(self):
         """Test graph maxima initialization"""
         # Setup some test data
-        types.ResHis = [100, 200, 150, 300] + [0] * 236
-        types.ComHis = [50, 100, 75, 250] + [0] * 236
-        types.IndHis = [25, 50, 40, 150] + [0] * 236
+        types.res_his = [100, 200, 150, 300] + [0] * 236
+        types.com_his = [50, 100, 75, 250] + [0] * 236
+        types.ind_his = [25, 50, 40, 150] + [0] * 236
 
         graphs.init_graph_maxima()
 
-        assert types.ResHisMax == 300
-        assert types.ComHisMax == 250
-        assert types.IndHisMax == 150
+        assert types.res_his_max == 300
+        assert types.com_his__max == 250
+        assert types.ind_his_max == 150
         assert graphs.Graph10Max == 300
 
     def test_draw_month(self):
@@ -130,21 +130,21 @@ class TestHistoryData:
         graphs.draw_month(source, dest, 0.5)  # Scale by 0.5
 
         # Values should be scaled and reversed
-        assert dest[119] == 0    # source[0] * 0.5
-        assert dest[118] == 25   # source[1] * 0.5
-        assert dest[117] == 50   # source[2] * 0.5
-        assert dest[116] == 75   # source[3] * 0.5
+        assert dest[119] == 0  # source[0] * 0.5
+        assert dest[118] == 25  # source[1] * 0.5
+        assert dest[117] == 50  # source[2] * 0.5
+        assert dest[116] == 75  # source[3] * 0.5
         assert dest[115] == 100  # source[4] * 0.5
 
     def test_do_all_graphs(self):
         """Test do_all_graphs data processing"""
         # Setup test history data
-        types.ResHis = [100, 200, 300] + [0] * 237
-        types.ComHis = [50, 100, 150] + [0] * 237
-        types.IndHis = [25, 50, 75] + [0] * 237
-        types.MoneyHis = [1000, 2000, 3000] + [0] * 237
-        types.CrimeHis = [10, 20, 30] + [0] * 237
-        types.PollutionHis = [5, 10, 15] + [0] * 237
+        types.res_his = [100, 200, 300] + [0] * 237
+        types.com_his = [50, 100, 150] + [0] * 237
+        types.ind_his = [25, 50, 75] + [0] * 237
+        types.money_his = [1000, 2000, 3000] + [0] * 237
+        types.crime_his = [10, 20, 30] + [0] * 237
+        types.pollution_his = [5, 10, 15] + [0] * 237
 
         graphs.init_graph_maxima()
         graphs.do_all_graphs()
@@ -203,12 +203,12 @@ class TestGraphRendering:
         graph.set_size(400, 300)
 
         # Setup census changed flag
-        types.CensusChanged = 1
+        types.census_changed = 1
 
         graphs.update_all_graphs()
 
         # CensusChanged should be reset
-        assert types.CensusChanged == 0
+        assert types.census_changed == 0
 
         # Graph should be marked for redraw
         assert graph.needs_redraw
@@ -233,9 +233,10 @@ class TestGraphPanel:
 
     def test_panel_render_with_pygame(self):
         """Panel rendering requests a pygame surface."""
-        with patch.object(graphs, "PYGAME_AVAILABLE", True), patch.object(
-            graphs, "pygame"
-        ) as mock_pygame:
+        with (
+            patch.object(graphs, "PYGAME_AVAILABLE", True),
+            patch.object(graphs, "pygame") as mock_pygame,
+        ):
             mock_pygame.SRCALPHA = 0
             mock_surface = MagicMock()
             mock_pygame.Surface.return_value = mock_surface
@@ -251,9 +252,10 @@ class TestGraphPanel:
 
     def test_panel_resize_marks_dirty(self):
         """Changing panel size recreates the surface."""
-        with patch.object(graphs, "PYGAME_AVAILABLE", True), patch.object(
-            graphs, "pygame"
-        ) as mock_pygame:
+        with (
+            patch.object(graphs, "PYGAME_AVAILABLE", True),
+            patch.object(graphs, "pygame") as mock_pygame,
+        ):
             mock_pygame.SRCALPHA = 0
             initial_surface = MagicMock()
             initial_surface.get_size.return_value = graphs.graph_panel_size
@@ -360,19 +362,19 @@ class TestIntegration:
         graph.set_mask(types.RES_HIST | types.COM_HIST)
 
         # Setup history data
-        types.ResHis = [i * 10 for i in range(240)]
-        types.ComHis = [i * 5 for i in range(240)]
-        types.IndHis = [i * 2 for i in range(240)]
-        types.MoneyHis = [1000 + i * 100 for i in range(240)]
-        types.CrimeHis = [i for i in range(240)]
-        types.PollutionHis = [i // 2 for i in range(240)]
+        types.res_his = [i * 10 for i in range(240)]
+        types.com_his = [i * 5 for i in range(240)]
+        types.ind_his = [i * 2 for i in range(240)]
+        types.money_his = [1000 + i * 100 for i in range(240)]
+        types.crime_his = [i for i in range(240)]
+        types.pollution_his = [i // 2 for i in range(240)]
 
         # Process data
         graphs.init_graph_maxima()
         graphs.do_all_graphs()
 
         # Update graphs
-        types.CensusChanged = 1
+        types.census_changed = 1
         graphs.update_all_graphs()
 
         # Render graph

@@ -104,15 +104,15 @@ class TestBasicFunctionality(unittest.TestCase):
 
         """Test setting game level."""
 
-        original_level = ui_utilities.types.GameLevel        """Test formatting with 4 digits."""        result = ui_utilities.make_dollar_decimal_str("42")
+        original_level = ui_utilities.types.game_level        """Test formatting with 4 digits."""        result = ui_utilities.make_dollar_decimal_str("42")
 
         ui_utilities.set_game_level(1)
 
-        self.assertEqual(ui_utilities.types.GameLevel, 1)        result = ui_utilities.make_dollar_decimal_str("1234")        self.assertEqual(result, "$42")
+        self.assertEqual(ui_utilities.types.game_level, 1)        result = ui_utilities.make_dollar_decimal_str("1234")        self.assertEqual(result, "$42")
 
         # Restore original value
 
-        ui_utilities.types.GameLevel = original_level        self.assertEqual(result, "$1,234")
+        ui_utilities.types.game_level = original_level        self.assertEqual(result, "$1,234")
 
 
 
@@ -120,15 +120,15 @@ class TestBasicFunctionality(unittest.TestCase):
 
         """Test setting city name with only alphanumeric characters."""
 
-        original_name = ui_utilities.types.CityName    def test_make_dollar_decimal_str_large_number(self):        """Test formatting three digit numbers."""
+        original_name = ui_utilities.types.city_name    def test_make_dollar_decimal_str_large_number(self):        """Test formatting three digit numbers."""
 
         ui_utilities.set_city_name("TestCity123")
 
-        self.assertEqual(ui_utilities.types.CityName, "TestCity123")        """Test formatting with large number."""        result = ui_utilities.make_dollar_decimal_str("123")
+        self.assertEqual(ui_utilities.types.city_name, "TestCity123")        """Test formatting with large number."""        result = ui_utilities.make_dollar_decimal_str("123")
 
         # Restore original value
 
-        ui_utilities.types.CityName = original_name        result = ui_utilities.make_dollar_decimal_str("123456789012345")        self.assertEqual(result, "$123")
+        ui_utilities.types.city_name = original_name        result = ui_utilities.make_dollar_decimal_str("123456789012345")        self.assertEqual(result, "$123")
 
 
 
@@ -136,17 +136,17 @@ class TestBasicFunctionality(unittest.TestCase):
 
         """Test setting city name with sanitization."""
 
-        original_name = ui_utilities.types.CityName    def test_make_dollar_decimal_str_four_digits(self):
+        original_name = ui_utilities.types.city_name    def test_make_dollar_decimal_str_four_digits(self):
 
         ui_utilities.set_city_name("Test City!")
 
         # Should sanitize non-alphanumeric characters    def test_make_dollar_decimal_str_single_digit(self):        """Test formatting four digit numbers with comma."""
 
-        self.assertEqual(ui_utilities.types.CityName, "Test_City_")
+        self.assertEqual(ui_utilities.types.city_name, "Test_City_")
 
         # Restore original value        """Test formatting with single digit."""        result = ui_utilities.make_dollar_decimal_str("1234")
 
-        ui_utilities.types.CityName = original_name
+        ui_utilities.types.city_name = original_name
 
         result = ui_utilities.make_dollar_decimal_str("5")        self.assertEqual(result, "$1,234")
 
@@ -154,15 +154,15 @@ class TestBasicFunctionality(unittest.TestCase):
 
         """Test setting city name without sanitization."""        self.assertEqual(result, "$5")
 
-        original_name = ui_utilities.types.CityName
+        original_name = ui_utilities.types.city_name
 
         ui_utilities.set_any_city_name("Test City!")    def test_make_dollar_decimal_str_large_number(self):
 
-        self.assertEqual(ui_utilities.types.CityName, "Test City!")
+        self.assertEqual(ui_utilities.types.city_name, "Test City!")
 
         # Restore original value    def test_make_dollar_decimal_str_three_digits(self):        """Test formatting large numbers with multiple commas."""
 
-        ui_utilities.types.CityName = original_name
+        ui_utilities.types.city_name = original_name
 
         """Test formatting with 3 digits."""        result = ui_utilities.make_dollar_decimal_str("1234567")
 
@@ -172,15 +172,15 @@ class TestBasicFunctionality(unittest.TestCase):
 
         # Set up test values
 
-        original_city_time = ui_utilities.types.CityTime        self.assertEqual(result, "$123")
+        original_city_time = ui_utilities.types.city_time        self.assertEqual(result, "$123")
 
-        original_starting_year = ui_utilities.types.StartingYear
+        original_starting_year = ui_utilities.types.starting_year
 
     def test_make_dollar_decimal_str_exact_multiple_of_three(self):
 
-        ui_utilities.types.CityTime = 480  # 10 years
+        ui_utilities.types.city_time = 480  # 10 years
 
-        ui_utilities.types.StartingYear = 1900    def test_make_dollar_decimal_str_two_digits(self):        """Test formatting numbers that are exact multiples of 3 digits."""
+        ui_utilities.types.starting_year = 1900    def test_make_dollar_decimal_str_two_digits(self):        """Test formatting numbers that are exact multiples of 3 digits."""
 
 
 
@@ -196,9 +196,9 @@ class TestBasicFunctionality(unittest.TestCase):
 
         # Restore original values
 
-        ui_utilities.types.CityTime = original_city_time
+        ui_utilities.types.city_time = original_city_time
 
-        ui_utilities.types.StartingYear = original_starting_year
+        ui_utilities.types.starting_year = original_starting_year
 
 class TestSimulationControl(unittest.TestCase):
 
@@ -208,15 +208,15 @@ class TestSimulationControl(unittest.TestCase):
 
         # Set up test values
 
-        original_starting_year = ui_utilities.types.StartingYear    """Test simulation control functions."""
+        original_starting_year = ui_utilities.types.starting_year    """Test simulation control functions."""
 
-        original_city_time = ui_utilities.types.CityTime
+        original_city_time = ui_utilities.types.city_time
 
     def setUp(self):
 
-        ui_utilities.types.StartingYear = 1900
+        ui_utilities.types.starting_year = 1900
 
-        ui_utilities.types.CityTime = 0    @patch('src.micropolis.ui_utilities.sim_control.is_sim_paused')        """Set up test fixtures."""
+        ui_utilities.types.city_time = 0    @patch('src.micropolis.ui_utilities.sim_control.is_sim_paused')        """Set up test fixtures."""
 
 
 
@@ -228,15 +228,15 @@ class TestSimulationControl(unittest.TestCase):
 
         # CityTime should increase by 10 * 48 = 480
 
-        self.assertEqual(ui_utilities.types.CityTime, 480)    @patch('src.micropolis.ui_utilities.sim_control.resume_simulation')
+        self.assertEqual(ui_utilities.types.city_time, 480)    @patch('src.micropolis.ui_utilities.sim_control.resume_simulation')
 
 
 
         # Restore original values    @patch('src.micropolis.ui_utilities.sim_control.set_sim_speed')        # Patch the modules
 
-        ui_utilities.types.StartingYear = original_starting_year
+        ui_utilities.types.starting_year = original_starting_year
 
-        ui_utilities.types.CityTime = original_city_time    def test_pause_when_already_paused(self, mock_set_sim_speed, mock_resume_simulation,        with patch('src.micropolis.ui_utilities.types', self.mock_types), \
+        ui_utilities.types.city_time = original_city_time    def test_pause_when_already_paused(self, mock_set_sim_speed, mock_resume_simulation,        with patch('src.micropolis.ui_utilities.types', self.mock_types), \
 
 
 

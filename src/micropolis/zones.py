@@ -5,12 +5,14 @@ This module contains the zone growth and management functions ported from s_zone
 implementing residential, commercial, and industrial zone development logic.
 """
 
+import micropolis.power
 from . import types, macros, simulation
 
 
 # ============================================================================
 # Zone Processing Functions
 # ============================================================================
+
 
 def DoZone() -> None:
     """
@@ -22,23 +24,23 @@ def DoZone() -> None:
     ZonePwrFlg = SetZPower()  # Set Power Bit in Map from PowerMap
 
     if ZonePwrFlg:
-        types.PwrdZCnt += 1
+        types.pwrd_z_cnt += 1
     else:
-        types.unPwrdZCnt += 1
+        types.un_pwrd_z_cnt += 1
 
-    if types.CChr9 > types.PORTBASE:  # do Special Zones
+    if types.cchr9 > types.PORTBASE:  # do Special Zones
         simulation.DoSPZone(ZonePwrFlg)
         return
 
-    if types.CChr9 < types.HOSPITAL:
+    if types.cchr9 < types.HOSPITAL:
         DoResidential(ZonePwrFlg)
         return
 
-    if types.CChr9 < types.COMBASE:
+    if types.cchr9 < types.COMBASE:
         DoHospChur()
         return
 
-    if types.CChr9 < types.INDBASE:
+    if types.cchr9 < types.INDBASE:
         DoCommercial(ZonePwrFlg)
         return
 
@@ -52,19 +54,19 @@ def DoHospChur() -> None:
     Handles hospital and church population counting and repair.
     Ported from DoHospChur() in s_zone.c.
     """
-    if types.CChr9 == types.HOSPITAL:
-        types.HospPop += 1
-        if (types.CityTime & 15) == 0:
+    if types.cchr9 == types.HOSPITAL:
+        types.hosp_pop += 1
+        if (types.city_time & 15) == 0:
             simulation.RepairZone(types.HOSPITAL, 3)  # post
-        if types.NeedHosp == -1:
+        if types.need_hosp == -1:
             if simulation.Rand(20) == 0:
                 ZonePlop(types.RESBASE)
 
-    if types.CChr9 == types.CHURCH:
-        types.ChurchPop += 1
-        if (types.CityTime & 15) == 0:
+    if types.cchr9 == types.CHURCH:
+        types.church_pop += 1
+        if (types.city_time & 15) == 0:
             simulation.RepairZone(types.CHURCH, 3)  # post
-        if types.NeedChurch == -1:
+        if types.need_church == -1:
             if simulation.Rand(20) == 0:
                 ZonePlop(types.RESBASE)
 
@@ -89,26 +91,30 @@ def SetSmoke(ZonePower: int) -> None:
     AniTabC = [types.IND1, 0, types.IND2, types.IND4, 0, 0, types.IND6, types.IND8]
     AniTabD = [types.IND1, 0, types.IND3, types.IND5, 0, 0, types.IND7, types.IND9]
 
-    if types.CChr9 < types.IZB:
+    if types.cchr9 < types.IZB:
         return
 
-    z = (types.CChr9 - types.IZB) >> 3
+    z = (types.cchr9 - types.IZB) >> 3
     z = z & 7
 
     if AniThis[z]:
-        xx = types.SMapX + DX1[z]
-        yy = types.SMapY + DY1[z]
+        xx = types.s_map_x + DX1[z]
+        yy = types.s_map_y + DY1[z]
         if macros.TestBounds(xx, yy):
             if ZonePower:
-                if (types.Map[xx][yy] & types.LOMASK) == AniTabC[z]:
-                    types.Map[xx][yy] = types.ASCBIT | (types.SMOKEBASE + AniTabA[z])
+                if (types.map_data[xx][yy] & types.LOMASK) == AniTabC[z]:
+                    types.map_data[xx][yy] = types.ASCBIT | (
+                        types.SMOKEBASE + AniTabA[z]
+                    )
                     # Note: Original has duplicate line, keeping for compatibility
-                    types.Map[xx][yy] = types.ASCBIT | (types.SMOKEBASE + AniTabB[z])
+                    types.map_data[xx][yy] = types.ASCBIT | (
+                        types.SMOKEBASE + AniTabB[z]
+                    )
             else:
-                if (types.Map[xx][yy] & types.LOMASK) > AniTabC[z]:
-                    types.Map[xx][yy] = types.REGBIT | AniTabC[z]
+                if (types.map_data[xx][yy] & types.LOMASK) > AniTabC[z]:
+                    types.map_data[xx][yy] = types.REGBIT | AniTabC[z]
                     # Note: Original has duplicate line, keeping for compatibility
-                    types.Map[xx][yy] = types.REGBIT | AniTabD[z]
+                    types.map_data[xx][yy] = types.REGBIT | AniTabD[z]
 
 
 def DoIndustrial(ZonePwrFlg: int) -> None:
@@ -120,8 +126,8 @@ def DoIndustrial(ZonePwrFlg: int) -> None:
     Args:
         ZonePwrFlg: Whether zone is powered
     """
-    tpop = IZPop(types.CChr9)
-    types.IndPop += tpop
+    tpop = IZPop(types.cchr9)
+    types.ind_pop += tpop
 
     if tpop > simulation.Rand(5):
         TrfGood = MakeTraf(2)
@@ -133,17 +139,15 @@ def DoIndustrial(ZonePwrFlg: int) -> None:
         return
 
     if (simulation.Rand16() & 7) == 0:
-        zscore = types.IValve + EvalInd(TrfGood)
+        zscore = types.i_value + EvalInd(TrfGood)
         if not ZonePwrFlg:
             zscore = -500
 
-        if (zscore > -350) and \
-           ((zscore - 26380) > simulation.Rand16Signed()):
+        if (zscore > -350) and ((zscore - 26380) > simulation.Rand16Signed()):
             DoIndIn(tpop, simulation.Rand16() & 1)
             return
 
-        if (zscore < 350) and \
-           ((zscore + 26380) < simulation.Rand16Signed()):
+        if (zscore < 350) and ((zscore + 26380) < simulation.Rand16Signed()):
             DoIndOut(tpop, simulation.Rand16() & 1)
 
 
@@ -156,8 +160,8 @@ def DoCommercial(ZonePwrFlg: int) -> None:
     Args:
         ZonePwrFlg: Whether zone is powered
     """
-    tpop = CZPop(types.CChr9)
-    types.ComPop += tpop
+    tpop = CZPop(types.cchr9)
+    types.com_pop += tpop
 
     if tpop > simulation.Rand(5):
         TrfGood = MakeTraf(1)
@@ -171,18 +175,20 @@ def DoCommercial(ZonePwrFlg: int) -> None:
 
     if (simulation.Rand16() & 7) == 0:
         locvalve = EvalCom(TrfGood)
-        zscore = types.CValve + locvalve
+        zscore = types.c_value + locvalve
         if not ZonePwrFlg:
             zscore = -500
 
-        if TrfGood and (zscore > -350) and \
-           ((zscore - 26380) > simulation.Rand16Signed()):
+        if (
+            TrfGood
+            and (zscore > -350)
+            and ((zscore - 26380) > simulation.Rand16Signed())
+        ):
             value = GetCRVal()
             DoComIn(tpop, value)
             return
 
-        if (zscore < 350) and \
-           ((zscore + 26380) < simulation.Rand16Signed()):
+        if (zscore < 350) and ((zscore + 26380) < simulation.Rand16Signed()):
             value = GetCRVal()
             DoComOut(tpop, value)
 
@@ -196,12 +202,12 @@ def DoResidential(ZonePwrFlg: int) -> None:
     Args:
         ZonePwrFlg: Whether zone is powered
     """
-    if types.CChr9 == types.FREEZ:
+    if types.cchr9 == types.FREEZ:
         tpop = DoFreePop()
     else:
-        tpop = RZPop(types.CChr9)
+        tpop = RZPop(types.cchr9)
 
-    types.ResPop += tpop
+    types.res_pop += tpop
 
     if tpop > simulation.Rand(35):
         TrfGood = MakeTraf(0)
@@ -213,14 +219,13 @@ def DoResidential(ZonePwrFlg: int) -> None:
         DoResOut(tpop, value)
         return
 
-    if (types.CChr9 == types.FREEZ) or ((simulation.Rand16() & 7) == 0):
+    if (types.cchr9 == types.FREEZ) or ((simulation.Rand16() & 7) == 0):
         locvalve = EvalRes(TrfGood)
-        zscore = types.RValve + locvalve
+        zscore = types.r_value + locvalve
         if not ZonePwrFlg:
             zscore = -500
 
-        if (zscore > -350) and \
-           ((zscore - 26380) > simulation.Rand16Signed()):
+        if (zscore > -350) and ((zscore - 26380) > simulation.Rand16Signed()):
             if (not tpop) and ((simulation.Rand16() & 3) == 0):
                 MakeHosp()
                 return
@@ -228,8 +233,7 @@ def DoResidential(ZonePwrFlg: int) -> None:
             DoResIn(tpop, value)
             return
 
-        if (zscore < 350) and \
-           ((zscore + 26380) < simulation.Rand16Signed()):
+        if (zscore < 350) and ((zscore + 26380) < simulation.Rand16Signed()):
             value = GetCRVal()
             DoResOut(tpop, value)
 
@@ -240,14 +244,14 @@ def MakeHosp() -> None:
 
     Ported from MakeHosp() in s_zone.c.
     """
-    if types.NeedHosp > 0:
+    if types.need_hosp > 0:
         ZonePlop(types.HOSPITAL - 4)
-        types.NeedHosp = False
+        types.need_hosp = False
         return
 
-    if types.NeedChurch > 0:
+    if types.need_church > 0:
         ZonePlop(types.CHURCH - 4)
-        types.NeedChurch = False
+        types.need_church = False
 
 
 def GetCRVal() -> int:
@@ -259,8 +263,8 @@ def GetCRVal() -> int:
     Returns:
         Value from 0-3 based on land value minus pollution
     """
-    LVal = types.LandValueMem[types.SMapX >> 1][types.SMapY >> 1]
-    LVal -= types.PollutionMem[types.SMapX >> 1][types.SMapY >> 1]
+    LVal = types.land_value_mem[types.s_map_x >> 1][types.s_map_y >> 1]
+    LVal -= types.pollution_mem[types.s_map_x >> 1][types.s_map_y >> 1]
 
     if LVal < 30:
         return 0
@@ -275,6 +279,7 @@ def GetCRVal() -> int:
 # Zone Growth Functions
 # ============================================================================
 
+
 def DoResIn(pop: int, value: int) -> None:
     """
     Handle residential zone growth inward.
@@ -285,16 +290,16 @@ def DoResIn(pop: int, value: int) -> None:
         pop: Current population
         value: Land value rating
     """
-    z = types.PollutionMem[types.SMapX >> 1][types.SMapY >> 1]
+    z = types.pollution_mem[types.s_map_x >> 1][types.s_map_y >> 1]
     if z > 128:
         return
 
-    if types.CChr9 == types.FREEZ:
+    if types.cchr9 == types.FREEZ:
         if pop < 8:
             BuildHouse(value)
             IncROG(1)
             return
-        if types.PopDensity[types.SMapX >> 1][types.SMapY >> 1] > 64:
+        if types.pop_density[types.s_map_x >> 1][types.s_map_y >> 1] > 64:
             ResPlop(0, value)
             IncROG(8)
             return
@@ -315,7 +320,7 @@ def DoComIn(pop: int, value: int) -> None:
         pop: Current population
         value: Land value rating
     """
-    z = types.LandValueMem[types.SMapX >> 1][types.SMapY >> 1]
+    z = types.land_value_mem[types.s_map_x >> 1][types.s_map_y >> 1]
     z = z >> 5
     if pop > z:
         return
@@ -349,12 +354,13 @@ def IncROG(amount: int) -> None:
     Args:
         amount: Amount to increment
     """
-    types.RateOGMem[types.SMapX >> 3][types.SMapY >> 3] += amount << 2
+    types.rate_og_mem[types.s_map_x >> 3][types.s_map_y >> 3] += amount << 2
 
 
 # ============================================================================
 # Zone Shrinkage Functions
 # ============================================================================
+
 
 def DoResOut(pop: int, value: int) -> None:
     """
@@ -378,22 +384,28 @@ def DoResOut(pop: int, value: int) -> None:
 
     if pop == 16:
         IncROG(-8)
-        types.Map[types.SMapX][types.SMapY] = (types.FREEZ | types.BLBNCNBIT | types.ZONEBIT)
-        for x in range(types.SMapX - 1, types.SMapX + 2):
-            for y in range(types.SMapY - 1, types.SMapY + 2):
+        types.map_data[types.s_map_x][types.s_map_y] = (
+            types.FREEZ | types.BLBNCNBIT | types.ZONEBIT
+        )
+        for x in range(types.s_map_x - 1, types.s_map_x + 2):
+            for y in range(types.s_map_y - 1, types.s_map_y + 2):
                 if macros.TestBounds(x, y):
-                    if (types.Map[x][y] & types.LOMASK) != types.FREEZ:
-                        types.Map[x][y] = types.LHTHR + value + simulation.Rand(2) + types.BLBNCNBIT
+                    if (types.map_data[x][y] & types.LOMASK) != types.FREEZ:
+                        types.map_data[x][y] = (
+                            types.LHTHR + value + simulation.Rand(2) + types.BLBNCNBIT
+                        )
 
     if pop < 16:
         IncROG(-1)
         z = 0
-        for x in range(types.SMapX - 1, types.SMapX + 2):
-            for y in range(types.SMapY - 1, types.SMapY + 2):
+        for x in range(types.s_map_x - 1, types.s_map_x + 2):
+            for y in range(types.s_map_y - 1, types.s_map_y + 2):
                 if macros.TestBounds(x, y):
-                    loc = types.Map[x][y] & types.LOMASK
+                    loc = types.map_data[x][y] & types.LOMASK
                     if (loc >= types.LHTHR) and (loc <= types.HHTHR):
-                        types.Map[x][y] = Brdr[z] + types.BLBNCNBIT + types.FREEZ - 4
+                        types.map_data[x][y] = (
+                            Brdr[z] + types.BLBNCNBIT + types.FREEZ - 4
+                        )
                         return
                 z += 1
 
@@ -442,6 +454,7 @@ def DoIndOut(pop: int, value: int) -> None:
 # Population Calculation Functions
 # ============================================================================
 
+
 def RZPop(Ch9: int) -> int:
     """
     Calculate residential zone population.
@@ -454,8 +467,8 @@ def RZPop(Ch9: int) -> int:
     Returns:
         Population count
     """
-    CzDen = (((Ch9 - types.RZB) // 9) % 4)
-    return ((CzDen * 8) + 16)
+    CzDen = ((Ch9 - types.RZB) // 9) % 4
+    return (CzDen * 8) + 16
 
 
 def CZPop(Ch9: int) -> int:
@@ -498,6 +511,7 @@ def IZPop(Ch9: int) -> int:
 # Building and Construction Functions
 # ============================================================================
 
+
 def BuildHouse(value: int) -> None:
     """
     Build a house in an empty residential lot.
@@ -514,8 +528,8 @@ def BuildHouse(value: int) -> None:
     hscore = 0
 
     for z in range(1, 9):
-        xx = types.SMapX + ZeX[z]
-        yy = types.SMapY + ZeY[z]
+        xx = types.s_map_x + ZeX[z]
+        yy = types.s_map_y + ZeY[z]
         if macros.TestBounds(xx, yy):
             score = EvalLot(xx, yy)
             if score != 0:
@@ -526,10 +540,12 @@ def BuildHouse(value: int) -> None:
                     BestLoc = z
 
     if BestLoc:
-        xx = types.SMapX + ZeX[BestLoc]
-        yy = types.SMapY + ZeY[BestLoc]
+        xx = types.s_map_x + ZeX[BestLoc]
+        yy = types.s_map_y + ZeY[BestLoc]
         if macros.TestBounds(xx, yy):
-            types.Map[xx][yy] = types.HOUSE + types.BLBNCNBIT + simulation.Rand(2) + (value * 3)
+            types.map_data[xx][yy] = (
+                types.HOUSE + types.BLBNCNBIT + simulation.Rand(2) + (value * 3)
+            )
 
 
 def ResPlop(Den: int, Value: int) -> None:
@@ -591,7 +607,7 @@ def EvalLot(x: int, y: int) -> int:
     DY = [-1, 0, 1, 0]
 
     # test for clear lot
-    z = types.Map[x][y] & types.LOMASK
+    z = types.map_data[x][y] & types.LOMASK
     if z and ((z < types.RESBASE) or (z > types.RESBASE + 8)):
         return -1
 
@@ -599,9 +615,11 @@ def EvalLot(x: int, y: int) -> int:
     for z in range(4):
         xx = x + DX[z]
         yy = y + DY[z]
-        if macros.TestBounds(xx, yy) and \
-           types.Map[xx][yy] and \
-           ((types.Map[xx][yy] & types.LOMASK) <= types.LASTROAD):
+        if (
+            macros.TestBounds(xx, yy)
+            and types.map_data[xx][yy]
+            and ((types.map_data[xx][yy] & types.LOMASK) <= types.LASTROAD)
+        ):
             score += 1  # look for road
 
     return score
@@ -624,30 +642,31 @@ def ZonePlop(base: int) -> bool:
 
     # check for fire/flood
     for z in range(9):
-        xx = types.SMapX + Zx[z]
-        yy = types.SMapY + Zy[z]
+        xx = types.s_map_x + Zx[z]
+        yy = types.s_map_y + Zy[z]
         if macros.TestBounds(xx, yy):
-            x = types.Map[xx][yy] & types.LOMASK
+            x = types.map_data[xx][yy] & types.LOMASK
             if (x >= types.FLOOD) and (x < types.ROADBASE):
                 return False
 
     # place zone tiles
     for z in range(9):
-        xx = types.SMapX + Zx[z]
-        yy = types.SMapY + Zy[z]
+        xx = types.s_map_x + Zx[z]
+        yy = types.s_map_y + Zy[z]
         if macros.TestBounds(xx, yy):
-            types.Map[xx][yy] = base + types.BNCNBIT
+            types.map_data[xx][yy] = base + types.BNCNBIT
         base += 1
 
-    types.CChr = types.Map[types.SMapX][types.SMapY]
+    types.cchr = types.map_data[types.s_map_x][types.s_map_y]
     SetZPower()
-    types.Map[types.SMapX][types.SMapY] |= types.ZONEBIT | types.BULLBIT
+    types.map_data[types.s_map_x][types.s_map_y] |= types.ZONEBIT | types.BULLBIT
     return True
 
 
 # ============================================================================
 # Evaluation Functions
 # ============================================================================
+
 
 def EvalRes(traf: int) -> int:
     """
@@ -664,8 +683,8 @@ def EvalRes(traf: int) -> int:
     if traf < 0:
         return -3000
 
-    Value = types.LandValueMem[types.SMapX >> 1][types.SMapY >> 1]
-    Value -= types.PollutionMem[types.SMapX >> 1][types.SMapY >> 1]
+    Value = types.land_value_mem[types.s_map_x >> 1][types.s_map_y >> 1]
+    Value -= types.pollution_mem[types.s_map_x >> 1][types.s_map_y >> 1]
 
     if Value < 0:
         Value = 0  # Cap at 0
@@ -694,7 +713,7 @@ def EvalCom(traf: int) -> int:
     if traf < 0:
         return -3000
 
-    Value = types.ComRate[types.SMapX >> 3][types.SMapY >> 3]
+    Value = types.com_rate[types.s_map_x >> 3][types.s_map_y >> 3]
     return Value
 
 
@@ -719,6 +738,7 @@ def EvalInd(traf: int) -> int:
 # Population Counting Functions
 # ============================================================================
 
+
 def DoFreePop() -> int:
     """
     Count population in free zone area.
@@ -729,10 +749,10 @@ def DoFreePop() -> int:
         Population count
     """
     count = 0
-    for x in range(types.SMapX - 1, types.SMapX + 2):
-        for y in range(types.SMapY - 1, types.SMapY + 2):
+    for x in range(types.s_map_x - 1, types.s_map_x + 2):
+        for y in range(types.s_map_y - 1, types.s_map_y + 2):
             if macros.TestBounds(x, y):
-                loc = types.Map[x][y] & types.LOMASK
+                loc = types.map_data[x][y] & types.LOMASK
                 if (loc >= types.LHTHR) and (loc <= types.HHTHR):
                     count += 1
     return count
@@ -741,6 +761,7 @@ def DoFreePop() -> int:
 # ============================================================================
 # Power Management Functions
 # ============================================================================
+
 
 def SetZPower() -> int:
     """
@@ -752,20 +773,33 @@ def SetZPower() -> int:
         1 if powered, 0 if not powered
     """
     # Test for special power cases or power map connectivity
-    if ((types.CChr9 == types.NUCLEAR) or
-        (types.CChr9 == types.POWERPLANT) or
-        ((types.powerword(types.SMapX, types.SMapY) < types.PWRMAPSIZE) and
-         (types.PowerMap[types.powerword(types.SMapX, types.SMapY)] & (1 << (types.SMapX & 15))))):
-        types.Map[types.SMapX][types.SMapY] = types.CChr | types.PWRBIT
+    if (
+        (types.cchr9 == types.NUCLEAR)
+        or (types.cchr9 == types.POWERPLANT)
+        or (
+            (
+                micropolis.power.powerword(types.s_map_x, types.s_map_y)
+                < types.PWRMAPSIZE
+            )
+            and (
+                types.power_map[
+                    micropolis.power.powerword(types.s_map_x, types.s_map_y)
+                ]
+                & (1 << (types.s_map_x & 15))
+            )
+        )
+    ):
+        types.map_data[types.s_map_x][types.s_map_y] = types.cchr | types.PWRBIT
         return 1
     else:
-        types.Map[types.SMapX][types.SMapY] = types.CChr & (~types.PWRBIT)
+        types.map_data[types.s_map_x][types.s_map_y] = types.cchr & (~types.PWRBIT)
         return 0
 
 
 # ============================================================================
 # Traffic Functions (placeholders - will be implemented in traffic.py)
 # ============================================================================
+
 
 def MakeTraf(kind: int) -> int:
     """

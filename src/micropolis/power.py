@@ -8,14 +8,17 @@ to determine which areas receive power from coal and nuclear power plants.
 Based on s_power.c from the original C codebase.
 """
 
-
 import array
+
+import micropolis.constants
 from . import types
 
 # Power grid constants
-POWERMAPROW = (types.WORLD_X + 15) // 16  # ((WORLD_X + 15) / 16)
-PWRMAPSIZE = POWERMAPROW * types.WORLD_Y
-PWRSTKSIZE = (types.WORLD_X * types.WORLD_Y) // 4  # ((WORLD_X * WORLD_Y) / 4)
+POWERMAPROW = (micropolis.constants.WORLD_X + 15) // 16  # ((WORLD_X + 15) / 16)
+PWRMAPSIZE = POWERMAPROW * micropolis.constants.WORLD_Y
+PWRSTKSIZE = (
+    micropolis.constants.WORLD_X * micropolis.constants.WORLD_Y
+) // 4  # ((WORLD_X * WORLD_Y) / 4)
 
 # Power-related bit constants
 PWRBIT = 32768  # 0x8000 - bit 15
@@ -40,17 +43,17 @@ def DoPowerScan() -> None:
     global PowerStackNum, MaxPower, NumPower
 
     # Clear the power map
-    types.PowerMap = array.array('H', [0] * PWRMAPSIZE)
+    types.power_map = array.array("H", [0] * PWRMAPSIZE)
 
     # Reset power statistics
-    MaxPower = types.CoalPop * 700 + types.NuclearPop * 2000
+    MaxPower = types.coal_pop * 700 + types.nuclear_pop * 2000
     NumPower = 0
 
     # Find all power plants and add them to the stack
     PowerStackNum = 0
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
-            tile = types.Map[x][y]
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
+            tile = types.map_data[x][y]
             # Check if this is a power plant tile
             if tile & PWRBIT != 0:
                 if PowerStackNum < PWRSTKSIZE:
@@ -69,7 +72,12 @@ def DoPowerScan() -> None:
         # Spread power to adjacent conductive tiles
         for dir in range(4):  # 4 directions: north, east, south, west
             nx, ny = MoveMapSim(x, y, dir)
-            if nx >= 0 and nx < types.WORLD_X and ny >= 0 and ny < types.WORLD_Y:
+            if (
+                nx >= 0
+                and nx < micropolis.constants.WORLD_X
+                and ny >= 0
+                and ny < micropolis.constants.WORLD_Y
+            ):
                 if TestForCond(nx, ny):
                     if not TestPowerBit(nx, ny):
                         SetPowerBit(nx, ny)
@@ -117,8 +125,19 @@ def TestForCond(x: int, y: int) -> bool:
     Returns:
         True if the tile conducts power, False otherwise
     """
-    tile = types.Map[x][y]
+    tile = types.map_data[x][y]
     return (tile & CONDBIT) != 0
+
+
+# ============================================================================
+# Power Grid Constants
+# ============================================================================
+
+
+# Power grid bit operations
+def powerword(x: int, y: int) -> int:
+    """Calculate power map word index for coordinates"""
+    return ((x) >> 4) + ((y) << 3)
 
 
 def SetPowerBit(x: int, y: int) -> None:
@@ -130,11 +149,11 @@ def SetPowerBit(x: int, y: int) -> None:
         y: Y coordinate
     """
     # Calculate the word index in the power map
-    word = types.powerword(x, y)
+    word = powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Set the bit
-    types.PowerMap[word] |= (1 << bit)
+    types.power_map[word] |= 1 << bit
 
 
 def TestPowerBit(x: int, y: int) -> bool:
@@ -149,11 +168,11 @@ def TestPowerBit(x: int, y: int) -> bool:
         True if the tile has power, False otherwise
     """
     # Calculate the word index in the power map
-    word = types.powerword(x, y)
+    word = powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Test the bit
-    return (types.PowerMap[word] & (1 << bit)) != 0
+    return (types.power_map[word] & (1 << bit)) != 0
 
 
 def PushPowerStack() -> None:
@@ -166,8 +185,8 @@ def PushPowerStack() -> None:
 
     if PowerStackNum < (PWRSTKSIZE - 2):
         PowerStackNum += 1
-        PowerStackX[PowerStackNum] = types.SMapX
-        PowerStackY[PowerStackNum] = types.SMapY
+        PowerStackX[PowerStackNum] = types.s_map_x
+        PowerStackY[PowerStackNum] = types.s_map_y
 
 
 def ClearPowerBit(x: int, y: int) -> None:
@@ -179,8 +198,13 @@ def ClearPowerBit(x: int, y: int) -> None:
         y: Y coordinate
     """
     # Calculate the word index in the power map
-    word = types.powerword(x, y)
+    word = powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Clear the bit
-    types.PowerMap[word] &= ~(1 << bit)
+    types.power_map[word] &= ~(1 << bit)
+
+
+def setpowerbit(x: int, y: int, power_map: array.array) -> None:
+    """Set power bit at coordinates in power map"""
+    power_map[powerword(x, y)] |= 1 << ((x) & 15)

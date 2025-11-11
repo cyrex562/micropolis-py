@@ -1,5 +1,8 @@
 {
     "python": {
         "formatter": "ruff"
-    }
+    },
+    "cSpell.words": [
+        "PROBNUM"
+    ]
 }

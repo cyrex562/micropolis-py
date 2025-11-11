@@ -7,11 +7,12 @@ This module contains comprehensive tests for the map editor interface functional
 from unittest.mock import Mock, patch
 
 import micropolis.editor as editor
-import micropolis.types as types
+import micropolis.sim_view as types
 import micropolis.view_types as view_types
 
 
 from tests.assertions import Assertions
+
 
 class TestEditor(Assertions):
     """Test cases for the editor module"""
@@ -94,7 +95,7 @@ class TestEditor(Assertions):
         self.assertEqual(self.mock_view.pan_y, original_pan_y - 25)
         self.assertTrue(self.mock_view.invalid)
 
-    @patch('micropolis.editor.tools')
+    @patch("micropolis.editor.tools")
     def test_do_tool(self, mock_tools):
         """Test applying a tool"""
         mock_tools.do_tool.return_value = 0
@@ -108,35 +109,41 @@ class TestEditor(Assertions):
         self.assertEqual(args[1], 1)  # tool
         # Coordinates should be converted from screen to tile
 
-    @patch('micropolis.editor.tools')
+    @patch("micropolis.editor.tools")
     def test_tool_down(self, mock_tools):
         """Test tool down event"""
         mock_tools.ToolDown.return_value = None
 
         editor.ToolDown(self.mock_view, 400, 300)
 
-        mock_tools.ToolDown.assert_called_once_with(self.mock_view, 25, 18)  # Converted coordinates
+        mock_tools.ToolDown.assert_called_once_with(
+            self.mock_view, 25, 18
+        )  # Converted coordinates
 
-    @patch('micropolis.editor.tools')
+    @patch("micropolis.editor.tools")
     def test_tool_drag(self, mock_tools):
         """Test tool drag event"""
         mock_tools.ToolDrag.return_value = 1
 
         editor.ToolDrag(self.mock_view, 400, 300)
 
-        mock_tools.ToolDrag.assert_called_once_with(self.mock_view, 25, 18)  # Converted coordinates
+        mock_tools.ToolDrag.assert_called_once_with(
+            self.mock_view, 25, 18
+        )  # Converted coordinates
 
-    @patch('micropolis.editor.tools')
+    @patch("micropolis.editor.tools")
     def test_tool_up(self, mock_tools):
         """Test tool up event"""
         mock_tools.ToolUp.return_value = 1
 
         editor.ToolUp(self.mock_view, 400, 300)
 
-        mock_tools.ToolUp.assert_called_once_with(self.mock_view, 25, 18)  # Converted coordinates
+        mock_tools.ToolUp.assert_called_once_with(
+            self.mock_view, 25, 18
+        )  # Converted coordinates
 
-    @patch('micropolis.editor.PYGAME_AVAILABLE', True)
-    @patch('micropolis.editor.pygame')
+    @patch("micropolis.editor.PYGAME_AVAILABLE", True)
+    @patch("micropolis.editor.pygame")
     def test_draw_outside(self, mock_pygame):
         """Test drawing borders outside the map area"""
         mock_pygame.Surface.return_value = self.surface_mock
@@ -151,14 +158,14 @@ class TestEditor(Assertions):
         mock_sim.editors = 0
         mock_sim.editor = None
 
-        with patch('micropolis.editor.types.sim', mock_sim):
+        with patch("micropolis.editor.types.sim", mock_sim):
             editor.DoNewEditor(self.mock_view)
 
             self.assertEqual(mock_sim.editors, 1)
             self.assertEqual(mock_sim.editor, self.mock_view)
             self.assertTrue(self.mock_view.invalid)
 
-    @patch('micropolis.editor.types')
+    @patch("micropolis.editor.types")
     def test_do_update_editor_invisible(self, mock_types):
         """Test updating an invisible editor view"""
         self.mock_view.visible = False
@@ -168,10 +175,12 @@ class TestEditor(Assertions):
         # Should return early without doing anything
         self.assertEqual(self.mock_view.updates, 0)
 
-    @patch('micropolis.editor.types')
-    @patch('micropolis.editor.HandleAutoGoto')
-    @patch('micropolis.editor.pygame')
-    def test_do_update_editor_visible(self, mock_pygame, mock_handle_autogoto, mock_types):
+    @patch("micropolis.editor.types")
+    @patch("micropolis.editor.HandleAutoGoto")
+    @patch("micropolis.editor.pygame")
+    def test_do_update_editor_visible(
+        self, mock_pygame, mock_handle_autogoto, mock_types
+    ):
         """Test updating a visible editor view"""
         self.mock_view.visible = True
         self.mock_view.invalid = True
@@ -179,13 +188,13 @@ class TestEditor(Assertions):
         # Mock pygame surface
         mock_surface = Mock()
         mock_pygame.Surface.return_value = mock_surface
-        setattr(self.mock_view, 'surface', mock_surface)
+        setattr(self.mock_view, "surface", mock_surface)
 
         # Mock the types module
         mock_types.ShakeNow = 0
         mock_types.sim_skips = 0
-        mock_types.DoAnimation = 0
-        mock_types.TilesAnimated = 0
+        mock_types.do_animation = 0
+        mock_types.tiles_animated = 0
         mock_types.PendingTool = -1  # No pending tool
 
         editor.DoUpdateEditor(self.mock_view)
@@ -221,7 +230,7 @@ class TestEditor(Assertions):
         self.assertEqual(self.mock_view.pan_x, 508)  # x + x_hot
         self.assertEqual(self.mock_view.pan_y, 408)  # y + y_hot
 
-    @patch('micropolis.editor.tools')
+    @patch("micropolis.editor.tools")
     def test_chalk_start(self, mock_tools):
         """Test starting chalk drawing"""
         mock_tools.ChalkStart.return_value = None
@@ -233,7 +242,7 @@ class TestEditor(Assertions):
         self.assertEqual(args[0], self.mock_view)
         # Coordinates should be converted
 
-    @patch('micropolis.editor.tools')
+    @patch("micropolis.editor.tools")
     def test_chalk_to(self, mock_tools):
         """Test continuing chalk drawing"""
         mock_tools.ChalkTo.return_value = None
@@ -298,23 +307,24 @@ class TestEditorIntegration(Assertions):
         self.display.color = True
         self.view.x = self.display
 
-    @patch('micropolis.editor.types')
+    @patch("micropolis.editor.types")
     def test_full_update_cycle(self, mock_types):
         """Test a full editor update cycle"""
         # Mock global state
         mock_types.ShakeNow = 0
         mock_types.sim_skips = 0
-        mock_types.DoAnimation = 0
-        mock_types.TilesAnimated = 0
+        mock_types.do_animation = 0
+        mock_types.tiles_animated = 0
         mock_types.sim = Mock()
         mock_types.sim.editors = 1
         mock_types.sim.editor = self.view
 
-        with patch('micropolis.editor.HandleAutoGoto') as mock_autogoto, \
-             patch('micropolis.editor.DrawOutside') as mock_draw_outside, \
-             patch('micropolis.editor.DrawPending') as mock_draw_pending, \
-             patch('micropolis.editor.DrawOverlay') as mock_draw_overlay:
-
+        with (
+            patch("micropolis.editor.HandleAutoGoto") as mock_autogoto,
+            patch("micropolis.editor.DrawOutside") as mock_draw_outside,
+            patch("micropolis.editor.DrawPending") as mock_draw_pending,
+            patch("micropolis.editor.DrawOverlay") as mock_draw_overlay,
+        ):
             editor.DoUpdateEditor(self.view)
 
             # Should call all the drawing functions
@@ -324,4 +334,3 @@ class TestEditorIntegration(Assertions):
             mock_draw_overlay.assert_called_once_with(self.view)
 
             self.assertFalse(self.view.invalid)
-

@@ -7,10 +7,13 @@ population classification, and voting simulation.
 """
 
 from unittest.mock import patch
+
+import micropolis.constants
 from src.micropolis import evaluation, types
 
 
 from tests.assertions import Assertions
+
 
 class TestEvaluation(Assertions):
     """Test cases for the evaluation system."""
@@ -35,35 +38,35 @@ class TestEvaluation(Assertions):
         evaluation.TrafficAverage = 0
 
         # Reset global simulation state used by evaluation
-        types.TotalPop = 0
-        types.ResPop = 0
-        types.ComPop = 0
-        types.IndPop = 0
-        types.RoadTotal = 0
-        types.RailTotal = 0
-        types.PolicePop = 0
-        types.FireStPop = 0
-        types.HospPop = 0
-        types.StadiumPop = 0
-        types.PortPop = 0
-        types.APortPop = 0
-        types.CoalPop = 0
-        types.NuclearPop = 0
-        types.CrimeAverage = 0
-        types.PolluteAverage = 0
-        types.LVAverage = 0
-        types.CityTax = 0
-        types.ResCap = False
-        types.ComCap = False
-        types.IndCap = False
-        types.RoadEffect = 0
-        types.PoliceEffect = 0
-        types.FireEffect = 0
-        types.RValve = 0
-        types.CValve = 0
-        types.IValve = 0
-        types.unPwrdZCnt = 0
-        types.PwrdZCnt = 0
+        types.total_pop = 0
+        types.res_pop = 0
+        types.com_pop = 0
+        types.ind_pop = 0
+        types.road_total = 0
+        types.rail_total = 0
+        types.police_pop = 0
+        types.fire_st_pop = 0
+        types.hosp_pop = 0
+        types.stadium_pop = 0
+        types.port_pop = 0
+        types.airport_pop = 0
+        types.coal_pop = 0
+        types.nuclear_pop = 0
+        types.crime_average = 0
+        types.pollute_average = 0
+        types.lv_average = 0
+        types.city_tax = 0
+        types.res_cap = False
+        types.com_cap = False
+        types.ind_cap = False
+        types.road_effect = 0
+        types.police_effect = 0
+        types.fire_effect = 0
+        types.r_value = 0
+        types.c_value = 0
+        types.i_value = 0
+        types.un_pwrd_z_cnt = 0
+        types.pwrd_z_cnt = 0
 
     def test_eval_init(self):
         """Test evaluation initialization."""
@@ -85,29 +88,39 @@ class TestEvaluation(Assertions):
     def test_get_ass_value(self):
         """Test assessed value calculation."""
         # Set up infrastructure values
-        types.RoadTotal = 100
-        types.RailTotal = 50
-        types.PolicePop = 10
-        types.FireStPop = 8
-        types.HospPop = 5
-        types.StadiumPop = 2
-        types.PortPop = 1
-        types.APortPop = 1
-        types.CoalPop = 3
-        types.NuclearPop = 2
+        types.road_total = 100
+        types.rail_total = 50
+        types.police_pop = 10
+        types.fire_st_pop = 8
+        types.hosp_pop = 5
+        types.stadium_pop = 2
+        types.port_pop = 1
+        types.airport_pop = 1
+        types.coal_pop = 3
+        types.nuclear_pop = 2
 
         evaluation.GetAssValue()
 
         # Calculate expected value
-        expected = (100 * 5 + 50 * 10 + 10 * 1000 + 8 * 1000 + 5 * 400 +
-                   2 * 3000 + 1 * 5000 + 1 * 10000 + 3 * 3000 + 2 * 6000) * 1000
+        expected = (
+            100 * 5
+            + 50 * 10
+            + 10 * 1000
+            + 8 * 1000
+            + 5 * 400
+            + 2 * 3000
+            + 1 * 5000
+            + 1 * 10000
+            + 3 * 3000
+            + 2 * 6000
+        ) * 1000
         self.assertEqual(evaluation.CityAssValue, expected)
 
     def test_do_pop_num_village(self):
         """Test population calculation for village (smallest class)."""
-        types.ResPop = 10
-        types.ComPop = 5
-        types.IndPop = 3
+        types.res_pop = 10
+        types.com_pop = 5
+        types.ind_pop = 3
 
         evaluation.DoPopNum()
 
@@ -117,9 +130,9 @@ class TestEvaluation(Assertions):
 
     def test_do_pop_num_megalopolis(self):
         """Test population calculation for megalopolis (largest class)."""
-        types.ResPop = 50000  # Large residential population
-        types.ComPop = 10000
-        types.IndPop = 8000
+        types.res_pop = 50000  # Large residential population
+        types.com_pop = 10000
+        types.ind_pop = 8000
 
         evaluation.DoPopNum()
 
@@ -131,24 +144,28 @@ class TestEvaluation(Assertions):
     def test_do_problems(self):
         """Test problem analysis and voting."""
         # Set up problem values
-        types.CrimeAverage = 50
-        types.PolluteAverage = 40
-        types.LVAverage = 100  # Housing = 70
-        types.CityTax = 8       # Taxes = 80
+        types.crime_average = 50
+        types.pollute_average = 40
+        types.lv_average = 100  # Housing = 70
+        types.city_tax = 8  # Taxes = 80
         # Traffic will be calculated
         # Unemployment will be calculated
-        types.FirePop = 10      # Fire = 50
+        types.fire_pop = 10  # Fire = 50
 
         # Set up population for unemployment calculation (more residents than jobs)
-        types.ResPop = 2000  # More residents
-        types.ComPop = 100   # Fewer commercial jobs
-        types.IndPop = 100   # Fewer industrial jobs
+        types.res_pop = 2000  # More residents
+        types.com_pop = 100  # Fewer commercial jobs
+        types.ind_pop = 100  # Fewer industrial jobs
 
         # Mock traffic density data
-        types.LandValueMem = [[100 if i < 10 else 0 for i in range(types.HWLDY)]
-                             for _ in range(types.HWLDX)]
-        types.TrfDensity = [[50 if i < 10 else 0 for i in range(types.HWLDY)]
-                           for _ in range(types.HWLDX)]
+        types.land_value_mem = [
+            [100 if i < 10 else 0 for i in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.trf_density = [
+            [50 if i < 10 else 0 for i in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
 
         evaluation.DoPopNum()  # Initialize population
         evaluation.DoProblems()
@@ -168,31 +185,31 @@ class TestEvaluation(Assertions):
     def test_get_score_perfect_city(self):
         """Test score calculation for a near-perfect city."""
         # Set up a good city scenario
-        types.TotalPop = 1000
-        types.ResPop = 500
-        types.ComPop = 100
-        types.IndPop = 100
+        types.total_pop = 1000
+        types.res_pop = 500
+        types.com_pop = 100
+        types.ind_pop = 100
 
         # Low problems
-        types.CrimeAverage = 10
-        types.PolluteAverage = 10
-        types.LVAverage = 200
-        types.CityTax = 5
-        types.FirePop = 5
+        types.crime_average = 10
+        types.pollute_average = 10
+        types.lv_average = 200
+        types.city_tax = 5
+        types.fire_pop = 5
 
         # Good infrastructure
-        types.RoadEffect = 100
-        types.PoliceEffect = 1500
-        types.FireEffect = 1500
+        types.road_effect = 100
+        types.police_effect = 1500
+        types.fire_effect = 1500
 
         # Positive demand
-        types.RValve = 1000
-        types.CValve = 1000
-        types.IValve = 1000
+        types.r_value = 1000
+        types.c_value = 1000
+        types.i_value = 1000
 
         # Good power ratio
-        types.PwrdZCnt = 100
-        types.unPwrdZCnt = 10
+        types.pwrd_z_cnt = 100
+        types.un_pwrd_z_cnt = 10
 
         # Initialize and calculate
         evaluation.DoPopNum()
@@ -206,31 +223,31 @@ class TestEvaluation(Assertions):
     def test_get_score_poor_city(self):
         """Test score calculation for a poor city."""
         # Set up a bad city scenario
-        types.TotalPop = 1000
-        types.ResPop = 500
-        types.ComPop = 100
-        types.IndPop = 100
+        types.total_pop = 1000
+        types.res_pop = 500
+        types.com_pop = 100
+        types.ind_pop = 100
 
         # High problems
-        types.CrimeAverage = 200
-        types.PolluteAverage = 200
-        types.LVAverage = 50
-        types.CityTax = 15
-        types.FirePop = 50
+        types.crime_average = 200
+        types.pollute_average = 200
+        types.lv_average = 50
+        types.city_tax = 15
+        types.fire_pop = 50
 
         # Poor infrastructure
-        types.RoadEffect = 10
-        types.PoliceEffect = 500
-        types.FireEffect = 500
+        types.road_effect = 10
+        types.police_effect = 500
+        types.fire_effect = 500
 
         # Negative demand
-        types.RValve = -2000
-        types.CValve = -2000
-        types.IValve = -2000
+        types.r_value = -2000
+        types.c_value = -2000
+        types.i_value = -2000
 
         # Poor power ratio
-        types.PwrdZCnt = 10
-        types.unPwrdZCnt = 100
+        types.pwrd_z_cnt = 10
+        types.un_pwrd_z_cnt = 100
 
         # Initialize and calculate
         evaluation.DoPopNum()
@@ -265,24 +282,30 @@ class TestEvaluation(Assertions):
 
     def test_city_evaluation_no_population(self):
         """Test city evaluation with no population."""
-        types.TotalPop = 0
+        types.total_pop = 0
 
         evaluation.CityEvaluation()
 
         self.assertEqual(evaluation.EvalValid, 1)
         self.assertEqual(evaluation.CityScore, 500)  # Default score
 
-    @patch('src.micropolis.evaluation.GetAssValue')
-    @patch('src.micropolis.evaluation.DoPopNum')
-    @patch('src.micropolis.evaluation.DoProblems')
-    @patch('src.micropolis.evaluation.GetScore')
-    @patch('src.micropolis.evaluation.DoVotes')
-    @patch('src.micropolis.evaluation.ChangeEval')
-    def test_city_evaluation_with_population(self, mock_change_eval, mock_do_votes,
-                                           mock_get_score, mock_do_problems,
-                                           mock_do_pop_num, mock_get_ass_value):
+    @patch("src.micropolis.evaluation.GetAssValue")
+    @patch("src.micropolis.evaluation.DoPopNum")
+    @patch("src.micropolis.evaluation.DoProblems")
+    @patch("src.micropolis.evaluation.GetScore")
+    @patch("src.micropolis.evaluation.DoVotes")
+    @patch("src.micropolis.evaluation.ChangeEval")
+    def test_city_evaluation_with_population(
+        self,
+        mock_change_eval,
+        mock_do_votes,
+        mock_get_score,
+        mock_do_problems,
+        mock_do_pop_num,
+        mock_get_ass_value,
+    ):
         """Test full city evaluation flow with population."""
-        types.TotalPop = 1000
+        types.total_pop = 1000
 
         evaluation.CityEvaluation()
 
@@ -298,10 +321,14 @@ class TestEvaluation(Assertions):
     def test_average_trf(self):
         """Test traffic average calculation."""
         # Set up land value and traffic density with proper dimensions
-        types.LandValueMem = [[100 if i < 10 else 0 for i in range(types.HWLDY)]
-                             for _ in range(types.HWLDX)]
-        types.TrfDensity = [[50 if i < 10 else 0 for i in range(types.HWLDY)]
-                           for _ in range(types.HWLDX)]
+        types.land_value_mem = [
+            [100 if i < 10 else 0 for i in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
+        types.trf_density = [
+            [50 if i < 10 else 0 for i in range(micropolis.constants.HWLDY)]
+            for _ in range(micropolis.constants.HWLDX)
+        ]
 
         result = evaluation.AverageTrf()
 
@@ -311,9 +338,9 @@ class TestEvaluation(Assertions):
 
     def test_get_unemployment(self):
         """Test unemployment calculation."""
-        types.ResPop = 1000
-        types.ComPop = 100
-        types.IndPop = 100
+        types.res_pop = 1000
+        types.com_pop = 100
+        types.ind_pop = 100
 
         result = evaluation.GetUnemployment()
 
@@ -323,7 +350,7 @@ class TestEvaluation(Assertions):
 
     def test_get_fire(self):
         """Test fire danger calculation."""
-        types.FirePop = 10
+        types.fire_pop = 10
 
         result = evaluation.GetFire()
 
@@ -331,9 +358,8 @@ class TestEvaluation(Assertions):
 
     def test_get_fire_clamped(self):
         """Test fire danger calculation with clamping."""
-        types.FirePop = 100  # Would be 500, but clamped to 255
+        types.fire_pop = 100  # Would be 500, but clamped to 255
 
         result = evaluation.GetFire()
 
         self.assertEqual(result, 255)
-

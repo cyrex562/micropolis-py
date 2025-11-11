@@ -5,6 +5,9 @@ ui_utilities.py - UI utility functions for Micropolis Python port
 import re
 from typing import Any
 
+import micropolis.constants
+import micropolis.sim_view
+
 # Import simulation modules
 from . import (
     evaluation_ui,
@@ -20,6 +23,7 @@ from . import (
 # ============================================================================
 # Dollar Formatting Functions
 # ============================================================================
+
 
 def make_dollar_decimal_str(num_str: str) -> str:
     """
@@ -75,6 +79,7 @@ def make_dollar_decimal_str(num_str: str) -> str:
 # Simulation Control Functions
 # ============================================================================
 
+
 def pause() -> None:
     """
     Pause the simulation.
@@ -117,13 +122,13 @@ def set_speed(speed: int) -> None:
     elif speed > 3:
         speed = 3
 
-    types.SimMetaSpeed = speed
+    types.sime_meta_speed = speed
 
     if sim_control.is_sim_paused():
-        types.sim_paused_speed = types.SimMetaSpeed
+        types.sim_paused_speed = types.sime_meta_speed
         speed = 0
 
-    types.SimSpeed = speed
+    types.sim_speed = speed
 
     # Update TCL interface (adapted for pygame)
     # In pygame version, this would trigger UI updates
@@ -168,19 +173,19 @@ _OVERLAY_NEXT_KEYS = {ord("]")}
 _OVERLAY_PREV_KEYS = {ord("[")}
 
 _OVERLAY_SEQUENCE = [
-    types.ALMAP,
-    types.REMAP,
-    types.COMAP,
-    types.INMAP,
-    types.PDMAP,
-    types.RGMAP,
-    types.TDMAP,
-    types.PLMAP,
-    types.CRMAP,
-    types.LVMAP,
-    types.FIMAP,
-    types.POMAP,
-    types.DYMAP,
+    micropolis.constants.ALMAP,
+    micropolis.constants.REMAP,
+    micropolis.constants.COMAP,
+    micropolis.constants.INMAP,
+    micropolis.constants.PDMAP,
+    micropolis.constants.RGMAP,
+    micropolis.constants.TDMAP,
+    micropolis.constants.PLMAP,
+    micropolis.constants.CRMAP,
+    micropolis.constants.LVMAP,
+    micropolis.constants.FIMAP,
+    micropolis.constants.POMAP,
+    micropolis.constants.DYMAP,
 ]
 
 _overlay_index: int = 0
@@ -198,7 +203,7 @@ def toggle_pause() -> None:
 
 def adjust_speed(delta: int) -> None:
     """Increment simulation speed by delta within the valid range."""
-    new_speed = max(0, min(3, types.SimSpeed + delta))
+    new_speed = max(0, min(3, types.sim_speed + delta))
     set_speed(new_speed)
 
 
@@ -267,7 +272,7 @@ def toggle_graph_display() -> None:
     _graph_display_enabled = not _graph_display_enabled
     graphs.set_graph_panel_visible(_graph_display_enabled)
     graphs.request_graph_panel_redraw()
-    types.NewGraph = 1
+    types.new_graph = 1
 
 
 def toggle_evaluation_display() -> None:
@@ -314,12 +319,12 @@ def set_map_overlay(mode: int) -> None:
         view.map_state = mode
         view.invalid = True
 
-    types.NewMap = 1
-    if 0 <= mode < len(types.NewMapFlags):
-        types.NewMapFlags[mode] = 1
+    types.new_map = 1
+    if 0 <= mode < len(types.new_map_flags):
+        types.new_map_flags[mode] = 1
 
 
-def _iter_views(head: types.SimView | None):
+def _iter_views(head: micropolis.sim_view.SimView | None):
     """Yield linked SimView objects starting from head."""
     current = head
     while current:
@@ -330,6 +335,7 @@ def _iter_views(head: types.SimView | None):
 # ============================================================================
 # Game Level Management
 # ============================================================================
+
 
 def set_game_level_funds(level: int) -> None:
     """
@@ -364,7 +370,7 @@ def set_game_level(level: int) -> None:
     Args:
         level: Game difficulty level (0=easy, 1=medium, 2=hard)
     """
-    types.GameLevel = level
+    types.game_level = level
     # In pygame version, this would trigger UI updates
     # For now, just update the level
 
@@ -384,6 +390,7 @@ def update_game_level() -> None:
 # City Name Management
 # ============================================================================
 
+
 def set_city_name(name: str) -> None:
     """
     Set city name with validation.
@@ -395,7 +402,7 @@ def set_city_name(name: str) -> None:
         name: New city name
     """
     # Sanitize name - replace non-alphanumeric with underscores
-    sanitized_name = re.sub(r'[^a-zA-Z0-9]', '_', name)
+    sanitized_name = re.sub(r"[^a-zA-Z0-9]", "_", name)
     set_any_city_name(sanitized_name)
 
 
@@ -408,7 +415,7 @@ def set_any_city_name(name: str) -> None:
     Args:
         name: New city name
     """
-    types.CityName = name
+    types.city_name = name
     # In pygame version, this would trigger UI updates
     # For now, just update the name
 
@@ -416,6 +423,7 @@ def set_any_city_name(name: str) -> None:
 # ============================================================================
 # Time Management
 # ============================================================================
+
 
 def set_year(year: int) -> None:
     """
@@ -428,12 +436,12 @@ def set_year(year: int) -> None:
         year: New year (must be >= StartingYear)
     """
     # Prevent year from going negative
-    if year < types.StartingYear:
-        year = types.StartingYear
+    if year < types.starting_year:
+        year = types.starting_year
 
     # Calculate year offset and update CityTime
-    year_offset = year - types.StartingYear - (types.CityTime // 48)
-    types.CityTime += year_offset * 48
+    year_offset = year - types.starting_year - (types.city_time // 48)
+    types.city_time += year_offset * 48
 
     # In original C code, this calls doTimeStuff()
     # In pygame version, this would trigger time-based updates
@@ -449,12 +457,13 @@ def current_year() -> int:
     Returns:
         Current year based on CityTime
     """
-    return (types.CityTime // 48) + types.StartingYear
+    return (types.city_time // 48) + types.starting_year
 
 
 # ============================================================================
 # Map View Management
 # ============================================================================
+
 
 def do_set_map_state(view: Any, state: int) -> None:
     """
@@ -476,6 +485,7 @@ def do_set_map_state(view: Any, state: int) -> None:
 # Game Management
 # ============================================================================
 
+
 def do_new_game() -> None:
     """
     Start a new game.
@@ -491,7 +501,10 @@ def do_new_game() -> None:
 # Stub Functions (Not implemented in pygame version)
 # ============================================================================
 
-def do_generated_city_image(name: str, time: int, pop: int, class_type: str, score: int) -> None:
+
+def do_generated_city_image(
+    name: str, time: int, pop: int, class_type: str, score: int
+) -> None:
     """
     Generate city image (stub).
 

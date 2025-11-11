@@ -38,11 +38,11 @@ class TestTkinterBridge:
         if pygame.get_init():
             pygame.quit()
 
-    @patch('src.micropolis.tkinter_bridge.make_sound')
+    @patch("src.micropolis.tkinter_bridge.make_sound")
     def test_do_earthquake(self, mock_make_sound):
         """Test earthquake triggering."""
         # Reset global state
-        types.ShakeNow = 0
+        types.shake_now = 0
 
         tkinter_bridge.do_earthquake()
 
@@ -50,18 +50,18 @@ class TestTkinterBridge:
         mock_make_sound.assert_called_once_with("city", "Explosion-Low")
 
         # Check that ShakeNow was set
-        assert types.ShakeNow == 1
+        assert types.shake_now == 1
 
     def test_stop_earthquake(self):
         """Test earthquake stopping."""
         # Set up earthquake state
-        types.ShakeNow = 1
+        types.shake_now = 1
         tkinter_bridge.earthquake_timer_set = True
 
         tkinter_bridge.stop_earthquake()
 
         # Check that ShakeNow was reset
-        assert types.ShakeNow == 0
+        assert types.shake_now == 0
         assert not tkinter_bridge.earthquake_timer_set
 
     def test_eval_command_registered(self):
@@ -92,6 +92,7 @@ class TestTkinterBridge:
 
     def test_register_command(self):
         """Test command registration."""
+
         def test_callback():
             pass
 
@@ -100,22 +101,22 @@ class TestTkinterBridge:
         assert "test_cmd" in tkinter_bridge.command_callbacks
         assert tkinter_bridge.command_callbacks["test_cmd"] == test_callback
 
-    @patch('src.micropolis.tkinter_bridge.sim_loop')
-    @patch('src.micropolis.tkinter_bridge.start_micropolis_timer')
+    @patch("src.micropolis.tkinter_bridge.sim_loop")
+    @patch("src.micropolis.tkinter_bridge.start_micropolis_timer")
     def test_sim_timer_callback_with_speed(self, mock_start_timer, mock_sim_loop):
         """Test simulation timer callback when speed is set."""
-        types.SimSpeed = 1
-        types.NeedRest = 0
+        types.sim_speed = 1
+        types.need_rest = 0
 
         tkinter_bridge._sim_timer_callback()
 
         mock_sim_loop.assert_called_once_with(True)
         mock_start_timer.assert_called_once()
 
-    @patch('src.micropolis.tkinter_bridge.stop_micropolis_timer')
+    @patch("src.micropolis.tkinter_bridge.stop_micropolis_timer")
     def test_sim_timer_callback_no_speed(self, mock_stop_timer):
         """Test simulation timer callback when speed is zero."""
-        types.SimSpeed = 0
+        types.sim_speed = 0
 
         tkinter_bridge._sim_timer_callback()
 
@@ -156,7 +157,7 @@ class TestTkinterBridge:
         mock_sim = Mock()
         mock_sim.map = mock_view
 
-        with patch('src.micropolis.tkinter_bridge.Sim', mock_sim):
+        with patch("src.micropolis.tkinter_bridge.Sim", mock_sim):
             tkinter_bridge.invalidate_maps()
 
         assert mock_view.invalid
@@ -171,7 +172,7 @@ class TestTkinterBridge:
         mock_sim = Mock()
         mock_sim.editor = mock_view
 
-        with patch('src.micropolis.tkinter_bridge.Sim', mock_sim):
+        with patch("src.micropolis.tkinter_bridge.Sim", mock_sim):
             tkinter_bridge.invalidate_editors()
 
         assert mock_view.invalid
@@ -186,7 +187,7 @@ class TestTkinterBridge:
         mock_sim = Mock()
         mock_sim.map = mock_view
 
-        with patch('src.micropolis.tkinter_bridge.Sim', mock_sim):
+        with patch("src.micropolis.tkinter_bridge.Sim", mock_sim):
             tkinter_bridge.redraw_maps()
 
         assert mock_view.skip == 0
@@ -200,7 +201,7 @@ class TestTkinterBridge:
         mock_sim = Mock()
         mock_sim.editor = mock_view
 
-        with patch('src.micropolis.tkinter_bridge.Sim', mock_sim):
+        with patch("src.micropolis.tkinter_bridge.Sim", mock_sim):
             tkinter_bridge.redraw_editors()
 
         assert mock_view.skip == 0
@@ -234,7 +235,7 @@ class TestTkinterBridge:
         # Should not raise any exceptions
         tkinter_bridge.stop_auto_scroll(mock_view)
 
-    @patch('src.micropolis.tkinter_bridge.threading.Thread')
+    @patch("src.micropolis.tkinter_bridge.threading.Thread")
     def test_start_stdin_processing(self, mock_thread):
         """Test starting stdin processing."""
         tkinter_bridge.stdin_thread = None
@@ -305,7 +306,7 @@ class TestTkinterBridge:
 
         callback_mock.assert_called_once_with(data)
 
-    @patch('src.micropolis.tkinter_bridge.pygame.time.set_timer')
+    @patch("src.micropolis.tkinter_bridge.pygame.time.set_timer")
     def test_really_start_micropolis_timer(self, mock_set_timer):
         """Test actually starting the simulation timer."""
         tkinter_bridge.sim_timer_idle = True
@@ -320,7 +321,9 @@ class TestTkinterBridge:
         """Test fixing the simulation timer."""
         tkinter_bridge.sim_timer_set = True
 
-        with patch('src.micropolis.tkinter_bridge.start_micropolis_timer') as mock_start:
+        with patch(
+            "src.micropolis.tkinter_bridge.start_micropolis_timer"
+        ) as mock_start:
             tkinter_bridge.fix_micropolis_timer()
 
             mock_start.assert_called_once()
@@ -329,7 +332,7 @@ class TestTkinterBridge:
         """Test performing delayed update."""
         tkinter_bridge.update_delayed = True
 
-        with patch('src.micropolis.tkinter_bridge.sim_update') as mock_update:
+        with patch("src.micropolis.tkinter_bridge.sim_update") as mock_update:
             tkinter_bridge._do_delayed_update()
 
             assert not tkinter_bridge.update_delayed
@@ -351,7 +354,7 @@ class TestTkinterBridgeIntegration:
         if pygame.get_init():
             pygame.quit()
 
-    @patch('src.micropolis.tkinter_bridge.pygame.time.set_timer')
+    @patch("src.micropolis.tkinter_bridge.pygame.time.set_timer")
     def test_tk_main_init(self, mock_set_timer):
         """Test TK main initialization."""
         screen = pygame.display.set_mode((800, 600))

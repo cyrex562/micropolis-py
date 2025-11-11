@@ -7,6 +7,8 @@ responsible for calculating city scores, identifying problems, and determining
 city classification based on population and infrastructure.
 """
 
+import micropolis.constants
+import micropolis.utilities
 from . import types, budget
 
 # ============================================================================
@@ -33,6 +35,7 @@ TrafficAverage: int = 0
 # Main Evaluation Function
 # ============================================================================
 
+
 def CityEvaluation() -> None:
     """
     Main city evaluation function.
@@ -43,7 +46,7 @@ def CityEvaluation() -> None:
     global EvalValid
 
     EvalValid = 0
-    if types.TotalPop:
+    if types.total_pop:
         GetAssValue()
         DoPopNum()
         DoProblems()
@@ -55,9 +58,11 @@ def CityEvaluation() -> None:
         ChangeEval()
     EvalValid = 1
 
+
 # ============================================================================
 # Initialization Functions
 # ============================================================================
+
 
 def EvalInit() -> None:
     """
@@ -86,9 +91,11 @@ def EvalInit() -> None:
     for x in range(4):
         ProblemOrder[x] = z
 
+
 # ============================================================================
 # Assessment Value Calculation
 # ============================================================================
+
 
 def GetAssValue() -> None:
     """
@@ -99,21 +106,23 @@ def GetAssValue() -> None:
     """
     global CityAssValue
 
-    z = types.RoadTotal * 5
-    z += types.RailTotal * 10
-    z += types.PolicePop * 1000
-    z += types.FireStPop * 1000
-    z += types.HospPop * 400
-    z += types.StadiumPop * 3000
-    z += types.PortPop * 5000
-    z += types.APortPop * 10000
-    z += types.CoalPop * 3000
-    z += types.NuclearPop * 6000
+    z = types.road_total * 5
+    z += types.rail_total * 10
+    z += types.police_pop * 1000
+    z += types.fire_st_pop * 1000
+    z += types.hosp_pop * 400
+    z += types.stadium_pop * 3000
+    z += types.port_pop * 5000
+    z += types.airport_pop * 10000
+    z += types.coal_pop * 3000
+    z += types.nuclear_pop * 6000
     CityAssValue = z * 1000
+
 
 # ============================================================================
 # Population and Classification
 # ============================================================================
+
 
 def DoPopNum() -> None:
     """
@@ -125,7 +134,7 @@ def DoPopNum() -> None:
     global CityPop, deltaCityPop, CityClass
 
     OldCityPop = CityPop
-    CityPop = ((types.ResPop) + (types.ComPop * 8) + (types.IndPop * 8)) * 20
+    CityPop = ((types.res_pop) + (types.com_pop * 8) + (types.ind_pop * 8)) * 20
 
     if OldCityPop == -1:
         OldCityPop = CityPop
@@ -144,9 +153,11 @@ def DoPopNum() -> None:
     if CityPop > 500000:
         CityClass += 1  # megalopolis
 
+
 # ============================================================================
 # Problem Analysis and Voting
 # ============================================================================
+
 
 def DoProblems() -> None:
     """
@@ -162,13 +173,13 @@ def DoProblems() -> None:
         ProblemTable[z] = 0
 
     # Calculate problem severity scores
-    ProblemTable[0] = types.CrimeAverage        # Crime
-    ProblemTable[1] = types.PolluteAverage      # Pollution
-    ProblemTable[2] = int(types.LVAverage * 0.7)  # Housing
-    ProblemTable[3] = types.CityTax * 10        # Taxes
-    ProblemTable[4] = AverageTrf()              # Traffic
-    ProblemTable[5] = GetUnemployment()         # Unemployment
-    ProblemTable[6] = GetFire()                 # Fire
+    ProblemTable[0] = types.crime_average  # Crime
+    ProblemTable[1] = types.pollute_average  # Pollution
+    ProblemTable[2] = int(types.lv_average * 0.7)  # Housing
+    ProblemTable[3] = types.city_tax * 10  # Taxes
+    ProblemTable[4] = AverageTrf()  # Traffic
+    ProblemTable[5] = GetUnemployment()  # Unemployment
+    ProblemTable[6] = GetFire()  # Fire
 
     # Vote on problems
     VoteProblems()
@@ -193,6 +204,7 @@ def DoProblems() -> None:
             ProblemOrder[z] = 7
             ProblemTable[7] = 0
 
+
 def VoteProblems() -> None:
     """
     Simulate voting on city problems based on their severity.
@@ -212,13 +224,14 @@ def VoteProblems() -> None:
 
     # Simulate 100 votes with diminishing returns
     while (z < 100) and (count < 600):
-        if types.Rand(300) < ProblemTable[x]:
+        if micropolis.utilities.Rand(300) < ProblemTable[x]:
             ProblemVotes[x] += 1
             z += 1
         x += 1
         if x > types.PROBNUM - 1:
             x = 0
         count += 1
+
 
 def AverageTrf() -> int:
     """
@@ -236,14 +249,15 @@ def AverageTrf() -> int:
     count = 1
 
     # Sum traffic density over land value areas
-    for x in range(types.HWLDX):
-        for y in range(types.HWLDY):
-            if types.LandValueMem[x][y]:
-                TrfTotal += types.TrfDensity[x][y]
+    for x in range(micropolis.constants.HWLDX):
+        for y in range(micropolis.constants.HWLDY):
+            if types.land_value_mem[x][y]:
+                TrfTotal += types.trf_density[x][y]
                 count += 1
 
     TrafficAverage = int((TrfTotal / count) * 2.4)
     return TrafficAverage
+
 
 def GetUnemployment() -> int:
     """
@@ -255,9 +269,9 @@ def GetUnemployment() -> int:
     Returns:
         Unemployment rate (0-255 range)
     """
-    b = (types.ComPop + types.IndPop) << 3
+    b = (types.com_pop + types.ind_pop) << 3
     if b:
-        r = types.ResPop / b
+        r = types.res_pop / b
     else:
         return 0
 
@@ -267,6 +281,7 @@ def GetUnemployment() -> int:
     if b < 0:
         b = 0
     return b
+
 
 def GetFire() -> int:
     """
@@ -278,15 +293,17 @@ def GetFire() -> int:
     Returns:
         Fire danger level (0-255 range)
     """
-    z = types.FirePop * 5
+    z = types.fire_pop * 5
     if z > 255:
         return 255
     else:
         return z
 
+
 # ============================================================================
 # Score Calculation
 # ============================================================================
+
 
 def GetScore() -> None:
     """
@@ -315,27 +332,27 @@ def GetScore() -> None:
         z = 0
 
     # Apply capacity penalties
-    if types.ResCap:
+    if types.res_cap:
         z = int(z * 0.85)
-    if types.ComCap:
+    if types.com_cap:
         z = int(z * 0.85)
-    if types.IndCap:
+    if types.ind_cap:
         z = int(z * 0.85)
 
     # Apply infrastructure effects
-    if types.RoadEffect < 32:
-        z = z - (32 - types.RoadEffect)
-    if types.PoliceEffect < 1000:
-        z = int(z * (0.9 + (types.PoliceEffect / 10000.1)))
-    if types.FireEffect < 1000:
-        z = int(z * (0.9 + (types.FireEffect / 10000.1)))
+    if types.road_effect < 32:
+        z = z - (32 - types.road_effect)
+    if types.police_effect < 1000:
+        z = int(z * (0.9 + (types.police_effect / 10000.1)))
+    if types.fire_effect < 1000:
+        z = int(z * (0.9 + (types.fire_effect / 10000.1)))
 
     # Apply demand penalties
-    if types.RValve < -1000:
+    if types.r_value < -1000:
         z = int(z * 0.85)
-    if types.CValve < -1000:
+    if types.c_value < -1000:
         z = int(z * 0.85)
-    if types.IValve < -1000:
+    if types.i_value < -1000:
         z = int(z * 0.85)
 
     # Apply population growth modifier
@@ -353,12 +370,12 @@ def GetScore() -> None:
 
     # Subtract fire and tax penalties
     z = z - GetFire()
-    z = z - types.CityTax
+    z = z - types.city_tax
 
     # Apply power ratio modifier
-    TM = types.unPwrdZCnt + types.PwrdZCnt  # total zones
+    TM = types.un_pwrd_z_cnt + types.pwrd_z_cnt  # total zones
     if TM:
-        SM = types.PwrdZCnt / TM  # powered ratio
+        SM = types.pwrd_z_cnt / TM  # powered ratio
     else:
         SM = 1.0
     z = int(z * SM)
@@ -374,9 +391,11 @@ def GetScore() -> None:
 
     deltaCityScore = CityScore - OldCityScore
 
+
 # ============================================================================
 # Voting and UI Updates
 # ============================================================================
+
 
 def DoVotes() -> None:
     """
@@ -392,10 +411,11 @@ def DoVotes() -> None:
 
     # Simulate 100 votes
     for z in range(100):
-        if types.Rand(1000) < CityScore:
+        if micropolis.utilities.Rand(1000) < CityScore:
             CityYes += 1
         else:
             CityNo += 1
+
 
 def ChangeEval() -> None:
     """
@@ -426,7 +446,7 @@ def DoBudget() -> None:
     Run the standard annual budget sequence.
     """
     budget.do_budget()
-    types.MustUpdateFunds = 1
+    types.must_update_funds = 1
 
 
 def DoBudgetFromMenu() -> None:
@@ -434,4 +454,4 @@ def DoBudgetFromMenu() -> None:
     Trigger the budget workflow via the modern budget module.
     """
     budget.do_budget_from_menu()
-    types.MustUpdateFunds = 1
+    types.must_update_funds = 1

@@ -9,12 +9,15 @@
 
 from typing import Tuple, Generator
 
+import micropolis.constants
+
 from . import types
 
 
 # ============================================================================
 # Basic Math Utilities
 # ============================================================================
+
 
 def ABS(x: int) -> int:
     """
@@ -34,12 +37,12 @@ def ABS(x: int) -> int:
 # ============================================================================
 
 # World dimensions (imported from types to maintain a single source of truth)
-WORLD_X = types.WORLD_X
-WORLD_Y = types.WORLD_Y
+WORLD_X = micropolis.constants.WORLD_X
+WORLD_Y = micropolis.constants.WORLD_Y
 
 # Half world dimensions for downsampled maps
-HWLDX = types.HWLDX
-HWLDY = types.HWLDY
+HWLDX = micropolis.constants.HWLDX
+HWLDY = micropolis.constants.HWLDY
 
 
 def TestBounds(x: int, y: int) -> bool:
@@ -67,10 +70,7 @@ def clamp_to_bounds(x: int, y: int) -> Tuple[int, int]:
     Returns:
         Tuple of clamped (x, y) coordinates
     """
-    return (
-        max(0, min(x, WORLD_X - 1)),
-        max(0, min(y, WORLD_Y - 1))
-    )
+    return (max(0, min(x, WORLD_X - 1)), max(0, min(y, WORLD_Y - 1)))
 
 
 # ============================================================================
@@ -79,7 +79,7 @@ def clamp_to_bounds(x: int, y: int) -> Tuple[int, int]:
 
 # Tile bit masks and constants (will be imported from constants when available)
 # These are placeholder values - actual values will come from the tile system
-LOMASK = 0x03FF   # Low 10 bits mask (corrected from sim.h)
+LOMASK = 0x03FF  # Low 10 bits mask (corrected from sim.h)
 ZONEBIT = 0x0400  # Zone bit (bit 10)
 BULLBIT = 0x0800  # Bulldozer bit (bit 11)
 ANIMBIT = 0x1000  # Animation bit (bit 12)
@@ -90,7 +90,7 @@ ALLBITS = 0xFC00  # Mask for upper 6 bits (bits 10-15)
 
 # Tile ID constants (placeholder values)
 NUCLEAR = types.NUCLEAR
-RBRDR = 0         # Residential zone start (placeholder until port complete)
+RBRDR = 0  # Residential zone start (placeholder until port complete)
 LASTZONE = types.LASTZONE
 RESBASE = types.RESBASE
 COMBASE = types.COMBASE
@@ -120,12 +120,12 @@ PORT = types.PORT
 AIRPORT = types.AIRPORT
 
 # Sprite types for disasters
-GOD = 5           # Monster/Godzilla sprite
-TOR = 6           # Tornado sprite
-COP = 2           # Police helicopter sprite
-AIR = 3           # Airplane sprite
-SHI = 4           # Ship sprite
-EXP = 7           # Explosion sprite
+GOD = 5  # Monster/Godzilla sprite
+TOR = 6  # Tornado sprite
+COP = 2  # Police helicopter sprite
+AIR = 3  # Airplane sprite
+SHI = 4  # Ship sprite
+EXP = 7  # Explosion sprite
 
 # River tile for monster spawning
 RIVER = types.RIVER
@@ -154,9 +154,11 @@ def TILE_IS_VULNERABLE(tile: int) -> bool:
     Returns:
         True if tile is vulnerable, False otherwise
     """
-    return (not (tile & ZONEBIT) and
-            (tile & LOMASK) >= RBRDR and
-            (tile & LOMASK) <= LASTZONE)
+    return (
+        not (tile & ZONEBIT)
+        and (tile & LOMASK) >= RBRDR
+        and (tile & LOMASK) <= LASTZONE
+    )
 
 
 def TILE_IS_ARSONABLE(tile: int) -> bool:
@@ -169,9 +171,11 @@ def TILE_IS_ARSONABLE(tile: int) -> bool:
     Returns:
         True if tile can burn, False otherwise
     """
-    return (not (tile & ZONEBIT) and
-            (tile & LOMASK) >= RBRDR and
-            (tile & LOMASK) <= LASTZONE)
+    return (
+        not (tile & ZONEBIT)
+        and (tile & LOMASK) >= RBRDR
+        and (tile & LOMASK) <= LASTZONE
+    )
 
 
 def TILE_IS_RIVER_EDGE(tile: int) -> bool:
@@ -184,8 +188,7 @@ def TILE_IS_RIVER_EDGE(tile: int) -> bool:
     Returns:
         True if tile is river edge, False otherwise
     """
-    return ((tile & LOMASK) >= FIRSTRIVEDGE and
-            (tile & LOMASK) <= LASTRIVEDGE)
+    return (tile & LOMASK) >= FIRSTRIVEDGE and (tile & LOMASK) <= LASTRIVEDGE
 
 
 def TILE_IS_FLOODABLE(tile: int) -> bool:
@@ -198,8 +201,7 @@ def TILE_IS_FLOODABLE(tile: int) -> bool:
     Returns:
         True if tile can be flooded, False otherwise
     """
-    return bool(tile == DIRT or
-                ((tile & BULLBIT) and (tile & BURNBIT)))
+    return bool(tile == DIRT or ((tile & BULLBIT) and (tile & BURNBIT)))
 
 
 def TILE_IS_RUBBLE(tile: int) -> bool:
@@ -212,8 +214,7 @@ def TILE_IS_RUBBLE(tile: int) -> bool:
     Returns:
         True if tile is rubble, False otherwise
     """
-    return ((tile & LOMASK) >= RUBBLE and
-            (tile & LOMASK) <= LASTRUBBLE)
+    return (tile & LOMASK) >= RUBBLE and (tile & LOMASK) <= LASTRUBBLE
 
 
 def TILE_IS_FLOODABLE2(tile: int) -> bool:
@@ -226,14 +227,13 @@ def TILE_IS_FLOODABLE2(tile: int) -> bool:
     Returns:
         True if tile can be flooded, False otherwise
     """
-    return bool(tile == 0 or
-                (tile & BURNBIT) or
-                TILE_IS_RUBBLE(tile))
+    return bool(tile == 0 or (tile & BURNBIT) or TILE_IS_RUBBLE(tile))
 
 
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def get_tile_base_id(tile: int) -> int:
     """
@@ -294,8 +294,10 @@ def clear_tile_status(tile: int, status_bit: int) -> int:
 # Coordinate Conversion Utilities
 # ============================================================================
 
-def world_to_screen_coords(world_x: int, world_y: int,
-                          tile_size: int = 16) -> Tuple[int, int]:
+
+def world_to_screen_coords(
+    world_x: int, world_y: int, tile_size: int = 16
+) -> Tuple[int, int]:
     """
     Convert world coordinates to screen coordinates.
 
@@ -310,8 +312,9 @@ def world_to_screen_coords(world_x: int, world_y: int,
     return (world_x * tile_size, world_y * tile_size)
 
 
-def screen_to_world_coords(screen_x: int, screen_y: int,
-                          tile_size: int = 16) -> Tuple[int, int]:
+def screen_to_world_coords(
+    screen_x: int, screen_y: int, tile_size: int = 16
+) -> Tuple[int, int]:
     """
     Convert screen coordinates to world coordinates.
 
@@ -329,6 +332,7 @@ def screen_to_world_coords(screen_x: int, screen_y: int,
 # ============================================================================
 # Range and Iteration Utilities
 # ============================================================================
+
 
 def iterate_world_coords() -> Generator[Tuple[int, int], None, None]:
     """

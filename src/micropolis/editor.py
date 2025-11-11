@@ -9,6 +9,8 @@ import math
 import time
 from typing import Any
 
+import micropolis.sim_view
+import micropolis.utilities
 import pygame
 
 from . import tools, types, view_types
@@ -37,10 +39,10 @@ from .tools import (
 
 # Overlay mode state machine values
 OVERLAY_INVALID = 0  # Draw lines to pixmap
-OVERLAY_STABLE = 1   # Sync, time draw lines to pixmap
-OVERLAY_OPTIMIZE = 2 # Draw lines to overlay, sync, time clip overlay to pixmap
+OVERLAY_STABLE = 1  # Sync, time draw lines to pixmap
+OVERLAY_OPTIMIZE = 2  # Draw lines to overlay, sync, time clip overlay to pixmap
 OVERLAY_FAST_LINES = 3  # Lines faster: draw lines to pixmap
-OVERLAY_FAST_CLIP = 4   # Clipping faster: clip overlay to pixmap
+OVERLAY_FAST_CLIP = 4  # Clipping faster: clip overlay to pixmap
 
 # Cursor dash pattern
 CURSOR_DASHES = [4, 4]
@@ -59,8 +61,14 @@ DoOverlay = 2
 # Utility Functions
 # ============================================================================
 
-def ViewToTileCoords(view: types.SimView, screen_x: int, screen_y: int,
-                    tile_x: list[int], tile_y: list[int]) -> None:
+
+def ViewToTileCoords(
+    view: micropolis.sim_view.SimView,
+    screen_x: int,
+    screen_y: int,
+    tile_x: list[int],
+    tile_y: list[int],
+) -> None:
     """
     Convert screen coordinates to tile coordinates.
 
@@ -86,7 +94,9 @@ def ViewToTileCoords(view: types.SimView, screen_x: int, screen_y: int,
     tile_y[0] = pixel_y // 16
 
 
-def TileToViewCoords(view: types.SimView, tile_x: int, tile_y: int) -> tuple[int, int]:
+def TileToViewCoords(
+    view: micropolis.sim_view.SimView, tile_x: int, tile_y: int
+) -> tuple[int, int]:
     """
     Convert tile coordinates to view coordinates.
 
@@ -113,7 +123,7 @@ def TileToViewCoords(view: types.SimView, tile_x: int, tile_y: int) -> tuple[int
     return view_x, view_y
 
 
-def DoPanTo(view: types.SimView, x: int, y: int) -> None:
+def DoPanTo(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     """
     Pan the view to center on the given coordinates.
 
@@ -125,10 +135,10 @@ def DoPanTo(view: types.SimView, x: int, y: int) -> None:
     view.pan_x = x
     view.pan_y = y
     view.invalid = True
-    types.NewMap = 1
+    types.new_map = 1
 
 
-def DoPanBy(view: types.SimView, dx: int, dy: int) -> None:
+def DoPanBy(view: micropolis.sim_view.SimView, dx: int, dy: int) -> None:
     """
     Pan the view by the given delta.
 
@@ -140,10 +150,10 @@ def DoPanBy(view: types.SimView, dx: int, dy: int) -> None:
     view.pan_x += dx
     view.pan_y += dy
     view.invalid = True
-    types.NewMap = 1
+    types.new_map = 1
 
 
-def DidStopPan(view: types.SimView) -> None:
+def DidStopPan(view: micropolis.sim_view.SimView) -> None:
     """
     Called when panning stops (placeholder for UI updates).
     """
@@ -154,7 +164,8 @@ def DidStopPan(view: types.SimView) -> None:
 # Tool Functions
 # ============================================================================
 
-def DoTool(view: types.SimView, tool: int, x: int, y: int) -> None:
+
+def DoTool(view: micropolis.sim_view.SimView, tool: int, x: int, y: int) -> None:
     """
     Apply a tool at the specified coordinates.
 
@@ -176,7 +187,7 @@ def DoTool(view: types.SimView, tool: int, x: int, y: int) -> None:
     tools.do_tool(view, tool, tile_x[0], tile_y[0], 1)
 
 
-def ToolDown(view: types.SimView, x: int, y: int) -> None:
+def ToolDown(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     """
     Handle tool down event.
 
@@ -194,7 +205,7 @@ def ToolDown(view: types.SimView, x: int, y: int) -> None:
     tools.ToolDown(view, tile_x[0], tile_y[0])
 
 
-def ToolDrag(view: types.SimView, x: int, y: int) -> None:
+def ToolDrag(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     """
     Handle tool drag event.
 
@@ -212,7 +223,7 @@ def ToolDrag(view: types.SimView, x: int, y: int) -> None:
     tools.ToolDrag(view, tile_x[0], tile_y[0])
 
 
-def ToolUp(view: types.SimView, x: int, y: int) -> None:
+def ToolUp(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     """
     Handle tool up event.
 
@@ -234,7 +245,8 @@ def ToolUp(view: types.SimView, x: int, y: int) -> None:
 # Drawing Functions
 # ============================================================================
 
-def DrawOutside(view: types.SimView) -> None:
+
+def DrawOutside(view: micropolis.sim_view.SimView) -> None:
     """
     Draw black borders outside the map area.
 
@@ -254,10 +266,10 @@ def DrawOutside(view: types.SimView) -> None:
     bottom = top + view.i_height
 
     # Create a surface for drawing if needed
-    surface = getattr(view, 'surface', None)
+    surface = getattr(view, "surface", None)
     if surface is None:
         surface = pygame.Surface((view.w_width, view.w_height))
-        setattr(view, 'surface', surface)
+        setattr(view, "surface", surface)
 
     # Draw black rectangles for areas outside the map
     black = (0, 0, 0) if (view.x and view.x.color) else (255, 255, 255)
@@ -268,8 +280,9 @@ def DrawOutside(view: types.SimView) -> None:
 
     # Bottom border
     if bottom < view.w_height:
-        pygame.draw.rect(surface, black,
-                        (0, bottom, view.w_width, view.w_height - bottom))
+        pygame.draw.rect(
+            surface, black, (0, bottom, view.w_width, view.w_height - bottom)
+        )
 
     # Left border
     if left > 0:
@@ -277,11 +290,12 @@ def DrawOutside(view: types.SimView) -> None:
 
     # Right border
     if right < view.w_width:
-        pygame.draw.rect(surface, black,
-                        (right, top, view.w_width - right, bottom - top))
+        pygame.draw.rect(
+            surface, black, (right, top, view.w_width - right, bottom - top)
+        )
 
 
-def DrawPending(view: types.SimView) -> None:
+def DrawPending(view: micropolis.sim_view.SimView) -> None:
     """
     Draw the pending tool preview.
 
@@ -291,22 +305,22 @@ def DrawPending(view: types.SimView) -> None:
     if view.x is None:
         return
 
-    if types.PendingTool == -1:
+    if types.pending_tool == -1:
         return
 
     # Get or create surface
-    surface = getattr(view, 'surface', None)
+    surface = getattr(view, "surface", None)
     if surface is None:
         surface = pygame.Surface((view.w_width, view.w_height))
-        setattr(view, 'surface', surface)
+        setattr(view, "surface", surface)
 
     # Calculate position
     center_x = view.w_width // 2
     center_y = view.w_height // 2
 
-    x = (types.PendingX - toolOffset[types.PendingTool]) * 16
-    y = (types.PendingY - toolOffset[types.PendingTool]) * 16
-    size = toolSize[types.PendingTool] * 16
+    x = (types.pending_x - toolOffset[types.pending_tool]) * 16
+    y = (types.pending_y - toolOffset[types.pending_tool]) * 16
+    size = toolSize[types.pending_tool] * 16
 
     x += center_x - view.pan_x
     y += center_y - view.pan_y
@@ -324,41 +338,41 @@ def DrawPending(view: types.SimView) -> None:
 
     # Draw tool icon with bobbing animation
     icon_name = None
-    if types.PendingTool == residentialState:
+    if types.pending_tool == residentialState:
         icon_name = "@images/res.xpm"
-    elif types.PendingTool == commercialState:
+    elif types.pending_tool == commercialState:
         icon_name = "@images/com.xpm"
-    elif types.PendingTool == industrialState:
+    elif types.pending_tool == industrialState:
         icon_name = "@images/ind.xpm"
-    elif types.PendingTool == fireState:
+    elif types.pending_tool == fireState:
         icon_name = "@images/fire.xpm"
-    elif types.PendingTool == policeState:
+    elif types.pending_tool == policeState:
         icon_name = "@images/police.xpm"
-    elif types.PendingTool == stadiumState:
+    elif types.pending_tool == stadiumState:
         icon_name = "@images/stadium.xpm"
-    elif types.PendingTool == seaportState:
+    elif types.pending_tool == seaportState:
         icon_name = "@images/seaport.xpm"
-    elif types.PendingTool == powerState:
+    elif types.pending_tool == powerState:
         icon_name = "@images/coal.xpm"
-    elif types.PendingTool == nuclearState:
+    elif types.pending_tool == nuclearState:
         icon_name = "@images/nuclear.xpm"
-    elif types.PendingTool == airportState:
+    elif types.pending_tool == airportState:
         icon_name = "@images/airport.xpm"
 
     if icon_name is not None:
         # Calculate bobbing offset
         now_time = time.time()
-        f = (2 * (now_time % 1.0))
+        f = 2 * (now_time % 1.0)
         if f > 1.0:
             f = 2.0 - f
-        i = int(f * BOB_HEIGHT * (types.Players - types.Votes))
+        i = int(f * BOB_HEIGHT * (types.players - types.votes))
 
         # Load and draw icon (placeholder - would need actual icon loading)
         # For now, skip icon drawing
         pass
 
 
-def DrawCursor(view: types.SimView) -> None:
+def DrawCursor(view: micropolis.sim_view.SimView) -> None:
     """
     Draw the tool cursor.
 
@@ -396,7 +410,7 @@ def DrawCursor(view: types.SimView) -> None:
 
     else:  # Edit cursor
         size = toolSize[view.tool_state]
-        fg = toolColors[view.tool_state] & 0xff
+        fg = toolColors[view.tool_state] & 0xFF
         light = (255, 255, 255)  # COLOR_WHITE
         dark = (0, 0, 0)  # COLOR_BLACK
 
@@ -416,9 +430,15 @@ def DrawCursor(view: types.SimView) -> None:
 
             # Draw chalk cursor (simplified)
             # This is a complex cursor - simplified version
-            pygame.draw.circle(view.surface, (128, 128, 128), (x - 8, y + 7), 7)  # Medium gray circle
-            pygame.draw.line(view.surface, (192, 192, 192), (x + 13, y - 5), (x - 1, y + 9), 3)  # Light gray line
-            pygame.draw.circle(view.surface, (255, 255, 255), (x + 8, y - 9), 7)  # White circle
+            pygame.draw.circle(
+                view.surface, (128, 128, 128), (x - 8, y + 7), 7
+            )  # Medium gray circle
+            pygame.draw.line(
+                view.surface, (192, 192, 192), (x + 13, y - 5), (x - 1, y + 9), 3
+            )  # Light gray line
+            pygame.draw.circle(
+                view.surface, (255, 255, 255), (x + 8, y - 9), 7
+            )  # White circle
 
         elif view.tool_state == eraserState:
             x += center_x - view.pan_x
@@ -430,13 +450,17 @@ def DrawCursor(view: types.SimView) -> None:
                 offset = 2
 
             # Draw eraser cursor (simplified rectangle)
-            pygame.draw.rect(view.surface, (128, 128, 128), (x - 8, y - 8, 16, 16), 1)  # Medium gray outline
-            pygame.draw.rect(view.surface, (0, 0, 0), (x - 5, y - 5, 10, 10))  # Black fill
+            pygame.draw.rect(
+                view.surface, (128, 128, 128), (x - 8, y - 8, 16, 16), 1
+            )  # Medium gray outline
+            pygame.draw.rect(
+                view.surface, (0, 0, 0), (x - 5, y - 5, 10, 10)
+            )  # Black fill
 
         else:
             # Standard tool cursor
             offset = toolOffset[view.tool_state]
-            bg = (toolColors[view.tool_state] >> 8) & 0xff
+            bg = (toolColors[view.tool_state] >> 8) & 0xFF
 
             x = (x & ~15) - (offset * 16)
             y = (y & ~15) - (offset * 16)
@@ -446,26 +470,65 @@ def DrawCursor(view: types.SimView) -> None:
             y += center_y - view.pan_y
 
             # Draw cursor outline
-            pygame.draw.rect(view.surface, dark, (x - 1, y - 1, pixel_size + 4, pixel_size + 4), 1)
-            pygame.draw.line(view.surface, dark, (x - 3, y + pixel_size + 3), (x - 1, y + pixel_size + 3))
-            pygame.draw.line(view.surface, dark, (x + pixel_size + 3, y - 3), (x + pixel_size + 3, y - 1))
+            pygame.draw.rect(
+                view.surface, dark, (x - 1, y - 1, pixel_size + 4, pixel_size + 4), 1
+            )
+            pygame.draw.line(
+                view.surface,
+                dark,
+                (x - 3, y + pixel_size + 3),
+                (x - 1, y + pixel_size + 3),
+            )
+            pygame.draw.line(
+                view.surface,
+                dark,
+                (x + pixel_size + 3, y - 3),
+                (x + pixel_size + 3, y - 1),
+            )
 
-            pygame.draw.rect(view.surface, light, (x - 4, y - 4, pixel_size + 4, pixel_size + 4), 1)
-            pygame.draw.line(view.surface, light, (x - 4, y + pixel_size + 1), (x - 4, y + pixel_size + 3))
-            pygame.draw.line(view.surface, light, (x + pixel_size + 1, y - 4), (x + pixel_size + 3, y - 4))
+            pygame.draw.rect(
+                view.surface, light, (x - 4, y - 4, pixel_size + 4, pixel_size + 4), 1
+            )
+            pygame.draw.line(
+                view.surface,
+                light,
+                (x - 4, y + pixel_size + 1),
+                (x - 4, y + pixel_size + 3),
+            )
+            pygame.draw.line(
+                view.surface,
+                light,
+                (x + pixel_size + 1, y - 4),
+                (x + pixel_size + 3, y - 4),
+            )
 
             # Draw cursor lines (simplified)
-            pygame.draw.line(view.surface, dark, (x - 2, y - 1), (x - 2, y + pixel_size + 3))
-            pygame.draw.line(view.surface, dark, (x - 1, y + pixel_size + 2), (x + pixel_size + 3, y + pixel_size + 2))
-            pygame.draw.line(view.surface, dark, (x + pixel_size + 2, y + pixel_size + 1), (x + pixel_size + 2, y - 3))
-            pygame.draw.line(view.surface, dark, (x + pixel_size + 1, y - 2), (x - 3, y - 2))
+            pygame.draw.line(
+                view.surface, dark, (x - 2, y - 1), (x - 2, y + pixel_size + 3)
+            )
+            pygame.draw.line(
+                view.surface,
+                dark,
+                (x - 1, y + pixel_size + 2),
+                (x + pixel_size + 3, y + pixel_size + 2),
+            )
+            pygame.draw.line(
+                view.surface,
+                dark,
+                (x + pixel_size + 2, y + pixel_size + 1),
+                (x + pixel_size + 2, y - 3),
+            )
+            pygame.draw.line(
+                view.surface, dark, (x + pixel_size + 1, y - 2), (x - 3, y - 2)
+            )
 
 
 # ============================================================================
 # Overlay Functions
 # ============================================================================
 
-def DrawOverlay(view: types.SimView) -> None:
+
+def DrawOverlay(view: micropolis.sim_view.SimView) -> None:
     """
     Draw data overlays on the view.
 
@@ -488,8 +551,12 @@ def DrawOverlay(view: types.SimView) -> None:
 
     # Check if any overlay data is visible
     for ink in types.sim.overlay or []:
-        if ((ink.bottom >= top) and (ink.top <= bottom) and
-            (ink.right >= left) and (ink.left <= right)):
+        if (
+            (ink.bottom >= top)
+            and (ink.top <= bottom)
+            and (ink.right >= left)
+            and (ink.left <= right)
+        ):
             showing = True
             break
 
@@ -516,8 +583,14 @@ def DrawOverlay(view: types.SimView) -> None:
         ClipTheOverlay(view)
 
 
-def DrawTheOverlay(view: types.SimView, top: int, bottom: int, left: int, right: int,
-                  on_overlay: bool) -> None:
+def DrawTheOverlay(
+    view: micropolis.sim_view.SimView,
+    top: int,
+    bottom: int,
+    left: int,
+    right: int,
+    on_overlay: bool,
+) -> None:
     """
     Draw the overlay data.
 
@@ -529,7 +602,6 @@ def DrawTheOverlay(view: types.SimView, top: int, bottom: int, left: int, right:
         right: Right boundary
         on_overlay: Whether drawing to overlay surface
     """
-    
 
     # Set drawing color
     if view.x.color:
@@ -539,9 +611,12 @@ def DrawTheOverlay(view: types.SimView, top: int, bottom: int, left: int, right:
 
     # Draw overlay lines
     for ink in types.sim.overlay or []:
-        if ((ink.bottom >= top) and (ink.top <= bottom) and
-            (ink.right >= left) and (ink.left <= right)):
-
+        if (
+            (ink.bottom >= top)
+            and (ink.top <= bottom)
+            and (ink.right >= left)
+            and (ink.left <= right)
+        ):
             if ink.length <= 1:
                 # Draw single point
                 x = ink.x - left
@@ -560,7 +635,7 @@ def DrawTheOverlay(view: types.SimView, top: int, bottom: int, left: int, right:
                     pygame.draw.lines(view.surface, color, False, points, 3)
 
 
-def ClipTheOverlay(view: types.SimView) -> None:
+def ClipTheOverlay(view: micropolis.sim_view.SimView) -> None:
     """
     Clip overlay data to the view surface.
 
@@ -576,7 +651,8 @@ def ClipTheOverlay(view: types.SimView) -> None:
 # View Management Functions
 # ============================================================================
 
-def DoNewEditor(view: types.SimView) -> None:
+
+def DoNewEditor(view: micropolis.sim_view.SimView) -> None:
     """
     Initialize a new editor view.
 
@@ -589,7 +665,7 @@ def DoNewEditor(view: types.SimView) -> None:
     view.invalid = True
 
 
-def DoUpdateEditor(view: types.SimView) -> None:
+def DoUpdateEditor(view: micropolis.sim_view.SimView) -> None:
     """
     Update and render the editor view.
 
@@ -604,9 +680,12 @@ def DoUpdateEditor(view: types.SimView) -> None:
     view.updates += 1
 
     # Check if we should skip this update
-    if (not types.ShakeNow and not view.invalid and not view.update and
-        (types.sim_skips or view.skips)):
-
+    if (
+        not types.shake_now
+        and not view.invalid
+        and not view.update
+        and (types.sim_skips or view.skips)
+    ):
         if types.sim_skips:
             if types.sim_skip > 0:
                 return
@@ -624,8 +703,13 @@ def DoUpdateEditor(view: types.SimView) -> None:
     HandleAutoGoto(view)
 
     # Handle tile animation
-    if (types.DoAnimation and types.SimSpeed and not types.heat_steps and not types.TilesAnimated):
-        types.TilesAnimated = True
+    if (
+        types.do_animation
+        and types.sim_speed
+        and not types.heat_steps
+        and not types.tiles_animated
+    ):
+        types.tiles_animated = True
         # animateTiles() - placeholder
 
     if view.invalid:
@@ -640,7 +724,7 @@ def DoUpdateEditor(view: types.SimView) -> None:
         DrawOutside(view)
 
         # Draw pending tool if any
-        if types.PendingTool != -1:
+        if types.pending_tool != -1:
             DrawPending(view)
 
         # Draw sprites/objects
@@ -651,9 +735,9 @@ def DoUpdateEditor(view: types.SimView) -> None:
             DrawOverlay(view)
 
     # Apply shake effect
-    for i in range(types.ShakeNow):
-        dx += types.Rand(16) - 8
-        dy += types.Rand(16) - 8
+    for i in range(types.shake_now):
+        dx += micropolis.utilities.Rand(16) - 8
+        dy += micropolis.utilities.Rand(16) - 8
 
     # Copy to display (placeholder - would copy surface to screen)
     # DrawCursor(view) - cursor is drawn separately in event handling
@@ -661,7 +745,7 @@ def DoUpdateEditor(view: types.SimView) -> None:
     view.invalid = False
 
 
-def HandleAutoGoto(view: types.SimView) -> None:
+def HandleAutoGoto(view: micropolis.sim_view.SimView) -> None:
     """
     Handle automatic panning to follow sprites or goals.
 
@@ -676,7 +760,7 @@ def HandleAutoGoto(view: types.SimView) -> None:
         if (x != view.pan_x) or (y != view.pan_y):
             DoPanTo(view, x, y)
 
-    elif (view.auto_goto and view.auto_going and (view.tool_mode == 0)):
+    elif view.auto_goto and view.auto_going and (view.tool_mode == 0):
         speed = view.auto_speed
 
         if view.auto_going < 5:
@@ -694,7 +778,7 @@ def HandleAutoGoto(view: types.SimView) -> None:
             if view.auto_goto == -1:
                 view.auto_goto = 0
             DoPanTo(view, view.auto_x_goal, view.auto_y_goal)
-            types.NewMap = 1
+            types.new_map = 1
             DidStopPan(view)
         else:
             direction = math.atan2(dy, dx)
@@ -718,7 +802,8 @@ def HandleAutoGoto(view: types.SimView) -> None:
 # Drawing Tool Functions
 # ============================================================================
 
-def ChalkStart(view: types.SimView, x: int, y: int, color: int) -> None:
+
+def ChalkStart(view: micropolis.sim_view.SimView, x: int, y: int, color: int) -> None:
     """
     Start chalk drawing.
 
@@ -737,7 +822,7 @@ def ChalkStart(view: types.SimView, x: int, y: int, color: int) -> None:
     tools.ChalkStart(view, tile_x[0], tile_y[0], color)
 
 
-def ChalkTo(view: types.SimView, x: int, y: int) -> None:
+def ChalkTo(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     """
     Continue chalk drawing to new position.
 
@@ -759,7 +844,8 @@ def ChalkTo(view: types.SimView, x: int, y: int) -> None:
 # Configuration Functions
 # ============================================================================
 
-def setWandState(view: types.SimView, state: int) -> None:
+
+def setWandState(view: micropolis.sim_view.SimView, state: int) -> None:
     """
     Set the tool state for the view.
 
@@ -775,142 +861,247 @@ def setWandState(view: types.SimView, state: int) -> None:
 # Placeholder Functions (for TCL command compatibility)
 # ============================================================================
 
-def EditorCmdconfigure(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdconfigure(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Configure command (placeholder)"""
     return 0
 
-def EditorCmdposition(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdposition(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Position command (placeholder)"""
     return 0
 
-def EditorCmdsize(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdsize(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Size command (placeholder)"""
     return 0
 
-def EditorCmdAutoGoto(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdAutoGoto(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Auto goto command (placeholder)"""
     return 0
 
-def EditorCmdSound(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdSound(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Sound command (placeholder)"""
     return 0
 
-def EditorCmdSkip(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdSkip(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Skip command (placeholder)"""
     return 0
 
-def EditorCmdUpdate(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdUpdate(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Update command (placeholder)"""
     return 0
 
-def EditorCmdPan(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdPan(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Pan command (placeholder)"""
     return 0
 
-def EditorCmdToolConstrain(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdToolConstrain(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Tool constrain command (placeholder)"""
     return 0
 
-def EditorCmdToolState(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdToolState(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Tool state command (placeholder)"""
     return 0
 
-def EditorCmdToolMode(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdToolMode(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Tool mode command (placeholder)"""
     return 0
 
-def EditorCmdDoTool(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdDoTool(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Do tool command (placeholder)"""
     return 0
 
-def EditorCmdToolDown(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdToolDown(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Tool down command (placeholder)"""
     return 0
 
-def EditorCmdToolDrag(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdToolDrag(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Tool drag command (placeholder)"""
     return 0
 
-def EditorCmdToolUp(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdToolUp(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Tool up command (placeholder)"""
     return 0
 
-def EditorCmdPanStart(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdPanStart(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Pan start command (placeholder)"""
     return 0
 
-def EditorCmdPanTo(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdPanTo(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Pan to command (placeholder)"""
     return 0
 
-def EditorCmdPanBy(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdPanBy(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Pan by command (placeholder)"""
     return 0
 
-def EditorCmdTweakCursor(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdTweakCursor(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Tweak cursor command (placeholder)"""
     return 0
 
-def EditorCmdVisible(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdVisible(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Visible command (placeholder)"""
     return 0
 
-def EditorCmdKeyDown(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdKeyDown(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Key down command (placeholder)"""
     return 0
 
-def EditorCmdKeyUp(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdKeyUp(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Key up command (placeholder)"""
     return 0
 
-def EditorCmdTileCoord(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdTileCoord(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Tile coord command (placeholder)"""
     return 0
 
-def EditorCmdChalkStart(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdChalkStart(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Chalk start command (placeholder)"""
     return 0
 
-def EditorCmdChalkTo(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdChalkTo(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Chalk to command (placeholder)"""
     return 0
 
-def EditorCmdAutoGoing(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdAutoGoing(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Auto going command (placeholder)"""
     return 0
 
-def EditorCmdAutoSpeed(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdAutoSpeed(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Auto speed command (placeholder)"""
     return 0
 
-def EditorCmdAutoGoal(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdAutoGoal(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Auto goal command (placeholder)"""
     return 0
 
-def EditorCmdSU(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdSU(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """SU command (placeholder)"""
     return 0
 
-def EditorCmdShowMe(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdShowMe(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Show me command (placeholder)"""
     return 0
 
-def EditorCmdFollow(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdFollow(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Follow command (placeholder)"""
     return 0
 
-def EditorCmdShowOverlay(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdShowOverlay(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Show overlay command (placeholder)"""
     return 0
 
-def EditorCmdOverlayMode(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdOverlayMode(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Overlay mode command (placeholder)"""
     return 0
 
-def EditorCmdDynamicFilter(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdDynamicFilter(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Dynamic filter command (placeholder)"""
     return 0
 
-def EditorCmdWriteJpeg(view: types.SimView, interp: Any, argc: int, argv: list[str]) -> int:
+
+def EditorCmdWriteJpeg(
+    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+) -> int:
     """Write JPEG command (placeholder)"""
     return 0

@@ -8,6 +8,9 @@ ported from s_sim.c, implementing the city simulation mechanics.
 from typing import Optional
 import time
 
+import micropolis.constants
+import micropolis.utilities
+
 from . import types, macros, power, zones, sprite_manager as sprites
 
 
@@ -115,6 +118,7 @@ MeltY: int = 0
 # Main Simulation Functions
 # ============================================================================
 
+
 def SimFrame() -> None:
     """
     Main simulation frame function.
@@ -124,15 +128,15 @@ def SimFrame() -> None:
     """
     global Spdcycle, Fcycle
 
-    if types.SimSpeed == 0:
+    if types.sim_speed == 0:
         return
 
     Spdcycle = (Spdcycle + 1) % 1024
 
-    if types.SimSpeed == 1 and (Spdcycle % 5) != 0:
+    if types.sim_speed == 1 and (Spdcycle % 5) != 0:
         return
 
-    if types.SimSpeed == 2 and (Spdcycle % 3) != 0:
+    if types.sim_speed == 2 and (Spdcycle % 3) != 0:
         return
 
     Fcycle = (Fcycle + 1) % 1024
@@ -160,7 +164,7 @@ def Simulate(mod16: int) -> None:
     SpdPop = [1, 1, 9, 19]
     SpdFir = [1, 1, 10, 20]
 
-    x = types.SimSpeed
+    x = types.sim_speed
     if x > 3:
         x = 3
 
@@ -169,36 +173,48 @@ def Simulate(mod16: int) -> None:
         if DoInitialEval:
             DoInitialEval = 0
             CityEvaluation()
-        types.CityTime += 1
-        AvCityTax += types.CityTax  # post
+        types.city_time += 1
+        AvCityTax += types.city_tax  # post
         if (Scycle & 1) == 0:
             SetValves()
         ClearCensus()
 
     elif mod16 == 1:
-        MapScan(0, 1 * types.WORLD_X // 8)
+        MapScan(0, 1 * micropolis.constants.WORLD_X // 8)
     elif mod16 == 2:
-        MapScan(1 * types.WORLD_X // 8, 2 * types.WORLD_X // 8)
+        MapScan(
+            1 * micropolis.constants.WORLD_X // 8, 2 * micropolis.constants.WORLD_X // 8
+        )
     elif mod16 == 3:
-        MapScan(2 * types.WORLD_X // 8, 3 * types.WORLD_X // 8)
+        MapScan(
+            2 * micropolis.constants.WORLD_X // 8, 3 * micropolis.constants.WORLD_X // 8
+        )
     elif mod16 == 4:
-        MapScan(3 * types.WORLD_X // 8, 4 * types.WORLD_X // 8)
+        MapScan(
+            3 * micropolis.constants.WORLD_X // 8, 4 * micropolis.constants.WORLD_X // 8
+        )
     elif mod16 == 5:
-        MapScan(4 * types.WORLD_X // 8, 5 * types.WORLD_X // 8)
+        MapScan(
+            4 * micropolis.constants.WORLD_X // 8, 5 * micropolis.constants.WORLD_X // 8
+        )
     elif mod16 == 6:
-        MapScan(5 * types.WORLD_X // 8, 6 * types.WORLD_X // 8)
+        MapScan(
+            5 * micropolis.constants.WORLD_X // 8, 6 * micropolis.constants.WORLD_X // 8
+        )
     elif mod16 == 7:
-        MapScan(6 * types.WORLD_X // 8, 7 * types.WORLD_X // 8)
+        MapScan(
+            6 * micropolis.constants.WORLD_X // 8, 7 * micropolis.constants.WORLD_X // 8
+        )
     elif mod16 == 8:
-        MapScan(7 * types.WORLD_X // 8, types.WORLD_X)
+        MapScan(7 * micropolis.constants.WORLD_X // 8, micropolis.constants.WORLD_X)
 
     elif mod16 == 9:
-        if (types.CityTime % types.CENSUSRATE) == 0:
+        if (types.city_time % micropolis.constants.CENSUSRATE) == 0:
             TakeCensus()
-        if (types.CityTime % (types.CENSUSRATE * 12)) == 0:
+        if (types.city_time % (micropolis.constants.CENSUSRATE * 12)) == 0:
             Take2Census()
 
-        if (types.CityTime % types.TAXFREQ) == 0:
+        if (types.city_time % micropolis.constants.TAXFREQ) == 0:
             CollectTax()
             CityEvaluation()
 
@@ -206,13 +222,13 @@ def Simulate(mod16: int) -> None:
         if (Scycle % 5) == 0:
             DecROGMem()
         DecTrafficMem()
-        types.NewMapFlags[types.TDMAP] = 1
-        types.NewMapFlags[types.RDMAP] = 1
-        types.NewMapFlags[types.ALMAP] = 1
-        types.NewMapFlags[types.REMAP] = 1
-        types.NewMapFlags[types.COMAP] = 1
-        types.NewMapFlags[types.INMAP] = 1
-        types.NewMapFlags[types.DYMAP] = 1
+        types.new_map_flags[micropolis.constants.TDMAP] = 1
+        types.new_map_flags[micropolis.constants.RDMAP] = 1
+        types.new_map_flags[micropolis.constants.ALMAP] = 1
+        types.new_map_flags[micropolis.constants.REMAP] = 1
+        types.new_map_flags[micropolis.constants.COMAP] = 1
+        types.new_map_flags[micropolis.constants.INMAP] = 1
+        types.new_map_flags[micropolis.constants.DYMAP] = 1
         SendMessages()
 
     elif mod16 == 11:
@@ -253,10 +269,10 @@ def DoSimInit() -> None:
     Fcycle = 0
     Scycle = 0
 
-    if types.InitSimLoad == 2:  # if new city
+    if types.init_sim_load == 2:  # if new city
         InitSimMemory()
 
-    if types.InitSimLoad == 1:  # if city just loaded
+    if types.init_sim_load == 1:  # if city just loaded
         SimLoadInit()
 
     SetValves()
@@ -268,10 +284,10 @@ def DoSimInit() -> None:
     # CrimeScan() - placeholder
     # PopDenScan() - placeholder
     # FireAnalysis() - placeholder
-    types.NewMap = 1
+    types.new_map = 1
     # doAllGraphs() - placeholder
-    types.NewGraph = 1
-    types.TotalPop = 1
+    types.new_graph = 1
+    types.total_pop = 1
     DoInitialEval = 1
 
 
@@ -279,23 +295,24 @@ def DoSimInit() -> None:
 # Memory Management Functions
 # ============================================================================
 
+
 def DecTrafficMem() -> None:
     """
     Gradually reduces traffic density values.
 
     Ported from DecTrafficMem() in s_sim.c.
     """
-    for x in range(types.HWLDX):
-        for y in range(types.HWLDY):
-            z = types.TrfDensity[x][y]
+    for x in range(micropolis.constants.HWLDX):
+        for y in range(micropolis.constants.HWLDY):
+            z = types.trf_density[x][y]
             if z > 0:
                 if z > 24:
                     if z > 200:
-                        types.TrfDensity[x][y] = z - 34
+                        types.trf_density[x][y] = z - 34
                     else:
-                        types.TrfDensity[x][y] = z - 24
+                        types.trf_density[x][y] = z - 24
                 else:
-                    types.TrfDensity[x][y] = 0
+                    types.trf_density[x][y] = 0
 
 
 def DecROGMem() -> None:
@@ -304,20 +321,20 @@ def DecROGMem() -> None:
 
     Ported from DecROGMem() in s_sim.c.
     """
-    for x in range(types.SmX):
-        for y in range(types.SmY):
-            z = types.RateOGMem[x][y]
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
+            z = types.rate_og_mem[x][y]
             if z == 0:
                 continue
             if z > 0:
-                types.RateOGMem[x][y] -= 1
+                types.rate_og_mem[x][y] -= 1
                 if z > 200:
-                    types.RateOGMem[x][y] = 200  # prevent overflow
+                    types.rate_og_mem[x][y] = 200  # prevent overflow
                 continue
             if z < 0:
-                types.RateOGMem[x][y] += 1
+                types.rate_og_mem[x][y] += 1
                 if z < -200:
-                    types.RateOGMem[x][y] = -200
+                    types.rate_og_mem[x][y] = -200
 
 
 def InitSimMemory() -> None:
@@ -331,16 +348,16 @@ def InitSimMemory() -> None:
     z = 0
     # SetCommonInits() - placeholder
     for x in range(240):
-        types.ResHis[x] = z
-        types.ComHis[x] = z
-        types.IndHis[x] = z
-        types.MoneyHis[x] = 128
-        types.CrimeHis[x] = z
-        types.PollutionHis[x] = z
+        types.res_his[x] = z
+        types.com_his[x] = z
+        types.ind_his[x] = z
+        types.money_his[x] = 128
+        types.crime_his[x] = z
+        types.pollution_his[x] = z
 
     CrimeRamp = z
     PolluteRamp = z
-    types.TotalPop = z
+    types.total_pop = z
     RValve = z
     CValve = z
     IValve = z
@@ -354,11 +371,11 @@ def InitSimMemory() -> None:
 
     # Clear power map
     for z in range(types.PWRMAPSIZE):
-        types.PowerMap[z] = ~0  # set power Map
+        types.power_map[z] = ~0  # set power Map
     power.DoPowerScan()
     NewPower = 1  # post rel
 
-    types.InitSimLoad = 0
+    types.init_sim_load = 0
 
 
 def SimLoadInit() -> None:
@@ -369,70 +386,79 @@ def SimLoadInit() -> None:
     """
     # Disaster wait times for different scenarios
     DisTab = [0, 2, 10, 5, 20, 3, 5, 5, 2 * 48]
-    ScoreWaitTab = [0, 30 * 48, 5 * 48, 5 * 48, 10 * 48,
-                   5 * 48, 10 * 48, 5 * 48, 10 * 48]
+    ScoreWaitTab = [
+        0,
+        30 * 48,
+        5 * 48,
+        5 * 48,
+        10 * 48,
+        5 * 48,
+        10 * 48,
+        5 * 48,
+        10 * 48,
+    ]
 
     global EMarket, RValve, CValve, IValve, CrimeRamp, PolluteRamp
 
     z = 0
-    EMarket = float(types.MiscHis[1])
-    types.ResPop = types.MiscHis[2]
-    types.ComPop = types.MiscHis[3]
-    types.IndPop = types.MiscHis[4]
-    RValve = types.MiscHis[5]
-    CValve = types.MiscHis[6]
-    IValve = types.MiscHis[7]
-    CrimeRamp = types.MiscHis[10]
-    PolluteRamp = types.MiscHis[11]
-    types.LVAverage = types.MiscHis[12]
-    types.CrimeAverage = types.MiscHis[13]
-    types.PolluteAverage = types.MiscHis[14]
-    types.GameLevel = types.MiscHis[15]
+    EMarket = float(types.misc_his[1])
+    types.res_pop = types.misc_his[2]
+    types.com_pop = types.misc_his[3]
+    types.ind_pop = types.misc_his[4]
+    RValve = types.misc_his[5]
+    CValve = types.misc_his[6]
+    IValve = types.misc_his[7]
+    CrimeRamp = types.misc_his[10]
+    PolluteRamp = types.misc_his[11]
+    types.lv_average = types.misc_his[12]
+    types.crime_average = types.misc_his[13]
+    types.pollute_average = types.misc_his[14]
+    types.game_level = types.misc_his[15]
 
-    if types.CityTime < 0:
-        types.CityTime = 0
+    if types.city_time < 0:
+        types.city_time = 0
     if EMarket == 0:
         EMarket = 4.0
-    if (types.GameLevel > 2) or (types.GameLevel < 0):
-        types.GameLevel = 0
+    if (types.game_level > 2) or (types.game_level < 0):
+        types.game_level = 0
     # SetGameLevel(GameLevel) - placeholder
 
     # SetCommonInits() - placeholder
 
-    types.CityClass = types.MiscHis[16]
-    types.CityScore = types.MiscHis[17]
+    types.city_class = types.misc_his[16]
+    types.city_score = types.misc_his[17]
 
-    if (types.CityClass > 5) or (types.CityClass < 0):
-        types.CityClass = 0
-    if (types.CityScore > 999) or (types.CityScore < 1):
-        types.CityScore = 500
+    if (types.city_class > 5) or (types.city_class < 0):
+        types.city_class = 0
+    if (types.city_score > 999) or (types.city_score < 1):
+        types.city_score = 500
 
     ResCap = 0
     ComCap = 0
     IndCap = 0
 
-    AvCityTax = (types.CityTime % 48) * 7  # post
+    AvCityTax = (types.city_time % 48) * 7  # post
 
     for z in range(types.PWRMAPSIZE):
-        types.PowerMap[z] = 0xFFFF  # set power Map
+        types.power_map[z] = 0xFFFF  # set power Map
     DoNilPower()
 
-    if types.ScenarioID > 8:
-        types.ScenarioID = 0
+    if types.scenario_id > 8:
+        types.scenario_id = 0
 
-    if types.ScenarioID:
-        DisasterEvent = types.ScenarioID
-        DisasterWait = DisTab[types.ScenarioID]
-        ScoreType = types.ScenarioID
-        ScoreWait = ScoreWaitTab[types.ScenarioID]
+    if types.scenario_id:
+        DisasterEvent = types.scenario_id
+        DisasterWait = DisTab[types.scenario_id]
+        ScoreType = types.scenario_id
+        ScoreWait = ScoreWaitTab[types.scenario_id]
     else:
         DisasterEvent = 0
         ScoreType = 0
 
-    types.RoadEffect = 32
-    types.PoliceEffect = 1000  # post
-    types.FireEffect = 1000
-    types.InitSimLoad = 0
+    types.road_effect = 32
+    types.police_effect = 1000  # post
+    types.fire_effect = 1000
+    types.init_sim_load = 0
 
 
 def DoNilPower() -> None:
@@ -441,19 +467,20 @@ def DoNilPower() -> None:
 
     Ported from DoNilPower() in s_sim.c.
     """
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
-            z = types.Map[x][y]
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
+            z = types.map_data[x][y]
             if z & types.ZONEBIT:
-                types.SMapX = x
-                types.SMapY = y
-                types.CChr = z
+                types.s_map_x = x
+                types.s_map_y = y
+                types.cchr = z
                 zones.SetZPower()
 
 
 # ============================================================================
 # Valve and Census Functions
 # ============================================================================
+
 
 def SetValves() -> None:
     """
@@ -463,37 +490,56 @@ def SetValves() -> None:
     """
     # Tax table for different tax rates
     TaxTable = [
-        200, 150, 120, 100, 80, 50, 30, 0, -10, -40, -100,
-        -150, -200, -250, -300, -350, -400, -450, -500, -550, -600
+        200,
+        150,
+        120,
+        100,
+        80,
+        50,
+        30,
+        0,
+        -10,
+        -40,
+        -100,
+        -150,
+        -200,
+        -250,
+        -300,
+        -350,
+        -400,
+        -450,
+        -500,
+        -550,
+        -600,
     ]
 
     global ValveFlag, RValve, CValve, IValve
 
     # Store current values in MiscHis
-    types.MiscHis[1] = int(EMarket)
-    types.MiscHis[2] = types.ResPop
-    types.MiscHis[3] = types.ComPop
-    types.MiscHis[4] = types.IndPop
-    types.MiscHis[5] = RValve
-    types.MiscHis[6] = CValve
-    types.MiscHis[7] = IValve
-    types.MiscHis[10] = CrimeRamp
-    types.MiscHis[11] = PolluteRamp
-    types.MiscHis[12] = types.LVAverage
-    types.MiscHis[13] = types.CrimeAverage
-    types.MiscHis[14] = types.PolluteAverage
-    types.MiscHis[15] = types.GameLevel
-    types.MiscHis[16] = types.CityClass
-    types.MiscHis[17] = types.CityScore
+    types.misc_his[1] = int(EMarket)
+    types.misc_his[2] = types.res_pop
+    types.misc_his[3] = types.com_pop
+    types.misc_his[4] = types.ind_pop
+    types.misc_his[5] = RValve
+    types.misc_his[6] = CValve
+    types.misc_his[7] = IValve
+    types.misc_his[10] = CrimeRamp
+    types.misc_his[11] = PolluteRamp
+    types.misc_his[12] = types.lv_average
+    types.misc_his[13] = types.crime_average
+    types.misc_his[14] = types.pollute_average
+    types.misc_his[15] = types.game_level
+    types.misc_his[16] = types.city_class
+    types.misc_his[17] = types.city_score
 
     # Calculate normalized residential population
-    NormResPop = types.ResPop / 8
-    types.LastTotalPop = types.TotalPop
-    types.TotalPop = NormResPop + types.ComPop + types.IndPop
+    NormResPop = types.res_pop / 8
+    types.last_total_pop = types.total_pop
+    types.total_pop = NormResPop + types.com_pop + types.ind_pop
 
     # Calculate employment rate
     if NormResPop:
-        Employment = ((types.ComHis[1] + types.IndHis[1]) / NormResPop)
+        Employment = (types.com_his[1] + types.ind_his[1]) / NormResPop
     else:
         Employment = 1
 
@@ -503,8 +549,8 @@ def SetValves() -> None:
     PjResPop = NormResPop + Migration + Births  # Projected Res.Pop
 
     # Calculate labor base
-    if (types.ComHis[1] + types.IndHis[1]):
-        LaborBase = (types.ResHis[1] / (types.ComHis[1] + types.IndHis[1]))
+    if types.com_his[1] + types.ind_his[1]:
+        LaborBase = types.res_his[1] / (types.com_his[1] + types.ind_his[1])
     else:
         LaborBase = 1
     if LaborBase > 1.3:
@@ -514,14 +560,14 @@ def SetValves() -> None:
 
     # Calculate temporary values for market calculations
     for z in range(2):
-        temp = types.ResHis[z] + types.ComHis[z] + types.IndHis[z]
-    IntMarket = (NormResPop + types.ComPop + types.IndPop) / 3.7
+        temp = types.res_his[z] + types.com_his[z] + types.ind_his[z]
+    IntMarket = (NormResPop + types.com_pop + types.ind_pop) / 3.7
 
     # Calculate projected commercial population
     PjComPop = IntMarket * LaborBase
 
     # Adjust for game level
-    z = types.GameLevel
+    z = types.game_level
     temp = 1
     if z == 0:
         temp = 1.2
@@ -530,21 +576,21 @@ def SetValves() -> None:
     elif z == 2:
         temp = 0.98
 
-    PjIndPop = types.IndPop * LaborBase * temp
+    PjIndPop = types.ind_pop * LaborBase * temp
     if PjIndPop < 5:
         PjIndPop = 5
 
     # Calculate ratios
     if NormResPop:
-        Rratio = (PjResPop / NormResPop)  # projected -vs- actual
+        Rratio = PjResPop / NormResPop  # projected -vs- actual
     else:
         Rratio = 1.3
-    if types.ComPop:
-        Cratio = (PjComPop / types.ComPop)
+    if types.com_pop:
+        Cratio = PjComPop / types.com_pop
     else:
         Cratio = PjComPop
-    if types.IndPop:
-        Iratio = (PjIndPop / types.IndPop)
+    if types.ind_pop:
+        Iratio = PjIndPop / types.ind_pop
     else:
         Iratio = PjIndPop
 
@@ -557,7 +603,7 @@ def SetValves() -> None:
         Iratio = 2
 
     # Apply tax effects
-    z = types.CityTax + types.GameLevel
+    z = types.city_tax + types.game_level
     if z > 20:
         z = 20
     Rratio = ((Rratio - 1) * 600) + TaxTable[z]  # global tax/Glevel effects
@@ -619,30 +665,30 @@ def ClearCensus() -> None:
     z = 0
     PwrdZCnt = z
     unPwrdZCnt = z
-    types.FirePop = z
-    types.RoadTotal = z
-    types.RailTotal = z
-    types.ResPop = z
-    types.ComPop = z
-    types.IndPop = z
-    types.ResZPop = z
+    types.fire_pop = z
+    types.road_total = z
+    types.rail_total = z
+    types.res_pop = z
+    types.com_pop = z
+    types.ind_pop = z
+    types.res_z_pop = z
     types.ComZPop = z
     types.IndZPop = z
-    types.HospPop = z
-    types.ChurchPop = z
-    types.PolicePop = z
-    types.FireStPop = z
-    types.StadiumPop = z
-    types.CoalPop = z
-    types.NuclearPop = z
-    types.PortPop = z
-    types.APortPop = z
+    types.hosp_pop = z
+    types.church_pop = z
+    types.police_pop = z
+    types.fire_st_pop = z
+    types.stadium_pop = z
+    types.coal_pop = z
+    types.nuclear_pop = z
+    types.port_pop = z
+    types.airport_pop = z
     power.PowerStackNum = z  # Reset before Mapscan
 
-    for x in range(types.SmX):
-        for y in range(types.SmY):
-            types.FireStMap[x][y] = z
-            types.PoliceMap[x][y] = z
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
+            types.fire_st_map[x][y] = z
+            types.police_map[x][y] = z
 
 
 def TakeCensus() -> None:
@@ -655,42 +701,42 @@ def TakeCensus() -> None:
 
     # Scroll data
     for x in range(118, -1, -1):
-        types.ResHis[x + 1] = types.ResHis[x]
-        types.ComHis[x + 1] = types.ComHis[x]
-        types.IndHis[x + 1] = types.IndHis[x]
-        types.CrimeHis[x + 1] = types.CrimeHis[x]
-        types.PollutionHis[x + 1] = types.PollutionHis[x]
-        types.MoneyHis[x + 1] = types.MoneyHis[x]
+        types.res_his[x + 1] = types.res_his[x]
+        types.com_his[x + 1] = types.com_his[x]
+        types.ind_his[x + 1] = types.ind_his[x]
+        types.crime_his[x + 1] = types.crime_his[x]
+        types.pollution_his[x + 1] = types.pollution_his[x]
+        types.money_his[x + 1] = types.money_his[x]
 
     # Update max values
     ResHisMax = 0
     ComHisMax = 0
     IndHisMax = 0
     for x in range(119):
-        if types.ResHis[x] > ResHisMax:
-            ResHisMax = types.ResHis[x]
-        if types.ComHis[x] > ComHisMax:
-            ComHisMax = types.ComHis[x]
-        if types.IndHis[x] > IndHisMax:
-            IndHisMax = types.IndHis[x]
+        if types.res_his[x] > ResHisMax:
+            ResHisMax = types.res_his[x]
+        if types.com_his[x] > ComHisMax:
+            ComHisMax = types.com_his[x]
+        if types.ind_his[x] > IndHisMax:
+            IndHisMax = types.ind_his[x]
 
-    types.Graph10Max = ResHisMax
-    if ComHisMax > types.Graph10Max:
-        types.Graph10Max = ComHisMax
-    if IndHisMax > types.Graph10Max:
-        types.Graph10Max = IndHisMax
+    types.graph_10_max = ResHisMax
+    if ComHisMax > types.graph_10_max:
+        types.graph_10_max = ComHisMax
+    if IndHisMax > types.graph_10_max:
+        types.graph_10_max = IndHisMax
 
     # Set current values
-    types.ResHis[0] = types.ResPop // 8
-    types.ComHis[0] = types.ComPop
-    types.IndHis[0] = types.IndPop
+    types.res_his[0] = types.res_pop // 8
+    types.com_his[0] = types.com_pop
+    types.ind_his[0] = types.ind_pop
 
     # Update crime and pollution ramps
-    CrimeRamp += (types.CrimeAverage - CrimeRamp) // 4
-    types.CrimeHis[0] = CrimeRamp
+    CrimeRamp += (types.crime_average - CrimeRamp) // 4
+    types.crime_his[0] = CrimeRamp
 
-    PolluteRamp += (types.PolluteAverage - PolluteRamp) // 4
-    types.PollutionHis[0] = PolluteRamp
+    PolluteRamp += (types.pollute_average - PolluteRamp) // 4
+    types.pollution_his[0] = PolluteRamp
 
     # Scale cash flow to 0..255
     x = (CashFlow // 20) + 128
@@ -699,28 +745,28 @@ def TakeCensus() -> None:
     if x > 255:
         x = 255
 
-    types.MoneyHis[0] = x
-    if types.CrimeHis[0] > 255:
-        types.CrimeHis[0] = 255
-    if types.PollutionHis[0] > 255:
-        types.PollutionHis[0] = 255
+    types.money_his[0] = x
+    if types.crime_his[0] > 255:
+        types.crime_his[0] = 255
+    if types.pollution_his[0] > 255:
+        types.pollution_his[0] = 255
 
     # ChangeCensus() - placeholder for 10 year graph view
 
     # Check hospital and church needs
-    if types.HospPop < (types.ResPop >> 8):
-        types.NeedHosp = types.TRUE
-    if types.HospPop > (types.ResPop >> 8):
-        types.NeedHosp = -1
-    if types.HospPop == (types.ResPop >> 8):
-        types.NeedHosp = types.FALSE
+    if types.hosp_pop < (types.res_pop >> 8):
+        types.need_hosp = micropolis.constants.TRUE
+    if types.hosp_pop > (types.res_pop >> 8):
+        types.need_hosp = -1
+    if types.hosp_pop == (types.res_pop >> 8):
+        types.need_hosp = micropolis.constants.FALSE
 
-    if types.ChurchPop < (types.ResPop >> 8):
-        types.NeedChurch = types.TRUE
-    if types.ChurchPop > (types.ResPop >> 8):
-        types.NeedChurch = -1
-    if types.ChurchPop == (types.ResPop >> 8):
-        types.NeedChurch = types.FALSE
+    if types.church_pop < (types.res_pop >> 8):
+        types.need_church = micropolis.constants.TRUE
+    if types.church_pop > (types.res_pop >> 8):
+        types.need_church = -1
+    if types.church_pop == (types.res_pop >> 8):
+        types.need_church = micropolis.constants.FALSE
 
 
 def Take2Census() -> None:
@@ -731,44 +777,45 @@ def Take2Census() -> None:
     """
     # Scroll 120-year data
     for x in range(238, 119, -1):
-        types.ResHis[x + 1] = types.ResHis[x]
-        types.ComHis[x + 1] = types.ComHis[x]
-        types.IndHis[x + 1] = types.IndHis[x]
-        types.CrimeHis[x + 1] = types.CrimeHis[x]
-        types.PollutionHis[x + 1] = types.PollutionHis[x]
-        types.MoneyHis[x + 1] = types.MoneyHis[x]
+        types.res_his[x + 1] = types.res_his[x]
+        types.com_his[x + 1] = types.com_his[x]
+        types.ind_his[x + 1] = types.ind_his[x]
+        types.crime_his[x + 1] = types.crime_his[x]
+        types.pollution_his[x + 1] = types.pollution_his[x]
+        types.money_his[x + 1] = types.money_his[x]
 
     # Update max values
     Res2HisMax = 0
     Com2HisMax = 0
     Ind2HisMax = 0
     for x in range(120, 239):
-        if types.ResHis[x] > Res2HisMax:
-            Res2HisMax = types.ResHis[x]
-        if types.ComHis[x] > Com2HisMax:
-            Com2HisMax = types.ComHis[x]
-        if types.IndHis[x] > Ind2HisMax:
-            Ind2HisMax = types.IndHis[x]
+        if types.res_his[x] > Res2HisMax:
+            Res2HisMax = types.res_his[x]
+        if types.com_his[x] > Com2HisMax:
+            Com2HisMax = types.com_his[x]
+        if types.ind_his[x] > Ind2HisMax:
+            Ind2HisMax = types.ind_his[x]
 
-    types.Graph120Max = Res2HisMax
-    if Com2HisMax > types.Graph120Max:
-        types.Graph120Max = Com2HisMax
-    if Ind2HisMax > types.Graph120Max:
-        types.Graph120Max = Ind2HisMax
+    types.graph_12_max = Res2HisMax
+    if Com2HisMax > types.graph_12_max:
+        types.graph_12_max = Com2HisMax
+    if Ind2HisMax > types.graph_12_max:
+        types.graph_12_max = Ind2HisMax
 
     # Set 120-year values
-    types.ResHis[120] = types.ResPop // 8
-    types.ComHis[120] = types.ComPop
-    types.IndHis[120] = types.IndPop
-    types.CrimeHis[120] = types.CrimeHis[0]
-    types.PollutionHis[120] = types.PollutionHis[0]
-    types.MoneyHis[120] = types.MoneyHis[0]
+    types.res_his[120] = types.res_pop // 8
+    types.com_his[120] = types.com_pop
+    types.ind_his[120] = types.ind_pop
+    types.crime_his[120] = types.crime_his[0]
+    types.pollution_his[120] = types.pollution_his[0]
+    types.money_his[120] = types.money_his[0]
     # ChangeCensus() - placeholder for 120 year graph view
 
 
 # ============================================================================
 # Tax and Financial Functions
 # ============================================================================
+
 
 def CollectTax() -> None:
     """
@@ -783,25 +830,32 @@ def CollectTax() -> None:
     f_levels = [1.4, 1.2, 0.8]
 
     CashFlow = 0
-    if not types.TaxFlag:  # if the Tax Port is clear
+    if not types.tax_flag:  # if the Tax Port is clear
         # XXX: do something with z
         z = AvCityTax // 48  # post
         AvCityTax = 0
 
-        types.PoliceFund = types.PolicePop * 100
-        types.FireFund = types.FireStPop * 100
-        types.RoadFund = (types.RoadTotal + (types.RailTotal * 2)) * r_levels[types.GameLevel]
-        types.TaxFund = (((types.TotalPop * types.LVAverage) // 120) *
-                        types.CityTax * f_levels[types.GameLevel])
+        types.police_fund = types.police_pop * 100
+        types.fire_fund = types.fire_st_pop * 100
+        types.road_fund = (types.road_total + (types.rail_total * 2)) * r_levels[
+            types.game_level
+        ]
+        types.tax_fund = (
+            ((types.total_pop * types.lv_average) // 120)
+            * types.city_tax
+            * f_levels[types.game_level]
+        )
 
-        if types.TotalPop:  # if there are people to tax
-            CashFlow = int(types.TaxFund - (types.PoliceFund + types.FireFund + types.RoadFund))
+        if types.total_pop:  # if there are people to tax
+            CashFlow = int(
+                types.tax_fund - (types.police_fund + types.fire_fund + types.road_fund)
+            )
 
             # DoBudget() - placeholder
         else:
-            types.RoadEffect = 32
-            types.PoliceEffect = 1000
-            types.FireEffect = 1000
+            types.road_effect = 32
+            types.police_effect = 1000
+            types.fire_effect = 1000
 
 
 def UpdateFundEffects() -> None:
@@ -810,20 +864,20 @@ def UpdateFundEffects() -> None:
 
     Ported from UpdateFundEffects() in s_sim.c.
     """
-    if types.RoadFund:
-        types.RoadEffect = int((types.RoadSpend / types.RoadFund) * 32.0)
+    if types.road_fund:
+        types.road_effect = int((types.road_spend / types.road_fund) * 32.0)
     else:
-        types.RoadEffect = 32
+        types.road_effect = 32
 
-    if types.PoliceFund:
-        types.PoliceEffect = int((types.PoliceSpend / types.PoliceFund) * 1000.0)
+    if types.police_fund:
+        types.police_effect = int((types.police_spend / types.police_fund) * 1000.0)
     else:
-        types.PoliceEffect = 1000
+        types.police_effect = 1000
 
-    if types.FireFund:
-        types.FireEffect = int(((types.FireSpend / types.FireFund) * 1000.0))
+    if types.fire_fund:
+        types.fire_effect = int(((types.fire_spend / types.fire_fund) * 1000.0))
     else:
-        types.FireEffect = 1000
+        types.fire_effect = 1000
 
     # drawCurrPercents() - placeholder
 
@@ -831,6 +885,7 @@ def UpdateFundEffects() -> None:
 # ============================================================================
 # Map Scanning Functions
 # ============================================================================
+
 
 def MapScan(x1: int, x2: int) -> None:
     """
@@ -843,47 +898,58 @@ def MapScan(x1: int, x2: int) -> None:
         x2: Ending x coordinate
     """
     for x in range(x1, x2):
-        for y in range(types.WORLD_Y):
-            types.CChr = types.Map[x][y]
-            if types.CChr:
-                types.CChr9 = types.CChr & types.LOMASK  # Mask off status bits
-                if types.CChr9 >= types.FLOOD:
-                    types.SMapX = x
-                    types.SMapY = y
-                    if types.CChr9 < types.ROADBASE:
-                        if types.CChr9 >= types.FIREBASE:
-                            types.FirePop += 1
-                            if (types.Rand16() & 3) == 0:  # 1 in 4 times
+        for y in range(micropolis.constants.WORLD_Y):
+            types.cchr = types.map_data[x][y]
+            if types.cchr:
+                types.cchr9 = types.cchr & types.LOMASK  # Mask off status bits
+                if types.cchr9 >= types.FLOOD:
+                    types.s_map_x = x
+                    types.s_map_y = y
+                    if types.cchr9 < types.ROADBASE:
+                        if types.cchr9 >= types.FIREBASE:
+                            types.fire_pop += 1
+                            if (micropolis.utilities.Rand16() & 3) == 0:  # 1 in 4 times
                                 DoFire()
                             continue
-                        if types.CChr9 < types.RADTILE:
+                        if types.cchr9 < types.RADTILE:
                             DoFlood()
                         else:
                             DoRadTile()
                         continue
 
-                    if NewPower and (types.CChr & types.CONDBIT):
+                    if NewPower and (types.cchr & types.CONDBIT):
                         zones.SetZPower()
 
-                    if (types.CChr9 >= types.ROADBASE) and (types.CChr9 < types.POWERBASE):
+                    if (types.cchr9 >= types.ROADBASE) and (
+                        types.cchr9 < types.POWERBASE
+                    ):
                         DoRoad()
                         continue
 
-                    if types.CChr & types.ZONEBIT:  # process Zones
+                    if types.cchr & types.ZONEBIT:  # process Zones
                         DoZone()
                         continue
 
-                    if (types.CChr9 >= types.RAILBASE) and (types.CChr9 < types.RESBASE):
+                    if (types.cchr9 >= types.RAILBASE) and (
+                        types.cchr9 < types.RESBASE
+                    ):
                         DoRail()
                         continue
-                    if (types.CChr9 >= types.SOMETINYEXP) and (types.CChr9 <= types.LASTTINYEXP):
+                    if (types.cchr9 >= types.SOMETINYEXP) and (
+                        types.cchr9 <= types.LASTTINYEXP
+                    ):
                         # clear AniRubble
-                        types.Map[x][y] = types.RUBBLE + (types.Rand16() & 3) + types.BULLBIT
+                        types.map_data[x][y] = (
+                            types.RUBBLE
+                            + (micropolis.utilities.Rand16() & 3)
+                            + types.BULLBIT
+                        )
 
 
 # ============================================================================
 # Tile Processing Functions
 # ============================================================================
+
 
 def DoRail() -> None:
     """
@@ -891,16 +957,20 @@ def DoRail() -> None:
 
     Ported from DoRail() in s_sim.c.
     """
-    types.RailTotal += 1
-    sprites.GenerateTrain(types.SMapX, types.SMapY)
-    if types.RoadEffect < 30:  # Deteriorating Rail
-        if (types.Rand16() & 511) == 0:
-            if (types.CChr & types.CONDBIT) == 0:
-                if types.RoadEffect < (types.Rand16() & 31):
-                    if types.CChr9 < (types.RAILBASE + 2):
-                        types.Map[types.SMapX][types.SMapY] = types.RIVER
+    types.rail_total += 1
+    sprites.GenerateTrain(types.s_map_x, types.s_map_y)
+    if types.road_effect < 30:  # Deteriorating Rail
+        if (micropolis.utilities.Rand16() & 511) == 0:
+            if (types.cchr & types.CONDBIT) == 0:
+                if types.road_effect < (micropolis.utilities.Rand16() & 31):
+                    if types.cchr9 < (types.RAILBASE + 2):
+                        types.map_data[types.s_map_x][types.s_map_y] = types.RIVER
                     else:
-                        types.Map[types.SMapX][types.SMapY] = types.RUBBLE + (types.Rand16() & 3) + types.BULLBIT
+                        types.map_data[types.s_map_x][types.s_map_y] = (
+                            types.RUBBLE
+                            + (micropolis.utilities.Rand16() & 3)
+                            + types.BULLBIT
+                        )
 
 
 def DoRadTile() -> None:
@@ -909,8 +979,8 @@ def DoRadTile() -> None:
 
     Ported from DoRadTile() in s_sim.c.
     """
-    if (types.Rand16() & 4095) == 0:
-        types.Map[types.SMapX][types.SMapY] = 0  # Radioactive decay
+    if (micropolis.utilities.Rand16() & 4095) == 0:
+        types.map_data[types.s_map_x][types.s_map_y] = 0  # Radioactive decay
 
 
 def DoRoad() -> None:
@@ -923,43 +993,47 @@ def DoRoad() -> None:
 
     DenTab = [types.ROADBASE, types.LTRFBASE, types.HTRFBASE]
 
-    types.RoadTotal += 1
-    sprites.GenerateBus(types.SMapX, types.SMapY)
+    types.road_total += 1
+    sprites.GenerateBus(types.s_map_x, types.s_map_y)
 
-    if types.RoadEffect < 30:  # Deteriorating Roads
-        if (types.Rand16() & 511) == 0:
-            if (types.CChr & types.CONDBIT) == 0:
-                if types.RoadEffect < (types.Rand16() & 31):
-                    if ((types.CChr9 & 15) < 2) or ((types.CChr9 & 15) == 15):
-                        types.Map[types.SMapX][types.SMapY] = types.RIVER
+    if types.road_effect < 30:  # Deteriorating Roads
+        if (micropolis.utilities.Rand16() & 511) == 0:
+            if (types.cchr & types.CONDBIT) == 0:
+                if types.road_effect < (micropolis.utilities.Rand16() & 31):
+                    if ((types.cchr9 & 15) < 2) or ((types.cchr9 & 15) == 15):
+                        types.map_data[types.s_map_x][types.s_map_y] = types.RIVER
                     else:
-                        types.Map[types.SMapX][types.SMapY] = types.RUBBLE + (types.Rand16() & 3) + types.BULLBIT
+                        types.map_data[types.s_map_x][types.s_map_y] = (
+                            types.RUBBLE
+                            + (micropolis.utilities.Rand16() & 3)
+                            + types.BULLBIT
+                        )
                     return
 
-    if types.CChr & types.BURNBIT:  # If Bridge
-        types.RoadTotal += 4
+    if types.cchr & types.BURNBIT:  # If Bridge
+        types.road_total += 4
         if DoBridge():
             return
 
-    if types.CChr9 < types.LTRFBASE:
+    if types.cchr9 < types.LTRFBASE:
         tden = 0
     else:
-        if types.CChr9 < types.HTRFBASE:
+        if types.cchr9 < types.HTRFBASE:
             tden = 1
         else:
-            types.RoadTotal += 1
+            types.road_total += 1
             tden = 2
 
     # Set Traf Density
-    Density = (types.TrfDensity[types.SMapX >> 1][types.SMapY >> 1]) >> 6
+    Density = (types.trf_density[types.s_map_x >> 1][types.s_map_y >> 1]) >> 6
     if Density > 1:
         Density -= 1
     if tden != Density:  # tden 0..2
-        z = ((types.CChr9 - types.ROADBASE) & 15) + DenTab[Density]
-        z += types.CChr & (types.ALLBITS - types.ANIMBIT)
+        z = ((types.cchr9 - types.ROADBASE) & 15) + DenTab[Density]
+        z += types.cchr & (types.ALLBITS - types.ANIMBIT)
         if Density:
             z += types.ANIMBIT
-        types.Map[types.SMapX][types.SMapY] = z
+        types.map_data[types.s_map_x][types.s_map_y] = z
 
 
 def DoBridge() -> bool:
@@ -974,69 +1048,96 @@ def DoBridge() -> bool:
     # Bridge tile tables
     HDx = [-2, 2, -2, -1, 0, 1, 2]
     HDy = [-1, -1, 0, 0, 0, 0, 0]
-    HBRTAB = [types.HBRDG1 | types.BULLBIT, types.HBRDG3 | types.BULLBIT,
-              types.HBRDG0 | types.BULLBIT, types.RIVER,
-              types.BRWH | types.BULLBIT, types.RIVER,
-              types.HBRDG2 | types.BULLBIT]
-    HBRTAB2 = [types.RIVER, types.RIVER, types.HBRIDGE | types.BULLBIT,
-               types.HBRIDGE | types.BULLBIT, types.HBRIDGE | types.BULLBIT,
-               types.HBRIDGE | types.BULLBIT, types.HBRIDGE | types.BULLBIT]
+    HBRTAB = [
+        types.HBRDG1 | types.BULLBIT,
+        types.HBRDG3 | types.BULLBIT,
+        types.HBRDG0 | types.BULLBIT,
+        types.RIVER,
+        types.BRWH | types.BULLBIT,
+        types.RIVER,
+        types.HBRDG2 | types.BULLBIT,
+    ]
+    HBRTAB2 = [
+        types.RIVER,
+        types.RIVER,
+        types.HBRIDGE | types.BULLBIT,
+        types.HBRIDGE | types.BULLBIT,
+        types.HBRIDGE | types.BULLBIT,
+        types.HBRIDGE | types.BULLBIT,
+        types.HBRIDGE | types.BULLBIT,
+    ]
     VDx = [0, 1, 0, 0, 0, 0, 1]
     VDy = [-2, -2, -1, 0, 1, 2, 2]
-    VBRTAB = [types.VBRDG0 | types.BULLBIT, types.VBRDG1 | types.BULLBIT,
-              types.RIVER, types.BRWV | types.BULLBIT,
-              types.RIVER, types.VBRDG2 | types.BULLBIT,
-              types.VBRDG3 | types.BULLBIT]
-    VBRTAB2 = [types.VBRIDGE | types.BULLBIT, types.RIVER,
-               types.VBRIDGE | types.BULLBIT, types.VBRIDGE | types.BULLBIT,
-               types.VBRIDGE | types.BULLBIT, types.VBRIDGE | types.BULLBIT,
-               types.RIVER]
+    VBRTAB = [
+        types.VBRDG0 | types.BULLBIT,
+        types.VBRDG1 | types.BULLBIT,
+        types.RIVER,
+        types.BRWV | types.BULLBIT,
+        types.RIVER,
+        types.VBRDG2 | types.BULLBIT,
+        types.VBRDG3 | types.BULLBIT,
+    ]
+    VBRTAB2 = [
+        types.VBRIDGE | types.BULLBIT,
+        types.RIVER,
+        types.VBRIDGE | types.BULLBIT,
+        types.VBRIDGE | types.BULLBIT,
+        types.VBRIDGE | types.BULLBIT,
+        types.VBRIDGE | types.BULLBIT,
+        types.RIVER,
+    ]
 
-    if types.CChr9 == types.BRWV:  # Vertical bridge close
-        if ((types.Rand16() & 3) == 0) and (GetBoatDis() > 340):
+    if types.cchr9 == types.BRWV:  # Vertical bridge close
+        if ((micropolis.utilities.Rand16() & 3) == 0) and (GetBoatDis() > 340):
             for z in range(7):  # Close
-                x = types.SMapX + VDx[z]
-                y = types.SMapY + VDy[z]
+                x = types.s_map_x + VDx[z]
+                y = types.s_map_y + VDy[z]
                 if macros.TestBounds(x, y):
-                    if (types.Map[x][y] & types.LOMASK) == (VBRTAB[z] & types.LOMASK):
-                        types.Map[x][y] = VBRTAB2[z]
+                    if (types.map_data[x][y] & types.LOMASK) == (
+                        VBRTAB[z] & types.LOMASK
+                    ):
+                        types.map_data[x][y] = VBRTAB2[z]
         return True
 
-    if types.CChr9 == types.BRWH:  # Horizontal bridge close
-        if ((types.Rand16() & 3) == 0) and (GetBoatDis() > 340):
+    if types.cchr9 == types.BRWH:  # Horizontal bridge close
+        if ((micropolis.utilities.Rand16() & 3) == 0) and (GetBoatDis() > 340):
             for z in range(7):  # Close
-                x = types.SMapX + HDx[z]
-                y = types.SMapY + HDy[z]
+                x = types.s_map_x + HDx[z]
+                y = types.s_map_y + HDy[z]
                 if macros.TestBounds(x, y):
-                    if (types.Map[x][y] & types.LOMASK) == (HBRTAB[z] & types.LOMASK):
-                        types.Map[x][y] = HBRTAB2[z]
+                    if (types.map_data[x][y] & types.LOMASK) == (
+                        HBRTAB[z] & types.LOMASK
+                    ):
+                        types.map_data[x][y] = HBRTAB2[z]
         return True
 
-    if (GetBoatDis() < 300) or ((types.Rand16() & 7) == 0):
-        if types.CChr9 & 1:  # Vertical open
-            if types.SMapX < (types.WORLD_X - 1):
-                if types.Map[types.SMapX + 1][types.SMapY] == types.CHANNEL:
+    if (GetBoatDis() < 300) or ((micropolis.utilities.Rand16() & 7) == 0):
+        if types.cchr9 & 1:  # Vertical open
+            if types.s_map_x < (micropolis.constants.WORLD_X - 1):
+                if types.map_data[types.s_map_x + 1][types.s_map_y] == types.CHANNEL:
                     for z in range(7):
-                        x = types.SMapX + VDx[z]
-                        y = types.SMapY + VDy[z]
+                        x = types.s_map_x + VDx[z]
+                        y = types.s_map_y + VDy[z]
                         if macros.TestBounds(x, y):
-                            MPtem = types.Map[x][y]
-                            if (MPtem == types.CHANNEL) or \
-                               ((MPtem & 15) == (VBRTAB2[z] & 15)):
-                                types.Map[x][y] = VBRTAB[z]
+                            MPtem = types.map_data[x][y]
+                            if (MPtem == types.CHANNEL) or (
+                                (MPtem & 15) == (VBRTAB2[z] & 15)
+                            ):
+                                types.map_data[x][y] = VBRTAB[z]
                     return True
             return False
         else:  # Horizontal open
-            if types.SMapY > 0:
-                if types.Map[types.SMapX][types.SMapY - 1] == types.CHANNEL:
+            if types.s_map_y > 0:
+                if types.map_data[types.s_map_x][types.s_map_y - 1] == types.CHANNEL:
                     for z in range(7):
-                        x = types.SMapX + HDx[z]
-                        y = types.SMapY + HDy[z]
+                        x = types.s_map_x + HDx[z]
+                        y = types.s_map_y + HDy[z]
                         if macros.TestBounds(x, y):
-                            MPtem = types.Map[x][y]
-                            if ((MPtem & 15) == (HBRTAB2[z] & 15)) or \
-                               (MPtem == types.CHANNEL):
-                                types.Map[x][y] = HBRTAB[z]
+                            MPtem = types.map_data[x][y]
+                            if ((MPtem & 15) == (HBRTAB2[z] & 15)) or (
+                                MPtem == types.CHANNEL
+                            ):
+                                types.map_data[x][y] = HBRTAB[z]
                     return True
             return False
     return False
@@ -1052,8 +1153,8 @@ def GetBoatDis() -> int:
         Distance to nearest boat sprite
     """
     dist = 99999
-    mx = (types.SMapX << 4) + 8
-    my = (types.SMapY << 4) + 8
+    mx = (types.s_map_x << 4) + 8
+    my = (types.s_map_y << 4) + 8
 
     sprite = types.sim.sprite
     while sprite is not None:
@@ -1082,19 +1183,21 @@ def DoFire() -> None:
     DY = [0, -1, 0, 1]
 
     for z in range(4):
-        if (types.Rand16() & 7) == 0:
-            Xtem = types.SMapX + DX[z]
-            Ytem = types.SMapY + DY[z]
+        if (micropolis.utilities.Rand16() & 7) == 0:
+            Xtem = types.s_map_x + DX[z]
+            Ytem = types.s_map_y + DY[z]
             if macros.TestBounds(Xtem, Ytem):
-                c = types.Map[Xtem][Ytem]
+                c = types.map_data[Xtem][Ytem]
                 if c & types.BURNBIT:
                     if c & types.ZONEBIT:
                         FireZone(Xtem, Ytem, c)
                         if (c & types.LOMASK) > types.IZB:  # Explode
                             sprites.MakeExplosionAt((Xtem << 4) + 8, (Ytem << 4) + 8)
-                    types.Map[Xtem][Ytem] = types.FIRE + (types.Rand16() & 3) + types.ANIMBIT
+                    types.map_data[Xtem][Ytem] = (
+                        types.FIRE + (micropolis.utilities.Rand16() & 3) + types.ANIMBIT
+                    )
 
-    z = types.FireRate[types.SMapX >> 3][types.SMapY >> 3]
+    z = types.fire_rate[types.s_map_x >> 3][types.s_map_y >> 3]
     Rate = 10
     if z:
         Rate = 3
@@ -1102,8 +1205,10 @@ def DoFire() -> None:
             Rate = 2
         if z > 100:
             Rate = 1
-    if types.Rand(Rate) == 0:
-        types.Map[types.SMapX][types.SMapY] = types.RUBBLE + (types.Rand16() & 3) + types.BULLBIT
+    if micropolis.utilities.Rand(Rate) == 0:
+        types.map_data[types.s_map_x][types.s_map_y] = (
+            types.RUBBLE + (micropolis.utilities.Rand16() & 3) + types.BULLBIT
+        )
 
 
 def FireZone(Xloc: int, Yloc: int, ch: int) -> None:
@@ -1117,7 +1222,7 @@ def FireZone(Xloc: int, Yloc: int, ch: int) -> None:
         Yloc: Y coordinate of fire
         ch: Tile value
     """
-    types.RateOGMem[Xloc >> 3][Yloc >> 3] -= 20
+    types.rate_og_mem[Xloc >> 3][Yloc >> 3] -= 20
 
     ch = ch & types.LOMASK
     if ch < types.PORTBASE:
@@ -1132,11 +1237,17 @@ def FireZone(Xloc: int, Yloc: int, ch: int) -> None:
         for y in range(-1, XYmax):
             Xtem = Xloc + x
             Ytem = Yloc + y
-            if ((Xtem < 0) or (Xtem > (types.WORLD_X - 1)) or
-                (Ytem < 0) or (Ytem > (types.WORLD_Y - 1))):
+            if (
+                (Xtem < 0)
+                or (Xtem > (micropolis.constants.WORLD_X - 1))
+                or (Ytem < 0)
+                or (Ytem > (micropolis.constants.WORLD_Y - 1))
+            ):
                 continue
-            if (types.Map[Xtem][Ytem] & types.LOMASK) >= types.ROADBASE:  # post release
-                types.Map[Xtem][Ytem] |= types.BULLBIT
+            if (
+                types.map_data[Xtem][Ytem] & types.LOMASK
+            ) >= types.ROADBASE:  # post release
+                types.map_data[Xtem][Ytem] |= types.BULLBIT
 
 
 def RepairZone(ZCent: int, zsize: int) -> None:
@@ -1153,18 +1264,20 @@ def RepairZone(ZCent: int, zsize: int) -> None:
     zsize -= 1
     for y in range(-1, zsize):
         for x in range(-1, zsize):
-            xx = types.SMapX + x
-            yy = types.SMapY + y
+            xx = types.s_map_x + x
+            yy = types.s_map_y + y
             cnt += 1
             if macros.TestBounds(xx, yy):
-                ThCh = types.Map[xx][yy]
+                ThCh = types.map_data[xx][yy]
                 if ThCh & types.ZONEBIT:
                     continue
                 if ThCh & types.ANIMBIT:
                     continue
                 ThCh = ThCh & types.LOMASK
                 if (ThCh < types.RUBBLE) or (ThCh >= types.ROADBASE):
-                    types.Map[xx][yy] = ZCent - 3 - zsize + cnt + types.CONDBIT + types.BURNBIT
+                    types.map_data[xx][yy] = (
+                        ZCent - 3 - zsize + cnt + types.CONDBIT + types.BURNBIT
+                    )
 
 
 def DoSPZone(PwrOn: int) -> None:
@@ -1176,91 +1289,105 @@ def DoSPZone(PwrOn: int) -> None:
     Args:
         PwrOn: Whether zone is powered
     """
-    if types.CChr9 == types.POWERPLANT:
-        types.CoalPop += 1
-        if (types.CityTime & 7) == 0:
+    if types.cchr9 == types.POWERPLANT:
+        types.coal_pop += 1
+        if (types.city_time & 7) == 0:
             RepairZone(types.POWERPLANT, 4)  # post
         power.PushPowerStack()
-        CoalSmoke(types.SMapX, types.SMapY)
+        CoalSmoke(types.s_map_x, types.s_map_y)
         return
 
-    if types.CChr9 == types.NUCLEAR:
-        if (not types.NoDisasters) and (types.Rand(types.MltdwnTab[types.GameLevel]) == 0):
-            DoMeltdown(types.SMapX, types.SMapY)
+    if types.cchr9 == types.NUCLEAR:
+        if (not types.no_disasters) and (
+            micropolis.utilities.Rand(types.MltdwnTab[types.game_level]) == 0
+        ):
+            DoMeltdown(types.s_map_x, types.s_map_y)
             return
-        types.NuclearPop += 1
-        if (types.CityTime & 7) == 0:
+        types.nuclear_pop += 1
+        if (types.city_time & 7) == 0:
             RepairZone(types.NUCLEAR, 4)  # post
         power.PushPowerStack()
         return
 
-    if types.CChr9 == types.FIRESTATION:
-        types.FireStPop += 1
-        if (types.CityTime & 7) == 0:
+    if types.cchr9 == types.FIRESTATION:
+        types.fire_st_pop += 1
+        if (types.city_time & 7) == 0:
             RepairZone(types.FIRESTATION, 3)  # post
 
         if PwrOn:
-            z = types.FireEffect  # if powered get effect
+            z = types.fire_effect  # if powered get effect
         else:
-            z = types.FireEffect >> 1  # from the funding ratio
+            z = types.fire_effect >> 1  # from the funding ratio
 
         if not FindPRoad():
             z = z >> 1  # post FD's need roads
 
-        types.FireStMap[types.SMapX >> 3][types.SMapY >> 3] += z
+        types.fire_st_map[types.s_map_x >> 3][types.s_map_y >> 3] += z
         return
 
-    if types.CChr9 == types.POLICESTATION:
-        types.PolicePop += 1
-        if (types.CityTime & 7) == 0:
+    if types.cchr9 == types.POLICESTATION:
+        types.police_pop += 1
+        if (types.city_time & 7) == 0:
             RepairZone(types.POLICESTATION, 3)  # post
 
         if PwrOn:
-            z = types.PoliceEffect
+            z = types.police_effect
         else:
-            z = types.PoliceEffect >> 1
+            z = types.police_effect >> 1
 
         if not FindPRoad():
             z = z >> 1  # post PD's need roads
 
-        types.PoliceMap[types.SMapX >> 3][types.SMapY >> 3] += z
+        types.police_map[types.s_map_x >> 3][types.s_map_y >> 3] += z
         return
 
-    if types.CChr9 == types.STADIUM:
-        types.StadiumPop += 1
-        if (types.CityTime & 15) == 0:
+    if types.cchr9 == types.STADIUM:
+        types.stadium_pop += 1
+        if (types.city_time & 15) == 0:
             RepairZone(types.STADIUM, 4)
         if PwrOn:
-            if ((types.CityTime + types.SMapX + types.SMapY) & 31) == 0:  # post release
+            if (
+                (types.city_time + types.s_map_x + types.s_map_y) & 31
+            ) == 0:  # post release
                 DrawStadium(types.FULLSTADIUM)
-                types.Map[types.SMapX + 1][types.SMapY] = types.FOOTBALLGAME1 + types.ANIMBIT
-                types.Map[types.SMapX + 1][types.SMapY + 1] = types.FOOTBALLGAME2 + types.ANIMBIT
+                types.map_data[types.s_map_x + 1][types.s_map_y] = (
+                    types.FOOTBALLGAME1 + types.ANIMBIT
+                )
+                types.map_data[types.s_map_x + 1][types.s_map_y + 1] = (
+                    types.FOOTBALLGAME2 + types.ANIMBIT
+                )
         return
 
-    if types.CChr9 == types.FULLSTADIUM:
-        types.StadiumPop += 1
-        if ((types.CityTime + types.SMapX + types.SMapY) & 7) == 0:  # post release
+    if types.cchr9 == types.FULLSTADIUM:
+        types.stadium_pop += 1
+        if ((types.city_time + types.s_map_x + types.s_map_y) & 7) == 0:  # post release
             DrawStadium(types.STADIUM)
         return
 
-    if types.CChr9 == types.AIRPORT:
-        types.APortPop += 1
-        if (types.CityTime & 7) == 0:
+    if types.cchr9 == types.AIRPORT:
+        types.airport_pop += 1
+        if (types.city_time & 7) == 0:
             RepairZone(types.AIRPORT, 6)
 
         if PwrOn:  # post
-            if (types.Map[types.SMapX + 1][types.SMapY - 1] & types.LOMASK) == types.RADAR:
-                types.Map[types.SMapX + 1][types.SMapY - 1] = types.RADAR + types.ANIMBIT + types.CONDBIT + types.BURNBIT
+            if (
+                types.map_data[types.s_map_x + 1][types.s_map_y - 1] & types.LOMASK
+            ) == types.RADAR:
+                types.map_data[types.s_map_x + 1][types.s_map_y - 1] = (
+                    types.RADAR + types.ANIMBIT + types.CONDBIT + types.BURNBIT
+                )
         else:
-            types.Map[types.SMapX + 1][types.SMapY - 1] = types.RADAR + types.CONDBIT + types.BURNBIT
+            types.map_data[types.s_map_x + 1][types.s_map_y - 1] = (
+                types.RADAR + types.CONDBIT + types.BURNBIT
+            )
 
         if PwrOn:
             DoAirport()
         return
 
-    if types.CChr9 == types.PORT:
-        types.PortPop += 1
-        if (types.CityTime & 15) == 0:
+    if types.cchr9 == types.PORT:
+        types.port_pop += 1
+        if (types.city_time & 15) == 0:
             RepairZone(types.PORT, 4)
         if PwrOn and (sprites.GetSprite(types.SHI) is None):
             sprites.GenerateShip()
@@ -1277,10 +1404,10 @@ def DrawStadium(z: int) -> None:
         z: Base tile value
     """
     z = z - 5
-    for y in range(types.SMapY - 1, types.SMapY + 3):
-        for x in range(types.SMapX - 1, types.SMapX + 3):
-            types.Map[x][y] = (z) | types.BNCNBIT
-    types.Map[types.SMapX][types.SMapY] |= types.ZONEBIT | types.PWRBIT
+    for y in range(types.s_map_y - 1, types.s_map_y + 3):
+        for x in range(types.s_map_x - 1, types.s_map_x + 3):
+            types.map_data[x][y] = (z) | types.BNCNBIT
+    types.map_data[types.s_map_x][types.s_map_y] |= types.ZONEBIT | types.PWRBIT
 
 
 def DoAirport() -> None:
@@ -1289,11 +1416,11 @@ def DoAirport() -> None:
 
     Ported from DoAirport() in s_sim.c.
     """
-    if types.Rand(5) == 0:
-        sprites.GeneratePlane(types.SMapX, types.SMapY)
+    if micropolis.utilities.Rand(5) == 0:
+        sprites.GeneratePlane(types.s_map_x, types.s_map_y)
         return
-    if types.Rand(12) == 0:
-        sprites.GenerateCopter(types.SMapX, types.SMapY)
+    if micropolis.utilities.Rand(12) == 0:
+        sprites.GenerateCopter(types.s_map_x, types.s_map_y)
 
 
 def CoalSmoke(mx: int, my: int) -> None:
@@ -1311,8 +1438,9 @@ def CoalSmoke(mx: int, my: int) -> None:
     dy = [-1, -1, 0, 0]
 
     for x in range(4):
-        types.Map[mx + dx[x]][my + dy[x]] = \
+        types.map_data[mx + dx[x]][my + dy[x]] = (
             SmTb[x] | types.ANIMBIT | types.CONDBIT | types.PWRBIT | types.BURNBIT
+        )
 
 
 def DoMeltdown(SX: int, SY: int) -> None:
@@ -1337,19 +1465,25 @@ def DoMeltdown(SX: int, SY: int) -> None:
 
     for x in range(SX - 1, SX + 3):
         for y in range(SY - 1, SY + 3):
-            types.Map[x][y] = types.FIRE + (types.Rand16() & 3) + types.ANIMBIT
+            types.map_data[x][y] = (
+                types.FIRE + (micropolis.utilities.Rand16() & 3) + types.ANIMBIT
+            )
 
     for z in range(200):
-        x = SX - 20 + types.Rand(40)
-        y = SY - 15 + types.Rand(30)
-        if ((x < 0) or (x >= types.WORLD_X) or
-            (y < 0) or (y >= types.WORLD_Y)):
+        x = SX - 20 + micropolis.utilities.Rand(40)
+        y = SY - 15 + micropolis.utilities.Rand(30)
+        if (
+            (x < 0)
+            or (x >= micropolis.constants.WORLD_X)
+            or (y < 0)
+            or (y >= micropolis.constants.WORLD_Y)
+        ):
             continue
-        t = types.Map[x][y]
+        t = types.map_data[x][y]
         if t & types.ZONEBIT:
             continue
         if (t & types.BURNBIT) or (t == 0):
-            types.Map[x][y] = types.RADTILE
+            types.map_data[x][y] = types.RADTILE
 
     messages.ClearMes()
     messages.SendMesAt(-43, SX, SY)
@@ -1359,7 +1493,7 @@ def DoMeltdown(SX: int, SY: int) -> None:
 # Random Number Functions
 # ============================================================================
 
-RANDOM_RANGE = 0xffff
+RANDOM_RANGE = 0xFFFF
 
 
 def Rand(range_val: int) -> int:
@@ -1378,7 +1512,7 @@ def Rand(range_val: int) -> int:
     maxMultiple = RANDOM_RANGE // range_val
     maxMultiple *= range_val
     while True:
-        rnum = types.Rand16()
+        rnum = micropolis.utilities.Rand16()
         if rnum < maxMultiple:
             break
     return rnum % range_val
@@ -1393,7 +1527,7 @@ def Rand16() -> int:
     Returns:
         Random number from sim_rand()
     """
-    return types.sim_rand()
+    return micropolis.utilities.sim_rand()
 
 
 def Rand16Signed() -> int:
@@ -1405,7 +1539,7 @@ def Rand16Signed() -> int:
     Returns:
         Signed random number
     """
-    i = types.sim_rand()
+    i = micropolis.utilities.sim_rand()
     if i > 32767:
         i = 32767 - i
     return i
@@ -1432,12 +1566,13 @@ def SeedRand(seed: int) -> None:
     Args:
         seed: Seed value
     """
-    types.sim_srand(seed)
+    micropolis.utilities.sim_srand(seed)
 
 
 # ============================================================================
 # Placeholder Functions (to be implemented)
 # ============================================================================
+
 
 def CityEvaluation() -> None:
     """City evaluation - placeholder for evaluation.py"""
@@ -1478,6 +1613,7 @@ def FindPRoad() -> bool:
 # Set Common Inits (placeholder)
 # ============================================================================
 
+
 def SetCommonInits() -> None:
     """
     Set common initialization values.
@@ -1485,8 +1621,8 @@ def SetCommonInits() -> None:
     Ported from SetCommonInits() in s_sim.c.
     """
     # evaluation.EvalInit() - placeholder
-    types.RoadEffect = 32
-    types.PoliceEffect = 1000
-    types.FireEffect = 1000
-    types.TaxFlag = 0
-    types.TaxFund = 0
+    types.road_effect = 32
+    types.police_effect = 1000
+    types.fire_effect = 1000
+    types.tax_flag = 0
+    types.tax_fund = 0

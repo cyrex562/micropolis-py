@@ -6,6 +6,7 @@ implementing fire analysis, population density scanning, pollution/terrain/land 
 analysis, crime scanning, and various smoothing operations.
 """
 
+import micropolis.constants
 from . import simulation, types, zones
 
 # ============================================================================
@@ -14,7 +15,7 @@ from . import simulation, types, zones
 
 # Map update flags
 NewMap: int = 0
-NewMapFlags: list[int] = [0] * types.NMAPS
+NewMapFlags: list[int] = [0] * micropolis.constants.NMAPS
 CCx: int = 0
 CCy: int = 0
 CCx2: int = 0
@@ -30,6 +31,7 @@ DonDither: int = 0
 # Fire Analysis Functions
 # ============================================================================
 
+
 def FireAnalysis() -> None:
     """
     Make fire rate map from fire station map.
@@ -41,17 +43,18 @@ def FireAnalysis() -> None:
     SmoothFSMap()
     SmoothFSMap()
 
-    for x in range(types.SmX):
-        for y in range(types.SmY):
-            types.FireRate[x][y] = types.FireStMap[x][y]
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
+            types.fire_rate[x][y] = types.fire_st_map[x][y]
 
-    NewMapFlags[types.DYMAP] = 1
-    NewMapFlags[types.FIMAP] = 1
+    NewMapFlags[micropolis.constants.DYMAP] = 1
+    NewMapFlags[micropolis.constants.FIMAP] = 1
 
 
 # ============================================================================
 # Population Density Scanning
 # ============================================================================
+
 
 def PopDenScan() -> None:
     """
@@ -66,13 +69,13 @@ def PopDenScan() -> None:
 
     ClrTemArray()
 
-    for x in range(types.WORLD_X):
-        for y in range(types.WORLD_Y):
-            z = types.Map[x][y]
+    for x in range(micropolis.constants.WORLD_X):
+        for y in range(micropolis.constants.WORLD_Y):
+            z = types.map_data[x][y]
             if z & types.ZONEBIT:
                 z = z & types.LOMASK
-                types.SMapX = x
-                types.SMapY = y
+                types.s_map_x = x
+                types.s_map_y = y
                 z = GetPDen(z) << 3
                 if z > 254:
                     z = 254
@@ -85,9 +88,9 @@ def PopDenScan() -> None:
     DoSmooth2()  # T2 -> T1
     DoSmooth()  # T1 -> T2
 
-    for x in range(types.HWLDX):
-        for y in range(types.HWLDY):
-            types.PopDensity[x][y] = types.tem2[x][y] << 1
+    for x in range(micropolis.constants.HWLDX):
+        for y in range(micropolis.constants.HWLDY):
+            types.pop_density[x][y] = types.tem2[x][y] << 1
 
     DistIntMarket()  # set ComRate w/ (/ComMap)
 
@@ -97,15 +100,15 @@ def PopDenScan() -> None:
         CCx = Xtot // Ztot
         CCy = Ytot // Ztot
     else:
-        CCx = types.HWLDX  # if pop=0 center of Map is CC
-        CCy = types.HWLDY
+        CCx = micropolis.constants.HWLDX  # if pop=0 center of Map is CC
+        CCy = micropolis.constants.HWLDY
 
     CCx2 = CCx >> 1
     CCy2 = CCy >> 1
 
-    NewMapFlags[types.DYMAP] = 1
-    NewMapFlags[types.PDMAP] = 1
-    NewMapFlags[types.RGMAP] = 1
+    NewMapFlags[micropolis.constants.DYMAP] = 1
+    NewMapFlags[micropolis.constants.PDMAP] = 1
+    NewMapFlags[micropolis.constants.RGMAP] = 1
 
 
 def GetPDen(Ch9: int) -> int:
@@ -143,6 +146,7 @@ def GetPDen(Ch9: int) -> int:
 # Pollution, Terrain, Land Value Scanning
 # ============================================================================
 
+
 def PTLScan() -> None:
     """
     Does pollution, terrain, and land value scanning.
@@ -155,12 +159,12 @@ def PTLScan() -> None:
     LVnum = 0
 
     # Initialize Qtem array
-    for x in range(types.QWX):
-        for y in range(types.QWY):
+    for x in range(micropolis.constants.QWX):
+        for y in range(micropolis.constants.QWY):
             types.Qtem[x][y] = 0
 
-    for x in range(types.HWLDX):
-        for y in range(types.HWLDY):
+    for x in range(micropolis.constants.HWLDX):
+        for y in range(micropolis.constants.HWLDY):
             Plevel = 0
             LVflag = 0
             zx = x << 1
@@ -168,7 +172,7 @@ def PTLScan() -> None:
 
             for Mx in range(zx, zx + 2):
                 for My in range(zy, zy + 2):
-                    loc = types.Map[Mx][My] & types.LOMASK
+                    loc = types.map_data[Mx][My] & types.LOMASK
                     if loc:
                         if loc < types.RUBBLE:
                             types.Qtem[x >> 1][y >> 1] += 15  # inc terrainMem
@@ -186,25 +190,25 @@ def PTLScan() -> None:
             if LVflag:  # LandValue Equation
                 dis = 34 - GetDisCC(x, y)
                 dis = dis << 2
-                dis += types.TerrainMem[x >> 1][y >> 1]
-                dis -= types.PollutionMem[x][y]
-                if types.CrimeMem[x][y] > 190:
+                dis += types.terrain_mem[x >> 1][y >> 1]
+                dis -= types.pollution_mem[x][y]
+                if types.crime_mem[x][y] > 190:
                     dis -= 20
                 if dis > 250:
                     dis = 250
                 if dis < 1:
                     dis = 1
-                types.LandValueMem[x][y] = dis
+                types.land_value_mem[x][y] = dis
                 LVtot += dis
                 LVnum += 1
             else:
-                types.LandValueMem[x][y] = 0
+                types.land_value_mem[x][y] = 0
 
     # Calculate land value average
     if LVnum:
-        types.LVAverage = LVtot // LVnum
+        types.lv_average = LVtot // LVnum
     else:
-        types.LVAverage = 0
+        types.lv_average = 0
 
     DoSmooth()
     DoSmooth2()
@@ -215,10 +219,10 @@ def PTLScan() -> None:
     pnum = 0
     ptot = 0
 
-    for x in range(types.HWLDX):
-        for y in range(types.HWLDY):
+    for x in range(micropolis.constants.HWLDX):
+        for y in range(micropolis.constants.HWLDY):
             z = types.tem[x][y]
-            types.PollutionMem[x][y] = z
+            types.pollution_mem[x][y] = z
             if z:  # get pollute average
                 pnum += 1
                 ptot += z
@@ -230,15 +234,15 @@ def PTLScan() -> None:
 
     # Calculate pollution average
     if pnum:
-        types.PolluteAverage = ptot // pnum
+        types.pollute_average = ptot // pnum
     else:
-        types.PolluteAverage = 0
+        types.pollute_average = 0
 
     SmoothTerrain()
 
-    NewMapFlags[types.DYMAP] = 1
-    NewMapFlags[types.PLMAP] = 1
-    NewMapFlags[types.LVMAP] = 1
+    NewMapFlags[micropolis.constants.DYMAP] = 1
+    NewMapFlags[micropolis.constants.PLMAP] = 1
+    NewMapFlags[micropolis.constants.LVMAP] = 1
 
 
 def GetPValue(loc: int) -> int:
@@ -308,6 +312,7 @@ def GetDisCC(x: int, y: int) -> int:
 # Crime Analysis
 # ============================================================================
 
+
 def CrimeScan() -> None:
     """
     Analyze crime rates based on land value, population, and police coverage.
@@ -325,21 +330,21 @@ def CrimeScan() -> None:
 
     global CrimeMaxX, CrimeMaxY
 
-    for x in range(types.HWLDX):
-        for y in range(types.HWLDY):
-            z = types.LandValueMem[x][y]
+    for x in range(micropolis.constants.HWLDX):
+        for y in range(micropolis.constants.HWLDY):
+            z = types.land_value_mem[x][y]
             if z:
                 numz += 1
                 z = 128 - z
-                z += types.PopDensity[x][y]
+                z += types.pop_density[x][y]
                 if z > 300:
                     z = 300
-                z -= types.PoliceMap[x >> 2][y >> 2]
+                z -= types.police_map[x >> 2][y >> 2]
                 if z > 250:
                     z = 250
                 if z < 0:
                     z = 0
-                types.CrimeMem[x][y] = z
+                types.crime_mem[x][y] = z
                 totz += z
 
                 # Find max crime for monster
@@ -348,27 +353,28 @@ def CrimeScan() -> None:
                     CrimeMaxX = x << 1
                     CrimeMaxY = y << 1
             else:
-                types.CrimeMem[x][y] = 0
+                types.crime_mem[x][y] = 0
 
     # Calculate crime average
     if numz:
-        types.CrimeAverage = totz // numz
+        types.crime_average = totz // numz
     else:
-        types.CrimeAverage = 0
+        types.crime_average = 0
 
     # Copy police map to effect map
-    for x in range(types.SmX):
-        for y in range(types.SmY):
-            types.PoliceMapEffect[x][y] = types.PoliceMap[x][y]
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
+            types.police_map_effect[x][y] = types.police_map[x][y]
 
-    NewMapFlags[types.DYMAP] = 1
-    NewMapFlags[types.CRMAP] = 1
-    NewMapFlags[types.POMAP] = 1
+    NewMapFlags[micropolis.constants.DYMAP] = 1
+    NewMapFlags[micropolis.constants.CRMAP] = 1
+    NewMapFlags[micropolis.constants.POMAP] = 1
 
 
 # ============================================================================
 # Smoothing Functions
 # ============================================================================
+
 
 def SmoothTerrain() -> None:
     """
@@ -382,14 +388,14 @@ def SmoothTerrain() -> None:
         z = 0
         dir = 1
 
-        while x < types.QWX:
-            while (y != types.QWY) and (y != -1):
+        while x < micropolis.constants.QWX:
+            while (y != micropolis.constants.QWY) and (y != -1):
                 z += types.Qtem[x if x == 0 else x - 1][y]
-                z += types.Qtem[x if x == (types.QWX - 1) else x + 1][y]
+                z += types.Qtem[x if x == (micropolis.constants.QWX - 1) else x + 1][y]
                 z += types.Qtem[x][y if y == 0 else y - 1]
-                z += types.Qtem[x][y if y == (types.QWY - 1) else y + 1]
-                z += (types.Qtem[x][y] << 2)
-                types.TerrainMem[x][y] = (z >> 3) & 0xFF
+                z += types.Qtem[x][y if y == (micropolis.constants.QWY - 1) else y + 1]
+                z += types.Qtem[x][y] << 2
+                types.terrain_mem[x][y] = (z >> 3) & 0xFF
                 z &= 0x7
                 y += dir
 
@@ -397,18 +403,18 @@ def SmoothTerrain() -> None:
             y += dir
             x += 1
     else:
-        for x in range(types.QWX):
-            for y in range(types.QWY):
+        for x in range(micropolis.constants.QWX):
+            for y in range(micropolis.constants.QWY):
                 z = 0
                 if x > 0:
                     z += types.Qtem[x - 1][y]
-                if x < (types.QWX - 1):
+                if x < (micropolis.constants.QWX - 1):
                     z += types.Qtem[x + 1][y]
                 if y > 0:
                     z += types.Qtem[x][y - 1]
-                if y < (types.QWY - 1):
+                if y < (micropolis.constants.QWY - 1):
                     z += types.Qtem[x][y + 1]
-                types.TerrainMem[x][y] = ((z >> 2) + types.Qtem[x][y]) >> 1
+                types.terrain_mem[x][y] = ((z >> 2) + types.Qtem[x][y]) >> 1
 
 
 def DoSmooth() -> None:
@@ -423,12 +429,12 @@ def DoSmooth() -> None:
         z = 0
         dir = 1
 
-        while x < types.HWLDX:
-            while (y != types.HWLDY) and (y != -1):
+        while x < micropolis.constants.HWLDX:
+            while (y != micropolis.constants.HWLDY) and (y != -1):
                 z += types.tem[x if x == 0 else x - 1][y]
-                z += types.tem[x if x == (types.HWLDX - 1) else x + 1][y]
+                z += types.tem[x if x == (micropolis.constants.HWLDX - 1) else x + 1][y]
                 z += types.tem[x][y if y == 0 else y - 1]
-                z += types.tem[x][y if y == (types.HWLDY - 1) else y + 1]
+                z += types.tem[x][y if y == (micropolis.constants.HWLDY - 1) else y + 1]
                 z += types.tem[x][y]
                 types.tem2[x][y] = (z >> 2) & 0xFF
                 z &= 3
@@ -438,16 +444,16 @@ def DoSmooth() -> None:
             y += dir
             x += 1
     else:
-        for x in range(types.HWLDX):
-            for y in range(types.HWLDY):
+        for x in range(micropolis.constants.HWLDX):
+            for y in range(micropolis.constants.HWLDY):
                 z = 0
                 if x > 0:
                     z += types.tem[x - 1][y]
-                if x < (types.HWLDX - 1):
+                if x < (micropolis.constants.HWLDX - 1):
                     z += types.tem[x + 1][y]
                 if y > 0:
                     z += types.tem[x][y - 1]
-                if y < (types.HWLDY - 1):
+                if y < (micropolis.constants.HWLDY - 1):
                     z += types.tem[x][y + 1]
                 z = (z + types.tem[x][y]) >> 2
                 if z > 255:
@@ -467,12 +473,16 @@ def DoSmooth2() -> None:
         z = 0
         dir = 1
 
-        while x < types.HWLDX:
-            while (y != types.HWLDY) and (y != -1):
+        while x < micropolis.constants.HWLDX:
+            while (y != micropolis.constants.HWLDY) and (y != -1):
                 z += types.tem2[x if x == 0 else x - 1][y]
-                z += types.tem2[x if x == (types.HWLDX - 1) else x + 1][y]
+                z += types.tem2[x if x == (micropolis.constants.HWLDX - 1) else x + 1][
+                    y
+                ]
                 z += types.tem2[x][y if y == 0 else y - 1]
-                z += types.tem2[x][y if y == (types.HWLDY - 1) else y + 1]
+                z += types.tem2[x][
+                    y if y == (micropolis.constants.HWLDY - 1) else y + 1
+                ]
                 z += types.tem2[x][y]
                 types.tem[x][y] = (z >> 2) & 0xFF
                 z &= 3
@@ -482,16 +492,16 @@ def DoSmooth2() -> None:
             y += dir
             x += 1
     else:
-        for x in range(types.HWLDX):
-            for y in range(types.HWLDY):
+        for x in range(micropolis.constants.HWLDX):
+            for y in range(micropolis.constants.HWLDY):
                 z = 0
                 if x > 0:
                     z += types.tem2[x - 1][y]
-                if x < (types.HWLDX - 1):
+                if x < (micropolis.constants.HWLDX - 1):
                     z += types.tem2[x + 1][y]
                 if y > 0:
                     z += types.tem2[x][y - 1]
-                if y < (types.HWLDY - 1):
+                if y < (micropolis.constants.HWLDY - 1):
                     z += types.tem2[x][y + 1]
                 z = (z + types.tem2[x][y]) >> 2
                 if z > 255:
@@ -506,8 +516,8 @@ def ClrTemArray() -> None:
     Ported from ClrTemArray() in s_scan.c.
     """
     z = 0
-    for x in range(types.HWLDX):
-        for y in range(types.HWLDY):
+    for x in range(micropolis.constants.HWLDX):
+        for y in range(micropolis.constants.HWLDY):
             types.tem[x][y] = z
 
 
@@ -517,23 +527,23 @@ def SmoothFSMap() -> None:
 
     Ported from SmoothFSMap() in s_scan.c.
     """
-    for x in range(types.SmX):
-        for y in range(types.SmY):
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
             edge = 0
             if x > 0:
-                edge += types.FireStMap[x - 1][y]
-            if x < (types.SmX - 1):
-                edge += types.FireStMap[x + 1][y]
+                edge += types.fire_st_map[x - 1][y]
+            if x < (micropolis.constants.SM_X - 1):
+                edge += types.fire_st_map[x + 1][y]
             if y > 0:
-                edge += types.FireStMap[x][y - 1]
-            if y < (types.SmY - 1):
-                edge += types.FireStMap[x][y + 1]
-            edge = (edge >> 2) + types.FireStMap[x][y]
-            types.STem[x][y] = edge >> 1
+                edge += types.fire_st_map[x][y - 1]
+            if y < (micropolis.constants.SM_Y - 1):
+                edge += types.fire_st_map[x][y + 1]
+            edge = (edge >> 2) + types.fire_st_map[x][y]
+            types.stem[x][y] = edge >> 1
 
-    for x in range(types.SmX):
-        for y in range(types.SmY):
-            types.FireStMap[x][y] = types.STem[x][y]
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
+            types.fire_st_map[x][y] = types.stem[x][y]
 
 
 def SmoothPSMap() -> None:
@@ -542,23 +552,23 @@ def SmoothPSMap() -> None:
 
     Ported from SmoothPSMap() in s_scan.c.
     """
-    for x in range(types.SmX):
-        for y in range(types.SmY):
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
             edge = 0
             if x > 0:
-                edge += types.PoliceMap[x - 1][y]
-            if x < (types.SmX - 1):
-                edge += types.PoliceMap[x + 1][y]
+                edge += types.police_map[x - 1][y]
+            if x < (micropolis.constants.SM_X - 1):
+                edge += types.police_map[x + 1][y]
             if y > 0:
-                edge += types.PoliceMap[x][y - 1]
-            if y < (types.SmY - 1):
-                edge += types.PoliceMap[x][y + 1]
-            edge = (edge >> 2) + types.PoliceMap[x][y]
-            types.STem[x][y] = edge >> 1
+                edge += types.police_map[x][y - 1]
+            if y < (micropolis.constants.SM_Y - 1):
+                edge += types.police_map[x][y + 1]
+            edge = (edge >> 2) + types.police_map[x][y]
+            types.stem[x][y] = edge >> 1
 
-    for x in range(types.SmX):
-        for y in range(types.SmY):
-            types.PoliceMap[x][y] = types.STem[x][y]
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
+            types.police_map[x][y] = types.stem[x][y]
 
 
 def DistIntMarket() -> None:
@@ -567,9 +577,9 @@ def DistIntMarket() -> None:
 
     Ported from DistIntMarket() in s_scan.c.
     """
-    for x in range(types.SmX):
-        for y in range(types.SmY):
+    for x in range(micropolis.constants.SM_X):
+        for y in range(micropolis.constants.SM_Y):
             z = GetDisCC(x << 2, y << 2)
             z = z << 2
             z = 64 - z
-            types.ComRate[x][y] = z
+            types.com_rate[x][y] = z

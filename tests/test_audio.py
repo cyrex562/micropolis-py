@@ -26,11 +26,11 @@ class TestAudio(Assertions):
         audio.active_channels.clear()
 
         # Set up sound enabled
-        types.UserSoundOn = 1
-        types.Sound = 1
+        types.user_sound_on = 1
+        types.sound = 1
 
         # Mock pygame mixer to avoid actual audio initialization
-        self.pygame_mixer_patcher = patch('pygame.mixer')
+        self.pygame_mixer_patcher = patch("pygame.mixer")
         self.mock_mixer = self.pygame_mixer_patcher.start()
 
         # Configure mock mixer
@@ -47,8 +47,8 @@ class TestAudio(Assertions):
         audio.sound_cache.clear()
         audio.active_channels.clear()
 
-        types.UserSoundOn = 0
-        types.Sound = 0
+        types.user_sound_on = 0
+        types.sound = 0
 
     def test_initialize_sound_success(self):
         """Test successful sound initialization."""
@@ -64,7 +64,7 @@ class TestAudio(Assertions):
 
     def test_initialize_sound_disabled(self):
         """Test sound initialization when sound is disabled."""
-        types.UserSoundOn = 0
+        types.user_sound_on = 0
 
         audio.initialize_sound()
 
@@ -107,10 +107,10 @@ class TestAudio(Assertions):
         mock_sound = MagicMock()
         mock_channel = MagicMock()
 
-        with patch.object(audio, 'get_sound') as mock_get_sound:
+        with patch.object(audio, "get_sound") as mock_get_sound:
             mock_get_sound.return_value = audio.SoundInfo(sound=mock_sound)
 
-            with patch('micropolis.audio.pygame.mixer.Channel') as mock_channel_class:
+            with patch("micropolis.audio.pygame.mixer.Channel") as mock_channel_class:
                 mock_channel_class.return_value = mock_channel
 
                 audio.make_sound("city", "test")
@@ -121,9 +121,9 @@ class TestAudio(Assertions):
 
     def test_make_sound_disabled(self):
         """Test sound playback when sound is disabled."""
-        types.UserSoundOn = 0
+        types.user_sound_on = 0
 
-        with patch.object(audio, 'get_sound') as mock_get_sound:
+        with patch.object(audio, "get_sound") as mock_get_sound:
             audio.make_sound("city", "test")
 
             mock_get_sound.assert_not_called()
@@ -132,7 +132,7 @@ class TestAudio(Assertions):
         """Test sound playback when not initialized."""
         audio.SoundInitialized = False
 
-        with patch.object(audio, 'get_sound') as mock_get_sound:
+        with patch.object(audio, "get_sound") as mock_get_sound:
             audio.make_sound("city", "test")
 
             mock_get_sound.assert_not_called()
@@ -141,7 +141,7 @@ class TestAudio(Assertions):
         """Test sound playback when sound not found."""
         audio.SoundInitialized = True
 
-        with patch.object(audio, 'get_sound') as mock_get_sound:
+        with patch.object(audio, "get_sound") as mock_get_sound:
             mock_get_sound.return_value = None
 
             audio.make_sound("city", "nonexistent")
@@ -152,7 +152,7 @@ class TestAudio(Assertions):
         """Test MakeSoundOn function."""
         audio.SoundInitialized = True
 
-        with patch.object(audio, 'make_sound') as mock_make_sound:
+        with patch.object(audio, "make_sound") as mock_make_sound:
             mock_view = MagicMock()
             audio.make_sound_on(mock_view, "city", "test")
 
@@ -166,10 +166,10 @@ class TestAudio(Assertions):
         mock_sound = MagicMock()
         mock_channel = MagicMock()
 
-        with patch.object(audio, 'get_sound') as mock_get_sound:
+        with patch.object(audio, "get_sound") as mock_get_sound:
             mock_get_sound.return_value = audio.SoundInfo(sound=mock_sound)
 
-            with patch('micropolis.audio.pygame.mixer.Channel') as mock_channel_class:
+            with patch("micropolis.audio.pygame.mixer.Channel") as mock_channel_class:
                 mock_channel_class.return_value = mock_channel
 
                 audio.start_bulldozer()
@@ -183,7 +183,7 @@ class TestAudio(Assertions):
         """Test bulldozer sound start when already playing."""
         audio.Dozing = True
 
-        with patch.object(audio, 'get_sound') as mock_get_sound:
+        with patch.object(audio, "get_sound") as mock_get_sound:
             audio.start_bulldozer()
 
             mock_get_sound.assert_not_called()
@@ -193,7 +193,7 @@ class TestAudio(Assertions):
         audio.SoundInitialized = True
         audio.Dozing = True
 
-        with patch('micropolis.audio.pygame.mixer.Channel') as mock_channel_class:
+        with patch("micropolis.audio.pygame.mixer.Channel") as mock_channel_class:
             mock_channel = MagicMock()
             mock_channel_class.return_value = mock_channel
 
@@ -215,7 +215,7 @@ class TestAudio(Assertions):
 
     def test_do_start_sound(self):
         """Test DoStartSound function."""
-        with patch.object(audio, 'make_sound') as mock_make_sound:
+        with patch.object(audio, "make_sound") as mock_make_sound:
             audio.do_start_sound("city", "test")
 
             mock_make_sound.assert_called_once_with("city", "test")
@@ -244,7 +244,7 @@ class TestAudio(Assertions):
 
     def test_get_sound_load_new(self):
         """Test loading a new sound."""
-        with patch.object(audio, 'load_sound') as mock_load_sound:
+        with patch.object(audio, "load_sound") as mock_load_sound:
             sound_info = audio.SoundInfo(sound=MagicMock(), resource_id="test")
             mock_load_sound.return_value = sound_info
 
@@ -261,12 +261,12 @@ class TestAudio(Assertions):
         test_sound_path = os.path.join(sound_dir, "beep.wav")
 
         # Mock pygame.mixer.Sound to avoid actual file loading
-        with patch('micropolis.audio.pygame.mixer.Sound') as mock_sound_class:
+        with patch("micropolis.audio.pygame.mixer.Sound") as mock_sound_class:
             mock_sound = MagicMock()
             mock_sound_class.return_value = mock_sound
 
             # Mock os.path.exists to return True for our test file
-            with patch('os.path.exists') as mock_exists:
+            with patch("os.path.exists") as mock_exists:
                 mock_exists.return_value = True
 
                 result = audio.load_sound("beep")
@@ -277,7 +277,7 @@ class TestAudio(Assertions):
 
     def test_load_sound_not_found(self):
         """Test sound loading when file not found."""
-        with patch('os.path.exists') as mock_exists:
+        with patch("os.path.exists") as mock_exists:
             mock_exists.return_value = False
 
             result = audio.load_sound("nonexistent")
@@ -291,11 +291,11 @@ class TestAudio(Assertions):
 
         # Initialized but disabled
         audio.SoundInitialized = True
-        types.UserSoundOn = 0
+        types.user_sound_on = 0
         self.assertFalse(audio.is_sound_enabled())
 
         # Enabled
-        types.UserSoundOn = 1
+        types.user_sound_on = 1
         self.assertTrue(audio.is_sound_enabled())
 
     def test_get_channel_count(self):
@@ -312,7 +312,7 @@ class TestAudio(Assertions):
         """Test preloading sounds."""
         audio.SoundInitialized = True
 
-        with patch.object(audio, 'get_sound') as mock_get_sound:
+        with patch.object(audio, "get_sound") as mock_get_sound:
             audio.preload_sounds(["sound1", "sound2"])
 
             self.assertEqual(mock_get_sound.call_count, 2)
@@ -321,14 +321,14 @@ class TestAudio(Assertions):
 
     def test_preload_sounds_not_initialized(self):
         """Test preloading sounds when not initialized."""
-        with patch.object(audio, 'get_sound') as mock_get_sound:
+        with patch.object(audio, "get_sound") as mock_get_sound:
             audio.preload_sounds(["sound1"])
 
             mock_get_sound.assert_not_called()
 
     def test_tcl_commands_initialize_sound(self):
         """Test TCL initialize_sound command."""
-        with patch.object(audio, 'initialize_sound') as mock_init:
+        with patch.object(audio, "initialize_sound") as mock_init:
             result = audio.AudioCommand.handle_command("initialize_sound")
 
             self.assertEqual(result, "")
@@ -336,7 +336,7 @@ class TestAudio(Assertions):
 
     def test_tcl_commands_make_sound(self):
         """Test TCL make_sound command."""
-        with patch.object(audio, 'make_sound') as mock_make:
+        with patch.object(audio, "make_sound") as mock_make:
             result = audio.AudioCommand.handle_command("make_sound", "city", "test")
 
             self.assertEqual(result, "")
@@ -344,7 +344,7 @@ class TestAudio(Assertions):
 
     def test_tcl_commands_start_bulldozer(self):
         """Test TCL start_bulldozer command."""
-        with patch.object(audio, 'start_bulldozer') as mock_start:
+        with patch.object(audio, "start_bulldozer") as mock_start:
             result = audio.AudioCommand.handle_command("start_bulldozer")
 
             self.assertEqual(result, "")
@@ -352,7 +352,7 @@ class TestAudio(Assertions):
 
     def test_tcl_commands_stop_bulldozer(self):
         """Test TCL stop_bulldozer command."""
-        with patch.object(audio, 'stop_bulldozer') as mock_stop:
+        with patch.object(audio, "stop_bulldozer") as mock_stop:
             result = audio.AudioCommand.handle_command("stop_bulldozer")
 
             self.assertEqual(result, "")
@@ -360,7 +360,7 @@ class TestAudio(Assertions):
 
     def test_tcl_commands_sound_off(self):
         """Test TCL sound_off command."""
-        with patch.object(audio, 'sound_off') as mock_off:
+        with patch.object(audio, "sound_off") as mock_off:
             result = audio.AudioCommand.handle_command("sound_off")
 
             self.assertEqual(result, "")
