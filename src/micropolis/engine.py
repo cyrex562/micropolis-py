@@ -11,6 +11,11 @@ import os
 import signal
 import sys
 import time
+import signal
+from typing import Optional, List
+import argparse
+
+
 from typing import TYPE_CHECKING
 
 import pygame
@@ -35,7 +40,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .types import Sim
-
 
 # ============================================================================
 # Global Simulation State
@@ -78,6 +82,7 @@ StartupGameLevel: int = 0
 # ============================================================================
 # View Management Functions
 # ============================================================================
+
 
 
 # ported from InvalidateMaps
@@ -423,6 +428,7 @@ def _blit_overlay_panels(screen) -> None:
 # ============================================================================
 # Exit and Signal Handling
 # ============================================================================
+
 
 
 def sim_exit(val: int) -> None:
@@ -1056,6 +1062,8 @@ def main() -> int:
     """
     logger.info(f"Welcome to Python Micropolis version {MicropolisVersion}")
     logger.info("Copyright (C) 2002 by Electronic Arts, Maxis. All rights reserved.")
+
+    app_config: AppConfig = AppConfig()
 
     # Parse command line arguments
     # try:
