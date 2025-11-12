@@ -21,21 +21,21 @@ class TestEvaluation(Assertions):
     def setUp(self):
         """Set up test fixtures before each test method."""
         # Reset evaluation state
-        evaluation.EvalValid = 0
-        evaluation.CityYes = 0
-        evaluation.CityNo = 0
-        evaluation.ProblemTable = [0] * types.PROBNUM
-        evaluation.ProblemTaken = [0] * types.PROBNUM
-        evaluation.ProblemVotes = [0] * types.PROBNUM
-        evaluation.ProblemOrder = [0] * 4
-        evaluation.CityPop = 0
-        evaluation.deltaCityPop = 0
-        evaluation.CityAssValue = 0
-        evaluation.CityClass = 0
-        evaluation.CityScore = 0
-        evaluation.deltaCityScore = 0
-        evaluation.AverageCityScore = 0
-        evaluation.TrafficAverage = 0
+        evaluation.eval_valid = 0
+        evaluation.city_yes = 0
+        evaluation.city_no = 0
+        evaluation.problem_table = [0] * types.PROBNUM
+        evaluation.problem_taken = [0] * types.PROBNUM
+        evaluation.problem_votes = [0] * types.PROBNUM
+        evaluation.problem_order = [0] * 4
+        evaluation.city_pop = 0
+        evaluation.delta_city_pop = 0
+        evaluation.city_ass_value = 0
+        evaluation.city_class = 0
+        evaluation.city_score = 0
+        evaluation.delta_city_score = 0
+        evaluation.average_city_score = 0
+        evaluation.traffic_average = 0
 
         # Reset global simulation state used by evaluation
         types.total_pop = 0
@@ -71,19 +71,19 @@ class TestEvaluation(Assertions):
     def test_eval_init(self):
         """Test evaluation initialization."""
         # Set some non-zero values first
-        evaluation.CityScore = 600
-        evaluation.CityYes = 50
-        evaluation.ProblemVotes[0] = 10
+        evaluation.city_score = 600
+        evaluation.city_yes = 50
+        evaluation.problem_votes[0] = 10
 
-        evaluation.EvalInit()
+        evaluation.EvalInit(context)
 
-        self.assertEqual(evaluation.CityYes, 0)
-        self.assertEqual(evaluation.CityNo, 0)
-        self.assertEqual(evaluation.CityPop, 0)
-        self.assertEqual(evaluation.CityScore, 500)  # Should be set to 500
-        self.assertEqual(evaluation.EvalValid, 1)
-        self.assertEqual(sum(evaluation.ProblemVotes), 0)
-        self.assertEqual(sum(evaluation.ProblemOrder), 0)
+        self.assertEqual(evaluation.city_yes, 0)
+        self.assertEqual(evaluation.city_no, 0)
+        self.assertEqual(evaluation.city_pop, 0)
+        self.assertEqual(evaluation.city_score, 500)  # Should be set to 500
+        self.assertEqual(evaluation.eval_valid, 1)
+        self.assertEqual(sum(evaluation.problem_votes), 0)
+        self.assertEqual(sum(evaluation.problem_order), 0)
 
     def test_get_ass_value(self):
         """Test assessed value calculation."""
@@ -99,7 +99,7 @@ class TestEvaluation(Assertions):
         types.coal_pop = 3
         types.nuclear_pop = 2
 
-        evaluation.GetAssValue()
+        evaluation.GetAssValue(context)
 
         # Calculate expected value
         expected = (
@@ -114,7 +114,7 @@ class TestEvaluation(Assertions):
             + 3 * 3000
             + 2 * 6000
         ) * 1000
-        self.assertEqual(evaluation.CityAssValue, expected)
+        self.assertEqual(evaluation.city_ass_value, expected)
 
     def test_do_pop_num_village(self):
         """Test population calculation for village (smallest class)."""
@@ -122,11 +122,11 @@ class TestEvaluation(Assertions):
         types.com_pop = 5
         types.ind_pop = 3
 
-        evaluation.DoPopNum()
+        evaluation.DoPopNum(context)
 
         expected_pop = (10 + 5 * 8 + 3 * 8) * 20
-        self.assertEqual(evaluation.CityPop, expected_pop)
-        self.assertEqual(evaluation.CityClass, 0)  # Village
+        self.assertEqual(evaluation.city_pop, expected_pop)
+        self.assertEqual(evaluation.city_class, 0)  # Village
 
     def test_do_pop_num_megalopolis(self):
         """Test population calculation for megalopolis (largest class)."""
@@ -134,12 +134,12 @@ class TestEvaluation(Assertions):
         types.com_pop = 10000
         types.ind_pop = 8000
 
-        evaluation.DoPopNum()
+        evaluation.DoPopNum(context)
 
         expected_pop = (50000 + 10000 * 8 + 8000 * 8) * 20
-        self.assertEqual(evaluation.CityPop, expected_pop)
-        self.assertGreater(evaluation.CityPop, 500000)  # Should be megalopolis
-        self.assertEqual(evaluation.CityClass, 5)  # Megalopolis
+        self.assertEqual(evaluation.city_pop, expected_pop)
+        self.assertGreater(evaluation.city_pop, 500000)  # Should be megalopolis
+        self.assertEqual(evaluation.city_class, 5)  # Megalopolis
 
     def test_do_problems(self):
         """Test problem analysis and voting."""
@@ -167,20 +167,20 @@ class TestEvaluation(Assertions):
             for _ in range(micropolis.constants.HWLDX)
         ]
 
-        evaluation.DoPopNum()  # Initialize population
-        evaluation.DoProblems()
+        evaluation.DoPopNum(context)  # Initialize population
+        evaluation.DoProblems(context)
 
         # Check that problems were calculated
-        self.assertGreater(evaluation.ProblemTable[0], 0)  # Crime
-        self.assertGreater(evaluation.ProblemTable[1], 0)  # Pollution
-        self.assertGreater(evaluation.ProblemTable[2], 0)  # Housing
-        self.assertGreater(evaluation.ProblemTable[3], 0)  # Taxes
-        self.assertGreater(evaluation.ProblemTable[4], 0)  # Traffic
-        self.assertGreater(evaluation.ProblemTable[5], 0)  # Unemployment
-        self.assertGreater(evaluation.ProblemTable[6], 0)  # Fire
+        self.assertGreater(evaluation.problem_table[0], 0)  # Crime
+        self.assertGreater(evaluation.problem_table[1], 0)  # Pollution
+        self.assertGreater(evaluation.problem_table[2], 0)  # Housing
+        self.assertGreater(evaluation.problem_table[3], 0)  # Taxes
+        self.assertGreater(evaluation.problem_table[4], 0)  # Traffic
+        self.assertGreater(evaluation.problem_table[5], 0)  # Unemployment
+        self.assertGreater(evaluation.problem_table[6], 0)  # Fire
 
         # Check that top problems were identified
-        self.assertTrue(any(x < 7 for x in evaluation.ProblemOrder))
+        self.assertTrue(any(x < 7 for x in evaluation.problem_order))
 
     def test_get_score_perfect_city(self):
         """Test score calculation for a near-perfect city."""
@@ -212,13 +212,13 @@ class TestEvaluation(Assertions):
         types.un_pwrd_z_cnt = 10
 
         # Initialize and calculate
-        evaluation.DoPopNum()
-        evaluation.DoProblems()
-        evaluation.GetScore()
+        evaluation.DoPopNum(context)
+        evaluation.DoProblems(context)
+        evaluation.GetScore(context)
 
         # Score should be positive and reasonable
-        self.assertGreater(evaluation.CityScore, 0)
-        self.assertLessEqual(evaluation.CityScore, 1000)
+        self.assertGreater(evaluation.city_score, 0)
+        self.assertLessEqual(evaluation.city_score, 1000)
 
     def test_get_score_poor_city(self):
         """Test score calculation for a poor city."""
@@ -250,44 +250,44 @@ class TestEvaluation(Assertions):
         types.un_pwrd_z_cnt = 100
 
         # Initialize and calculate
-        evaluation.DoPopNum()
-        evaluation.DoProblems()
-        evaluation.GetScore()
+        evaluation.DoPopNum(context)
+        evaluation.DoProblems(context)
+        evaluation.GetScore(context)
 
         # Score should be low
-        self.assertLess(evaluation.CityScore, 300)
-        self.assertGreaterEqual(evaluation.CityScore, 0)
+        self.assertLess(evaluation.city_score, 300)
+        self.assertGreaterEqual(evaluation.city_score, 0)
 
     def test_do_votes_high_score(self):
         """Test voting with high city score."""
-        evaluation.CityScore = 900
+        evaluation.city_score = 900
 
-        evaluation.DoVotes()
+        evaluation.DoVotes(context)
 
-        total_votes = evaluation.CityYes + evaluation.CityNo
+        total_votes = evaluation.city_yes + evaluation.city_no
         self.assertEqual(total_votes, 100)
         # Should have mostly yes votes
-        self.assertGreater(evaluation.CityYes, 80)
+        self.assertGreater(evaluation.city_yes, 80)
 
     def test_do_votes_low_score(self):
         """Test voting with low city score."""
-        evaluation.CityScore = 100
+        evaluation.city_score = 100
 
-        evaluation.DoVotes()
+        evaluation.DoVotes(context)
 
-        total_votes = evaluation.CityYes + evaluation.CityNo
+        total_votes = evaluation.city_yes + evaluation.city_no
         self.assertEqual(total_votes, 100)
         # Should have mostly no votes
-        self.assertGreater(evaluation.CityNo, 80)
+        self.assertGreater(evaluation.city_no, 80)
 
     def test_city_evaluation_no_population(self):
         """Test city evaluation with no population."""
         types.total_pop = 0
 
-        evaluation.CityEvaluation()
+        evaluation.CityEvaluation(context)
 
-        self.assertEqual(evaluation.EvalValid, 1)
-        self.assertEqual(evaluation.CityScore, 500)  # Default score
+        self.assertEqual(evaluation.eval_valid, 1)
+        self.assertEqual(evaluation.city_score, 500)  # Default score
 
     @patch("src.micropolis.evaluation.GetAssValue")
     @patch("src.micropolis.evaluation.DoPopNum")
@@ -307,7 +307,7 @@ class TestEvaluation(Assertions):
         """Test full city evaluation flow with population."""
         types.total_pop = 1000
 
-        evaluation.CityEvaluation()
+        evaluation.CityEvaluation(context)
 
         # Verify all functions were called
         mock_get_ass_value.assert_called_once()
@@ -316,7 +316,7 @@ class TestEvaluation(Assertions):
         mock_get_score.assert_called_once()
         mock_do_votes.assert_called_once()
         mock_change_eval.assert_called_once()
-        self.assertEqual(evaluation.EvalValid, 1)
+        self.assertEqual(evaluation.eval_valid, 1)
 
     def test_average_trf(self):
         """Test traffic average calculation."""
@@ -330,11 +330,11 @@ class TestEvaluation(Assertions):
             for _ in range(micropolis.constants.HWLDX)
         ]
 
-        result = evaluation.AverageTrf()
+        result = evaluation.AverageTrf(context)
 
         # Should calculate average traffic density
         self.assertGreater(result, 0)
-        self.assertEqual(evaluation.TrafficAverage, result)
+        self.assertEqual(evaluation.traffic_average, result)
 
     def test_get_unemployment(self):
         """Test unemployment calculation."""
@@ -342,7 +342,7 @@ class TestEvaluation(Assertions):
         types.com_pop = 100
         types.ind_pop = 100
 
-        result = evaluation.GetUnemployment()
+        result = evaluation.GetUnemployment(context)
 
         # Should calculate unemployment rate
         self.assertGreaterEqual(result, 0)
@@ -352,7 +352,7 @@ class TestEvaluation(Assertions):
         """Test fire danger calculation."""
         types.fire_pop = 10
 
-        result = evaluation.GetFire()
+        result = evaluation.GetFire(context)
 
         self.assertEqual(result, 50)  # 10 * 5
 
@@ -360,6 +360,6 @@ class TestEvaluation(Assertions):
         """Test fire danger calculation with clamping."""
         types.fire_pop = 100  # Would be 500, but clamped to 255
 
-        result = evaluation.GetFire()
+        result = evaluation.GetFire(context)
 
         self.assertEqual(result, 255)

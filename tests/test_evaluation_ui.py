@@ -168,7 +168,7 @@ class TestEvaluationDisplay(Assertions):
         """Test score card generation"""
         mock_current_year.return_value = 1950
 
-        evaluation_ui.do_score_card()
+        evaluation_ui.do_score_card(context)
 
         # Check that set_evaluation was called with correct data
         mock_set_eval.assert_called_once()
@@ -264,7 +264,7 @@ class TestEvaluationUIState(Assertions):
         # Reset EvalChanged
         types.eval_changed = 0
 
-        evaluation_ui.change_eval()
+        evaluation_ui.change_eval(context)
 
         self.assertEqual(types.eval_changed, 1)
 
@@ -273,7 +273,7 @@ class TestEvaluationUIState(Assertions):
         """Test score_doer when evaluation has changed"""
         types.eval_changed = 1
 
-        evaluation_ui.score_doer()
+        evaluation_ui.score_doer(context)
 
         mock_do_score.assert_called_once()
         self.assertEqual(types.eval_changed, 0)
@@ -283,7 +283,7 @@ class TestEvaluationUIState(Assertions):
         """Test score_doer when evaluation has not changed"""
         types.eval_changed = 0
 
-        evaluation_ui.score_doer()
+        evaluation_ui.score_doer(context)
 
         mock_do_score.assert_not_called()
 
@@ -333,7 +333,7 @@ class TestCommandInterface(Assertions):
     @patch("micropolis.sim_control.kick")
     def test_do_score_card_command(self, mock_kick, mock_do_score):
         """Test do_score_card_command"""
-        evaluation_ui.do_score_card_command()
+        evaluation_ui.do_score_card_command(context)
 
         mock_do_score.assert_called_once()
         mock_kick.assert_called_once()
@@ -341,7 +341,7 @@ class TestCommandInterface(Assertions):
     @patch("micropolis.sim_control.kick")
     def test_change_eval_command(self, mock_kick):
         """Test change_eval_command"""
-        evaluation_ui.change_eval_command()
+        evaluation_ui.change_eval_command(context)
 
         self.assertEqual(types.eval_changed, 1)
         mock_kick.assert_called_once()
@@ -350,7 +350,7 @@ class TestCommandInterface(Assertions):
     @patch("micropolis.sim_control.kick")
     def test_update_evaluation_command(self, mock_kick, mock_update_eval):
         """Test update_evaluation_command"""
-        evaluation_ui.update_evaluation_command()
+        evaluation_ui.update_evaluation_command(context)
 
         mock_update_eval.assert_called_once()
         mock_kick.assert_called_once()

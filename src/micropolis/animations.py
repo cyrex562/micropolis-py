@@ -11,10 +11,12 @@
 
 from typing import Any
 
-from . import animation, macros, types
+from . import animation, macros
+from .constants import WORLD_X, WORLD_Y
+from .context import AppContext
 
 
-def animate_tiles() -> None:
+def animate_tiles(context: AppContext) -> None:
     """
     Animate all tiles in the world map that have the ANIMBIT flag set.
 
@@ -28,9 +30,9 @@ def animate_tiles() -> None:
     Called from: moveWorld, doEditWindow, scoreDoer, doMapInFront, graphDoer
     """
     # Iterate through all tiles in the world map
-    for x in range(macros.WORLD_X):
-        for y in range(macros.WORLD_Y):
-            tile_value = types.map_data[x][y]
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            tile_value = context.map_data[x][y]
 
             # Check if this tile should be animated
             if tile_value & macros.ANIMBIT:
@@ -49,7 +51,7 @@ def animate_tiles() -> None:
                     new_tile_index = tile_index  # Fallback for invalid indices
 
                 # Restore the flags and update the tile
-                types.map_data[x][y] = new_tile_index | tile_flags
+                context.map_data[x][y] = new_tile_index | tile_flags
 
 
 # ============================================================================
@@ -57,7 +59,7 @@ def animate_tiles() -> None:
 # ============================================================================
 
 
-def count_animated_tiles() -> int:
+def count_animated_tiles(context: AppContext) -> int:
     """
     Count the total number of animated tiles in the world map.
 
@@ -67,12 +69,12 @@ def count_animated_tiles() -> int:
     count = 0
     for x in range(macros.WORLD_X):
         for y in range(macros.WORLD_Y):
-            if types.map_data[x][y] & macros.ANIMBIT:
+            if context.map_data[x][y] & macros.ANIMBIT:
                 count += 1
     return count
 
 
-def get_animated_tile_positions() -> list[tuple[int, int]]:
+def get_animated_tile_positions(context: AppContext) -> list[tuple[int, int]]:
     """
     Get a list of all positions containing animated tiles.
 
@@ -82,12 +84,14 @@ def get_animated_tile_positions() -> list[tuple[int, int]]:
     positions = []
     for x in range(macros.WORLD_X):
         for y in range(macros.WORLD_Y):
-            if types.map_data[x][y] & macros.ANIMBIT:
+            if context.map_data[x][y] & macros.ANIMBIT:
                 positions.append((x, y))
     return positions
 
 
-def get_animation_info(x: int, y: int) -> dict[str, Any] | None:
+def get_animation_info(context: AppContext,
+                       x: int,
+                       y: int) -> dict[str, Any] | None:
     """
     Get detailed animation information for a specific tile.
 
@@ -97,11 +101,14 @@ def get_animation_info(x: int, y: int) -> dict[str, Any] | None:
 
     Returns:
         Dictionary with animation information, or None if not animated or out of bounds
+        :rtype: dict[str, Any] | None
+        :type context: AppContext
+        :param context:
     """
     if not macros.TestBounds(x, y):
         return None
 
-    tile_value = types.map_data[x][y]
+    tile_value = context.map_data[x][y]
 
     if not (tile_value & macros.ANIMBIT):
         return None

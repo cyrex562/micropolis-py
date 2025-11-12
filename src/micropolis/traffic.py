@@ -84,7 +84,7 @@ def SetTrafMem() -> None:
                 density_y = types.s_map_y >> 1
                 z = types.trf_density[density_x][density_y]
                 z += 50
-                if (z > 240) and (not random.Rand(5)):
+                if (z > 240) and (not random.rand(5)):
                     z = 240
                     # Set police car destination
                     types.traf_max_x = types.s_map_x << 4

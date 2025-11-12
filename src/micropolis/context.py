@@ -1,6 +1,6 @@
 import time
 
-from micropolis.constants import (
+from .constants import (
     HWLDX,
     HWLDY,
     NMAPS,
@@ -9,18 +9,14 @@ from micropolis.constants import (
     SM_X,
     SM_Y,
     WORLD_X,
-    WORLD_Y,
+    WORLD_Y, OBJN, PWRMAPSIZE, HISTORIES, PROBNUM, RESBASE,
 )
-from micropolis.types import (
-    HISTORIES,
-    OBJN,
-    PROBNUM,
-)
-from micropolis.view_types import XDisplay
+
+from .view_types import XDisplay
 from pydantic import BaseModel, Field
 
-from micropolis.app_config import AppConfig
-from micropolis.sim import Sim
+from .app_config import AppConfig
+from .sim import Sim
 
 from src.micropolis.constants import residentialState, networkState
 
@@ -156,8 +152,8 @@ class AppContext(BaseModel):
     city_file_name: str = Field(default="untitled.micropolis")
     startup_name: str = Field(default="")
 
-    starting_year: int = Field(default=1900)
-    city_time: int = Field(default=0)
+    # starting_year: int = Field(default=1900)
+    # city_time: int = Field(default=0)
     last_city_time: int = Field(default=0)
     last_city_month: int = Field(default=0)
     last_city_year: int = Field(default=0)
@@ -171,7 +167,7 @@ class AppContext(BaseModel):
 
     game_level: int = Field(default=0)
     cycle: int = Field(default=0)
-    scenario_id: int = Field(default=0)
+    # scenario_id: int = Field(default=0)
     shake_now: int = Field(default=0)
     flood_count: int = Field(default=0)
     don_dither: int = Field(default=0)
@@ -398,6 +394,9 @@ class AppContext(BaseModel):
     cell_src: list[int] = Field(default_factory=list)
     cell_dst: list[int] = Field(default_factory=list)
 
+    must_draw_curr_percents: bool = False
+    must_draw_budget_window: bool = False
+
     # start_time: float = 0.0
     # beat_time: float = 0.0
     # last_now_time: float = 0.0
@@ -406,4 +405,64 @@ class AppContext(BaseModel):
     # startup: int = 0
     # startup_game_level: int = 0
 
+    # Valve control
+    valve_flag: int = 0
+    crime_ramp: int = 0
+    pollute_ramp: int = 0
+    r_valve: int = 0
+    c_valve: int = 0
+    i_valve: int = 0
+
+    # Capacity limits
+    # res_cap: int = 0
+    # com_cap: int = 0
+    # ind_cap: int = 0
+
+    # Financial
+    cash_flow: int = 0
+    e_market: float = 4.0
+
+    # Disaster control
+    # disaster_event: int = 0
+    # disaster_wait: int = 0
+
+    # Scoring
+    # score_type: int = 0
+    # score_wait: int = 0
+
+    # Power statistics
+    # pwrd_z_cnt: int = 0
+    # un_pwrd_z_cnt: int = 0
+    new_power: int = 0
+
+    # Tax averaging
+    av_city_tax: int = 0
+
+    # Cycle counters
+    scycle: int = 0
+    fcycle: int = 0
+    spdcycle: int = 0
+
+    # Initial evaluation flag
+    # do_initial_eval: int = 0
+
+    # Melt down coordinates
+    # melt_x: int = 0
+    # melt_y: int = 0
+
+    eval_valid: int = 0
+    # city_yes: int = 0
+    # city_no: int = 0
+    # problem_table: list[int] = [0] * types.PROBNUM
+    problem_taken: list[int] = [0] * types.PROBNUM
+    # problem_votes: list[int] = [0] * types.PROBNUM  # votes for each problem
+    problem_order: list[int] = [0] * 4  # sorted index to above
+    # city_pop: int = 0
+    # delta_city_pop: int = 0
+    # city_ass_value: int = 0
+    # city_class: int = 0  # 0..5
+    # city_score: int = 0
+    # delta_city_score: int = 0
+    average_city_score: int = 0
+    # traffic_average: int = 0
 # END OF FILE

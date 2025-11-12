@@ -7,8 +7,12 @@ animation effects for time progression.
 """
 
 import pygame
+import logging
 
-from . import types
+
+from src.micropolis.context import AppContext
+
+logger = logging.getLogger()
 
 # ============================================================================
 # Constants
@@ -139,7 +143,7 @@ class SimDate:
         self.animation_years.clear()
         self.needs_redraw = True
 
-    def update_date(self) -> None:
+    def update_date(self, context: AppContext) -> None:
         """
         Update the date from CityTime.
 
@@ -147,8 +151,8 @@ class SimDate:
         """
         # Calculate current date from CityTime
         # CityTime increments every game tick, 48 ticks = 1 year, 4 ticks = 1 month
-        current_year = (types.city_time // 48) + types.starting_year
-        current_month = (types.city_time // 4) % 12
+        current_year = (context.city_time // 48) + context.starting_year
+        current_month = (context.city_time // 4) % 12
 
         # Check if date has changed
         if current_year != self.last_year or current_month != self.last_month:
@@ -208,7 +212,8 @@ class SimDate:
         """Initialize font for rendering"""
         try:
             self.font = pygame.font.Font(DEFAULT_FONT_NAME, DEFAULT_FONT_SIZE)
-        except Exception:
+        except Exception as ex:
+            logger.exception(f"failed to load font: {ex}")
             self.font = pygame.font.SysFont(None, DEFAULT_FONT_SIZE)
 
     def _compute_geometry(self) -> tuple:
@@ -361,14 +366,15 @@ def remove_date_display(date_display: SimDate) -> None:
 # ============================================================================
 
 
-def update_date_displays() -> None:
+def update_date_displays(context: AppContext) -> None:
     """
     Update all date display instances.
 
     Called from main game loop to update date displays.
+    :param context:
     """
     for date_display in _date_displays:
-        date_display.update_date()
+        date_display.update_date(context)
         if date_display.needs_redraw:
             date_display.render()
 
@@ -535,36 +541,39 @@ def set_date(date_display: SimDate, month: int, year: int) -> None:
 # ============================================================================
 
 
-def get_current_month_name() -> str:
+def get_current_month_name(context: AppContext) -> str:
     """
     Get the name of the current month based on CityTime.
 
     Returns:
         Month name abbreviation
+        :param context:
     """
-    current_month = (types.city_time // 4) % 12
+    current_month = (context.city_time // 4) % 12
     return MONTH_NAMES[current_month]
 
 
-def get_current_year() -> int:
+def get_current_year(context: AppContext) -> int:
     """
     Get the current year based on CityTime.
 
     Returns:
         Current year
+        :param context:
     """
-    return (types.city_time // 48) + types.starting_year
+    return (context.city_time // 48) + context.starting_year
 
 
-def format_date_string() -> str:
+def format_date_string(context: AppContext) -> str:
     """
     Format current date as a string.
 
     Returns:
         Formatted date string (e.g., "Jan 1900")
+        :param context:
     """
-    month_name = get_current_month_name()
-    year = get_current_year()
+    month_name = get_current_month_name(context)
+    year = get_current_year(context)
     return f"{month_name} {year}"
 
 

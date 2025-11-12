@@ -8,7 +8,8 @@ in a pygame-compatible format.
 
 import pygame
 
-from . import evaluation, sim_control, types
+from src.micropolis import sim_control
+from src.micropolis.context import AppContext
 
 # ============================================================================
 # City Classification and Level Strings
@@ -44,14 +45,14 @@ _evaluation_surface: pygame.Surface | None = None
 # ============================================================================
 
 
-def current_year() -> int:
+def current_year(context: AppContext) -> int:
     """
     Get the current game year.
 
     Ported from CurrentYear() in w_util.c.
     Returns the current year based on CityTime.
     """
-    return (types.city_time // 48) + types.starting_year
+    return (context.city_time // 48) + context.starting_year
 
 
 def make_dollar_decimal_str(num_str: str, dollar_str: str, max_len: int = 32) -> str:
@@ -109,46 +110,47 @@ def make_dollar_decimal_str(num_str: str, dollar_str: str, max_len: int = 32) ->
 # ============================================================================
 
 
-def do_score_card() -> None:
+def do_score_card(context: AppContext) -> None:
     """
     Generate and display the city evaluation scorecard.
 
     Ported from doScoreCard() in w_eval.c.
     Collects evaluation data and formats it for display.
+    :param context:
     """
     # Format title
-    title = f"City Evaluation  {current_year()}"
+    title = f"City Evaluation  {current_year(context)}"
 
     # Format percentages
-    goodyes = f"{evaluation.CityYes}%"
-    goodno = f"{evaluation.CityNo}%"
+    goodyes = f"{context.city_yes}%"
+    goodno = f"{context.city_no}%"
 
     # Format problem percentages
     prob_percentages = []
     for i in range(4):
-        if evaluation.ProblemVotes[evaluation.ProblemOrder[i]]:
+        if context.problem_votes[context.problem_order[i]]:
             prob_percentages.append(
-                f"{evaluation.ProblemVotes[evaluation.ProblemOrder[i]]}%"
+                f"{context.problem_votes[context.problem_order[i]]}%"
             )
         else:
             prob_percentages.append("")
 
     # Format statistics
-    pop = f"{evaluation.CityPop}"
-    delta = f"{evaluation.deltaCityPop}"
+    pop = f"{context.city_pop}"
+    delta = f"{context.delta_city_pop}"
 
     # Format assessed value
-    assessed_dollars = make_dollar_decimal_str(str(evaluation.CityAssValue), "")
+    assessed_dollars = make_dollar_decimal_str(str(context.city_ass_value), "")
 
     # Format score and change
-    score = f"{evaluation.CityScore}"
-    changed = f"{evaluation.deltaCityScore}"
+    score = f"{context.city_score}"
+    changed = f"{context.delta_city_score}"
 
     # Get problem names
     problem_names = []
     for i in range(4):
-        problem_idx = evaluation.ProblemOrder[i]
-        if evaluation.ProblemVotes[problem_idx]:
+        problem_idx = context.problem_order[i]
+        if context.problem_votes[problem_idx]:
             problem_names.append(PROBLEM_STRINGS[problem_idx])
         else:
             problem_names.append("")
@@ -172,34 +174,36 @@ def do_score_card() -> None:
         pop,
         delta,
         assessed_dollars,
-        CITY_CLASS_STRINGS[evaluation.CityClass],
-        CITY_LEVEL_STRINGS[types.game_level],
+        CITY_CLASS_STRINGS[context.city_class],
+        CITY_LEVEL_STRINGS[context.game_level],
         goodyes,
         goodno,
         title,
     )
 
 
-def change_eval() -> None:
+def change_eval(context: AppContext) -> None:
     """
     Mark evaluation for update.
 
     Ported from ChangeEval() in w_eval.c.
     Sets flag to trigger evaluation display update.
+    :param context:
     """
-    types.eval_changed = 1
+    context.eval_changed = 1
 
 
-def score_doer() -> None:
+def score_doer(context: AppContext) -> None:
     """
     Handle evaluation display updates.
 
     Ported from scoreDoer() in w_eval.c.
     Called from UI update loop to refresh evaluation display.
+    :param context:
     """
-    if types.eval_changed:
-        do_score_card()
-        types.eval_changed = 0
+    if context.eval_changed:
+        do_score_card(context)
+        context.eval_changed = 0
 
 
 def set_evaluation(
@@ -423,34 +427,37 @@ def get_problem_string(problem_idx: int) -> str:
 # ============================================================================
 
 
-def do_score_card_command() -> None:
+def do_score_card_command(context: AppContext) -> None:
     """
     Execute score card display.
 
     Ported from SimCmdDoScoreCard in w_sim.c.
     TCL command interface for triggering evaluation display.
+    :param context:
     """
-    do_score_card()
+    do_score_card(context)
     sim_control.kick()
 
 
-def change_eval_command() -> None:
+def change_eval_command(context: AppContext) -> None:
     """
     Mark evaluation for change.
 
     Ported from SimCmdChangeEval in w_sim.c.
     TCL command interface for marking evaluation as changed.
+    :param context:
     """
-    change_eval()
+    change_eval(context)
     sim_control.kick()
 
 
-def update_evaluation_command() -> None:
+def update_evaluation_command(context: AppContext) -> None:
     """
     Update evaluation display.
 
     Ported from SimCmdUpdateEvaluation in w_sim.c.
     TCL command interface for updating evaluation UI.
+    :param context:
     """
     update_evaluation()
     sim_control.kick()

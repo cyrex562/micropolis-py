@@ -12,33 +12,28 @@ import sys
 import time
 from typing import TYPE_CHECKING
 
+from . import initialization, graphics_setup
+from .allocation import init_map_arrays
 from .audio import initialize_sound
 import pygame
 from result import Err, Ok, Result
 
 from .app_config import AppConfig
-from .constants import DEFAULT_STARTING_FUNDS, RESBASE, WORLD_X, WORLD_Y, DIRT
+from .constants import DEFAULT_STARTING_FUNDS, RESBASE, WORLD_X, WORLD_Y, DIRT, MAP_W, MAP_H, EDITOR_W, EDITOR_H, NMAPS, \
+    MICROPOLIS_VERSION
 from .context import AppContext
+from .editor import do_update_editor
+from .evaluation_ui import get_evaluation_surface, score_doer, update_evaluation
+from .graphics_setup import init_graphics
+from .graphs import render_graph_panel, update_all_graphs, request_graph_panel_redraw
+from .initialization import InitWillStuff
 from .macros import LOMASK, ZONEBIT
+from .map_view import MemDrawMap
 
-from .sim_view import create_map_view, create_editor_view
-from .view_types import MakeNewSimGraph, MakeNewSimDate, MakeNewXDisplay
-
-from . import (
-    allocation,
-    editor_view,
-    evaluation_ui,
-    graphics_setup,
-    graphs,
-    initialization,
-    macros,
-    map_view,
-    simulation,
-    ui_utilities,
-    view_types,
-    sim,
-
-)
+from .sim_view import create_map_view, create_editor_view, SimView
+from .simulation import sim_frame
+from .ui_utilities import handle_keyboard_shortcut
+from .view_types import MakeNewSimGraph, MakeNewSimDate, MakeNewXDisplay, XDisplay, Map_Class
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +148,7 @@ def invalidate_errors(sim: Sim) -> Result[None, Exception]:
 # ============================================================================
 
 
-def get_or_create_display(context: AppContext) -> view_types.XDisplay:
+def get_or_create_display(context: AppContext) -> XDisplay:
     """Ensure there is a display object available for view wiring."""
     if context.main_display is None:
         context.main_display = MakeNewXDisplay()
@@ -165,7 +160,7 @@ def get_or_create_display(context: AppContext) -> view_types.XDisplay:
 
 def set_current_tool(context: AppContext, tile_id: int) -> None:
     """Update the currently selected placement tile."""
-    context.current_tool_tile = tile_id & macros.LOMASK
+    context.current_tool_tile = tile_id & LOMASK
 
 
 def apply_tool_to_tile(context: AppContext,
@@ -313,7 +308,7 @@ def handle_tool_hotkey(context: AppContext, key: int, tool_hotkeys: dict[int, in
 #     # view.next = None
 
 
-def _iter_views(head: micropolis.sim_view.SimView | None):
+def _iter_views(head: SimView | None):
     """Iterate over a linked list of views."""
     current = head
     while current:
@@ -321,18 +316,18 @@ def _iter_views(head: micropolis.sim_view.SimView | None):
         current = current.next
 
 
-def _iter_all_views(sim_obj: micropolis.sim.Sim):
+def _iter_all_views(sim_obj: Sim):
     """Yield all editor and map views."""
     yield from _iter_views(sim_obj.editor)
     yield from _iter_views(sim_obj.map)
 
 
-def pan_editor_view(dx: int, dy: int, viewport: tuple[int, int]) -> None:
+def pan_editor_view(context: AppContext, dx: int, dy: int, viewport: tuple[int, int]) -> None:
     """Pan the editor preview by the requested pixel delta."""
-    if not sim or not sim.editor:
+    if not context.sim or not context.sim.editor:
         return
 
-    view = sim.editor
+    view = context.sim.editor
     width, height = viewport
     if width <= 0 or height <= 0:
         return
@@ -344,47 +339,54 @@ def pan_editor_view(dx: int, dy: int, viewport: tuple[int, int]) -> None:
     view.pan_y = max(0, min(max_y, view.pan_y + dy))
 
 
-def initialize_view_surfaces(graphics_module) -> Result[None, Exception]:
-    """Attach pygame surfaces and tile caches to all views."""
+def initialize_view_surfaces(context: AppContext, graphics_module) -> Result[None, Exception]:
+    """Attach pygame surfaces and tile caches to all views.
+    :param context:
+    :param graphics_module:
+    """
 
     sim_obj = ensure_sim_structures()
-    display = get_or_create_display()
+    display = get_or_create_display(context)
 
-    for view in _iter_all_views(sim_obj):
+    for view in _iter_all_views(context.sim):
         if view.x is None:
             view.x = display
         if view.surface is None:
             width, height = (
-                (micropolis.constants.MAP_W, micropolis.constants.MAP_H)
-                if view.class_id == view_types.Map_Class
-                else (micropolis.constants.EDITOR_W, micropolis.constants.EDITOR_H)
+                (MAP_W, MAP_H)
+                if view.class_id == Map_Class
+                else (EDITOR_W, EDITOR_H)
             )
             view.surface = pygame.Surface((width, height), pygame.SRCALPHA)
 
         try:
-            graphics_module.init_view_graphics(view)
+            context.init_view_graphics(view)
         except Exception as exc:  # pragma: no cover - defensive
             logger.exception(f"Warning: Failed to initialize view graphics: {exc}")
             return Err(exc)
     return Ok(None)
 
 
-def blit_views_to_screen(
-    screen, map_area: tuple[int, int, int, int], editor_area: tuple[int, int, int, int]
-) -> None:
-    """Composite map/editor surfaces onto the main pygame screen."""
+def blit_views_to_screen(context: AppContext,
+                         screen,
+                         map_area: tuple[int, int, int, int],
+                         editor_area: tuple[int, int, int, int]
+                         ) -> None:
+    """Composite map/editor surfaces onto the main pygame screen.
+    :param screen: 
+    """
 
-    screen.fill((64, 128, 64))
+    context.fill((64, 128, 64))
 
-    if sim and sim.map and sim.map.surface:
+    if context.sim and context.sim.map and context.sim.map.surface:
         map_surface = pygame.transform.smoothscale(
-            sim.map.surface, (map_area[2], map_area[3])
+            context.sim.map.surface, (map_area[2], map_area[3])
         )
-        screen.blit(map_surface, (map_area[0], map_area[1]))
+        context.blit(map_surface, (map_area[0], map_area[1]))
 
-    if sim and sim.editor and sim.editor.surface:
-        editor_surface = sim.editor.surface
-        viewport_w, viewport_h = editor_viewport_size
+    if context.sim and context.sim.editor and context.sim.editor.surface:
+        editor_surface = context.sim.editor.surface
+        viewport_w, viewport_h = context.editor_viewport_size
         if viewport_w <= 0 or viewport_h <= 0:
             viewport_w, viewport_h = editor_area[2], editor_area[3]
 
@@ -392,26 +394,26 @@ def blit_views_to_screen(
         viewport_h = min(viewport_h, editor_surface.get_height())
         max_x = max(0, editor_surface.get_width() - viewport_w)
         max_y = max(0, editor_surface.get_height() - viewport_h)
-        pan_x = max(0, min(max_x, sim.editor.pan_x))
-        pan_y = max(0, min(max_y, sim.editor.pan_y))
+        pan_x = max(0, min(max_x, context.sim.editor.pan_x))
+        pan_y = max(0, min(max_y, context.sim.editor.pan_y))
 
         rect = pygame.Rect(pan_x, pan_y, viewport_w, viewport_h)
         region = editor_surface.subsurface(rect).copy()
         scaled = pygame.transform.smoothscale(region, (editor_area[2], editor_area[3]))
-        screen.blit(scaled, (editor_area[0], editor_area[1]))
+        context.blit(scaled, (editor_area[0], editor_area[1]))
 
-    _blit_overlay_panels(screen)
+    _blit_overlay_panels(context)
 
 
 def _blit_overlay_panels(screen) -> None:
     """Render graph/evaluation overlays when their toggles are enabled."""
     overlays = []
 
-    graph_surface = graphs.render_graph_panel()
+    graph_surface = render_graph_panel()
     if graph_surface is not None:
         overlays.append(graph_surface)
 
-    evaluation_surface = evaluation_ui.get_evaluation_surface()
+    evaluation_surface = get_evaluation_surface()
     if evaluation_surface is not None:
         overlays.append(evaluation_surface)
 
@@ -434,7 +436,7 @@ def _blit_overlay_panels(screen) -> None:
 # ============================================================================
 
 
-def sim_exit(val: int) -> None:
+def sim_exit(context: AppContext, val: int) -> None:
     """
     Signal that the simulation should exit.
 
@@ -443,12 +445,12 @@ def sim_exit(val: int) -> None:
     Args:
         val: Exit code
     """
-    global tk_must_exit, exit_return
-    tk_must_exit = True
-    exit_return = val
+    # global tk_must_exit, exit_return
+    context.tk_must_exit = True
+    context.exit_return = val
 
 
-def sim_really_exit(val: int) -> None:
+def sim_really_exit(context: AppContext, val: int) -> None:
     """
     Actually exit the simulation.
 
@@ -456,21 +458,23 @@ def sim_really_exit(val: int) -> None:
 
     Args:
         val: Exit code
+        :param context:
     """
     # Stop any running simulation
-    DoStopMicropolis()
+    DoStopMicropolis(context)
     sys.exit(val)
 
 
-def SignalExitHandler(signum: int, frame) -> None:
+def SignalExitHandler(context: AppContext, signum: int, frame) -> None:
     """
     Handle Unix signals for graceful shutdown.
 
     Ported from SignalExitHandler() in sim.c.
+    :param context:
     """
     print("\nMicropolis has been terminated by a signal.")
     print("Exiting gracefully...")
-    sim_really_exit(-1)
+    sim_really_exit(context, -1)
 
 
 def signal_init(context: AppContext) -> Result[None, Exception]:
@@ -545,7 +549,7 @@ def sim_init(context: AppContext) -> Result[None, Exception]:
     # Initialize various systems
     # InitializeSound(context)
     initialize_sound(context)
-    allocation.init_map_arrays(context)
+    init_map_arrays(context)
     initGraphs(context)
     InitFundingLevel(context)
     setUpMapProcs(context)
@@ -553,9 +557,9 @@ def sim_init(context: AppContext) -> Result[None, Exception]:
     ResetMapState(context)
     ResetEditorState(context)
     ClearMap(context)
-    initialization.InitWillStuff(context)
-    SetFunds(context, 5000)
-    SetGameLevelFunds(context, startup_game_level)
+    InitWillStuff(context)
+    SetFunds(context, 0)
+    SetGameLevelFunds(context, context.startup_game_level)
     setSpeed(context, 0)
     setSkips(context, 0)
 
@@ -573,14 +577,14 @@ def sim_update(context: AppContext) -> Result[None, Exception]:
 
     Ported from sim_update() in sim.c.
     """
-    global flagBlink
+    # global flagBlink
 
     now_time = time.time()
     context.flag_blink = 1 if (now_time % 1.0) < 0.5 else -1
 
-    if types.sim_speed and not heat_steps:
-        global tiles_animated
-        tiles_animated = 0
+    if context.sim_speed and not context.heat_steps:
+        # global tiles_animated
+        context.tiles_animated = 0
 
     sim_update_editors(context)
     sim_update_maps(context)
@@ -589,40 +593,42 @@ def sim_update(context: AppContext) -> Result[None, Exception]:
     sim_update_evaluations(context)
 
     UpdateFlush()
+    
+    return Ok(None)
 
 
-def sim_update_editors() -> None:
+def sim_update_editors(context: AppContext) -> None:
     """
     Update all editor views.
 
     Ported from sim_update_editors() in sim.c.
     """
-    if not sim:
+    if not context.sim:
         return
 
-    view = sim.editor
+    view = context.sim.editor
     while view:
         # Mark view as invalid to force redraw
         view.invalid = True
-        DoUpdateEditor(view)
+        DoUpdateEditor(view, context)
         view = view.next
 
     DoUpdateHeads()
 
 
-def sim_update_maps() -> None:
+def sim_update_maps(context: AppContext) -> None:
     """
     Update all map views.
 
     Ported from sim_update_maps() in sim.c.
     """
-    if not sim:
+    if not context.sim:
         return
 
-    view = sim.map
+    view = context.sim.map
     while view:
         must_update_map = (
-            types.new_map_flags[view.map_state] or types.new_map or types.shake_now
+            context.new_map_flags[view.map_state] or context.new_map or context.shake_now
         )
         if must_update_map:
             view.invalid = True
@@ -635,9 +641,9 @@ def sim_update_maps() -> None:
 
         view = view.next
 
-    types.new_map = 0
-    for i in range(micropolis.constants.NMAPS):
-        types.new_map_flags[i] = 0
+    context.new_map = 0
+    for i in range(NMAPS):
+        context.new_map_flags[i] = 0
 
 
 def sim_update_graphs() -> None:
@@ -649,25 +655,26 @@ def sim_update_graphs() -> None:
     graphDoer()
 
 
-def sim_update_budgets() -> None:
+def sim_update_budgets(context: AppContext) -> None:
     """
     Update budget displays.
 
     Ported from sim_update_budgets() in sim.c.
+    :param context:
     """
-    if sim_skips != 0 and sim_skip != 0:
+    if context.sim_skips != 0 and context.sim_skip != 0:
         return
 
     UpdateBudgetWindow()
 
 
-def sim_update_evaluations() -> None:
+def sim_update_evaluations(context: AppContext) -> None:
     """
     Update evaluation displays.
 
     Ported from sim_update_evaluations() in sim.c.
     """
-    if sim_skips != 0 and sim_skip != 0:
+    if context.sim_skips != 0 and context.sim_skip != 0:
         return
 
     scoreDoer()
@@ -678,20 +685,20 @@ def sim_update_evaluations() -> None:
 # ============================================================================
 
 
-def sim_heat() -> None:
+def sim_heat(context: AppContext) -> None:
     """
     Run heat/cellular automata simulation.
 
     Ported from sim_heat() in sim.c.
     This appears to be an experimental feature for cellular automata simulation.
     """
-    global CellSrc, CellDst
+    # global CellSrc, CellDst
 
-    if CellSrc is None:
+    if context.cell_src is None:
         # Initialize heat simulation arrays
-        size = (micropolis.constants.WORLD_X + 2) * (micropolis.constants.WORLD_Y + 2)
-        CellSrc = [0] * size
-        CellDst = types.map_data[0]  # Point to main map
+        size = (WORLD_X + 2) * (WORLD_Y + 2)
+        context.cell_src = [0] * size
+        context.cell_dst = context.map_data[0]  # Point to main map
 
     # Heat simulation implementation would go here
     # This is a complex cellular automata system that appears experimental
@@ -704,7 +711,7 @@ def sim_heat() -> None:
 # ============================================================================
 
 
-def sim_timeout_loop(doSim: bool) -> None:
+def sim_timeout_loop(context: AppContext, doSim: bool) -> None:
     """
     Main timeout loop for simulation.
 
@@ -713,12 +720,12 @@ def sim_timeout_loop(doSim: bool) -> None:
     Args:
         doSim: Whether to run simulation step
     """
-    if types.sim_speed:
-        sim_loop(doSim)
+    if context.sim_speed:
+        sim_loop(context, doSim)
     DoTimeoutListen()
 
 
-def sim_loop(doSim: bool) -> None:
+def sim_loop(context: AppContext, doSim: bool) -> None:
     """
     Main simulation loop iteration.
 
@@ -726,23 +733,24 @@ def sim_loop(doSim: bool) -> None:
 
     Args:
         doSim: Whether to run simulation step
+        :param context:
     """
-    global sim_loops
+    # global sim_loops
 
-    if heat_steps:
+    if context.heat_steps:
         # Run heat simulation steps
-        for j in range(heat_steps):
-            sim_heat()
+        for j in range(context.heat_steps):
+            sim_heat(context)
         MoveObjects()
-        types.new_map = 1
+        context.new_map = 1
     else:
         # Run normal simulation
         if doSim:
-            simulation.SimFrame()
+            sim_frame(context)
         MoveObjects()
 
-    sim_loops += 1
-    sim_update()
+    context.sim_loops += 1
+    sim_update(context)
 
 
 # ============================================================================
@@ -750,10 +758,12 @@ def sim_loop(doSim: bool) -> None:
 # ============================================================================
 
 
-def DoStopMicropolis() -> None:
-    """Stop the Micropolis simulation (placeholder)"""
-    global tk_must_exit
-    tk_must_exit = True
+def DoStopMicropolis(context: AppContext) -> None:
+    """Stop the Micropolis simulation (placeholder)
+    :param context:
+    """
+    # global tk_must_exit
+    context.tk_must_exit = True
 
     try:
         from . import audio
@@ -782,15 +792,17 @@ def initGraphs() -> None:
     pass
 
 
-def InitFundingLevel() -> None:
-    """Initialize funding levels (placeholder)"""
-    SetFunds(DEFAULT_STARTING_FUNDS)
-    SetGameLevelFunds(startup_game_level)
+def InitFundingLevel(context: AppContext) -> None:
+    """Initialize funding levels (placeholder)
+    :param context:
+    """
+    SetFunds(context, DEFAULT_STARTING_FUNDS)
+    SetGameLevelFunds(context, context.startup_game_level)
 
 
 def setUpMapProcs() -> None:
     """Set up map processing (placeholder)"""
-    map_view.setUpMapProcs()
+    setUpMapProcs()
 
 
 def StopEarthquake() -> None:
@@ -808,43 +820,50 @@ def ResetEditorState() -> None:
     initialization.ResetEditorState()
 
 
-def ClearMap() -> None:
-    """Clear the map (placeholder)"""
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
-            types.map_data[x][y] = types.DIRT
-    types.new_map = 1
+def ClearMap(context: AppContext) -> None:
+    """Clear the map (placeholder)
+    :param context:
+    """
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            context.map_data[x][y] = context.DIRT
+    context.new_map = 1
 
 
-def SetFunds(amount: int) -> None:
-    """Set initial funds (placeholder)"""
-    types.SetFunds(max(0, amount))
+def SetFunds(context: AppContext, amount: int) -> None:
+    """Set initial funds (placeholder)
+    :param context:
+    """
+    context.SetFunds(context, max(0, amount))
 
 
-def SetGameLevelFunds(level: int) -> None:
+def SetGameLevelFunds(context: AppContext, level: int) -> None:
     """Set funds based on game level (placeholder)"""
     level_funds = [20000, 10000, 5000]
     bounded_level = max(0, min(level, len(level_funds) - 1))
-    SetFunds(level_funds[bounded_level])
+    SetFunds(context, level_funds[bounded_level])
 
 
-def setSpeed(speed: int) -> int:
-    """Set simulation speed"""
-    types.sim_speed = speed
+def setSpeed(context: AppContext, speed: int) -> int:
+    """Set simulation speed
+    :param speed:
+    :param context:
+    """
+    context.sim_speed = speed
     return 0
 
 
-def setSkips(skips: int) -> int:
+def setSkips(context: AppContext, skips: int) -> int:
     """Set simulation skips"""
-    global sim_skips
-    sim_skips = skips
+    # global sim_skips
+    context.sim_skips = skips
     return 0
 
 
 def graphDoer() -> None:
     """Update graph history buffers and refresh pygame overlays."""
-    graphs.update_all_graphs()
-    graphs.request_graph_panel_redraw()
+    update_all_graphs()
+    request_graph_panel_redraw()
 
 
 def UpdateBudgetWindow() -> None:
@@ -854,8 +873,8 @@ def UpdateBudgetWindow() -> None:
 
 def scoreDoer() -> None:
     """Update evaluation data and pygame panel state."""
-    evaluation_ui.score_doer()
-    evaluation_ui.update_evaluation()
+    score_doer(context)
+    update_evaluation()
 
 
 def UpdateFlush() -> None:
@@ -863,9 +882,12 @@ def UpdateFlush() -> None:
     pass
 
 
-def DoUpdateEditor(view) -> None:
-    """Update editor view"""
-    editor_view.DoUpdateEditor(view)
+def DoUpdateEditor(context: AppContext, view) -> None:
+    """Update editor view
+    :param context:
+    :param view:
+    """
+    do_update_editor(context, context.sim.editor)
 
 
 def DoUpdateHeads() -> None:
@@ -878,7 +900,7 @@ def DoUpdateMap(view) -> bool:
     if not view or not view.visible:
         return False
 
-    map_view.MemDrawMap(view)
+    MemDrawMap(view)
     view.invalid = False
     return True
 
@@ -898,137 +920,137 @@ def DoTimeoutListen() -> None:
 # ============================================================================
 
 
-def parse_arguments() -> argparse.Namespace:
-    """
-    Parse command line arguments.
-
-    Adapted from main() argument parsing in sim.c.
-    """
-    parser = argparse.ArgumentParser(
-        description="Micropolis City Simulation",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Game levels: 1: Easy, 2: Medium, 3: Hard
-Scenarios: 1: Dullsville, 2: San_Francisco, 3: Hamburg, 4: Bern,
-           5: Tokyo, 6: Detroit, 7: Boston, 8: Rio_de_Janeiro
-        """,
-    )
-
-    parser.add_argument(
-        "-g",
-        "--generate",
-        action="store_true",
-        help="Generate new terrain and start playing",
-    )
-
-    parser.add_argument(
-        "-l",
-        "--level",
-        type=str,
-        choices=["1", "easy", "2", "medium", "3", "hard"],
-        help="Game difficulty level",
-    )
-
-    parser.add_argument(
-        "-s",
-        "--scenario",
-        type=str,
-        choices=[
-            "1",
-            "Dullsville",
-            "2",
-            "San_Francisco",
-            "3",
-            "Hamburg",
-            "4",
-            "Bern",
-            "5",
-            "Tokyo",
-            "6",
-            "Detroit",
-            "7",
-            "Boston",
-            "8",
-            "Rio_de_Janeiro",
-        ],
-        help="Start with specific scenario",
-    )
-
-    parser.add_argument(
-        "-w",
-        "--wire-mode",
-        action="store_true",
-        help="Use networking mode (no shared memory)",
-    )
-
-    parser.add_argument(
-        "-m", "--multiplayer", action="store_true", help="Enable multiplayer mode"
-    )
-
-    parser.add_argument(
-        "-S",
-        "--sugar",
-        action="store_true",
-        help="Enable OLPC Sugar interface integration",
-    )
-
-    parser.add_argument(
-        "filename", nargs="?", help="City file to load (.cty) or new city name"
-    )
-
-    args = parser.parse_args()
-
-    # Process level argument
-    if args.level:
-        level_map = {"1": 0, "easy": 0, "2": 1, "medium": 1, "3": 2, "hard": 2}
-        global startup_game_level
-        startup_game_level = level_map[args.level.lower()]
-
-    # Process scenario argument
-    if args.scenario:
-        scenario_map = {
-            "1": 1,
-            "Dullsville": 1,
-            "2": 2,
-            "San_Francisco": 2,
-            "3": 3,
-            "Hamburg": 3,
-            "4": 4,
-            "Bern": 4,
-            "5": 5,
-            "Tokyo": 5,
-            "6": 6,
-            "Detroit": 6,
-            "7": 7,
-            "Boston": 7,
-            "8": 8,
-            "Rio_de_Janeiro": 8,
-        }
-        global startup
-        startup = scenario_map[args.scenario]
-
-    # Process other flags
-    global wire_mode, multi_player_mode, SugarMode
-    if args.wire_mode:
-        wire_mode = 1
-    if args.multiplayer:
-        multi_player_mode = 1
-    if args.sugar:
-        SugarMode = 1
-
-    # Process filename
-    if args.filename:
-        global startup_name
-        if args.generate:
-            # Generate new city with given name
-            startup = -1
-            startup_name = args.filename
-        else:
-            # Load existing city file
-            startup = -2
-            startup_name = args.filename
-
-    return args
+# def parse_arguments() -> argparse.Namespace:
+#     """
+#     Parse command line arguments.
+#
+#     Adapted from main() argument parsing in sim.c.
+#     """
+#     parser = argparse.ArgumentParser(
+#         description="Micropolis City Simulation",
+#         formatter_class=argparse.RawDescriptionHelpFormatter,
+#         epilog="""
+# Game levels: 1: Easy, 2: Medium, 3: Hard
+# Scenarios: 1: Dullsville, 2: San_Francisco, 3: Hamburg, 4: Bern,
+#            5: Tokyo, 6: Detroit, 7: Boston, 8: Rio_de_Janeiro
+#         """,
+#     )
+#
+#     parser.add_argument(
+#         "-g",
+#         "--generate",
+#         action="store_true",
+#         help="Generate new terrain and start playing",
+#     )
+#
+#     parser.add_argument(
+#         "-l",
+#         "--level",
+#         type=str,
+#         choices=["1", "easy", "2", "medium", "3", "hard"],
+#         help="Game difficulty level",
+#     )
+#
+#     parser.add_argument(
+#         "-s",
+#         "--scenario",
+#         type=str,
+#         choices=[
+#             "1",
+#             "Dullsville",
+#             "2",
+#             "San_Francisco",
+#             "3",
+#             "Hamburg",
+#             "4",
+#             "Bern",
+#             "5",
+#             "Tokyo",
+#             "6",
+#             "Detroit",
+#             "7",
+#             "Boston",
+#             "8",
+#             "Rio_de_Janeiro",
+#         ],
+#         help="Start with specific scenario",
+#     )
+#
+#     parser.add_argument(
+#         "-w",
+#         "--wire-mode",
+#         action="store_true",
+#         help="Use networking mode (no shared memory)",
+#     )
+#
+#     parser.add_argument(
+#         "-m", "--multiplayer", action="store_true", help="Enable multiplayer mode"
+#     )
+#
+#     parser.add_argument(
+#         "-S",
+#         "--sugar",
+#         action="store_true",
+#         help="Enable OLPC Sugar interface integration",
+#     )
+#
+#     parser.add_argument(
+#         "filename", nargs="?", help="City file to load (.cty) or new city name"
+#     )
+#
+#     args = parser.parse_args()
+#
+#     # Process level argument
+#     if args.level:
+#         level_map = {"1": 0, "easy": 0, "2": 1, "medium": 1, "3": 2, "hard": 2}
+#         # global startup_game_level
+#         context.startup_game_level = level_map[args.level.lower()]
+#
+#     # Process scenario argument
+#     if args.scenario:
+#         scenario_map = {
+#             "1": 1,
+#             "Dullsville": 1,
+#             "2": 2,
+#             "San_Francisco": 2,
+#             "3": 3,
+#             "Hamburg": 3,
+#             "4": 4,
+#             "Bern": 4,
+#             "5": 5,
+#             "Tokyo": 5,
+#             "6": 6,
+#             "Detroit": 6,
+#             "7": 7,
+#             "Boston": 7,
+#             "8": 8,
+#             "Rio_de_Janeiro": 8,
+#         }
+#         global startup
+#         startup = scenario_map[args.scenario]
+#
+#     # Process other flags
+#     global wire_mode, multi_player_mode, SugarMode
+#     if args.wire_mode:
+#         wire_mode = 1
+#     if args.multiplayer:
+#         multi_player_mode = 1
+#     if args.sugar:
+#         SugarMode = 1
+#
+#     # Process filename
+#     if args.filename:
+#         global startup_name
+#         if args.generate:
+#             # Generate new city with given name
+#             startup = -1
+#             startup_name = args.filename
+#         else:
+#             # Load existing city file
+#             startup = -2
+#             startup_name = args.filename
+#
+#     return args
 
 
 # ============================================================================
@@ -1042,47 +1064,52 @@ def main() -> int:
 
     Adapted from main() in sim.c for Python environment.
     """
-    logger.info(f"Welcome to Python Micropolis version {MicropolisVersion}")
+    logger.info(f"Welcome to Python Micropolis version {MICROPOLIS_VERSION}")
     logger.info("Copyright (C) 2002 by Electronic Arts, Maxis. All rights reserved.")
 
     app_config: AppConfig = AppConfig()
     context: AppContext = AppContext(config=app_config)
 
-    result = sim_init()
+    result = sim_init(context)
     if result.is_err():
         logger.error(f"Simulation initialization error: {result.unwrap_err()}")
         return -1
 
     # Start the main pygame loop (placeholder for now)
-    result = pygame_main_loop()
+    result = pygame_main_loop(context)
     if result.is_err():
         logger.error(f"Simulation error: {result.unwrap_err()}")
         return -1
 
-    return exit_return
+    return 0
 
 
-def pygame_main_loop() -> Result[None, Exception]:
+def ensure_sim_structures():
+    pass
+
+
+def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
     """
     Main pygame event loop.
 
     This replaces the TCL/Tk main loop from the original C version.
+    :param context:
     """
     logger.debug("Initializing pygame graphics...")
     # Initialize graphics
-    if not graphics_setup.init_graphics():
+    if not init_graphics():
         return Err(ValueError("Failed to initialize graphics"))
 
     # Set up display
     try:
         # import pygame
 
-        global editor_viewport_size
+        # global editor_viewport_size
 
         # Set up a basic window
         screen = pygame.display.set_mode((800, 600))
         pygame.display.set_caption("Micropolis Python")
-        map_area = (16, 16, micropolis.constants.MAP_W, micropolis.constants.MAP_H)
+        map_area = (16, 16, MAP_W, MAP_H)
         preview_width = screen.get_width() // 2
         preview_height = screen.get_height() // 2
         editor_area = (
@@ -1091,18 +1118,18 @@ def pygame_main_loop() -> Result[None, Exception]:
             preview_width,
             preview_height,
         )
-        editor_viewport_size = (preview_width, preview_height)
+        context.editor_viewport_size = (preview_width, preview_height)
         tool_hotkeys = {
-            pygame.K_r: types.RESBASE,
-            pygame.K_c: types.COMBASE,
-            pygame.K_i: types.INDBASE,
-            pygame.K_p: types.POWERBASE,
+            pygame.K_r: context.RESBASE,
+            pygame.K_c: context.COMBASE,
+            pygame.K_i: context.INDBASE,
+            pygame.K_p: context.POWERBASE,
         }
 
         ensure_sim_structures()
-        initialize_view_surfaces(graphics_setup)
-        sim_update()
-        blit_views_to_screen(screen, map_area, editor_area)
+        initialize_view_surfaces(context, graphics_setup)
+        sim_update(context)
+        blit_views_to_screen(context, screen, map_area, editor_area)
         pygame.display.flip()
 
         logger.info("Pygame window initialized. Press Ctrl+C to exit")
@@ -1110,44 +1137,44 @@ def pygame_main_loop() -> Result[None, Exception]:
         clock = pygame.time.Clock()
 
         try:
-            while not tk_must_exit:
+            while not context.tk_must_exit:
                 # Handle pygame events
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         logger.info("Quit event received")
-                        DoStopMicropolis()
+                        DoStopMicropolis(context)
                         break
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             logger.info("Escape key pressed")
-                            DoStopMicropolis()
+                            DoStopMicropolis(context)
                             break
                         if event.key in (pygame.K_LEFT, pygame.K_a):
-                            pan_editor_view(-32, 0, editor_viewport_size)
+                            pan_editor_view(context, -32, 0, context.editor_viewport_size)
                             continue
                         if event.key in (pygame.K_RIGHT, pygame.K_d):
-                            pan_editor_view(32, 0, editor_viewport_size)
+                            pan_editor_view(context, 32, 0, context.editor_viewport_size)
                             continue
                         if event.key in (pygame.K_UP, pygame.K_w):
-                            pan_editor_view(0, -32, editor_viewport_size)
+                            pan_editor_view(context, 0, -32, context.editor_viewport_size)
                             continue
                         if event.key in (pygame.K_DOWN, pygame.K_s):
-                            pan_editor_view(0, 32, editor_viewport_size)
+                            pan_editor_view(context, 0, 32, context.editor_viewport_size)
                             continue
-                        if handle_tool_hotkey(event.key, tool_hotkeys):
+                        if handle_tool_hotkey(context, event.key, tool_hotkeys):
                             continue
-                        if ui_utilities.handle_keyboard_shortcut(event.key):
+                        if handle_keyboard_shortcut(event.key):
                             continue
                     elif event.type == pygame.MOUSEBUTTONDOWN:
-                        if handle_map_click(sim, event.pos, map_area, event.button):
+                        if handle_map_click(context, context.sim, event.pos, map_area, event.button):
                             continue
 
-                if tk_must_exit:
+                if context.tk_must_exit:
                     break
 
                 # Update simulation step and redraw
-                sim_loop(True)
-                blit_views_to_screen(screen, map_area, editor_area)
+                sim_loop(context, True)
+                blit_views_to_screen(context, screen, map_area, editor_area)
                 pygame.display.flip()
 
                 # Maintain 60 FPS

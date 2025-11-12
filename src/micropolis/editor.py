@@ -9,11 +9,12 @@ import math
 import time
 from typing import Any
 
-import micropolis.sim_view
-import micropolis.utilities
 import pygame
 
-from . import tools, types, view_types
+from . import tools, view_types
+from .context import AppContext
+from .sim_view import SimView
+from .simulation import rand
 from .tools import (
     airportState,
     chalkState,
@@ -57,19 +58,21 @@ BOB_HEIGHT = 8
 # Global overlay setting (from w_editor.c)
 DoOverlay = 2
 
+
 # ============================================================================
 # Utility Functions
 # ============================================================================
 
 
-def ViewToTileCoords(
-    view: micropolis.sim_view.SimView,
-    screen_x: int,
-    screen_y: int,
-    tile_x: list[int],
-    tile_y: list[int],
+def view_to_tile_coords(
+        view: SimView,
+        screen_x: int,
+        screen_y: int,
+        tile_x: list[int],
+        tile_y: list[int],
 ) -> None:
     """
+    ported from ViewToTileCoords
     Convert screen coordinates to tile coordinates.
 
     Args:
@@ -94,10 +97,11 @@ def ViewToTileCoords(
     tile_y[0] = pixel_y // 16
 
 
-def TileToViewCoords(
-    view: micropolis.sim_view.SimView, tile_x: int, tile_y: int
+def tile_to_view_coords(
+        view: SimView, tile_x: int, tile_y: int
 ) -> tuple[int, int]:
     """
+    ported from TileToViewCoords
     Convert tile coordinates to view coordinates.
 
     Args:
@@ -123,23 +127,26 @@ def TileToViewCoords(
     return view_x, view_y
 
 
-def DoPanTo(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
+def do_pan_to(context: AppContext, view: SimView, x: int, y: int) -> None:
     """
+    ported from DoPanTo
     Pan the view to center on the given coordinates.
 
     Args:
         view: The view to pan
         x: X coordinate to center on
         y: Y coordinate to center on
+        :param context:
     """
     view.pan_x = x
     view.pan_y = y
     view.invalid = True
-    types.new_map = 1
+    context.new_map = 1
 
 
-def DoPanBy(view: micropolis.sim_view.SimView, dx: int, dy: int) -> None:
+def do_pan_by(context: AppContext, view: SimView, dx: int, dy: int) -> None:
     """
+    ported from DoPanBy
     Pan the view by the given delta.
 
     Args:
@@ -150,11 +157,12 @@ def DoPanBy(view: micropolis.sim_view.SimView, dx: int, dy: int) -> None:
     view.pan_x += dx
     view.pan_y += dy
     view.invalid = True
-    types.new_map = 1
+    context.new_map = 1
 
 
-def DidStopPan(view: micropolis.sim_view.SimView) -> None:
+def did_stop_pan(view: SimView) -> None:
     """
+    ported from DidStopPan
     Called when panning stops (placeholder for UI updates).
     """
     pass
@@ -165,8 +173,9 @@ def DidStopPan(view: micropolis.sim_view.SimView) -> None:
 # ============================================================================
 
 
-def DoTool(view: micropolis.sim_view.SimView, tool: int, x: int, y: int) -> None:
+def do_tool(view: SimView, tool: int, x: int, y: int) -> None:
     """
+    ported from DoTool
     Apply a tool at the specified coordinates.
 
     Args:
@@ -181,14 +190,15 @@ def DoTool(view: micropolis.sim_view.SimView, tool: int, x: int, y: int) -> None
     # Convert screen coordinates to tile coordinates
     tile_x = [0]
     tile_y = [0]
-    ViewToTileCoords(view, x, y, tile_x, tile_y)
+    view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Apply the tool
     tools.do_tool(view, tool, tile_x[0], tile_y[0], 1)
 
 
-def ToolDown(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
+def tool_down(view: SimView, x: int, y: int) -> None:
     """
+    ported from ToolDown
     Handle tool down event.
 
     Args:
@@ -199,14 +209,15 @@ def ToolDown(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     # Convert screen coordinates to tile coordinates
     tile_x = [0]
     tile_y = [0]
-    ViewToTileCoords(view, x, y, tile_x, tile_y)
+    view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Start tool application
     tools.ToolDown(view, tile_x[0], tile_y[0])
 
 
-def ToolDrag(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
+def tool_drag(view: SimView, x: int, y: int) -> None:
     """
+    ported from ToolDrag
     Handle tool drag event.
 
     Args:
@@ -217,14 +228,15 @@ def ToolDrag(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     # Convert screen coordinates to tile coordinates
     tile_x = [0]
     tile_y = [0]
-    ViewToTileCoords(view, x, y, tile_x, tile_y)
+    view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Continue tool application
     tools.ToolDrag(view, tile_x[0], tile_y[0])
 
 
-def ToolUp(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
+def tool_up(view: SimView, x: int, y: int) -> None:
     """
+    ported from ToolUp
     Handle tool up event.
 
     Args:
@@ -235,7 +247,7 @@ def ToolUp(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     # Convert screen coordinates to tile coordinates
     tile_x = [0]
     tile_y = [0]
-    ViewToTileCoords(view, x, y, tile_x, tile_y)
+    view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Finish tool application
     tools.ToolUp(view, tile_x[0], tile_y[0])
@@ -246,8 +258,9 @@ def ToolUp(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
 # ============================================================================
 
 
-def DrawOutside(view: micropolis.sim_view.SimView) -> None:
+def draw_outside(view: SimView) -> None:
     """
+    ported from DrawOutside
     Draw black borders outside the map area.
 
     Args:
@@ -295,17 +308,19 @@ def DrawOutside(view: micropolis.sim_view.SimView) -> None:
         )
 
 
-def DrawPending(view: micropolis.sim_view.SimView) -> None:
+def draw_pending(context: AppContext, view: SimView) -> None:
     """
+    ported from DrawPending
     Draw the pending tool preview.
 
     Args:
         view: The view to draw on
+        :param context:
     """
     if view.x is None:
         return
 
-    if types.pending_tool == -1:
+    if context.pending_tool == -1:
         return
 
     # Get or create surface
@@ -318,9 +333,9 @@ def DrawPending(view: micropolis.sim_view.SimView) -> None:
     center_x = view.w_width // 2
     center_y = view.w_height // 2
 
-    x = (types.pending_x - toolOffset[types.pending_tool]) * 16
-    y = (types.pending_y - toolOffset[types.pending_tool]) * 16
-    size = toolSize[types.pending_tool] * 16
+    x = (context.pending_x - toolOffset[context.pending_tool]) * 16
+    y = (context.pending_y - toolOffset[context.pending_tool]) * 16
+    size = toolSize[context.pending_tool] * 16
 
     x += center_x - view.pan_x
     y += center_y - view.pan_y
@@ -338,25 +353,25 @@ def DrawPending(view: micropolis.sim_view.SimView) -> None:
 
     # Draw tool icon with bobbing animation
     icon_name = None
-    if types.pending_tool == residentialState:
+    if context.pending_tool == residentialState:
         icon_name = "@images/res.xpm"
-    elif types.pending_tool == commercialState:
+    elif context.pending_tool == commercialState:
         icon_name = "@images/com.xpm"
-    elif types.pending_tool == industrialState:
+    elif context.pending_tool == industrialState:
         icon_name = "@images/ind.xpm"
-    elif types.pending_tool == fireState:
+    elif context.pending_tool == fireState:
         icon_name = "@images/fire.xpm"
-    elif types.pending_tool == policeState:
+    elif context.pending_tool == policeState:
         icon_name = "@images/police.xpm"
-    elif types.pending_tool == stadiumState:
+    elif context.pending_tool == stadiumState:
         icon_name = "@images/stadium.xpm"
-    elif types.pending_tool == seaportState:
+    elif context.pending_tool == seaportState:
         icon_name = "@images/seaport.xpm"
-    elif types.pending_tool == powerState:
+    elif context.pending_tool == powerState:
         icon_name = "@images/coal.xpm"
-    elif types.pending_tool == nuclearState:
+    elif context.pending_tool == nuclearState:
         icon_name = "@images/nuclear.xpm"
-    elif types.pending_tool == airportState:
+    elif context.pending_tool == airportState:
         icon_name = "@images/airport.xpm"
 
     if icon_name is not None:
@@ -365,15 +380,16 @@ def DrawPending(view: micropolis.sim_view.SimView) -> None:
         f = 2 * (now_time % 1.0)
         if f > 1.0:
             f = 2.0 - f
-        i = int(f * BOB_HEIGHT * (types.players - types.votes))
+        i = int(f * BOB_HEIGHT * (context.players - context.votes))
 
         # Load and draw icon (placeholder - would need actual icon loading)
         # For now, skip icon drawing
         pass
 
 
-def DrawCursor(view: micropolis.sim_view.SimView) -> None:
+def draw_cursor(view: SimView) -> None:
     """
+    ported from DrawCursor
     Draw the tool cursor.
 
     Args:
@@ -528,14 +544,16 @@ def DrawCursor(view: micropolis.sim_view.SimView) -> None:
 # ============================================================================
 
 
-def DrawOverlay(view: micropolis.sim_view.SimView) -> None:
+def draw_overlay(context: AppContext, view: SimView) -> None:
     """
+    ported from DrawOverlay
     Draw data overlays on the view.
 
     Args:
         view: The view to draw overlays on
+        :param context:
     """
-    if view.x is None or view.surface is None or types.sim is None:
+    if view.x is None or view.surface is None or context.sim is None:
         return
 
     width = view.w_width
@@ -550,12 +568,12 @@ def DrawOverlay(view: micropolis.sim_view.SimView) -> None:
     showing = False
 
     # Check if any overlay data is visible
-    for ink in types.sim.overlay or []:
+    for ink in context.sim.overlay or []:
         if (
-            (ink.bottom >= top)
-            and (ink.top <= bottom)
-            and (ink.right >= left)
-            and (ink.left <= right)
+                (ink.bottom >= top)
+                and (ink.top <= bottom)
+                and (ink.right >= left)
+                and (ink.left <= right)
         ):
             showing = True
             break
@@ -565,33 +583,35 @@ def DrawOverlay(view: micropolis.sim_view.SimView) -> None:
 
     # Overlay mode state machine (simplified)
     if view.overlay_mode == OVERLAY_INVALID:
-        DrawTheOverlay(view, top, bottom, left, right, False)
+        draw_the_overlay(context, view, top, bottom, left, right, False)
         view.overlay_mode = OVERLAY_STABLE
     elif view.overlay_mode == OVERLAY_STABLE:
         start_time = time.time()
-        DrawTheOverlay(view, top, bottom, left, right, False)
+        draw_the_overlay(context, view, top, bottom, left, right, False)
         view.overlay_time = time.time() - start_time
         view.overlay_mode = OVERLAY_OPTIMIZE
     elif view.overlay_mode == OVERLAY_OPTIMIZE:
         # Draw to overlay surface, then clip to main surface
         # Simplified: just draw directly
-        DrawTheOverlay(view, top, bottom, left, right, True)
+        draw_the_overlay(context, view, top, bottom, left, right, True)
         view.overlay_mode = OVERLAY_FAST_CLIP
     elif view.overlay_mode == OVERLAY_FAST_LINES:
-        DrawTheOverlay(view, top, bottom, left, right, False)
+        draw_the_overlay(context, view, top, bottom, left, right, False)
     elif view.overlay_mode == OVERLAY_FAST_CLIP:
-        ClipTheOverlay(view)
+        clip_the_overlay(view)
 
 
-def DrawTheOverlay(
-    view: micropolis.sim_view.SimView,
-    top: int,
-    bottom: int,
-    left: int,
-    right: int,
-    on_overlay: bool,
+def draw_the_overlay(
+        context: AppContext,
+        view: SimView,
+        top: int,
+        bottom: int,
+        left: int,
+        right: int,
+        on_overlay: bool,
 ) -> None:
     """
+    ported from DrawTheOverlay
     Draw the overlay data.
 
     Args:
@@ -601,6 +621,7 @@ def DrawTheOverlay(
         left: Left boundary
         right: Right boundary
         on_overlay: Whether drawing to overlay surface
+        :param context:
     """
 
     # Set drawing color
@@ -610,12 +631,12 @@ def DrawTheOverlay(
         color = (255, 255, 255)  # White for monochrome too
 
     # Draw overlay lines
-    for ink in types.sim.overlay or []:
+    for ink in context.sim.overlay or []:
         if (
-            (ink.bottom >= top)
-            and (ink.top <= bottom)
-            and (ink.right >= left)
-            and (ink.left <= right)
+                (ink.bottom >= top)
+                and (ink.top <= bottom)
+                and (ink.right >= left)
+                and (ink.left <= right)
         ):
             if ink.length <= 1:
                 # Draw single point
@@ -635,8 +656,9 @@ def DrawTheOverlay(
                     pygame.draw.lines(view.surface, color, False, points, 3)
 
 
-def ClipTheOverlay(view: micropolis.sim_view.SimView) -> None:
+def clip_the_overlay(view: SimView) -> None:
     """
+    ported from ClipTheOverlay
     Clip overlay data to the view surface.
 
     Args:
@@ -652,25 +674,29 @@ def ClipTheOverlay(view: micropolis.sim_view.SimView) -> None:
 # ============================================================================
 
 
-def DoNewEditor(view: micropolis.sim_view.SimView) -> None:
+def do_new_editor(context: AppContext, view: SimView) -> None:
     """
+    ported from DoNewEditor
     Initialize a new editor view.
 
     Args:
         view: The view to initialize
+        :param context:
     """
-    types.sim.editors += 1
-    view.next = types.sim.editor
-    types.sim.editor = view
+    context.sim.editors += 1
+    view.next = context.sim.editor
+    context.sim.editor = view
     view.invalid = True
 
 
-def DoUpdateEditor(view: micropolis.sim_view.SimView) -> None:
+def do_update_editor(context: AppContext, view: SimView) -> None:
     """
+    ported from DoUpdateEditor
     Update and render the editor view.
 
     Args:
         view: The view to update
+        :param context:
     """
     dx = dy = i = 0
 
@@ -681,13 +707,13 @@ def DoUpdateEditor(view: micropolis.sim_view.SimView) -> None:
 
     # Check if we should skip this update
     if (
-        not types.shake_now
-        and not view.invalid
-        and not view.update
-        and (types.sim_skips or view.skips)
+            not context.shake_now
+            and not view.invalid
+            and not view.update
+            and (context.sim_skips or view.skips)
     ):
-        if types.sim_skips:
-            if types.sim_skip > 0:
+        if context.sim_skips:
+            if context.sim_skip > 0:
                 return
         else:
             if view.skip > 0:
@@ -700,16 +726,16 @@ def DoUpdateEditor(view: micropolis.sim_view.SimView) -> None:
     view.update = False
 
     # Handle auto-goto
-    HandleAutoGoto(view)
+    handle_auto_goto(context, view)
 
     # Handle tile animation
     if (
-        types.do_animation
-        and types.sim_speed
-        and not types.heat_steps
-        and not types.tiles_animated
+            context.do_animation
+            and context.sim_speed
+            and not context.heat_steps
+            and not context.tiles_animated
     ):
-        types.tiles_animated = True
+        context.tiles_animated = True
         # animateTiles() - placeholder
 
     if view.invalid:
@@ -721,23 +747,23 @@ def DoUpdateEditor(view: micropolis.sim_view.SimView) -> None:
             pass
 
         # Draw borders outside map
-        DrawOutside(view)
+        draw_outside(view)
 
         # Draw pending tool if any
-        if types.pending_tool != -1:
-            DrawPending(view)
+        if context.pending_tool != -1:
+            draw_pending(context, view)
 
         # Draw sprites/objects
         # DrawObjects(view) - placeholder
 
         # Draw overlay if enabled
         if view.show_overlay:
-            DrawOverlay(view)
+            draw_overlay(context, view)
 
     # Apply shake effect
-    for i in range(types.shake_now):
-        dx += micropolis.utilities.Rand(16) - 8
-        dy += micropolis.utilities.Rand(16) - 8
+    for i in range(context.shake_now):
+        dx += rand(16) - 8
+        dy += rand(16) - 8
 
     # Copy to display (placeholder - would copy surface to screen)
     # DrawCursor(view) - cursor is drawn separately in event handling
@@ -745,12 +771,14 @@ def DoUpdateEditor(view: micropolis.sim_view.SimView) -> None:
     view.invalid = False
 
 
-def HandleAutoGoto(view: micropolis.sim_view.SimView) -> None:
+def handle_auto_goto(context: AppContext, view: SimView) -> None:
     """
+    ported from HandleAutoGoto
     Handle automatic panning to follow sprites or goals.
 
     Args:
         view: The view to update
+        :param context:
     """
     if view.follow is not None:
         # Follow a sprite
@@ -758,7 +786,7 @@ def HandleAutoGoto(view: micropolis.sim_view.SimView) -> None:
         y = view.follow.y + view.follow.y_hot
 
         if (x != view.pan_x) or (y != view.pan_y):
-            DoPanTo(view, x, y)
+            do_pan_to(context, view, x, y)
 
     elif view.auto_goto and view.auto_going and (view.tool_mode == 0):
         speed = view.auto_speed
@@ -774,12 +802,12 @@ def HandleAutoGoto(view: micropolis.sim_view.SimView) -> None:
         dist = math.sqrt((dx * dx) + (dy * dy))
 
         if dist < (speed * sloth):
-            view.auto_going = 0
+            view.auto_going = False
             if view.auto_goto == -1:
-                view.auto_goto = 0
-            DoPanTo(view, view.auto_x_goal, view.auto_y_goal)
-            types.new_map = 1
-            DidStopPan(view)
+                view.auto_goto = False
+            do_pan_to(context, view, view.auto_x_goal, view.auto_y_goal)
+            context.new_map = 1
+            did_stop_pan(view)
         else:
             direction = math.atan2(dy, dx)
             co = math.cos(direction)
@@ -794,7 +822,7 @@ def HandleAutoGoto(view: micropolis.sim_view.SimView) -> None:
             vx += 0.5
             vy += 0.5
 
-            DoPanBy(view, int(vx), int(vy))
+            do_pan_by(context, view, int(vx), int(vy))
             view.auto_going += 1
 
 
@@ -803,8 +831,9 @@ def HandleAutoGoto(view: micropolis.sim_view.SimView) -> None:
 # ============================================================================
 
 
-def ChalkStart(view: micropolis.sim_view.SimView, x: int, y: int, color: int) -> None:
+def chalk_start(view: SimView, x: int, y: int, color: int) -> None:
     """
+    ported from ChalkStart
     Start chalk drawing.
 
     Args:
@@ -816,14 +845,15 @@ def ChalkStart(view: micropolis.sim_view.SimView, x: int, y: int, color: int) ->
     # Convert screen to tile coordinates
     tile_x = [0]
     tile_y = [0]
-    ViewToTileCoords(view, x, y, tile_x, tile_y)
+    view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Start drawing operation
     tools.ChalkStart(view, tile_x[0], tile_y[0], color)
 
 
-def ChalkTo(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
+def chalk_to(view: SimView, x: int, y: int) -> None:
     """
+    ported from ChalkTo
     Continue chalk drawing to new position.
 
     Args:
@@ -834,7 +864,7 @@ def ChalkTo(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
     # Convert screen to tile coordinates
     tile_x = [0]
     tile_y = [0]
-    ViewToTileCoords(view, x, y, tile_x, tile_y)
+    view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Continue drawing
     tools.ChalkTo(view, tile_x[0], tile_y[0])
@@ -845,8 +875,9 @@ def ChalkTo(view: micropolis.sim_view.SimView, x: int, y: int) -> None:
 # ============================================================================
 
 
-def setWandState(view: micropolis.sim_view.SimView, state: int) -> None:
+def set_wand_state(view: SimView, state: int) -> None:
     """
+    ported from setWandState
     Set the tool state for the view.
 
     Args:
@@ -862,246 +893,246 @@ def setWandState(view: micropolis.sim_view.SimView, state: int) -> None:
 # ============================================================================
 
 
-def EditorCmdconfigure(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmdconfigure(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Configure command (placeholder)"""
+    """ported from EditorCmdconfigure Configure command (placeholder)"""
     return 0
 
 
-def EditorCmdposition(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmdposition(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Position command (placeholder)"""
+    """ported from EditorCmdposition Position command (placeholder)"""
     return 0
 
 
-def EditorCmdsize(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmdsize(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Size command (placeholder)"""
+    """ported from EditorCmdsize Size command (placeholder)"""
     return 0
 
 
-def EditorCmdAutoGoto(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_auto_goto(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Auto goto command (placeholder)"""
+    """ported from EditorCmdAutoGoto Auto goto command (placeholder)"""
     return 0
 
 
-def EditorCmdSound(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_sound(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Sound command (placeholder)"""
+    """ported from EditorCmdSound Sound command (placeholder)"""
     return 0
 
 
-def EditorCmdSkip(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_skip(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Skip command (placeholder)"""
+    """ported from EditorCmdSkip Skip command (placeholder)"""
     return 0
 
 
-def EditorCmdUpdate(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_update(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Update command (placeholder)"""
+    """ported from EditorCmdUpdate Update command (placeholder)"""
     return 0
 
 
-def EditorCmdPan(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_pan(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Pan command (placeholder)"""
+    """ported from EdutorCmdPan Pan command (placeholder)"""
     return 0
 
 
-def EditorCmdToolConstrain(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_tool_constrain(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Tool constrain command (placeholder)"""
+    """ported from EditorCmdToolConstrain Tool constrain command (placeholder)"""
     return 0
 
 
-def EditorCmdToolState(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_tool_state(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Tool state command (placeholder)"""
+    """ported from EditorCmdToolState Tool state command (placeholder)"""
     return 0
 
 
-def EditorCmdToolMode(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_tool_mode(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Tool mode command (placeholder)"""
+    """ported from EditorCmdToolMode Tool mode command (placeholder)"""
     return 0
 
 
-def EditorCmdDoTool(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_do_tool(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Do tool command (placeholder)"""
+    """ported from EditorCmdDoTool Do tool command (placeholder)"""
     return 0
 
 
-def EditorCmdToolDown(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_tool_down(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Tool down command (placeholder)"""
+    """ported from EditorCmdToolDown Tool down command (placeholder)"""
     return 0
 
 
-def EditorCmdToolDrag(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_tool_drag(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Tool drag command (placeholder)"""
+    """ported from EditorCmdToolDrag Tool drag command (placeholder)"""
     return 0
 
 
-def EditorCmdToolUp(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_tool_up(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Tool up command (placeholder)"""
+    """ported from EditorCmdToolUp Tool up command (placeholder)"""
     return 0
 
 
-def EditorCmdPanStart(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_pan_start(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Pan start command (placeholder)"""
+    """ported from EditorCmdPanStart Pan start command (placeholder)"""
     return 0
 
 
-def EditorCmdPanTo(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_pan_to(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Pan to command (placeholder)"""
+    """ported from EditorCmdPanTo Pan to command (placeholder)"""
     return 0
 
 
-def EditorCmdPanBy(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_pan_by(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Pan by command (placeholder)"""
+    """ported from EditorCmdPanBy Pan by command (placeholder)"""
     return 0
 
 
-def EditorCmdTweakCursor(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_tweak_cursor(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Tweak cursor command (placeholder)"""
+    """ported from EditorCmdTweakCursor Tweak cursor command (placeholder)"""
     return 0
 
 
-def EditorCmdVisible(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_visible(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Visible command (placeholder)"""
+    """ported from EditorCmdVisible Visible command (placeholder)"""
     return 0
 
 
-def EditorCmdKeyDown(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_key_down(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Key down command (placeholder)"""
+    """ported from EditorCmdKeyDown Key down command (placeholder)"""
     return 0
 
 
-def EditorCmdKeyUp(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_key_up(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Key up command (placeholder)"""
+    """ported from EditorCmdKeyUp Key up command (placeholder)"""
     return 0
 
 
-def EditorCmdTileCoord(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_tile_coord(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Tile coord command (placeholder)"""
+    """ported from EditorCmdTileCoord Tile coord command (placeholder)"""
     return 0
 
 
-def EditorCmdChalkStart(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_chalk_start(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Chalk start command (placeholder)"""
+    """ported from EditorCmdChaklStart Chalk start command (placeholder)"""
     return 0
 
 
-def EditorCmdChalkTo(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_chalk_to(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Chalk to command (placeholder)"""
+    """ported from EditorCmdChalkTo Chalk to command (placeholder)"""
     return 0
 
 
-def EditorCmdAutoGoing(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_auto_going(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Auto going command (placeholder)"""
+    """ported from EditorCmdAutoGoing Auto going command (placeholder)"""
     return 0
 
 
-def EditorCmdAutoSpeed(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_auto_speed(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Auto speed command (placeholder)"""
+    """ported from EditorCmdAutoSpeed Auto speed command (placeholder)"""
     return 0
 
 
-def EditorCmdAutoGoal(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_auto_goal(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Auto goal command (placeholder)"""
+    """ported from EditorCmdAutoGoal Auto goal command (placeholder)"""
     return 0
 
 
-def EditorCmdSU(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_su(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """SU command (placeholder)"""
+    """ported from EditorCMDSU SU command (placeholder)"""
     return 0
 
 
-def EditorCmdShowMe(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_show_me(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Show me command (placeholder)"""
+    """ported from EditorCmdShowMe Show me command (placeholder)"""
     return 0
 
 
-def EditorCmdFollow(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_follow(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Follow command (placeholder)"""
+    """ported from EditorCmdFollow Follow command (placeholder)"""
     return 0
 
 
-def EditorCmdShowOverlay(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_show_overlay(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Show overlay command (placeholder)"""
+    """ported from EditorCmdShowOverlay Show overlay command (placeholder)"""
     return 0
 
 
-def EditorCmdOverlayMode(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_overlay_mode(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Overlay mode command (placeholder)"""
+    """ported from EditorCmdOverlayMode Overlay mode command (placeholder)"""
     return 0
 
 
-def EditorCmdDynamicFilter(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_dynamic_filter(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Dynamic filter command (placeholder)"""
+    """ported from EditorCmdDynamicFilter Dynamic filter command (placeholder)"""
     return 0
 
 
-def EditorCmdWriteJpeg(
-    view: micropolis.sim_view.SimView, interp: Any, argc: int, argv: list[str]
+def editor_cmd_write_jpeg(
+        view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
-    """Write JPEG command (placeholder)"""
+    """ported from EditorCmdWriteJpeg Write JPEG command (placeholder)"""
     return 0

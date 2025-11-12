@@ -491,7 +491,7 @@ class TestToolApplication(Assertions):
     @patch("micropolis.tools.MakeSoundOn")
     def test_tool_down_out_of_bounds(self, mock_sound, mock_send_mes, mock_clear_mes):
         """Test ToolDown with out of bounds coordinates."""
-        tools.ToolDown(self.mock_view, -10, -10)
+        tools.tool_down(self.mock_view, -10, -10)
         mock_clear_mes.assert_called_once()
         mock_send_mes.assert_called_with(34)  # Out of jurisdiction
 
@@ -499,7 +499,7 @@ class TestToolApplication(Assertions):
     def test_tool_down_success(self, mock_current_tool):
         """Test successful ToolDown."""
         mock_current_tool.return_value = 1
-        tools.ToolDown(self.mock_view, 80, 80)
+        tools.tool_down(self.mock_view, 80, 80)
         mock_current_tool.assert_called_with(self.mock_view, 80, 80, 1)
 
     def test_tool_drag_chalk(self):
@@ -509,7 +509,7 @@ class TestToolApplication(Assertions):
         self.mock_view.last_y = 80
 
         with patch("micropolis.tools.current_tool") as mock_current_tool:
-            result = tools.ToolDrag(self.mock_view, 88, 88)  # 8 pixels away
+            result = tools.tool_drag(self.mock_view, 88, 88)  # 8 pixels away
             mock_current_tool.assert_called_with(self.mock_view, 88, 88, 0)
             self.assertEqual(result, 1)
 

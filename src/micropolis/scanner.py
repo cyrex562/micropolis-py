@@ -227,7 +227,7 @@ def PTLScan() -> None:
                 pnum += 1
                 ptot += z
                 # find max pol for monster
-                if (z > pmax) or ((z == pmax) and ((simulation.Rand16() & 3) == 0)):
+                if (z > pmax) or ((z == pmax) and ((simulation.rand16() & 3) == 0)):
                     pmax = z
                     PolMaxX = x << 1
                     PolMaxY = y << 1
@@ -348,7 +348,7 @@ def CrimeScan() -> None:
                 totz += z
 
                 # Find max crime for monster
-                if (z > cmax) or ((z == cmax) and ((simulation.Rand16() & 3) == 0)):
+                if (z > cmax) or ((z == cmax) and ((simulation.rand16() & 3) == 0)):
                     cmax = z
                     CrimeMaxX = x << 1
                     CrimeMaxY = y << 1

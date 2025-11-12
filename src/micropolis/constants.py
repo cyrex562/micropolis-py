@@ -99,7 +99,7 @@ FIMAP = 12  # fire radius
 POMAP = 13  # police radius
 DYMAP = 14  # dynamic
 NMAPS = 15
-PROBNUM = 10
+# PROBNUM = 10
 # ============================================================================
 # Problem Tracking Constants
 # ============================================================================
@@ -385,3 +385,5 @@ STATE_TILES = 1
 STATE_OVERLAYS = 2
 STATE_GRAPHS = 3
 DEFAULT_STARTING_FUNDS = 20000
+
+MICROPOLIS_VERSION = "2025.11.11"

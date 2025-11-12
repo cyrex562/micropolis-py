@@ -29,9 +29,9 @@ class TestSimulationIntegration:
                 types.map_data[x][y] = 0
 
         # Reset simulation counters
-        simulation.Fcycle = 0
-        simulation.Scycle = 0
-        simulation.Spdcycle = 0
+        simulation.fcycle = 0
+        simulation.scycle = 0
+        simulation.spdcycle = 0
 
     def test_simulate_phase_0_initialization(self):
         """Test phase 0: time increment, valve setting, census clearing"""
@@ -40,13 +40,13 @@ class TestSimulationIntegration:
         types.sim_speed = 2
 
         # Run phase 0
-        simulation.Simulate(0)
+        simulation.simulate(context, 0)
 
         # Verify time incremented
         assert types.city_time == initial_time + 1
 
         # Verify Scycle incremented
-        assert simulation.Scycle == 1
+        assert simulation.scycle == 1
 
         # Verify census was cleared (check some counters)
         assert types.res_pop == 0
@@ -62,7 +62,7 @@ class TestSimulationIntegration:
         types.road_total = 200
 
         # Clear census
-        simulation.ClearCensus()
+        simulation.clear_census(context)
 
         # Verify all counters reset to 0
         assert types.res_pop == 0
@@ -80,7 +80,7 @@ class TestSimulationIntegration:
         types.trf_density[2][2] = 10  # Low density
 
         # Run decay
-        simulation.DecTrafficMem()
+        simulation.dec_traffic_mem(context)
 
         assert types.trf_density[0][0] == 50 - 24  # 26-200 range
         assert types.trf_density[1][1] == 250 - 34  # >200 range

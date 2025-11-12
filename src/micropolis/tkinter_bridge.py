@@ -19,7 +19,7 @@ import pygame
 
 from . import types
 from .audio import make_sound
-from .disasters import DoEarthQuake
+from .disasters import do_earth_quake
 from .engine import sim_loop, sim_update
 from .types import Eval as TypesEval
 from .sim_view import SimView
@@ -107,7 +107,7 @@ def tk_main_init(screen: pygame.Surface) -> None:
     running = True
 
     # Register core commands
-    register_command("UIEarthQuake", lambda: DoEarthQuake())
+    register_command("UIEarthQuake", lambda: do_earth_quake(context))
     register_command("UISaveCityAs", lambda: None)  # Placeholder
     register_command("UIDidLoadCity", lambda: None)  # Placeholder
     register_command("UIDidSaveCity", lambda: None)  # Placeholder
@@ -269,7 +269,7 @@ def _sim_timer_callback() -> None:
         types.need_rest -= 1
 
     if types.sim_speed:
-        sim_loop(True)  # Changed from 1 to True
+        sim_loop(context, True)  # Changed from 1 to True
         start_micropolis_timer()
     else:
         stop_micropolis_timer()

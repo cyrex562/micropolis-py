@@ -212,7 +212,7 @@ def InitGame() -> None:
     sim_paused_speed = 0
     heat_steps = 0
 
-    types.setSpeed(0)
+    types.setSpeed(context, 0)
 
 
 def ReallyQuit() -> None:

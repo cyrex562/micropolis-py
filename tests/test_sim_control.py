@@ -612,14 +612,14 @@ class TestSimControl(Assertions):
     @patch('micropolis.sim_control.evaluation.DoBudgetFromMenu')
     def test_budget_functions(self, mock_budget_menu, mock_do_budget, mock_update_budget):
         """Test budget functions"""
-        sim_control.update_budget()
+        sim_control.update_budget(context)
         mock_update_budget.assert_called_once()
         self.mock_types.Kick.assert_called()
 
-        sim_control.do_budget()
+        sim_control.do_budget(context)
         mock_do_budget.assert_called_once()
 
-        sim_control.do_budget_from_menu()
+        sim_control.do_budget_from_menu(context)
         mock_budget_menu.assert_called_once()
 
     @patch('micropolis.sim_control.engine.sim_update')

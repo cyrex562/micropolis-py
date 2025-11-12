@@ -314,7 +314,7 @@ def loadFile(filename: str) -> int:
         types.sim_speed = 3
 
     # Update simulation state
-    types.setSpeed(types.sim_speed)
+    types.setSpeed(context, types.sim_speed)
     types.setSkips(0)
 
     # Initialize funding and evaluation
@@ -323,7 +323,7 @@ def loadFile(filename: str) -> int:
     types.scenario_id = 0
     types.init_sim_load = 1
     types.do_initial_eval = 0
-    simulation.DoSimInit()
+    simulation.do_sim_init(context)
     engine.invalidate_errors()
     engine.invalidate_maps()
 
@@ -454,7 +454,7 @@ def LoadScenario(scenario_id: int) -> None:
     # Set scenario parameters
     types.scenario_id = scenario_id
     types.city_time = ((year - 1900) * 48) + month
-    types.SetFunds(funds)
+    types.SetFunds(context, funds)
 
     # Set city name
     types.setCityName(name)
@@ -463,7 +463,7 @@ def LoadScenario(scenario_id: int) -> None:
     types.setSkips(0)
     engine.invalidate_maps()
     engine.invalidate_errors()
-    types.setSpeed(3)
+    types.setSpeed(context, 3)
     types.city_tax = 7
 
     # Load scenario file
@@ -477,7 +477,7 @@ def LoadScenario(scenario_id: int) -> None:
     engine.invalidate_maps()
     types.init_sim_load = 1
     types.do_initial_eval = 0
-    simulation.DoSimInit()
+    simulation.do_sim_init(context)
     types.DidLoadScenario()
     types.Kick()
 

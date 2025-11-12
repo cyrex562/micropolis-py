@@ -50,7 +50,7 @@ def GenerateNewCity() -> None:
     Ported from GenerateNewCity() in s_gen.c.
     Main entry point for city generation.
     """
-    GenerateSomeCity(micropolis.utilities.Rand16())
+    GenerateSomeCity(micropolis.utilities.rand16())
 
 
 def GenerateSomeCity(r: int) -> None:
@@ -106,8 +106,8 @@ def ERand(limit: int) -> int:
     Returns:
         Random number between 0 and limit-1
     """
-    z = micropolis.utilities.Rand(limit)
-    x = micropolis.utilities.Rand(limit)
+    z = micropolis.utilities.rand(limit)
+    x = micropolis.utilities.rand(limit)
     return z if z < x else x
 
 
@@ -128,7 +128,7 @@ def GenerateMap(r: int) -> None:
 
     # Island generation logic
     if CreateIsland < 0:
-        if micropolis.utilities.Rand(100) < 10:  # 10% chance for island
+        if micropolis.utilities.rand(100) < 10:  # 10% chance for island
             MakeIsland()
             return
     elif CreateIsland == 1:
@@ -262,20 +262,20 @@ def MakeLakes() -> None:
     Places multiple lake clusters using river placement functions.
     """
     if LakeLevel < 0:
-        Lim1 = micropolis.utilities.Rand(10)
+        Lim1 = micropolis.utilities.rand(10)
     else:
         Lim1 = LakeLevel // 2
 
     for t in range(Lim1):
-        x = micropolis.utilities.Rand(micropolis.constants.WORLD_X - 21) + 10
-        y = micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 20) + 10
-        Lim2 = micropolis.utilities.Rand(12) + 2
+        x = micropolis.utilities.rand(micropolis.constants.WORLD_X - 21) + 10
+        y = micropolis.utilities.rand(micropolis.constants.WORLD_Y - 20) + 10
+        Lim2 = micropolis.utilities.rand(12) + 2
 
         for z in range(Lim2):
             global MapX, MapY
-            MapX = x - 6 + micropolis.utilities.Rand(12)
-            MapY = y - 6 + micropolis.utilities.Rand(12)
-            if micropolis.utilities.Rand(4):
+            MapX = x - 6 + micropolis.utilities.rand(12)
+            MapY = y - 6 + micropolis.utilities.rand(12)
+            if micropolis.utilities.rand(4):
                 SRivPlop()
             else:
                 BRivPlop()
@@ -294,8 +294,8 @@ def GetRandStart() -> None:
     Sets XStart, YStart, MapX, MapY to a random position in the central area.
     """
     global XStart, YStart, MapX, MapY
-    XStart = 40 + micropolis.utilities.Rand(micropolis.constants.WORLD_X - 80)
-    YStart = 33 + micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 67)
+    XStart = 40 + micropolis.utilities.rand(micropolis.constants.WORLD_X - 80)
+    YStart = 33 + micropolis.utilities.rand(micropolis.constants.WORLD_Y - 67)
     MapX = XStart
     MapY = YStart
 
@@ -325,7 +325,7 @@ def DoRivers() -> None:
     Creates rivers starting from the center and extending in different directions.
     """
     global LastDir, Dir, MapX, MapY
-    LastDir = micropolis.utilities.Rand(3)
+    LastDir = micropolis.utilities.rand(3)
     Dir = LastDir
     DoBRiv()
 
@@ -337,7 +337,7 @@ def DoRivers() -> None:
 
     MapX = XStart
     MapY = YStart
-    LastDir = micropolis.utilities.Rand(3)
+    LastDir = micropolis.utilities.rand(3)
     DoSRiv()
 
 
@@ -359,12 +359,12 @@ def DoBRiv() -> None:
 
     while macros.TestBounds(MapX + 4, MapY + 4):
         BRivPlop()
-        if micropolis.utilities.Rand(r1) < 10:
+        if micropolis.utilities.rand(r1) < 10:
             Dir = LastDir
         else:
-            if micropolis.utilities.Rand(r2) > 90:
+            if micropolis.utilities.rand(r2) > 90:
                 Dir += 1
-            if micropolis.utilities.Rand(r2) > 90:
+            if micropolis.utilities.rand(r2) > 90:
                 Dir -= 1
         MoveMap(Dir)
 
@@ -387,12 +387,12 @@ def DoSRiv() -> None:
 
     while macros.TestBounds(MapX + 3, MapY + 3):
         SRivPlop()
-        if micropolis.utilities.Rand(r1) < 10:
+        if micropolis.utilities.rand(r1) < 10:
             Dir = LastDir
         else:
-            if micropolis.utilities.Rand(r2) > 90:
+            if micropolis.utilities.rand(r2) > 90:
                 Dir += 1
-            if micropolis.utilities.Rand(r2) > 90:
+            if micropolis.utilities.rand(r2) > 90:
                 Dir -= 1
         MoveMap(Dir)
 
@@ -494,15 +494,15 @@ def TreeSplash(xloc: int, yloc: int) -> None:
     global MapX, MapY
 
     if TreeLevel < 0:
-        dis = micropolis.utilities.Rand(150) + 50
+        dis = micropolis.utilities.rand(150) + 50
     else:
-        dis = micropolis.utilities.Rand(100 + (TreeLevel * 2)) + 50
+        dis = micropolis.utilities.rand(100 + (TreeLevel * 2)) + 50
 
     MapX = xloc
     MapY = yloc
 
     for z in range(dis):
-        dir = micropolis.utilities.Rand(7)
+        dir = micropolis.utilities.rand(7)
         MoveMap(dir)
         if not macros.TestBounds(MapX, MapY):
             return
@@ -518,13 +518,13 @@ def DoTrees() -> None:
     Creates multiple tree clusters at random locations.
     """
     if TreeLevel < 0:
-        Amount = micropolis.utilities.Rand(100) + 50
+        Amount = micropolis.utilities.rand(100) + 50
     else:
         Amount = TreeLevel + 3
 
     for x in range(Amount):
-        xloc = micropolis.utilities.Rand(micropolis.constants.WORLD_X - 1)
-        yloc = micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 1)
+        xloc = micropolis.utilities.rand(micropolis.constants.WORLD_X - 1)
+        yloc = micropolis.utilities.rand(micropolis.constants.WORLD_Y - 1)
         TreeSplash(xloc, yloc)
 
     SmoothTrees()
@@ -585,7 +585,7 @@ def SmoothRiver() -> None:
                         bitindex += 1
 
                 temp = REdTab[bitindex & 15]
-                if (temp != types.RIVER) and micropolis.utilities.Rand(1):
+                if (temp != types.RIVER) and micropolis.utilities.rand(1):
                     temp += 1
                 types.map_data[MapX][MapY] = temp
 

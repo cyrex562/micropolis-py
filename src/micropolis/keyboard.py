@@ -55,18 +55,18 @@ def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
         types.punish_cnt += 1  # punish for cheating
         if types.punish_cnt == 5:
             types.punish_cnt = 0
-            disasters.MakeEarthquake()
+            disasters.make_earthquake(context)
         LastKeys = ""
         return
 
     elif LastKeys == "fart":
         messages.make_sound("city", "Explosion-High")
         messages.make_sound("city", "Explosion-Low")
-        disasters.MakeFire()
-        disasters.MakeFlood()
-        disasters.MakeTornado()
-        disasters.MakeEarthquake()
-        disasters.MakeMonster()
+        disasters.make_fire(context)
+        disasters.make_flood(context)
+        disasters.make_tornado()
+        disasters.make_earthquake(context)
+        disasters.make_monster(context)
         LastKeys = ""
         return
 
@@ -97,7 +97,7 @@ def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
                             types.TINYEXP
                             + types.ANIMBIT
                             + types.BULLBIT
-                            + micropolis.utilities.Rand(2)
+                            + micropolis.utilities.rand(2)
                         )
         LastKeys = ""
         return
@@ -114,10 +114,10 @@ def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
         n = 500
         for _ in range(n):
             try:
-                x1 = micropolis.utilities.Rand(micropolis.constants.WORLD_X - 1)
-                y1 = micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 1)
-                x2 = micropolis.utilities.Rand(micropolis.constants.WORLD_X - 1)
-                y2 = micropolis.utilities.Rand(micropolis.constants.WORLD_Y - 1)
+                x1 = micropolis.utilities.rand(micropolis.constants.WORLD_X - 1)
+                y1 = micropolis.utilities.rand(micropolis.constants.WORLD_Y - 1)
+                x2 = micropolis.utilities.rand(micropolis.constants.WORLD_X - 1)
+                y2 = micropolis.utilities.rand(micropolis.constants.WORLD_Y - 1)
             except StopIteration:
                 break
 
@@ -162,7 +162,7 @@ def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
 
     elif LastKeys == "patb":
         sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(micropolis.utilities.Rand(40) - 20)
+        sim_control.set_heat_flow(micropolis.utilities.rand(40) - 20)
         sim_control.set_heat_rule(0)
         LastKeys = ""
         types.Kick()
@@ -170,7 +170,7 @@ def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
 
     elif LastKeys == "lucb":
         sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(micropolis.utilities.Rand(1000) - 500)
+        sim_control.set_heat_flow(micropolis.utilities.rand(1000) - 500)
         sim_control.set_heat_rule(0)
         LastKeys = ""
         types.Kick()

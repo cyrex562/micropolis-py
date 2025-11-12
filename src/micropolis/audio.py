@@ -6,13 +6,11 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Any
-from micropolis.context import AppContext
+from .context import AppContext
 from result import Result, Err, Ok
 
 import pygame.mixer
 
-# Import simulation modules
-from . import types
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +135,7 @@ def shutdown_sound() -> Result[None, Exception]:
     return Ok(None)
 
 
-def make_sound(channel: str, sound_id: str) -> Result[None, Exception]:
+def make_sound(context: AppContext, channel: str, sound_id: str) -> Result[None, Exception]:
     """
     Play a sound on a specific channel.
 
@@ -148,7 +146,7 @@ def make_sound(channel: str, sound_id: str) -> Result[None, Exception]:
         channel: Sound channel name (e.g., "city", "edit")
         sound_id: Sound identifier
     """
-    if not types.user_sound_on or not SoundInitialized:
+    if not context.user_sound_on or not SoundInitialized:
         return Ok(None)
 
     try:
@@ -174,7 +172,7 @@ def make_sound(channel: str, sound_id: str) -> Result[None, Exception]:
     return Ok(None)
 
 
-def make_sound_on(view: Any, channel: str, sound_id: str) -> Result[None, Exception]:
+def make_sound_on(context: AppContext, view: Any, channel: str, sound_id: str) -> Result[None, Exception]:
     """
     Play a sound on a specific channel associated with a view.
 
@@ -188,10 +186,10 @@ def make_sound_on(view: Any, channel: str, sound_id: str) -> Result[None, Except
     """
     # For now, just delegate to make_sound
     # In full implementation, this would position sound based on view
-    return make_sound(channel, sound_id)
+    return make_sound(context, channel, sound_id)
 
 
-def start_bulldozer() -> Result[None, Exception]:
+def start_bulldozer(context: AppContext) -> Result[None, Exception]:
     """
     Start the bulldozer sound loop.
 
@@ -200,7 +198,7 @@ def start_bulldozer() -> Result[None, Exception]:
     """
     global Dozing
 
-    if not types.user_sound_on or not SoundInitialized:
+    if not context.user_sound_on or not SoundInitialized:
         return Ok(None)
 
     if Dozing:
@@ -282,14 +280,14 @@ def sound_off() -> Result[None, Exception]:
     return Ok(None)
 
 
-def do_start_sound(channel: str, sound_id: str) -> Result[None, Exception]:
+def do_start_sound(context: AppContext, channel: str, sound_id: str) -> Result[None, Exception]:
     """
     Start a sound (internal function).
 
     Ported from DoStartSound() in w_sound.c.
     Internal function for starting sounds.
     """
-    return make_sound(channel, sound_id)
+    return make_sound(context, channel, sound_id)
 
 
 def do_stop_sound(sound_id: str) -> Result[None, Exception]:
@@ -398,14 +396,14 @@ def load_sound(sound_name: str) -> Result[SoundInfo, Exception]:
 # ============================================================================
 
 
-def is_sound_enabled() -> bool:
+def is_sound_enabled(context: AppContext) -> bool:
     """
     Check if sound is enabled.
 
     Returns:
         True if sound is enabled and initialized
     """
-    return SoundInitialized and bool(types.user_sound_on)
+    return SoundInitialized and bool(context.user_sound_on)
 
 
 def get_channel_count() -> int:
@@ -477,7 +475,7 @@ class AudioCommand:
     """
 
     @staticmethod
-    def handle_command(command: str, *args: str) -> Result[str, Exception]:
+    def handle_command(context: AppContext, command: str, *args: str) -> Result[str, Exception]:
         """
         Handle TCL audio commands.
 
@@ -489,7 +487,7 @@ class AudioCommand:
             TCL command result
         """
         if command == "initialize_sound":
-            initialize_sound()
+            initialize_sound(context)
             return Ok("")
 
         elif command == "shutdown_sound":
@@ -499,11 +497,11 @@ class AudioCommand:
         elif command == "make_sound":
             if len(args) != 2:
                 return Err(ValueError("Usage: make_sound <channel> <sound_id>"))
-            make_sound(args[0], args[1])
+            make_sound(context, args[0], args[1])
             return Ok("")
 
         elif command == "start_bulldozer":
-            start_bulldozer()
+            start_bulldozer(context)
             return Ok("")
 
         elif command == "stop_bulldozer":

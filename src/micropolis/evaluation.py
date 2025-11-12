@@ -6,57 +6,59 @@ This module implements the city evaluation system ported from s_eval.c,
 responsible for calculating city scores, identifying problems, and determining
 city classification based on population and infrastructure.
 """
+from src.micropolis.budget import do_budget, do_budget_from_menu
+from src.micropolis.constants import PROBNUM, HWLDX, HWLDY
+from src.micropolis.context import AppContext
+from src.micropolis.simulation import rand
 
-import micropolis.constants
-import micropolis.utilities
-from . import types, budget
 
 # ============================================================================
 # Evaluation State Variables
 # ============================================================================
 
-EvalValid: int = 0
-CityYes: int = 0
-CityNo: int = 0
-ProblemTable: list[int] = [0] * types.PROBNUM
-ProblemTaken: list[int] = [0] * types.PROBNUM
-ProblemVotes: list[int] = [0] * types.PROBNUM  # votes for each problem
-ProblemOrder: list[int] = [0] * 4  # sorted index to above
-CityPop: int = 0
-deltaCityPop: int = 0
-CityAssValue: int = 0
-CityClass: int = 0  # 0..5
-CityScore: int = 0
-deltaCityScore: int = 0
-AverageCityScore: int = 0
-TrafficAverage: int = 0
+# eval_valid: int = 0
+# city_yes: int = 0
+# city_no: int = 0
+# problem_table: list[int] = [0] * types.PROBNUM
+# problem_taken: list[int] = [0] * types.PROBNUM
+# problem_votes: list[int] = [0] * types.PROBNUM  # votes for each problem
+# problem_order: list[int] = [0] * 4  # sorted index to above
+# city_pop: int = 0
+# delta_city_pop: int = 0
+# city_ass_value: int = 0
+# city_class: int = 0  # 0..5
+# city_score: int = 0
+# delta_city_score: int = 0
+# average_city_score: int = 0
+# traffic_average: int = 0
 
 # ============================================================================
 # Main Evaluation Function
 # ============================================================================
 
 
-def CityEvaluation() -> None:
+def CityEvaluation(context: AppContext) -> None:
     """
     Main city evaluation function.
 
     Ported from CityEvaluation() in s_eval.c.
     Called from SpecialInit and Simulate.
+    :param context:
     """
-    global EvalValid
+    # global eval_valid
 
-    EvalValid = 0
-    if types.total_pop:
-        GetAssValue()
-        DoPopNum()
-        DoProblems()
-        GetScore()
-        DoVotes()
+    context.eval_valid = 0
+    if context.total_pop:
+        GetAssValue(context)
+        DoPopNum(context)
+        DoProblems(context)
+        GetScore(context)
+        DoVotes(context)
         ChangeEval()
     else:
-        EvalInit()
+        EvalInit(context)
         ChangeEval()
-    EvalValid = 1
+    context.eval_valid = 1
 
 
 # ============================================================================
@@ -64,32 +66,33 @@ def CityEvaluation() -> None:
 # ============================================================================
 
 
-def EvalInit() -> None:
+def EvalInit(context: AppContext) -> None:
     """
     Initialize evaluation variables to default values.
 
     Ported from EvalInit() in s_eval.c.
     Called from CityEvaluation and SetCommonInits.
+    :param context:
     """
-    global CityYes, CityNo, CityPop, deltaCityPop, CityAssValue
-    global CityClass, CityScore, deltaCityScore, EvalValid
-    global ProblemVotes, ProblemOrder
+    # global city_yes, city_no, city_pop, delta_city_pop, city_ass_value
+    # global city_class, city_score, delta_city_score, eval_valid
+    # global problem_votes, problem_order
 
     z = 0
-    CityYes = z
-    CityNo = z
-    CityPop = z
-    deltaCityPop = z
-    CityAssValue = z
-    CityClass = z
-    CityScore = 500
-    deltaCityScore = z
-    EvalValid = 1
+    context.city_yes = z
+    context.city_no = z
+    context.city_pop = z
+    context.delta_city_pop = z
+    context.city_ass_value = z
+    context.city_class = z
+    context.city_score = 500
+    context.delta_city_score = z
+    context.eval_valid = 1
 
-    for x in range(types.PROBNUM):
-        ProblemVotes[x] = z
+    for x in range(PROBNUM):
+        context.problem_votes[x] = z
     for x in range(4):
-        ProblemOrder[x] = z
+        context.problem_order[x] = z
 
 
 # ============================================================================
@@ -97,26 +100,27 @@ def EvalInit() -> None:
 # ============================================================================
 
 
-def GetAssValue() -> None:
+def GetAssValue(context: AppContext) -> None:
     """
     Calculate the assessed value of the city based on infrastructure.
 
     Ported from GetAssValue() in s_eval.c.
     Called from CityEvaluation.
+    :param context:
     """
-    global CityAssValue
+    # global city_ass_value
 
-    z = types.road_total * 5
-    z += types.rail_total * 10
-    z += types.police_pop * 1000
-    z += types.fire_st_pop * 1000
-    z += types.hosp_pop * 400
-    z += types.stadium_pop * 3000
-    z += types.port_pop * 5000
-    z += types.airport_pop * 10000
-    z += types.coal_pop * 3000
-    z += types.nuclear_pop * 6000
-    CityAssValue = z * 1000
+    z = context.road_total * 5
+    z += context.rail_total * 10
+    z += context.police_pop * 1000
+    z += context.fire_st_pop * 1000
+    z += context.hosp_pop * 400
+    z += context.stadium_pop * 3000
+    z += context.port_pop * 5000
+    z += context.airport_pop * 10000
+    z += context.coal_pop * 3000
+    z += context.nuclear_pop * 6000
+    context.city_ass_value = z * 1000
 
 
 # ============================================================================
@@ -124,34 +128,35 @@ def GetAssValue() -> None:
 # ============================================================================
 
 
-def DoPopNum() -> None:
+def DoPopNum(context: AppContext) -> None:
     """
     Calculate city population and determine city class.
 
     Ported from DoPopNum() in s_eval.c.
     Called from CityEvaluation.
+    :param context:
     """
-    global CityPop, deltaCityPop, CityClass
+    # global city_pop, delta_city_pop, city_class
 
-    OldCityPop = CityPop
-    CityPop = ((types.res_pop) + (types.com_pop * 8) + (types.ind_pop * 8)) * 20
+    old_city_pop = context.city_pop
+    context.city_pop = (context.res_pop + (context.com_pop * 8) + (context.ind_pop * 8)) * 20
 
-    if OldCityPop == -1:
-        OldCityPop = CityPop
+    if old_city_pop == -1:
+        old_city_pop = context.city_pop
 
-    deltaCityPop = CityPop - OldCityPop
+    context.delta_city_pop = context.city_pop - old_city_pop
 
-    CityClass = 0  # village
-    if CityPop > 2000:
-        CityClass += 1  # town
-    if CityPop > 10000:
-        CityClass += 1  # city
-    if CityPop > 50000:
-        CityClass += 1  # capital
-    if CityPop > 100000:
-        CityClass += 1  # metropolis
-    if CityPop > 500000:
-        CityClass += 1  # megalopolis
+    context.city_class = 0  # village
+    if context.city_pop > 2000:
+        context.city_class += 1  # town
+    if context.city_pop > 10000:
+        context.city_class += 1  # city
+    if context.city_pop > 50000:
+        context.city_class += 1  # capital
+    if context.city_pop > 100000:
+        context.city_class += 1  # metropolis
+    if context.city_pop > 500000:
+        context.city_class += 1  # megalopolis
 
 
 # ============================================================================
@@ -159,64 +164,66 @@ def DoPopNum() -> None:
 # ============================================================================
 
 
-def DoProblems() -> None:
+def DoProblems(context: AppContext) -> None:
     """
     Analyze city problems and determine which ones are most significant.
 
     Ported from DoProblems() in s_eval.c.
     Called from CityEvaluation.
+    :param context:
     """
-    global ProblemTable, ProblemTaken, ProblemOrder
+    # global problem_table, problem_taken, problem_order
 
     # Initialize problem table
-    for z in range(types.PROBNUM):
-        ProblemTable[z] = 0
+    for z in range(PROBNUM):
+        context.problem_table[z] = 0
 
     # Calculate problem severity scores
-    ProblemTable[0] = types.crime_average  # Crime
-    ProblemTable[1] = types.pollute_average  # Pollution
-    ProblemTable[2] = int(types.lv_average * 0.7)  # Housing
-    ProblemTable[3] = types.city_tax * 10  # Taxes
-    ProblemTable[4] = AverageTrf()  # Traffic
-    ProblemTable[5] = GetUnemployment()  # Unemployment
-    ProblemTable[6] = GetFire()  # Fire
+    context.problem_table[0] = context.crime_average  # Crime
+    context.problem_table[1] = context.pollute_average  # Pollution
+    context.problem_table[2] = int(context.lv_average * 0.7)  # Housing
+    context.problem_table[3] = context.city_tax * 10  # Taxes
+    context.problem_table[4] = AverageTrf(context)  # Traffic
+    context.problem_table[5] = GetUnemployment(context)  # Unemployment
+    context.problem_table[6] = GetFire(context)  # Fire
 
     # Vote on problems
-    VoteProblems()
+    VoteProblems(context)
 
     # Initialize problem taken array
-    for z in range(types.PROBNUM):
-        ProblemTaken[z] = 0
+    for z in range(PROBNUM):
+        context.problem_taken[z] = 0
 
     # Find top 4 problems
     for z in range(4):
         Max = 0
         ThisProb = -1
         for x in range(7):  # Check first 7 problems
-            if (ProblemVotes[x] > Max) and (not ProblemTaken[x]):
+            if (context.problem_votes[x] > Max) and (not context.problem_taken[x]):
                 ThisProb = x
-                Max = ProblemVotes[x]
+                Max = context.problem_votes[x]
 
         if Max and ThisProb >= 0:
-            ProblemTaken[ThisProb] = 1
-            ProblemOrder[z] = ThisProb
+            context.problem_taken[ThisProb] = 1
+            context.problem_order[z] = ThisProb
         else:
-            ProblemOrder[z] = 7
-            ProblemTable[7] = 0
+            context.problem_order[z] = 7
+            context.problem_table[7] = 0
 
 
-def VoteProblems() -> None:
+def VoteProblems(context: AppContext) -> None:
     """
     Simulate voting on city problems based on their severity.
 
     Ported from VoteProblems() in s_eval.c.
     Called from DoProblems.
+    :param context: 
     """
-    global ProblemVotes
+    # global problem_votes
 
     # Initialize votes
-    for z in range(types.PROBNUM):
-        ProblemVotes[z] = 0
+    for z in range(PROBNUM):
+        context.problem_votes[z] = 0
 
     x = 0
     z = 0
@@ -224,16 +231,16 @@ def VoteProblems() -> None:
 
     # Simulate 100 votes with diminishing returns
     while (z < 100) and (count < 600):
-        if micropolis.utilities.Rand(300) < ProblemTable[x]:
-            ProblemVotes[x] += 1
+        if rand(300) < context.problem_table[x]:
+            context.problem_votes[x] += 1
             z += 1
         x += 1
-        if x > types.PROBNUM - 1:
+        if x > context.PROBNUM - 1:
             x = 0
         count += 1
 
 
-def AverageTrf() -> int:
+def AverageTrf(context: AppContext) -> int:
     """
     Calculate average traffic density.
 
@@ -242,24 +249,25 @@ def AverageTrf() -> int:
 
     Returns:
         Average traffic value (0-255 range)
+        :param context:
     """
-    global TrafficAverage
+    # global traffic_average
 
     TrfTotal = 0
     count = 1
 
     # Sum traffic density over land value areas
-    for x in range(micropolis.constants.HWLDX):
-        for y in range(micropolis.constants.HWLDY):
-            if types.land_value_mem[x][y]:
-                TrfTotal += types.trf_density[x][y]
+    for x in range(HWLDX):
+        for y in range(HWLDY):
+            if context.land_value_mem[x][y]:
+                TrfTotal += context.trf_density[x][y]
                 count += 1
 
-    TrafficAverage = int((TrfTotal / count) * 2.4)
-    return TrafficAverage
+    traffic_average = int((TrfTotal / count) * 2.4)
+    return traffic_average
 
 
-def GetUnemployment() -> int:
+def GetUnemployment(context: AppContext) -> int:
     """
     Calculate unemployment rate.
 
@@ -268,10 +276,11 @@ def GetUnemployment() -> int:
 
     Returns:
         Unemployment rate (0-255 range)
+        :param context:
     """
-    b = (types.com_pop + types.ind_pop) << 3
+    b = (context.com_pop + context.ind_pop) << 3
     if b:
-        r = types.res_pop / b
+        r = context.res_pop / b
     else:
         return 0
 
@@ -283,7 +292,7 @@ def GetUnemployment() -> int:
     return b
 
 
-def GetFire() -> int:
+def GetFire(context: AppContext) -> int:
     """
     Calculate fire danger level.
 
@@ -292,8 +301,9 @@ def GetFire() -> int:
 
     Returns:
         Fire danger level (0-255 range)
+        :param context:
     """
-    z = types.fire_pop * 5
+    z = context.fire_pop * 5
     if z > 255:
         return 255
     else:
@@ -305,21 +315,22 @@ def GetFire() -> int:
 # ============================================================================
 
 
-def GetScore() -> None:
+def GetScore(context: AppContext) -> None:
     """
     Calculate the overall city score based on various factors.
 
     Ported from GetScore() in s_eval.c.
     Called from CityEvaluation.
+    :param context:
     """
-    global CityScore, deltaCityScore
+    # global city_score, delta_city_score
 
-    OldCityScore = CityScore
+    OldCityScore = context.city_score
     x = 0
 
     # Sum all 7 problems
     for z in range(7):
-        x += ProblemTable[z]
+        x += context.problem_table[z]
 
     x = x // 3  # 7 + 2 average
     if x > 256:
@@ -332,50 +343,50 @@ def GetScore() -> None:
         z = 0
 
     # Apply capacity penalties
-    if types.res_cap:
+    if context.res_cap:
         z = int(z * 0.85)
-    if types.com_cap:
+    if context.com_cap:
         z = int(z * 0.85)
-    if types.ind_cap:
+    if context.ind_cap:
         z = int(z * 0.85)
 
     # Apply infrastructure effects
-    if types.road_effect < 32:
-        z = z - (32 - types.road_effect)
-    if types.police_effect < 1000:
-        z = int(z * (0.9 + (types.police_effect / 10000.1)))
-    if types.fire_effect < 1000:
-        z = int(z * (0.9 + (types.fire_effect / 10000.1)))
+    if context.road_effect < 32:
+        z = z - (32 - context.road_effect)
+    if context.police_effect < 1000:
+        z = int(z * (0.9 + (context.police_effect / 10000.1)))
+    if context.fire_effect < 1000:
+        z = int(z * (0.9 + (context.fire_effect / 10000.1)))
 
     # Apply demand penalties
-    if types.r_value < -1000:
+    if context.r_value < -1000:
         z = int(z * 0.85)
-    if types.c_value < -1000:
+    if context.c_value < -1000:
         z = int(z * 0.85)
-    if types.i_value < -1000:
+    if context.i_value < -1000:
         z = int(z * 0.85)
 
     # Apply population growth modifier
     SM = 1.0
-    if (CityPop == 0) or (deltaCityPop == 0):
+    if (context.city_pop == 0) or (context.delta_city_pop == 0):
         SM = 1.0
-    elif deltaCityPop == CityPop:
+    elif context.delta_city_pop == context.city_pop:
         SM = 1.0
-    elif deltaCityPop > 0:
-        SM = (deltaCityPop / CityPop) + 1.0
-    elif deltaCityPop < 0:
-        SM = 0.95 + (deltaCityPop / (CityPop - deltaCityPop))
+    elif context.delta_city_pop > 0:
+        SM = (context.delta_city_pop / context.city_pop) + 1.0
+    elif context.delta_city_pop < 0:
+        SM = 0.95 + (context.delta_city_pop / (context.city_pop - context.delta_city_pop))
 
     z = int(z * SM)
 
     # Subtract fire and tax penalties
-    z = z - GetFire()
-    z = z - types.city_tax
+    z = z - GetFire(context)
+    z = z - context.city_tax
 
     # Apply power ratio modifier
-    TM = types.un_pwrd_z_cnt + types.pwrd_z_cnt  # total zones
+    TM = context.un_pwrd_z_cnt + context.pwrd_z_cnt  # total zones
     if TM:
-        SM = types.pwrd_z_cnt / TM  # powered ratio
+        SM = context.pwrd_z_cnt / TM  # powered ratio
     else:
         SM = 1.0
     z = int(z * SM)
@@ -387,9 +398,9 @@ def GetScore() -> None:
         z = 0
 
     # Average with previous score
-    CityScore = (CityScore + z) // 2
+    city_score = (context.city_score + z) // 2
 
-    deltaCityScore = CityScore - OldCityScore
+    context.delta_city_score = city_score - OldCityScore
 
 
 # ============================================================================
@@ -397,24 +408,25 @@ def GetScore() -> None:
 # ============================================================================
 
 
-def DoVotes() -> None:
+def DoVotes(context: AppContext) -> None:
     """
     Simulate citizen voting based on city score.
 
     Ported from DoVotes() in s_eval.c.
     Called from CityEvaluation.
+    :param context:
     """
-    global CityYes, CityNo
+    # global city_yes, city_no
 
-    CityYes = 0
-    CityNo = 0
+    context.city_yes = 0
+    context.city_no = 0
 
     # Simulate 100 votes
     for z in range(100):
-        if micropolis.utilities.Rand(1000) < CityScore:
-            CityYes += 1
+        if rand(1000) < context.city_score:
+            context.city_yes += 1
         else:
-            CityNo += 1
+            context.city_no += 1
 
 
 def ChangeEval() -> None:
@@ -441,17 +453,19 @@ def UpdateBudget() -> None:
     pass
 
 
-def DoBudget() -> None:
+def DoBudget(context: AppContext) -> None:
     """
     Run the standard annual budget sequence.
+    :param context:
     """
-    budget.do_budget()
-    types.must_update_funds = 1
+    do_budget(context)
+    context.must_update_funds = 1
 
 
-def DoBudgetFromMenu() -> None:
+def DoBudgetFromMenu(context: AppContext) -> None:
     """
     Trigger the budget workflow via the modern budget module.
+    :param context:
     """
-    budget.do_budget_from_menu()
-    types.must_update_funds = 1
+    do_budget_from_menu(context)
+    context.must_update_funds = 1

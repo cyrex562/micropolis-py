@@ -279,7 +279,7 @@ def InitGame() -> None:
         return
 
     InitFundingLevel()
-    simulation.DoSimInit()
+    simulation.do_sim_init(context)
     types.init_sim_load = 2
     types.do_initial_eval = 0
 

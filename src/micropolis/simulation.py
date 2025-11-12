@@ -5,113 +5,74 @@ This module contains the main simulation loop and supporting functions
 ported from s_sim.c, implementing the city simulation mechanics.
 """
 
-from typing import Optional
 import time
 
-import micropolis.constants
-import micropolis.utilities
-
-from . import types, macros, power, zones, sprite_manager as sprites
-
-
-# ============================================================================
-# Simulation Control Variables (from s_sim.c globals)
-# ============================================================================
-
-# Valve control
-ValveFlag: int = 0
-CrimeRamp: int = 0
-PolluteRamp: int = 0
-RValve: int = 0
-CValve: int = 0
-IValve: int = 0
-
-# Capacity limits
-ResCap: int = 0
-ComCap: int = 0
-IndCap: int = 0
-
-# Financial
-CashFlow: int = 0
-EMarket: float = 4.0
-
-# Disaster control
-DisasterEvent: int = 0
-DisasterWait: int = 0
-
-# Scoring
-ScoreType: int = 0
-ScoreWait: int = 0
-
-# Power statistics
-PwrdZCnt: int = 0
-unPwrdZCnt: int = 0
-NewPower: int = 0
-
-# Tax averaging
-AvCityTax: int = 0
-
-# Cycle counters
-Scycle: int = 0
-Fcycle: int = 0
-Spdcycle: int = 0
-
-# Initial evaluation flag
-DoInitialEval: int = 0
-
-# Melt down coordinates
-MeltX: int = 0
-MeltY: int = 0
-
+from . import macros, power, zones, sprite_manager as sprites
+from .constants import WORLD_X, CENSUSRATE, TAXFREQ, TDMAP, RDMAP, ALMAP, REMAP, COMAP, INMAP, DYMAP, HWLDX, HWLDY, \
+    SM_X, SM_Y, WORLD_Y
+from .context import AppContext
+from .messages import clear_mes, send_mes_at
+from .random import sim_rand, sim_srand
 
 # ============================================================================
 # Simulation Control Variables (from s_sim.c globals)
 # ============================================================================
 
 # Valve control
-ValveFlag: int = 0
-CrimeRamp: int = 0
-PolluteRamp: int = 0
-RValve: int = 0
-CValve: int = 0
-IValve: int = 0
+# valve_flag: int = 0
+# crime_ramp: int = 0
+# pollute_ramp: int = 0
+# r_valve: int = 0
+# c_valve: int = 0
+# i_valve: int = 0
 
 # Capacity limits
-ResCap: int = 0
-ComCap: int = 0
-IndCap: int = 0
+# res_cap: int = 0
+# com_cap: int = 0
+# ind_cap: int = 0
 
 # Financial
-CashFlow: int = 0
-EMarket: float = 4.0
+# cash_flow: int = 0
+# e_market: float = 4.0
 
 # Disaster control
-DisasterEvent: int = 0
-DisasterWait: int = 0
+# disaster_event: int = 0
+# disaster_wait: int = 0
 
 # Scoring
-ScoreType: int = 0
-ScoreWait: int = 0
+# score_type: int = 0
+# score_wait: int = 0
 
 # Power statistics
-PwrdZCnt: int = 0
-unPwrdZCnt: int = 0
-NewPower: int = 0
+# pwrd_z_cnt: int = 0
+# un_pwrd_z_cnt: int = 0
+# new_power: int = 0
 
 # Tax averaging
-AvCityTax: int = 0
+# av_city_tax: int = 0
 
 # Cycle counters
-Scycle: int = 0
-Fcycle: int = 0
-Spdcycle: int = 0
+# scycle: int = 0
+# fcycle: int = 0
+# spdcycle: int = 0
 
 # Initial evaluation flag
-DoInitialEval: int = 0
+# do_initial_eval: int = 0
 
 # Melt down coordinates
-MeltX: int = 0
-MeltY: int = 0
+# melt_x: int = 0
+# melt_y: int = 0
+
+
+# ============================================================================
+# Simulation Control Variables (from s_sim.c globals)
+# ============================================================================
+
+
+
+
+
+
 
 
 # ============================================================================
@@ -119,34 +80,36 @@ MeltY: int = 0
 # ============================================================================
 
 
-def SimFrame() -> None:
+def sim_frame(context: AppContext) -> None:
     """
+    ported from SimFrame
     Main simulation frame function.
 
     Called each frame to advance the simulation based on speed settings.
     Ported from SimFrame() in s_sim.c.
     """
-    global Spdcycle, Fcycle
+    # global spdcycle, fcycle
 
-    if types.sim_speed == 0:
+    if context.sim_speed == 0:
         return
 
-    Spdcycle = (Spdcycle + 1) % 1024
+    context.spdcycle = (context.spdcycle + 1) % 1024
 
-    if types.sim_speed == 1 and (Spdcycle % 5) != 0:
+    if context.sim_speed == 1 and (context.spdcycle % 5) != 0:
         return
 
-    if types.sim_speed == 2 and (Spdcycle % 3) != 0:
+    if context.sim_speed == 2 and (context.spdcycle % 3) != 0:
         return
 
-    Fcycle = (Fcycle + 1) % 1024
+    context.fcycle = (context.fcycle + 1) % 1024
     # if InitSimLoad: Fcycle = 0;  # XXX: commented out in original
 
-    Simulate(Fcycle & 15)
+    simulate(context, context.fcycle & 15)
 
 
-def Simulate(mod16: int) -> None:
+def simulate(context: AppContext, mod16: int) -> None:
     """
+    ported from Simulate
     Main simulation loop function.
 
     Executes different simulation phases based on the mod16 counter.
@@ -154,141 +117,133 @@ def Simulate(mod16: int) -> None:
 
     Args:
         mod16: Current simulation phase (0-15)
+        :param mod16:
+        :param context:
     """
-    global Scycle, DoInitialEval, AvCityTax
+    # global scycle, do_initial_eval, av_city_tax
 
     # Speed control tables (from original C code)
-    SpdPwr = [1, 2, 4, 5]
-    SpdPtl = [1, 2, 7, 17]
-    SpdCri = [1, 1, 8, 18]
-    SpdPop = [1, 1, 9, 19]
-    SpdFir = [1, 1, 10, 20]
+    spd_pwr = [1, 2, 4, 5]
+    spd_ptl = [1, 2, 7, 17]
+    spd_cri = [1, 1, 8, 18]
+    spd_pop = [1, 1, 9, 19]
+    spd_fir = [1, 1, 10, 20]
 
-    x = types.sim_speed
+    x = context.sim_speed
     if x > 3:
         x = 3
 
     if mod16 == 0:
-        Scycle = (Scycle + 1) % 1024  # This is cosmic
-        if DoInitialEval:
-            DoInitialEval = 0
-            CityEvaluation()
-        types.city_time += 1
-        AvCityTax += types.city_tax  # post
-        if (Scycle & 1) == 0:
-            SetValves()
-        ClearCensus()
+        context.scycle = (context.scycle + 1) % 1024  # This is cosmic
+        if context.do_initial_eval:
+            context.do_initial_eval = 0
+            city_evaluation()
+        context.city_time += 1
+        context.av_city_tax += context.city_tax  # post
+        if (context.scycle & 1) == 0:
+            set_valves(context)
+        clear_census(context)
 
     elif mod16 == 1:
-        MapScan(0, 1 * micropolis.constants.WORLD_X // 8)
+        map_scan(context, 0, 1 * WORLD_X // 8)
     elif mod16 == 2:
-        MapScan(
-            1 * micropolis.constants.WORLD_X // 8, 2 * micropolis.constants.WORLD_X // 8
-        )
+        map_scan(context, 1 * WORLD_X // 8, 2 * WORLD_X // 8)
     elif mod16 == 3:
-        MapScan(
-            2 * micropolis.constants.WORLD_X // 8, 3 * micropolis.constants.WORLD_X // 8
-        )
+        map_scan(context, 2 * WORLD_X // 8, 3 * WORLD_X // 8)
     elif mod16 == 4:
-        MapScan(
-            3 * micropolis.constants.WORLD_X // 8, 4 * micropolis.constants.WORLD_X // 8
-        )
+        map_scan(context, 3 * WORLD_X // 8, 4 * WORLD_X // 8)
     elif mod16 == 5:
-        MapScan(
-            4 * micropolis.constants.WORLD_X // 8, 5 * micropolis.constants.WORLD_X // 8
-        )
+        map_scan(context, 4 * WORLD_X // 8, 5 * WORLD_X // 8)
     elif mod16 == 6:
-        MapScan(
-            5 * micropolis.constants.WORLD_X // 8, 6 * micropolis.constants.WORLD_X // 8
-        )
+        map_scan(context, 5 * WORLD_X // 8, 6 * WORLD_X // 8)
     elif mod16 == 7:
-        MapScan(
-            6 * micropolis.constants.WORLD_X // 8, 7 * micropolis.constants.WORLD_X // 8
-        )
+        map_scan(context, 6 * WORLD_X // 8, 7 * WORLD_X // 8)
     elif mod16 == 8:
-        MapScan(7 * micropolis.constants.WORLD_X // 8, micropolis.constants.WORLD_X)
+        map_scan(context, 7 * WORLD_X // 8, WORLD_X)
 
     elif mod16 == 9:
-        if (types.city_time % micropolis.constants.CENSUSRATE) == 0:
-            TakeCensus()
-        if (types.city_time % (micropolis.constants.CENSUSRATE * 12)) == 0:
-            Take2Census()
+        if (context.city_time % CENSUSRATE) == 0:
+            take_census(context)
+        if (context.city_time % (CENSUSRATE * 12)) == 0:
+            take2_census(context)
 
-        if (types.city_time % micropolis.constants.TAXFREQ) == 0:
-            CollectTax()
-            CityEvaluation()
+        if (context.city_time % TAXFREQ) == 0:
+            collect_tax(context)
+            city_evaluation()
 
     elif mod16 == 10:
-        if (Scycle % 5) == 0:
-            DecROGMem()
-        DecTrafficMem()
-        types.new_map_flags[micropolis.constants.TDMAP] = 1
-        types.new_map_flags[micropolis.constants.RDMAP] = 1
-        types.new_map_flags[micropolis.constants.ALMAP] = 1
-        types.new_map_flags[micropolis.constants.REMAP] = 1
-        types.new_map_flags[micropolis.constants.COMAP] = 1
-        types.new_map_flags[micropolis.constants.INMAP] = 1
-        types.new_map_flags[micropolis.constants.DYMAP] = 1
-        SendMessages()
+        if (context.scycle % 5) == 0:
+            dec_rog_mem(context)
+        dec_traffic_mem(context)
+        context.new_map_flags[TDMAP] = 1
+        context.new_map_flags[RDMAP] = 1
+        context.new_map_flags[ALMAP] = 1
+        context.new_map_flags[REMAP] = 1
+        context.new_map_flags[COMAP] = 1
+        context.new_map_flags[INMAP] = 1
+        context.new_map_flags[DYMAP] = 1
+        send_messages()
 
     elif mod16 == 11:
-        if (Scycle % SpdPwr[x]) == 0:
-            DoPowerScan()
-            NewPower = 1  # post-release change
+        if (context.scycle % spd_pwr[x]) == 0:
+            do_power_scan()
+            context.new_power = 1  # post-release change
 
     elif mod16 == 12:
-        if (Scycle % SpdPtl[x]) == 0:
+        if (context.scycle % spd_ptl[x]) == 0:
             # PTLScan() - Pollution scanning (placeholder)
             pass
 
     elif mod16 == 13:
-        if (Scycle % SpdCri[x]) == 0:
+        if (context.scycle % spd_cri[x]) == 0:
             # CrimeScan() - Crime scanning (placeholder)
             pass
 
     elif mod16 == 14:
-        if (Scycle % SpdPop[x]) == 0:
+        if (context.scycle % spd_pop[x]) == 0:
             # PopDenScan() - Population density scanning (placeholder)
             pass
 
     elif mod16 == 15:
-        if (Scycle % SpdFir[x]) == 0:
+        if (context.scycle % spd_fir[x]) == 0:
             # FireAnalysis() - Fire analysis (placeholder)
             pass
-        DoDisasters()
+        do_disasters()
 
 
-def DoSimInit() -> None:
+def do_sim_init(context: AppContext) -> None:
     """
+    ported from do_sim_init
     Initialize simulation when loading a city.
 
     Ported from DoSimInit() in s_sim.c.
+    :param context:
     """
-    global Fcycle, Scycle
+    # global fcycle, scycle
 
-    Fcycle = 0
-    Scycle = 0
+    context.fcycle = 0
+    context.scycle = 0
 
-    if types.init_sim_load == 2:  # if new city
-        InitSimMemory()
+    if context.init_sim_load == 2:  # if new city
+        init_sim_memory(context)
 
-    if types.init_sim_load == 1:  # if city just loaded
-        SimLoadInit()
+    if context.init_sim_load == 1:  # if city just loaded
+        sim_load_init(context)
 
-    SetValves()
-    ClearCensus()
+    set_valves(context)
+    clear_census(context)
     # MapScan(0, WORLD_X)  # XXX: commented out in original
     power.DoPowerScan()
-    NewPower = 1  # post rel
+    context.new_power = 1  # post rel
     # PTLScan() - placeholder
     # CrimeScan() - placeholder
     # PopDenScan() - placeholder
     # FireAnalysis() - placeholder
-    types.new_map = 1
+    context.new_map = 1
     # doAllGraphs() - placeholder
-    types.new_graph = 1
-    types.total_pop = 1
-    DoInitialEval = 1
+    context.new_graph = 1
+    context.total_pop = 1
+    context.do_initial_eval = 1
 
 
 # ============================================================================
@@ -296,97 +251,105 @@ def DoSimInit() -> None:
 # ============================================================================
 
 
-def DecTrafficMem() -> None:
+def dec_traffic_mem(context: AppContext) -> None:
     """
+    ported from dec_traffic_mem
     Gradually reduces traffic density values.
 
     Ported from DecTrafficMem() in s_sim.c.
+    :param context:
     """
-    for x in range(micropolis.constants.HWLDX):
-        for y in range(micropolis.constants.HWLDY):
-            z = types.trf_density[x][y]
+    for x in range(HWLDX):
+        for y in range(HWLDY):
+            z = context.trf_density[x][y]
             if z > 0:
                 if z > 24:
                     if z > 200:
-                        types.trf_density[x][y] = z - 34
+                        context.trf_density[x][y] = z - 34
                     else:
-                        types.trf_density[x][y] = z - 24
+                        context.trf_density[x][y] = z - 24
                 else:
-                    types.trf_density[x][y] = 0
+                    context.trf_density[x][y] = 0
 
 
-def DecROGMem() -> None:
+def dec_rog_mem(context: AppContext) -> None:
     """
+    ported from DecROGMem
     Gradually reduces RateOGMem values.
 
     Ported from DecROGMem() in s_sim.c.
+    :param context:
     """
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
-            z = types.rate_og_mem[x][y]
+    for x in range(SM_X):
+        for y in range(SM_Y):
+            z = context.rate_og_mem[x][y]
             if z == 0:
                 continue
             if z > 0:
-                types.rate_og_mem[x][y] -= 1
+                context.rate_og_mem[x][y] -= 1
                 if z > 200:
-                    types.rate_og_mem[x][y] = 200  # prevent overflow
+                    context.rate_og_mem[x][y] = 200  # prevent overflow
                 continue
             if z < 0:
-                types.rate_og_mem[x][y] += 1
+                context.rate_og_mem[x][y] += 1
                 if z < -200:
-                    types.rate_og_mem[x][y] = -200
+                    context.rate_og_mem[x][y] = -200
 
 
-def InitSimMemory() -> None:
+def init_sim_memory(context: AppContext) -> None:
     """
+    ported from InitSimMemory
     Initialize simulation memory for a new city.
 
     Ported from InitSimMemory() in s_sim.c.
+    :param context:
     """
-    global CrimeRamp, PolluteRamp, EMarket, DisasterEvent, ScoreType
+    # global crime_ramp, pollute_ramp, e_market, disaster_event, score_type
 
     z = 0
     # SetCommonInits() - placeholder
     for x in range(240):
-        types.res_his[x] = z
-        types.com_his[x] = z
-        types.ind_his[x] = z
-        types.money_his[x] = 128
-        types.crime_his[x] = z
-        types.pollution_his[x] = z
+        context.res_his[x] = z
+        context.com_his[x] = z
+        context.ind_his[x] = z
+        context.money_his[x] = 128
+        context.crime_his[x] = z
+        context.pollution_his[x] = z
 
-    CrimeRamp = z
-    PolluteRamp = z
-    types.total_pop = z
-    RValve = z
-    CValve = z
-    IValve = z
-    ResCap = z
-    ComCap = z
-    IndCap = z
+    context.crime_ramp = z
+    context.pollute_ramp = z
+    context.total_pop = z
+    context.r_value = z
+    context.c_value = z
+    context.i_val = z
+    context.res_cap = z
+    context.com_cap = z
+    context.ind_cap = z
 
-    EMarket = 6.0
-    DisasterEvent = 0
-    ScoreType = 0
+    context.e_market = 6.0
+    context.disaster_event = 0
+    context.score_type = 0
 
     # Clear power map
-    for z in range(types.PWRMAPSIZE):
-        types.power_map[z] = ~0  # set power Map
+    for z in range(context.PWRMAPSIZE):
+        context.power_map[z] = ~0  # set power Map
     power.DoPowerScan()
-    NewPower = 1  # post rel
+    context.new_power = 1  # post rel
 
-    types.init_sim_load = 0
+    context.init_sim_load = 0
 
 
-def SimLoadInit() -> None:
+def sim_load_init(context: AppContext) -> None:
     """
+    ported SimLoadInit
     Initialize simulation when loading a saved city.
 
     Ported from SimLoadInit() in s_sim.c.
+    :param context:
     """
     # Disaster wait times for different scenarios
-    DisTab = [0, 2, 10, 5, 20, 3, 5, 5, 2 * 48]
-    ScoreWaitTab = [
+    dis_tab = [0, 2, 10, 5, 20, 3, 5, 5, 2 * 48]
+    score_wait_tab = [
         0,
         30 * 48,
         5 * 48,
@@ -398,82 +361,84 @@ def SimLoadInit() -> None:
         10 * 48,
     ]
 
-    global EMarket, RValve, CValve, IValve, CrimeRamp, PolluteRamp
+    # global e_market, r_valve, c_valve, i_valve, crime_ramp, pollute_ramp
 
     z = 0
-    EMarket = float(types.misc_his[1])
-    types.res_pop = types.misc_his[2]
-    types.com_pop = types.misc_his[3]
-    types.ind_pop = types.misc_his[4]
-    RValve = types.misc_his[5]
-    CValve = types.misc_his[6]
-    IValve = types.misc_his[7]
-    CrimeRamp = types.misc_his[10]
-    PolluteRamp = types.misc_his[11]
-    types.lv_average = types.misc_his[12]
-    types.crime_average = types.misc_his[13]
-    types.pollute_average = types.misc_his[14]
-    types.game_level = types.misc_his[15]
+    context.e_market = float(context.misc_his[1])
+    context.res_pop = context.misc_his[2]
+    context.com_pop = context.misc_his[3]
+    context.ind_pop = context.misc_his[4]
+    context.r_valve = context.misc_his[5]
+    context.c_valve = context.misc_his[6]
+    context.i_valve = context.misc_his[7]
+    context.crime_ramp = context.misc_his[10]
+    context.pollute_ramp = context.misc_his[11]
+    context.lv_average = context.misc_his[12]
+    context.crime_average = context.misc_his[13]
+    context.pollute_average = context.misc_his[14]
+    context.game_level = context.misc_his[15]
 
-    if types.city_time < 0:
-        types.city_time = 0
-    if EMarket == 0:
-        EMarket = 4.0
-    if (types.game_level > 2) or (types.game_level < 0):
-        types.game_level = 0
+    if context.city_time < 0:
+        context.city_time = 0
+    if context.e_market == 0:
+        context.e_market = 4.0
+    if (context.game_level > 2) or (context.game_level < 0):
+        context.game_level = 0
     # SetGameLevel(GameLevel) - placeholder
 
     # SetCommonInits() - placeholder
 
-    types.city_class = types.misc_his[16]
-    types.city_score = types.misc_his[17]
+    context.city_class = context.misc_his[16]
+    context.city_score = context.misc_his[17]
 
-    if (types.city_class > 5) or (types.city_class < 0):
-        types.city_class = 0
-    if (types.city_score > 999) or (types.city_score < 1):
-        types.city_score = 500
+    if (context.city_class > 5) or (context.city_class < 0):
+        context.city_class = 0
+    if (context.city_score > 999) or (context.city_score < 1):
+        context.city_score = 500
 
-    ResCap = 0
-    ComCap = 0
-    IndCap = 0
+    context.res_cap = 0
+    context.com_cap = 0
+    context.ind_cap = 0
 
-    AvCityTax = (types.city_time % 48) * 7  # post
+    context.av_city_tax = (context.city_time % 48) * 7  # post
 
-    for z in range(types.PWRMAPSIZE):
-        types.power_map[z] = 0xFFFF  # set power Map
-    DoNilPower()
+    for z in range(context.PWRMAPSIZE):
+        context.power_map[z] = 0xFFFF  # set power Map
+    do_nil_power(context)
 
-    if types.scenario_id > 8:
-        types.scenario_id = 0
+    if context.scenario_id > 8:
+        context.scenario_id = 0
 
-    if types.scenario_id:
-        DisasterEvent = types.scenario_id
-        DisasterWait = DisTab[types.scenario_id]
-        ScoreType = types.scenario_id
-        ScoreWait = ScoreWaitTab[types.scenario_id]
+    if context.scenario_id:
+        context.disaster_event = context.scenario_id
+        context.disaster_wait = dis_tab[context.scenario_id]
+        context.score_type = context.scenario_id
+        context.score_wait = score_wait_tab[context.scenario_id]
     else:
-        DisasterEvent = 0
-        ScoreType = 0
+        context.disaster_event = 0
+        context.score_type = 0
 
-    types.road_effect = 32
-    types.police_effect = 1000  # post
-    types.fire_effect = 1000
-    types.init_sim_load = 0
+    context.road_effect = 32
+    context.police_effect = 1000  # post
+    context.fire_effect = 1000
+    context.init_sim_load = 0
 
 
-def DoNilPower() -> None:
+def do_nil_power(context: AppContext) -> None:
     """
+    DoNilPower
     Set power for all zones when loading a city.
 
     Ported from DoNilPower() in s_sim.c.
+    :param context:
     """
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
-            z = types.map_data[x][y]
-            if z & types.ZONEBIT:
-                types.s_map_x = x
-                types.s_map_y = y
-                types.cchr = z
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            z = context.map_data[x][y]
+            if z & context.ZONEBIT:
+                context.s_map_x = x
+                context.s_map_y = y
+                context.cchr = z
                 zones.SetZPower()
 
 
@@ -482,14 +447,15 @@ def DoNilPower() -> None:
 # ============================================================================
 
 
-def SetValves() -> None:
+def set_valves(context: AppContext) -> None:
     """
+    ported from SetValves
     Set zone growth valves based on economic conditions.
 
     Ported from SetValves() in s_sim.c.
     """
     # Tax table for different tax rates
-    TaxTable = [
+    tax_table = [
         200,
         150,
         120,
@@ -513,61 +479,61 @@ def SetValves() -> None:
         -600,
     ]
 
-    global ValveFlag, RValve, CValve, IValve
+    # global valve_flag, r_valve, c_valve, i_valve
 
     # Store current values in MiscHis
-    types.misc_his[1] = int(EMarket)
-    types.misc_his[2] = types.res_pop
-    types.misc_his[3] = types.com_pop
-    types.misc_his[4] = types.ind_pop
-    types.misc_his[5] = RValve
-    types.misc_his[6] = CValve
-    types.misc_his[7] = IValve
-    types.misc_his[10] = CrimeRamp
-    types.misc_his[11] = PolluteRamp
-    types.misc_his[12] = types.lv_average
-    types.misc_his[13] = types.crime_average
-    types.misc_his[14] = types.pollute_average
-    types.misc_his[15] = types.game_level
-    types.misc_his[16] = types.city_class
-    types.misc_his[17] = types.city_score
+    context.misc_his[1] = int(context.e_market)
+    context.misc_his[2] = context.res_pop
+    context.misc_his[3] = context.com_pop
+    context.misc_his[4] = context.ind_pop
+    context.misc_his[5] = context.r_valve
+    context.misc_his[6] = context.c_valve
+    context.misc_his[7] = context.i_valve
+    context.misc_his[10] = context.crime_ramp
+    context.misc_his[11] = context.pollute_ramp
+    context.misc_his[12] = context.lv_average
+    context.misc_his[13] = context.crime_average
+    context.misc_his[14] = context.pollute_average
+    context.misc_his[15] = context.game_level
+    context.misc_his[16] = context.city_class
+    context.misc_his[17] = context.city_score
 
     # Calculate normalized residential population
-    NormResPop = types.res_pop / 8
-    types.last_total_pop = types.total_pop
-    types.total_pop = NormResPop + types.com_pop + types.ind_pop
+    norm_res_pop = context.res_pop / 8
+    context.last_total_pop = context.total_pop
+    context.total_pop = norm_res_pop + context.com_pop + context.ind_pop
 
     # Calculate employment rate
-    if NormResPop:
-        Employment = (types.com_his[1] + types.ind_his[1]) / NormResPop
+    if norm_res_pop:
+        employment = (context.com_his[1] + context.ind_his[1]) / norm_res_pop
     else:
-        Employment = 1
+        employment = 1
 
     # Calculate migration and births
-    Migration = NormResPop * (Employment - 1)
-    Births = NormResPop * 0.02  # Birth Rate
-    PjResPop = NormResPop + Migration + Births  # Projected Res.Pop
+    migration = norm_res_pop * (employment - 1)
+    births = norm_res_pop * 0.02  # Birth Rate
+    pj_res_pop = norm_res_pop + migration + births  # Projected Res.Pop
 
     # Calculate labor base
-    if types.com_his[1] + types.ind_his[1]:
-        LaborBase = types.res_his[1] / (types.com_his[1] + types.ind_his[1])
+    if context.com_his[1] + context.ind_his[1]:
+        labor_base = context.res_his[1] / (context.com_his[1] + context.ind_his[1])
     else:
-        LaborBase = 1
-    if LaborBase > 1.3:
-        LaborBase = 1.3
-    if LaborBase < 0:
-        LaborBase = 0  # LB > 1 - .1
+        labor_base = 1
+    if labor_base > 1.3:
+        labor_base = 1.3
+    if labor_base < 0:
+        labor_base = 0  # LB > 1 - .1
 
     # Calculate temporary values for market calculations
     for z in range(2):
-        temp = types.res_his[z] + types.com_his[z] + types.ind_his[z]
-    IntMarket = (NormResPop + types.com_pop + types.ind_pop) / 3.7
+        temp = context.res_his[z] + context.com_his[z] + context.ind_his[z]
+    int_market = (norm_res_pop + context.com_pop + context.ind_pop) / 3.7
 
     # Calculate projected commercial population
-    PjComPop = IntMarket * LaborBase
+    pj_com_pop = int_market * labor_base
 
     # Adjust for game level
-    z = types.game_level
+    z = context.game_level
     temp = 1
     if z == 0:
         temp = 1.2
@@ -576,239 +542,245 @@ def SetValves() -> None:
     elif z == 2:
         temp = 0.98
 
-    PjIndPop = types.ind_pop * LaborBase * temp
-    if PjIndPop < 5:
-        PjIndPop = 5
+    pj_ind_pop = context.ind_pop * labor_base * temp
+    if pj_ind_pop < 5:
+        pj_ind_pop = 5
 
     # Calculate ratios
-    if NormResPop:
-        Rratio = PjResPop / NormResPop  # projected -vs- actual
+    if norm_res_pop:
+        rratio = pj_res_pop / norm_res_pop  # projected -vs- actual
     else:
-        Rratio = 1.3
-    if types.com_pop:
-        Cratio = PjComPop / types.com_pop
+        rratio = 1.3
+    if context.com_pop:
+        cratio = pj_com_pop / context.com_pop
     else:
-        Cratio = PjComPop
-    if types.ind_pop:
-        Iratio = PjIndPop / types.ind_pop
+        cratio = pj_com_pop
+    if context.ind_pop:
+        iratio = pj_ind_pop / context.ind_pop
     else:
-        Iratio = PjIndPop
+        iratio = pj_ind_pop
 
     # Clamp ratios
-    if Rratio > 2:
-        Rratio = 2
-    if Cratio > 2:
-        Cratio = 2
-    if Iratio > 2:
-        Iratio = 2
+    if rratio > 2:
+        rratio = 2
+    if cratio > 2:
+        cratio = 2
+    if iratio > 2:
+        iratio = 2
 
     # Apply tax effects
-    z = types.city_tax + types.game_level
+    z = context.city_tax + context.game_level
     if z > 20:
         z = 20
-    Rratio = ((Rratio - 1) * 600) + TaxTable[z]  # global tax/Glevel effects
-    Cratio = ((Cratio - 1) * 600) + TaxTable[z]
-    Iratio = ((Iratio - 1) * 600) + TaxTable[z]
+    rratio = ((rratio - 1) * 600) + tax_table[z]  # global tax/Glevel effects
+    cratio = ((cratio - 1) * 600) + tax_table[z]
+    iratio = ((iratio - 1) * 600) + tax_table[z]
 
     # Update valves
-    if Rratio > 0:
-        if RValve < 2000:
-            RValve += int(Rratio)
-    if Rratio < 0:
-        if RValve > -2000:
-            RValve += int(Rratio)
-    if Cratio > 0:
-        if CValve < 1500:
-            CValve += int(Cratio)
-    if Cratio < 0:
-        if CValve > -1500:
-            CValve += int(Cratio)
-    if Iratio > 0:
-        if IValve < 1500:
-            IValve += int(Iratio)
-    if Iratio < 0:
-        if IValve > -1500:
-            IValve += int(Iratio)
+    if rratio > 0:
+        if context.r_valve < 2000:
+            context.r_valve += int(rratio)
+    if rratio < 0:
+        if context.r_valve > -2000:
+            context.r_valve += int(rratio)
+    if cratio > 0:
+        if context.c_valve < 1500:
+            context.c_valve += int(cratio)
+    if cratio < 0:
+        if context.c_valve > -1500:
+            context.c_valve += int(cratio)
+    if iratio > 0:
+        if context.i_valve < 1500:
+            context.i_valve += int(iratio)
+    if iratio < 0:
+        if context.i_valve > -1500:
+            context.i_valve += int(iratio)
 
     # Clamp valve values
-    if RValve > 2000:
-        RValve = 2000
-    if RValve < -2000:
-        RValve = -2000
-    if CValve > 1500:
-        CValve = 1500
-    if CValve < -1500:
-        CValve = -1500
-    if IValve > 1500:
-        IValve = 1500
-    if IValve < -1500:
-        IValve = -1500
+    if context.r_valve > 2000:
+        context.r_valve = 2000
+    if context.r_valve < -2000:
+        context.r_valve = -2000
+    if context.c_valve > 1500:
+        context.c_valve = 1500
+    if context.c_valve < -1500:
+        context.c_valve = -1500
+    if context.i_valve > 1500:
+        context.i_valve = 1500
+    if context.i_valve < -1500:
+        context.i_valve = -1500
 
     # Apply capacity limits
-    if ResCap and RValve > 0:
-        RValve = 0  # Stad, Prt, Airprt
-    if ComCap and CValve > 0:
-        CValve = 0
-    if IndCap and IValve > 0:
-        IValve = 0
-    ValveFlag = 1
+    if context.res_cap and context.r_valve > 0:
+        context.r_valve = 0  # Stad, Prt, Airprt
+    if context.com_cap and context.c_valve > 0:
+        context.c_valve = 0
+    if context.ind_cap and context.i_valve > 0:
+        context.i_valve = 0
+    context.valve_flag = 1
 
 
-def ClearCensus() -> None:
+def clear_census(context: AppContext) -> None:
     """
+    ported from ClearCensus
     Reset all census counters.
 
     Ported from ClearCensus() in s_sim.c.
+    :param context:
     """
-    global PwrdZCnt, unPwrdZCnt
+    # global pwrd_z_cnt, un_pwrd_z_cnt
 
     z = 0
-    PwrdZCnt = z
-    unPwrdZCnt = z
-    types.fire_pop = z
-    types.road_total = z
-    types.rail_total = z
-    types.res_pop = z
-    types.com_pop = z
-    types.ind_pop = z
-    types.res_z_pop = z
-    types.ComZPop = z
-    types.IndZPop = z
-    types.hosp_pop = z
-    types.church_pop = z
-    types.police_pop = z
-    types.fire_st_pop = z
-    types.stadium_pop = z
-    types.coal_pop = z
-    types.nuclear_pop = z
-    types.port_pop = z
-    types.airport_pop = z
+    context.pwrd_z_cnt = z
+    context.un_pwrd_z_cnt = z
+    context.fire_pop = z
+    context.road_total = z
+    context.rail_total = z
+    context.res_pop = z
+    context.com_pop = z
+    context.ind_pop = z
+    context.res_z_pop = z
+    context.ComZPop = z
+    context.IndZPop = z
+    context.hosp_pop = z
+    context.church_pop = z
+    context.police_pop = z
+    context.fire_st_pop = z
+    context.stadium_pop = z
+    context.coal_pop = z
+    context.nuclear_pop = z
+    context.port_pop = z
+    context.airport_pop = z
     power.PowerStackNum = z  # Reset before Mapscan
 
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
-            types.fire_st_map[x][y] = z
-            types.police_map[x][y] = z
+    for x in range(SM_X):
+        for y in range(SM_Y):
+            context.fire_st_map[x][y] = z
+            context.police_map[x][y] = z
 
 
-def TakeCensus() -> None:
+def take_census(context: AppContext) -> None:
     """
+    ported from TakeCensus
     Record population data in history graphs.
 
     Ported from TakeCensus() in s_sim.c.
+    :param context:
     """
-    global CrimeRamp, PolluteRamp
+    # global crime_ramp, pollute_ramp
 
     # Scroll data
     for x in range(118, -1, -1):
-        types.res_his[x + 1] = types.res_his[x]
-        types.com_his[x + 1] = types.com_his[x]
-        types.ind_his[x + 1] = types.ind_his[x]
-        types.crime_his[x + 1] = types.crime_his[x]
-        types.pollution_his[x + 1] = types.pollution_his[x]
-        types.money_his[x + 1] = types.money_his[x]
+        context.res_his[x + 1] = context.res_his[x]
+        context.com_his[x + 1] = context.com_his[x]
+        context.ind_his[x + 1] = context.ind_his[x]
+        context.crime_his[x + 1] = context.crime_his[x]
+        context.pollution_his[x + 1] = context.pollution_his[x]
+        context.money_his[x + 1] = context.money_his[x]
 
     # Update max values
-    ResHisMax = 0
-    ComHisMax = 0
-    IndHisMax = 0
+    res_his_max = 0
+    com_his_max = 0
+    ind_his_max = 0
     for x in range(119):
-        if types.res_his[x] > ResHisMax:
-            ResHisMax = types.res_his[x]
-        if types.com_his[x] > ComHisMax:
-            ComHisMax = types.com_his[x]
-        if types.ind_his[x] > IndHisMax:
-            IndHisMax = types.ind_his[x]
+        if context.res_his[x] > res_his_max:
+            res_his_max = context.res_his[x]
+        if context.com_his[x] > com_his_max:
+            com_his_max = context.com_his[x]
+        if context.ind_his[x] > ind_his_max:
+            ind_his_max = context.ind_his[x]
 
-    types.graph_10_max = ResHisMax
-    if ComHisMax > types.graph_10_max:
-        types.graph_10_max = ComHisMax
-    if IndHisMax > types.graph_10_max:
-        types.graph_10_max = IndHisMax
+    context.graph_10_max = res_his_max
+    if com_his_max > context.graph_10_max:
+        context.graph_10_max = com_his_max
+    if ind_his_max > context.graph_10_max:
+        context.graph_10_max = ind_his_max
 
     # Set current values
-    types.res_his[0] = types.res_pop // 8
-    types.com_his[0] = types.com_pop
-    types.ind_his[0] = types.ind_pop
+    context.res_his[0] = context.res_pop // 8
+    context.com_his[0] = context.com_pop
+    context.ind_his[0] = context.ind_pop
 
     # Update crime and pollution ramps
-    CrimeRamp += (types.crime_average - CrimeRamp) // 4
-    types.crime_his[0] = CrimeRamp
+    context.crime_ramp += (context.crime_average - context.crime_ramp) // 4
+    context.crime_his[0] = context.crime_ramp
 
-    PolluteRamp += (types.pollute_average - PolluteRamp) // 4
-    types.pollution_his[0] = PolluteRamp
+    context.pollute_ramp += (context.pollute_average - context.pollute_ramp) // 4
+    context.pollution_his[0] = context.pollute_ramp
 
     # Scale cash flow to 0..255
-    x = (CashFlow // 20) + 128
+    x = (context.cash_flow // 20) + 128
     if x < 0:
         x = 0
     if x > 255:
         x = 255
 
-    types.money_his[0] = x
-    if types.crime_his[0] > 255:
-        types.crime_his[0] = 255
-    if types.pollution_his[0] > 255:
-        types.pollution_his[0] = 255
+    context.money_his[0] = x
+    if context.crime_his[0] > 255:
+        context.crime_his[0] = 255
+    if context.pollution_his[0] > 255:
+        context.pollution_his[0] = 255
 
     # ChangeCensus() - placeholder for 10 year graph view
 
     # Check hospital and church needs
-    if types.hosp_pop < (types.res_pop >> 8):
-        types.need_hosp = micropolis.constants.TRUE
-    if types.hosp_pop > (types.res_pop >> 8):
-        types.need_hosp = -1
-    if types.hosp_pop == (types.res_pop >> 8):
-        types.need_hosp = micropolis.constants.FALSE
+    if context.hosp_pop < (context.res_pop >> 8):
+        context.need_hosp = True
+    if context.hosp_pop > (context.res_pop >> 8):
+        context.need_hosp = -1
+    if context.hosp_pop == (context.res_pop >> 8):
+        context.need_hosp = False
 
-    if types.church_pop < (types.res_pop >> 8):
-        types.need_church = micropolis.constants.TRUE
-    if types.church_pop > (types.res_pop >> 8):
-        types.need_church = -1
-    if types.church_pop == (types.res_pop >> 8):
-        types.need_church = micropolis.constants.FALSE
+    if context.church_pop < (context.res_pop >> 8):
+        context.need_church = True
+    if context.church_pop > (context.res_pop >> 8):
+        context.need_church = -1
+    if context.church_pop == (context.res_pop >> 8):
+        context.need_church = False
 
 
-def Take2Census() -> None:
+def take2_census(context: AppContext) -> None:
     """
+    ported from Take2Census
     Record long-term population data.
 
     Ported from Take2Census() in s_sim.c.
+    :param context:
     """
     # Scroll 120-year data
     for x in range(238, 119, -1):
-        types.res_his[x + 1] = types.res_his[x]
-        types.com_his[x + 1] = types.com_his[x]
-        types.ind_his[x + 1] = types.ind_his[x]
-        types.crime_his[x + 1] = types.crime_his[x]
-        types.pollution_his[x + 1] = types.pollution_his[x]
-        types.money_his[x + 1] = types.money_his[x]
+        context.res_his[x + 1] = context.res_his[x]
+        context.com_his[x + 1] = context.com_his[x]
+        context.ind_his[x + 1] = context.ind_his[x]
+        context.crime_his[x + 1] = context.crime_his[x]
+        context.pollution_his[x + 1] = context.pollution_his[x]
+        context.money_his[x + 1] = context.money_his[x]
 
     # Update max values
-    Res2HisMax = 0
-    Com2HisMax = 0
-    Ind2HisMax = 0
+    res2_his_max = 0
+    com2_his_max = 0
+    ind2_his_max = 0
     for x in range(120, 239):
-        if types.res_his[x] > Res2HisMax:
-            Res2HisMax = types.res_his[x]
-        if types.com_his[x] > Com2HisMax:
-            Com2HisMax = types.com_his[x]
-        if types.ind_his[x] > Ind2HisMax:
-            Ind2HisMax = types.ind_his[x]
+        if context.res_his[x] > res2_his_max:
+            res2_his_max = context.res_his[x]
+        if context.com_his[x] > com2_his_max:
+            com2_his_max = context.com_his[x]
+        if context.ind_his[x] > ind2_his_max:
+            ind2_his_max = context.ind_his[x]
 
-    types.graph_12_max = Res2HisMax
-    if Com2HisMax > types.graph_12_max:
-        types.graph_12_max = Com2HisMax
-    if Ind2HisMax > types.graph_12_max:
-        types.graph_12_max = Ind2HisMax
+    context.graph_12_max = res2_his_max
+    if com2_his_max > context.graph_12_max:
+        context.graph_12_max = com2_his_max
+    if ind2_his_max > context.graph_12_max:
+        context.graph_12_max = ind2_his_max
 
     # Set 120-year values
-    types.res_his[120] = types.res_pop // 8
-    types.com_his[120] = types.com_pop
-    types.ind_his[120] = types.ind_pop
-    types.crime_his[120] = types.crime_his[0]
-    types.pollution_his[120] = types.pollution_his[0]
-    types.money_his[120] = types.money_his[0]
+    context.res_his[120] = context.res_pop // 8
+    context.com_his[120] = context.com_pop
+    context.ind_his[120] = context.ind_pop
+    context.crime_his[120] = context.crime_his[0]
+    context.pollution_his[120] = context.pollution_his[0]
+    context.money_his[120] = context.money_his[0]
     # ChangeCensus() - placeholder for 120 year graph view
 
 
@@ -817,67 +789,71 @@ def Take2Census() -> None:
 # ============================================================================
 
 
-def CollectTax() -> None:
+def collect_tax(context: AppContext) -> None:
     """
+    ported from CollectTax
     Calculate and collect taxes.
 
     Ported from CollectTax() in s_sim.c.
+    :param context:
     """
-    global CashFlow, AvCityTax
+    # global cash_flow, av_city_tax
 
     # Tax level factors
     r_levels = [0.7, 0.9, 1.2]
     f_levels = [1.4, 1.2, 0.8]
 
-    CashFlow = 0
-    if not types.tax_flag:  # if the Tax Port is clear
+    context.cash_flow = 0
+    if not context.tax_flag:  # if the Tax Port is clear
         # XXX: do something with z
-        z = AvCityTax // 48  # post
-        AvCityTax = 0
+        z = context.av_city_tax // 48  # post
+        context.av_city_tax = 0
 
-        types.police_fund = types.police_pop * 100
-        types.fire_fund = types.fire_st_pop * 100
-        types.road_fund = (types.road_total + (types.rail_total * 2)) * r_levels[
-            types.game_level
+        context.police_fund = context.police_pop * 100
+        context.fire_fund = context.fire_st_pop * 100
+        context.road_fund = (context.road_total + (context.rail_total * 2)) * r_levels[
+            context.game_level
         ]
-        types.tax_fund = (
-            ((types.total_pop * types.lv_average) // 120)
-            * types.city_tax
-            * f_levels[types.game_level]
+        context.tax_fund = (
+            ((context.total_pop * context.lv_average) // 120)
+            * context.city_tax
+            * f_levels[context.game_level]
         )
 
-        if types.total_pop:  # if there are people to tax
-            CashFlow = int(
-                types.tax_fund - (types.police_fund + types.fire_fund + types.road_fund)
+        if context.total_pop:  # if there are people to tax
+            context.cash_flow = int(
+                context.tax_fund - (context.police_fund + context.fire_fund + context.road_fund)
             )
 
             # DoBudget() - placeholder
         else:
-            types.road_effect = 32
-            types.police_effect = 1000
-            types.fire_effect = 1000
+            context.road_effect = 32
+            context.police_effect = 1000
+            context.fire_effect = 1000
 
 
-def UpdateFundEffects() -> None:
+def update_fund_effects(context: AppContext) -> None:
     """
+    ported from UpdateFundEffects
     Update service effects based on funding levels.
 
     Ported from UpdateFundEffects() in s_sim.c.
+    :param context:
     """
-    if types.road_fund:
-        types.road_effect = int((types.road_spend / types.road_fund) * 32.0)
+    if context.road_fund:
+        context.road_effect = int((context.road_spend / context.road_fund) * 32.0)
     else:
-        types.road_effect = 32
+        context.road_effect = 32
 
-    if types.police_fund:
-        types.police_effect = int((types.police_spend / types.police_fund) * 1000.0)
+    if context.police_fund:
+        context.police_effect = int((context.police_spend / context.police_fund) * 1000.0)
     else:
-        types.police_effect = 1000
+        context.police_effect = 1000
 
-    if types.fire_fund:
-        types.fire_effect = int(((types.fire_spend / types.fire_fund) * 1000.0))
+    if context.fire_fund:
+        context.fire_effect = int(((context.fire_spend / context.fire_fund) * 1000.0))
     else:
-        types.fire_effect = 1000
+        context.fire_effect = 1000
 
     # drawCurrPercents() - placeholder
 
@@ -887,8 +863,9 @@ def UpdateFundEffects() -> None:
 # ============================================================================
 
 
-def MapScan(x1: int, x2: int) -> None:
+def map_scan(context: AppContext, x1: int, x2: int) -> None:
     """
+    ported from MapScan
     Scan and process tiles in the specified range.
 
     Ported from MapScan() in s_sim.c.
@@ -896,53 +873,54 @@ def MapScan(x1: int, x2: int) -> None:
     Args:
         x1: Starting x coordinate
         x2: Ending x coordinate
+        :param context:
     """
     for x in range(x1, x2):
-        for y in range(micropolis.constants.WORLD_Y):
-            types.cchr = types.map_data[x][y]
-            if types.cchr:
-                types.cchr9 = types.cchr & types.LOMASK  # Mask off status bits
-                if types.cchr9 >= types.FLOOD:
-                    types.s_map_x = x
-                    types.s_map_y = y
-                    if types.cchr9 < types.ROADBASE:
-                        if types.cchr9 >= types.FIREBASE:
-                            types.fire_pop += 1
-                            if (micropolis.utilities.Rand16() & 3) == 0:  # 1 in 4 times
-                                DoFire()
+        for y in range(WORLD_Y):
+            context.cchr = context.map_data[x][y]
+            if context.cchr:
+                context.cchr9 = context.cchr & context.LOMASK  # Mask off status bits
+                if context.cchr9 >= context.FLOOD:
+                    context.s_map_x = x
+                    context.s_map_y = y
+                    if context.cchr9 < context.ROADBASE:
+                        if context.cchr9 >= context.FIREBASE:
+                            context.fire_pop += 1
+                            if (rand16() & 3) == 0:  # 1 in 4 times
+                                do_fire(context)
                             continue
-                        if types.cchr9 < types.RADTILE:
-                            DoFlood()
+                        if context.cchr9 < context.RADTILE:
+                            do_flood()
                         else:
-                            DoRadTile()
+                            do_rad_tile(context)
                         continue
 
-                    if NewPower and (types.cchr & types.CONDBIT):
+                    if context.new_power and (context.cchr & context.CONDBIT):
                         zones.SetZPower()
 
-                    if (types.cchr9 >= types.ROADBASE) and (
-                        types.cchr9 < types.POWERBASE
+                    if (context.cchr9 >= context.ROADBASE) and (
+                        context.cchr9 < context.POWERBASE
                     ):
-                        DoRoad()
+                        do_road(context)
                         continue
 
-                    if types.cchr & types.ZONEBIT:  # process Zones
-                        DoZone()
+                    if context.cchr & context.ZONEBIT:  # process Zones
+                        do_zone()
                         continue
 
-                    if (types.cchr9 >= types.RAILBASE) and (
-                        types.cchr9 < types.RESBASE
+                    if (context.cchr9 >= context.RAILBASE) and (
+                        context.cchr9 < context.RESBASE
                     ):
-                        DoRail()
+                        do_rail(context)
                         continue
-                    if (types.cchr9 >= types.SOMETINYEXP) and (
-                        types.cchr9 <= types.LASTTINYEXP
+                    if (context.cchr9 >= context.SOMETINYEXP) and (
+                        context.cchr9 <= context.LASTTINYEXP
                     ):
                         # clear AniRubble
-                        types.map_data[x][y] = (
-                            types.RUBBLE
-                            + (micropolis.utilities.Rand16() & 3)
-                            + types.BULLBIT
+                        context.map_data[x][y] = (
+                            context.RUBBLE
+                            + (rand16() & 3)
+                            + context.BULLBIT
                         )
 
 
@@ -951,214 +929,223 @@ def MapScan(x1: int, x2: int) -> None:
 # ============================================================================
 
 
-def DoRail() -> None:
+def do_rail(context: AppContext) -> None:
     """
+    ported from DoRail
     Process rail tiles.
 
     Ported from DoRail() in s_sim.c.
+    :param context:
     """
-    types.rail_total += 1
-    sprites.GenerateTrain(types.s_map_x, types.s_map_y)
-    if types.road_effect < 30:  # Deteriorating Rail
-        if (micropolis.utilities.Rand16() & 511) == 0:
-            if (types.cchr & types.CONDBIT) == 0:
-                if types.road_effect < (micropolis.utilities.Rand16() & 31):
-                    if types.cchr9 < (types.RAILBASE + 2):
-                        types.map_data[types.s_map_x][types.s_map_y] = types.RIVER
+    context.rail_total += 1
+    sprites.GenerateTrain(context.s_map_x, context.s_map_y)
+    if context.road_effect < 30:  # Deteriorating Rail
+        if (rand16() & 511) == 0:
+            if (context.cchr & context.CONDBIT) == 0:
+                if context.road_effect < (rand16() & 31):
+                    if context.cchr9 < (context.RAILBASE + 2):
+                        context.map_data[context.s_map_x][context.s_map_y] = context.RIVER
                     else:
-                        types.map_data[types.s_map_x][types.s_map_y] = (
-                            types.RUBBLE
-                            + (micropolis.utilities.Rand16() & 3)
-                            + types.BULLBIT
+                        context.map_data[context.s_map_x][context.s_map_y] = (
+                            context.RUBBLE
+                            + (rand16() & 3)
+                            + context.BULLBIT
                         )
 
 
-def DoRadTile() -> None:
+def do_rad_tile(context: AppContext) -> None:
     """
+    ported from DoRadTile
     Process radioactive tiles.
 
     Ported from DoRadTile() in s_sim.c.
+    :param context:
     """
-    if (micropolis.utilities.Rand16() & 4095) == 0:
-        types.map_data[types.s_map_x][types.s_map_y] = 0  # Radioactive decay
+    if (rand16() & 4095) == 0:
+        context.map_data[context.s_map_x][context.s_map_y] = 0  # Radioactive decay
 
 
-def DoRoad() -> None:
+def do_road(context: AppContext) -> None:
     """
+    ported from DoRoad
     Process road tiles.
 
     Ported from DoRoad() in s_sim.c.
     """
-    global types
+    # global types
 
-    DenTab = [types.ROADBASE, types.LTRFBASE, types.HTRFBASE]
+    den_tab = [context.ROADBASE, context.LTRFBASE, context.HTRFBASE]
 
-    types.road_total += 1
-    sprites.GenerateBus(types.s_map_x, types.s_map_y)
+    context.road_total += 1
+    sprites.GenerateBus(context.s_map_x, context.s_map_y)
 
-    if types.road_effect < 30:  # Deteriorating Roads
-        if (micropolis.utilities.Rand16() & 511) == 0:
-            if (types.cchr & types.CONDBIT) == 0:
-                if types.road_effect < (micropolis.utilities.Rand16() & 31):
-                    if ((types.cchr9 & 15) < 2) or ((types.cchr9 & 15) == 15):
-                        types.map_data[types.s_map_x][types.s_map_y] = types.RIVER
+    if context.road_effect < 30:  # Deteriorating Roads
+        if (rand16() & 511) == 0:
+            if (context.cchr & context.CONDBIT) == 0:
+                if context.road_effect < (rand16() & 31):
+                    if ((context.cchr9 & 15) < 2) or ((context.cchr9 & 15) == 15):
+                        context.map_data[context.s_map_x][context.s_map_y] = context.RIVER
                     else:
-                        types.map_data[types.s_map_x][types.s_map_y] = (
-                            types.RUBBLE
-                            + (micropolis.utilities.Rand16() & 3)
-                            + types.BULLBIT
+                        context.map_data[context.s_map_x][context.s_map_y] = (
+                            context.RUBBLE
+                            + (rand16() & 3)
+                            + context.BULLBIT
                         )
                     return
 
-    if types.cchr & types.BURNBIT:  # If Bridge
-        types.road_total += 4
-        if DoBridge():
+    if context.cchr & context.BURNBIT:  # If Bridge
+        context.road_total += 4
+        if do_bridge(context):
             return
 
-    if types.cchr9 < types.LTRFBASE:
+    if context.cchr9 < context.LTRFBASE:
         tden = 0
     else:
-        if types.cchr9 < types.HTRFBASE:
+        if context.cchr9 < context.HTRFBASE:
             tden = 1
         else:
-            types.road_total += 1
+            context.road_total += 1
             tden = 2
 
     # Set Traf Density
-    Density = (types.trf_density[types.s_map_x >> 1][types.s_map_y >> 1]) >> 6
-    if Density > 1:
-        Density -= 1
-    if tden != Density:  # tden 0..2
-        z = ((types.cchr9 - types.ROADBASE) & 15) + DenTab[Density]
-        z += types.cchr & (types.ALLBITS - types.ANIMBIT)
-        if Density:
-            z += types.ANIMBIT
-        types.map_data[types.s_map_x][types.s_map_y] = z
+    density = (context.trf_density[context.s_map_x >> 1][context.s_map_y >> 1]) >> 6
+    if density > 1:
+        density -= 1
+    if tden != density:  # tden 0..2
+        z = ((context.cchr9 - context.ROADBASE) & 15) + den_tab[density]
+        z += context.cchr & (context.ALLBITS - context.ANIMBIT)
+        if density:
+            z += context.ANIMBIT
+        context.map_data[context.s_map_x][context.s_map_y] = z
 
 
-def DoBridge() -> bool:
+def do_bridge(context: AppContext) -> bool:
     """
+    ported from DoBridge
     Handle bridge opening and closing.
 
     Ported from DoBridge() in s_sim.c.
 
     Returns:
         True if bridge was processed, False otherwise
+        :param context:
     """
     # Bridge tile tables
-    HDx = [-2, 2, -2, -1, 0, 1, 2]
-    HDy = [-1, -1, 0, 0, 0, 0, 0]
-    HBRTAB = [
-        types.HBRDG1 | types.BULLBIT,
-        types.HBRDG3 | types.BULLBIT,
-        types.HBRDG0 | types.BULLBIT,
-        types.RIVER,
-        types.BRWH | types.BULLBIT,
-        types.RIVER,
-        types.HBRDG2 | types.BULLBIT,
+    h_dx = [-2, 2, -2, -1, 0, 1, 2]
+    h_dy = [-1, -1, 0, 0, 0, 0, 0]
+    hbrtab = [
+        context.HBRDG1 | context.BULLBIT,
+        context.HBRDG3 | context.BULLBIT,
+        context.HBRDG0 | context.BULLBIT,
+        context.RIVER,
+        context.BRWH | context.BULLBIT,
+        context.RIVER,
+        context.HBRDG2 | context.BULLBIT,
     ]
-    HBRTAB2 = [
-        types.RIVER,
-        types.RIVER,
-        types.HBRIDGE | types.BULLBIT,
-        types.HBRIDGE | types.BULLBIT,
-        types.HBRIDGE | types.BULLBIT,
-        types.HBRIDGE | types.BULLBIT,
-        types.HBRIDGE | types.BULLBIT,
+    hbrtab2 = [
+        context.RIVER,
+        context.RIVER,
+        context.HBRIDGE | context.BULLBIT,
+        context.HBRIDGE | context.BULLBIT,
+        context.HBRIDGE | context.BULLBIT,
+        context.HBRIDGE | context.BULLBIT,
+        context.HBRIDGE | context.BULLBIT,
     ]
-    VDx = [0, 1, 0, 0, 0, 0, 1]
-    VDy = [-2, -2, -1, 0, 1, 2, 2]
-    VBRTAB = [
-        types.VBRDG0 | types.BULLBIT,
-        types.VBRDG1 | types.BULLBIT,
-        types.RIVER,
-        types.BRWV | types.BULLBIT,
-        types.RIVER,
-        types.VBRDG2 | types.BULLBIT,
-        types.VBRDG3 | types.BULLBIT,
+    v_dx = [0, 1, 0, 0, 0, 0, 1]
+    v_dy = [-2, -2, -1, 0, 1, 2, 2]
+    vbrtab = [
+        context.VBRDG0 | context.BULLBIT,
+        context.VBRDG1 | context.BULLBIT,
+        context.RIVER,
+        context.BRWV | context.BULLBIT,
+        context.RIVER,
+        context.VBRDG2 | context.BULLBIT,
+        context.VBRDG3 | context.BULLBIT,
     ]
-    VBRTAB2 = [
-        types.VBRIDGE | types.BULLBIT,
-        types.RIVER,
-        types.VBRIDGE | types.BULLBIT,
-        types.VBRIDGE | types.BULLBIT,
-        types.VBRIDGE | types.BULLBIT,
-        types.VBRIDGE | types.BULLBIT,
-        types.RIVER,
+    vbrtab2 = [
+        context.VBRIDGE | context.BULLBIT,
+        context.RIVER,
+        context.VBRIDGE | context.BULLBIT,
+        context.VBRIDGE | context.BULLBIT,
+        context.VBRIDGE | context.BULLBIT,
+        context.VBRIDGE | context.BULLBIT,
+        context.RIVER,
     ]
 
-    if types.cchr9 == types.BRWV:  # Vertical bridge close
-        if ((micropolis.utilities.Rand16() & 3) == 0) and (GetBoatDis() > 340):
+    if context.cchr9 == context.BRWV:  # Vertical bridge close
+        if ((rand16() & 3) == 0) and (get_boat_dis(context) > 340):
             for z in range(7):  # Close
-                x = types.s_map_x + VDx[z]
-                y = types.s_map_y + VDy[z]
+                x = context.s_map_x + v_dx[z]
+                y = context.s_map_y + v_dy[z]
                 if macros.TestBounds(x, y):
-                    if (types.map_data[x][y] & types.LOMASK) == (
-                        VBRTAB[z] & types.LOMASK
+                    if (context.map_data[x][y] & context.LOMASK) == (
+                        vbrtab[z] & context.LOMASK
                     ):
-                        types.map_data[x][y] = VBRTAB2[z]
+                        context.map_data[x][y] = vbrtab2[z]
         return True
 
-    if types.cchr9 == types.BRWH:  # Horizontal bridge close
-        if ((micropolis.utilities.Rand16() & 3) == 0) and (GetBoatDis() > 340):
+    if context.cchr9 == context.BRWH:  # Horizontal bridge close
+        if ((rand16() & 3) == 0) and (get_boat_dis(context) > 340):
             for z in range(7):  # Close
-                x = types.s_map_x + HDx[z]
-                y = types.s_map_y + HDy[z]
+                x = context.s_map_x + h_dx[z]
+                y = context.s_map_y + h_dy[z]
                 if macros.TestBounds(x, y):
-                    if (types.map_data[x][y] & types.LOMASK) == (
-                        HBRTAB[z] & types.LOMASK
+                    if (context.map_data[x][y] & context.LOMASK) == (
+                        hbrtab[z] & context.LOMASK
                     ):
-                        types.map_data[x][y] = HBRTAB2[z]
+                        context.map_data[x][y] = hbrtab2[z]
         return True
 
-    if (GetBoatDis() < 300) or ((micropolis.utilities.Rand16() & 7) == 0):
-        if types.cchr9 & 1:  # Vertical open
-            if types.s_map_x < (micropolis.constants.WORLD_X - 1):
-                if types.map_data[types.s_map_x + 1][types.s_map_y] == types.CHANNEL:
+    if (get_boat_dis(context) < 300) or ((rand16() & 7) == 0):
+        if context.cchr9 & 1:  # Vertical open
+            if context.s_map_x < (WORLD_X - 1):
+                if context.map_data[context.s_map_x + 1][context.s_map_y] == context.CHANNEL:
                     for z in range(7):
-                        x = types.s_map_x + VDx[z]
-                        y = types.s_map_y + VDy[z]
+                        x = context.s_map_x + v_dx[z]
+                        y = context.s_map_y + v_dy[z]
                         if macros.TestBounds(x, y):
-                            MPtem = types.map_data[x][y]
-                            if (MPtem == types.CHANNEL) or (
-                                (MPtem & 15) == (VBRTAB2[z] & 15)
+                            m_ptem = context.map_data[x][y]
+                            if (m_ptem == context.CHANNEL) or (
+                                (m_ptem & 15) == (vbrtab2[z] & 15)
                             ):
-                                types.map_data[x][y] = VBRTAB[z]
+                                context.map_data[x][y] = vbrtab[z]
                     return True
             return False
         else:  # Horizontal open
-            if types.s_map_y > 0:
-                if types.map_data[types.s_map_x][types.s_map_y - 1] == types.CHANNEL:
+            if context.s_map_y > 0:
+                if context.map_data[context.s_map_x][context.s_map_y - 1] == context.CHANNEL:
                     for z in range(7):
-                        x = types.s_map_x + HDx[z]
-                        y = types.s_map_y + HDy[z]
+                        x = context.s_map_x + h_dx[z]
+                        y = context.s_map_y + h_dy[z]
                         if macros.TestBounds(x, y):
-                            MPtem = types.map_data[x][y]
-                            if ((MPtem & 15) == (HBRTAB2[z] & 15)) or (
-                                MPtem == types.CHANNEL
+                            m_ptem = context.map_data[x][y]
+                            if ((m_ptem & 15) == (hbrtab2[z] & 15)) or (
+                                m_ptem == context.CHANNEL
                             ):
-                                types.map_data[x][y] = HBRTAB[z]
+                                context.map_data[x][y] = hbrtab[z]
                     return True
             return False
     return False
 
 
-def GetBoatDis() -> int:
+def get_boat_dis(context: AppContext) -> int:
     """
+    ported from GetBoatDis
     Get distance to nearest boat.
 
     Ported from GetBoatDis() in s_sim.c.
 
     Returns:
         Distance to nearest boat sprite
+        :param context:
     """
     dist = 99999
-    mx = (types.s_map_x << 4) + 8
-    my = (types.s_map_y << 4) + 8
+    mx = (context.s_map_x << 4) + 8
+    my = (context.s_map_y << 4) + 8
 
-    sprite = types.sim.sprite
+    sprite = context.sim.sprite
     while sprite is not None:
-        if (sprite.type == types.SHI) and (sprite.frame != 0):
+        if (sprite.type == context.SHI) and (sprite.frame != 0):
             dx = sprite.x + sprite.x_hot - mx
             dy = sprite.y + sprite.y_hot - my
             if dx < 0:
@@ -1173,46 +1160,49 @@ def GetBoatDis() -> int:
     return dist
 
 
-def DoFire() -> None:
+def do_fire(context: AppContext) -> None:
     """
+    ported from DoFire
     Handle fire spread from fire tiles.
 
     Ported from DoFire() in s_sim.c.
+    :param context:
     """
-    DX = [-1, 0, 1, 0]
-    DY = [0, -1, 0, 1]
+    dx = [-1, 0, 1, 0]
+    dy = [0, -1, 0, 1]
 
     for z in range(4):
-        if (micropolis.utilities.Rand16() & 7) == 0:
-            Xtem = types.s_map_x + DX[z]
-            Ytem = types.s_map_y + DY[z]
-            if macros.TestBounds(Xtem, Ytem):
-                c = types.map_data[Xtem][Ytem]
-                if c & types.BURNBIT:
-                    if c & types.ZONEBIT:
-                        FireZone(Xtem, Ytem, c)
-                        if (c & types.LOMASK) > types.IZB:  # Explode
-                            sprites.MakeExplosionAt((Xtem << 4) + 8, (Ytem << 4) + 8)
-                    types.map_data[Xtem][Ytem] = (
-                        types.FIRE + (micropolis.utilities.Rand16() & 3) + types.ANIMBIT
+        if (rand16() & 7) == 0:
+            xtem = context.s_map_x + dx[z]
+            ytem = context.s_map_y + dy[z]
+            if macros.TestBounds(xtem, ytem):
+                c = context.map_data[xtem][ytem]
+                if c & context.BURNBIT:
+                    if c & context.ZONEBIT:
+                        fire_zone(context, xtem, ytem, c)
+                        if (c & context.LOMASK) > context.IZB:  # Explode
+                            sprites.MakeExplosionAt((xtem << 4) + 8, (ytem << 4) + 8)
+                    context.map_data[xtem][ytem] = (
+                            context.FIRE + (rand16() & 3) + context.ANIMBIT
                     )
 
-    z = types.fire_rate[types.s_map_x >> 3][types.s_map_y >> 3]
-    Rate = 10
+    z = context.fire_rate[context.s_map_x >> 3][context.s_map_y >> 3]
+    rate = 10
     if z:
-        Rate = 3
+        rate = 3
         if z > 20:
-            Rate = 2
+            rate = 2
         if z > 100:
-            Rate = 1
-    if micropolis.utilities.Rand(Rate) == 0:
-        types.map_data[types.s_map_x][types.s_map_y] = (
-            types.RUBBLE + (micropolis.utilities.Rand16() & 3) + types.BULLBIT
+            rate = 1
+    if rand(rate) == 0:
+        context.map_data[context.s_map_x][context.s_map_y] = (
+                context.RUBBLE + (rand16() & 3) + context.BULLBIT
         )
 
 
-def FireZone(Xloc: int, Yloc: int, ch: int) -> None:
+def fire_zone(context: AppContext, xloc: int, yloc: int, ch: int) -> None:
     """
+    ported from fire_zone
     Handle fire damage to zones.
 
     Ported from FireZone() in s_sim.c.
@@ -1221,37 +1211,39 @@ def FireZone(Xloc: int, Yloc: int, ch: int) -> None:
         Xloc: X coordinate of fire
         Yloc: Y coordinate of fire
         ch: Tile value
+        :param context:
     """
-    types.rate_og_mem[Xloc >> 3][Yloc >> 3] -= 20
+    context.rate_og_mem[xloc >> 3][yloc >> 3] -= 20
 
-    ch = ch & types.LOMASK
-    if ch < types.PORTBASE:
-        XYmax = 2
+    ch = ch & context.LOMASK
+    if ch < context.PORTBASE:
+        x_ymax = 2
     else:
-        if ch == types.AIRPORT:
-            XYmax = 5
+        if ch == context.AIRPORT:
+            x_ymax = 5
         else:
-            XYmax = 4
+            x_ymax = 4
 
-    for x in range(-1, XYmax):
-        for y in range(-1, XYmax):
-            Xtem = Xloc + x
-            Ytem = Yloc + y
+    for x in range(-1, x_ymax):
+        for y in range(-1, x_ymax):
+            xtem = xloc + x
+            ytem = yloc + y
             if (
-                (Xtem < 0)
-                or (Xtem > (micropolis.constants.WORLD_X - 1))
-                or (Ytem < 0)
-                or (Ytem > (micropolis.constants.WORLD_Y - 1))
+                (xtem < 0)
+                or (xtem > (WORLD_X - 1))
+                or (ytem < 0)
+                or (ytem > (WORLD_Y - 1))
             ):
                 continue
             if (
-                types.map_data[Xtem][Ytem] & types.LOMASK
-            ) >= types.ROADBASE:  # post release
-                types.map_data[Xtem][Ytem] |= types.BULLBIT
+                context.map_data[xtem][ytem] & context.LOMASK
+            ) >= context.ROADBASE:  # post release
+                context.map_data[xtem][ytem] |= context.BULLBIT
 
 
-def RepairZone(ZCent: int, zsize: int) -> None:
+def repair_zone(context: AppContext, z_cent: int, zsize: int) -> None:
     """
+    ported from RepairZone
     Repair a zone by rebuilding damaged tiles.
 
     Ported from RepairZone() in s_sim.c.
@@ -1259,172 +1251,180 @@ def RepairZone(ZCent: int, zsize: int) -> None:
     Args:
         ZCent: Center tile value for the zone
         zsize: Size of the zone
+        :param context:
     """
     cnt = 0
     zsize -= 1
     for y in range(-1, zsize):
         for x in range(-1, zsize):
-            xx = types.s_map_x + x
-            yy = types.s_map_y + y
+            xx = context.s_map_x + x
+            yy = context.s_map_y + y
             cnt += 1
             if macros.TestBounds(xx, yy):
-                ThCh = types.map_data[xx][yy]
-                if ThCh & types.ZONEBIT:
+                th_ch = context.map_data[xx][yy]
+                if th_ch & context.ZONEBIT:
                     continue
-                if ThCh & types.ANIMBIT:
+                if th_ch & context.ANIMBIT:
                     continue
-                ThCh = ThCh & types.LOMASK
-                if (ThCh < types.RUBBLE) or (ThCh >= types.ROADBASE):
-                    types.map_data[xx][yy] = (
-                        ZCent - 3 - zsize + cnt + types.CONDBIT + types.BURNBIT
+                th_ch = th_ch & context.LOMASK
+                if (th_ch < context.RUBBLE) or (th_ch >= context.ROADBASE):
+                    context.map_data[xx][yy] = (
+                            z_cent - 3 - zsize + cnt + context.CONDBIT + context.BURNBIT
                     )
 
 
-def DoSPZone(PwrOn: int) -> None:
+def do_sp_zone(context: AppContext, pwr_on: int) -> None:
     """
+    ported from DoSPZone
     Handle special zones (power plants, fire stations, etc.).
 
     Ported from DoSPZone() in s_sim.c.
 
     Args:
         PwrOn: Whether zone is powered
+        :param context:
     """
-    if types.cchr9 == types.POWERPLANT:
-        types.coal_pop += 1
-        if (types.city_time & 7) == 0:
-            RepairZone(types.POWERPLANT, 4)  # post
+    if context.cchr9 == context.POWERPLANT:
+        context.coal_pop += 1
+        if (context.city_time & 7) == 0:
+            repair_zone(context, context.POWERPLANT, 4)  # post
         power.PushPowerStack()
-        CoalSmoke(types.s_map_x, types.s_map_y)
+        coal_smoke(context, context.s_map_x, context.s_map_y)
         return
 
-    if types.cchr9 == types.NUCLEAR:
-        if (not types.no_disasters) and (
-            micropolis.utilities.Rand(types.MltdwnTab[types.game_level]) == 0
+    if context.cchr9 == context.NUCLEAR:
+        if (not context.no_disasters) and (
+                rand(context.MltdwnTab[context.game_level]) == 0
         ):
-            DoMeltdown(types.s_map_x, types.s_map_y)
+            do_meltdown(context, context.s_map_x, context.s_map_y)
             return
-        types.nuclear_pop += 1
-        if (types.city_time & 7) == 0:
-            RepairZone(types.NUCLEAR, 4)  # post
+        context.nuclear_pop += 1
+        if (context.city_time & 7) == 0:
+            repair_zone(context, context.NUCLEAR, 4)  # post
         power.PushPowerStack()
         return
 
-    if types.cchr9 == types.FIRESTATION:
-        types.fire_st_pop += 1
-        if (types.city_time & 7) == 0:
-            RepairZone(types.FIRESTATION, 3)  # post
+    if context.cchr9 == context.FIRESTATION:
+        context.fire_st_pop += 1
+        if (context.city_time & 7) == 0:
+            repair_zone(context, context.FIRESTATION, 3)  # post
 
-        if PwrOn:
-            z = types.fire_effect  # if powered get effect
+        if pwr_on:
+            z = context.fire_effect  # if powered get effect
         else:
-            z = types.fire_effect >> 1  # from the funding ratio
+            z = context.fire_effect >> 1  # from the funding ratio
 
-        if not FindPRoad():
+        if not find_p_road():
             z = z >> 1  # post FD's need roads
 
-        types.fire_st_map[types.s_map_x >> 3][types.s_map_y >> 3] += z
+        context.fire_st_map[context.s_map_x >> 3][context.s_map_y >> 3] += z
         return
 
-    if types.cchr9 == types.POLICESTATION:
-        types.police_pop += 1
-        if (types.city_time & 7) == 0:
-            RepairZone(types.POLICESTATION, 3)  # post
+    if context.cchr9 == context.POLICESTATION:
+        context.police_pop += 1
+        if (context.city_time & 7) == 0:
+            repair_zone(context, context.POLICESTATION, 3)  # post
 
-        if PwrOn:
-            z = types.police_effect
+        if pwr_on:
+            z = context.police_effect
         else:
-            z = types.police_effect >> 1
+            z = context.police_effect >> 1
 
-        if not FindPRoad():
+        if not find_p_road():
             z = z >> 1  # post PD's need roads
 
-        types.police_map[types.s_map_x >> 3][types.s_map_y >> 3] += z
+        context.police_map[context.s_map_x >> 3][context.s_map_y >> 3] += z
         return
 
-    if types.cchr9 == types.STADIUM:
-        types.stadium_pop += 1
-        if (types.city_time & 15) == 0:
-            RepairZone(types.STADIUM, 4)
-        if PwrOn:
+    if context.cchr9 == context.STADIUM:
+        context.stadium_pop += 1
+        if (context.city_time & 15) == 0:
+            repair_zone(context, context.STADIUM, 4)
+        if pwr_on:
             if (
-                (types.city_time + types.s_map_x + types.s_map_y) & 31
+                (context.city_time + context.s_map_x + context.s_map_y) & 31
             ) == 0:  # post release
-                DrawStadium(types.FULLSTADIUM)
-                types.map_data[types.s_map_x + 1][types.s_map_y] = (
-                    types.FOOTBALLGAME1 + types.ANIMBIT
+                draw_stadium(context, context.FULLSTADIUM)
+                context.map_data[context.s_map_x + 1][context.s_map_y] = (
+                    context.FOOTBALLGAME1 + context.ANIMBIT
                 )
-                types.map_data[types.s_map_x + 1][types.s_map_y + 1] = (
-                    types.FOOTBALLGAME2 + types.ANIMBIT
+                context.map_data[context.s_map_x + 1][context.s_map_y + 1] = (
+                    context.FOOTBALLGAME2 + context.ANIMBIT
                 )
         return
 
-    if types.cchr9 == types.FULLSTADIUM:
-        types.stadium_pop += 1
-        if ((types.city_time + types.s_map_x + types.s_map_y) & 7) == 0:  # post release
-            DrawStadium(types.STADIUM)
+    if context.cchr9 == context.FULLSTADIUM:
+        context.stadium_pop += 1
+        if ((context.city_time + context.s_map_x + context.s_map_y) & 7) == 0:  # post release
+            draw_stadium(context, context.STADIUM)
         return
 
-    if types.cchr9 == types.AIRPORT:
-        types.airport_pop += 1
-        if (types.city_time & 7) == 0:
-            RepairZone(types.AIRPORT, 6)
+    if context.cchr9 == context.AIRPORT:
+        context.airport_pop += 1
+        if (context.city_time & 7) == 0:
+            repair_zone(context, context.AIRPORT, 6)
 
-        if PwrOn:  # post
+        if pwr_on:  # post
             if (
-                types.map_data[types.s_map_x + 1][types.s_map_y - 1] & types.LOMASK
-            ) == types.RADAR:
-                types.map_data[types.s_map_x + 1][types.s_map_y - 1] = (
-                    types.RADAR + types.ANIMBIT + types.CONDBIT + types.BURNBIT
+                context.map_data[context.s_map_x + 1][context.s_map_y - 1] & context.LOMASK
+            ) == context.RADAR:
+                context.map_data[context.s_map_x + 1][context.s_map_y - 1] = (
+                    context.RADAR + context.ANIMBIT + context.CONDBIT + context.BURNBIT
                 )
         else:
-            types.map_data[types.s_map_x + 1][types.s_map_y - 1] = (
-                types.RADAR + types.CONDBIT + types.BURNBIT
+            context.map_data[context.s_map_x + 1][context.s_map_y - 1] = (
+                context.RADAR + context.CONDBIT + context.BURNBIT
             )
 
-        if PwrOn:
-            DoAirport()
+        if pwr_on:
+            do_airport(context)
         return
 
-    if types.cchr9 == types.PORT:
-        types.port_pop += 1
-        if (types.city_time & 15) == 0:
-            RepairZone(types.PORT, 4)
-        if PwrOn and (sprites.GetSprite(types.SHI) is None):
+    if context.cchr9 == context.PORT:
+        context.port_pop += 1
+        if (context.city_time & 15) == 0:
+            repair_zone(context, context.PORT, 4)
+        if pwr_on and (sprites.GetSprite(context.SHI) is None):
             sprites.GenerateShip()
         return
 
 
-def DrawStadium(z: int) -> None:
+def draw_stadium(context: AppContext, z: int) -> None:
     """
+    ported from DrawStadium
     Draw stadium tiles.
 
     Ported from DrawStadium() in s_sim.c.
 
     Args:
         z: Base tile value
+        :param context:
     """
     z = z - 5
-    for y in range(types.s_map_y - 1, types.s_map_y + 3):
-        for x in range(types.s_map_x - 1, types.s_map_x + 3):
-            types.map_data[x][y] = (z) | types.BNCNBIT
-    types.map_data[types.s_map_x][types.s_map_y] |= types.ZONEBIT | types.PWRBIT
+    for y in range(context.s_map_y - 1, context.s_map_y + 3):
+        for x in range(context.s_map_x - 1, context.s_map_x + 3):
+            context.map_data[x][y] = z | context.BNCNBIT
+    context.map_data[context.s_map_x][context.s_map_y] |= context.ZONEBIT | context.PWRBIT
 
 
-def DoAirport() -> None:
+def do_airport(context: AppContext) -> None:
     """
+    ported from DoAirport
     Handle airport operations.
 
     Ported from DoAirport() in s_sim.c.
+    :param context:
     """
-    if micropolis.utilities.Rand(5) == 0:
-        sprites.GeneratePlane(types.s_map_x, types.s_map_y)
+    if rand(5) == 0:
+        sprites.GeneratePlane(context.s_map_x, context.s_map_y)
         return
-    if micropolis.utilities.Rand(12) == 0:
-        sprites.GenerateCopter(types.s_map_x, types.s_map_y)
+    if rand(12) == 0:
+        sprites.GenerateCopter(context.s_map_x, context.s_map_y)
 
 
-def CoalSmoke(mx: int, my: int) -> None:
+def coal_smoke(context: AppContext, mx: int, my: int) -> None:
     """
+    ported from CoalSmoke
     Generate coal smoke from power plants.
 
     Ported from CoalSmoke() in s_sim.c.
@@ -1432,19 +1432,21 @@ def CoalSmoke(mx: int, my: int) -> None:
     Args:
         mx: X coordinate
         my: Y coordinate
+        :param context:
     """
-    SmTb = [types.COALSMOKE1, types.COALSMOKE2, types.COALSMOKE3, types.COALSMOKE4]
+    sm_tb = [context.COALSMOKE1, context.COALSMOKE2, context.COALSMOKE3, context.COALSMOKE4]
     dx = [1, 2, 1, 2]
     dy = [-1, -1, 0, 0]
 
     for x in range(4):
-        types.map_data[mx + dx[x]][my + dy[x]] = (
-            SmTb[x] | types.ANIMBIT | types.CONDBIT | types.PWRBIT | types.BURNBIT
+        context.map_data[mx + dx[x]][my + dy[x]] = (
+            sm_tb[x] | context.ANIMBIT | context.CONDBIT | context.PWRBIT | context.BURNBIT
         )
 
 
-def DoMeltdown(SX: int, SY: int) -> None:
+def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
     """
+    ported from DoMeltdown
     Handle nuclear meltdown disaster.
 
     Ported from DoMeltdown() in s_sim.c.
@@ -1452,41 +1454,42 @@ def DoMeltdown(SX: int, SY: int) -> None:
     Args:
         SX: X coordinate of meltdown
         SY: Y coordinate of meltdown
+        :param context:
     """
-    global MeltX, MeltY
+    # global melt_x, melt_y
 
-    MeltX = SX
-    MeltY = SY
+    context.melt_x = sx
+    context.melt_y = sy
 
-    sprites.MakeExplosion(SX - 1, SY - 1)
-    sprites.MakeExplosion(SX - 1, SY + 2)
-    sprites.MakeExplosion(SX + 2, SY - 1)
-    sprites.MakeExplosion(SX + 2, SY + 2)
+    sprites.MakeExplosion(sx - 1, sy - 1)
+    sprites.MakeExplosion(sx - 1, sy + 2)
+    sprites.MakeExplosion(sx + 2, sy - 1)
+    sprites.MakeExplosion(sx + 2, sy + 2)
 
-    for x in range(SX - 1, SX + 3):
-        for y in range(SY - 1, SY + 3):
-            types.map_data[x][y] = (
-                types.FIRE + (micropolis.utilities.Rand16() & 3) + types.ANIMBIT
+    for x in range(sx - 1, sx + 3):
+        for y in range(sy - 1, sy + 3):
+            context.map_data[x][y] = (
+                    context.FIRE + (rand16() & 3) + context.ANIMBIT
             )
 
     for z in range(200):
-        x = SX - 20 + micropolis.utilities.Rand(40)
-        y = SY - 15 + micropolis.utilities.Rand(30)
+        x = sx - 20 + rand(40)
+        y = sy - 15 + rand(30)
         if (
             (x < 0)
-            or (x >= micropolis.constants.WORLD_X)
+            or (x >= WORLD_X)
             or (y < 0)
-            or (y >= micropolis.constants.WORLD_Y)
+            or (y >= WORLD_Y)
         ):
             continue
-        t = types.map_data[x][y]
-        if t & types.ZONEBIT:
+        t = context.map_data[x][y]
+        if t & context.ZONEBIT:
             continue
-        if (t & types.BURNBIT) or (t == 0):
-            types.map_data[x][y] = types.RADTILE
+        if (t & context.BURNBIT) or (t == 0):
+            context.map_data[x][y] = context.RADTILE
 
-    messages.ClearMes()
-    messages.SendMesAt(-43, SX, SY)
+    clear_mes()
+    send_mes_at(-43, sx, sy)
 
 
 # ============================================================================
@@ -1496,8 +1499,9 @@ def DoMeltdown(SX: int, SY: int) -> None:
 RANDOM_RANGE = 0xFFFF
 
 
-def Rand(range_val: int) -> int:
+def rand(range_val: int) -> int:
     """
+    ported for Rand
     Generate random number in range.
 
     Ported from Rand() in s_sim.c.
@@ -1509,17 +1513,18 @@ def Rand(range_val: int) -> int:
         Random number between 0 and range_val-1
     """
     range_val += 1
-    maxMultiple = RANDOM_RANGE // range_val
-    maxMultiple *= range_val
+    max_multiple = RANDOM_RANGE // range_val
+    max_multiple *= range_val
     while True:
-        rnum = micropolis.utilities.Rand16()
-        if rnum < maxMultiple:
+        rnum = rand16()
+        if rnum < max_multiple:
             break
     return rnum % range_val
 
 
-def Rand16() -> int:
+def rand16() -> int:
     """
+    ported Rand16
     Generate 16-bit random number.
 
     Ported from Rand16() in s_sim.c.
@@ -1527,11 +1532,13 @@ def Rand16() -> int:
     Returns:
         Random number from sim_rand()
     """
-    return micropolis.utilities.sim_rand()
+    return sim_rand()
 
 
-def Rand16Signed() -> int:
+def rand16_signed() -> int:
     """
+    ported from Rand16Signed
+
     Generate signed 16-bit random number.
 
     Ported from Rand16Signed() in s_sim.c.
@@ -1539,14 +1546,15 @@ def Rand16Signed() -> int:
     Returns:
         Signed random number
     """
-    i = micropolis.utilities.sim_rand()
+    i = sim_rand()
     if i > 32767:
         i = 32767 - i
     return i
 
 
-def RandomlySeedRand() -> None:
+def randomly_seed_rand() -> None:
     """
+    ported from RandomlySeedRand
     Seed random number generator with current time.
 
     Ported from RandomlySeedRand() in s_sim.c.
@@ -1554,11 +1562,12 @@ def RandomlySeedRand() -> None:
     # Use current time for seeding
     current_time = time.time()
     seed = int(current_time * 1000000)  # microseconds
-    SeedRand(seed)
+    seed_rand(seed)
 
 
-def SeedRand(seed: int) -> None:
+def seed_rand(seed: int) -> None:
     """
+    ported from seed_rand
     Seed the random number generator.
 
     Ported from SeedRand() in s_sim.c.
@@ -1566,7 +1575,7 @@ def SeedRand(seed: int) -> None:
     Args:
         seed: Seed value
     """
-    micropolis.utilities.sim_srand(seed)
+    sim_srand(seed)
 
 
 # ============================================================================
@@ -1574,38 +1583,38 @@ def SeedRand(seed: int) -> None:
 # ============================================================================
 
 
-def CityEvaluation() -> None:
-    """City evaluation - placeholder for evaluation.py"""
+def city_evaluation() -> None:
+    """ported from CityEvaluation City evaluation - placeholder for evaluation.py"""
     pass
 
 
-def SendMessages() -> None:
-    """Send messages - placeholder for messages.py"""
+def send_messages() -> None:
+    """ported from SendMessages Send messages - placeholder for messages.py"""
     pass
 
 
-def DoPowerScan() -> None:
-    """Power grid scanning - implemented in power.py"""
+def do_power_scan() -> None:
+    """ported from DoPowerScan Power grid scanning - implemented in power.py"""
     power.DoPowerScan()
 
 
-def DoDisasters() -> None:
-    """Handle disasters - placeholder for disasters.py"""
+def do_disasters() -> None:
+    """ported from DoDisasters Handle disasters - placeholder for disasters.py"""
     pass
 
 
-def DoFlood() -> None:
-    """Handle flood tiles - placeholder"""
+def do_flood() -> None:
+    """ported from DoFlood Handle flood tiles - placeholder"""
     pass
 
 
-def DoZone() -> None:
-    """Process zone tiles - placeholder for zones.py"""
+def do_zone() -> None:
+    """ported from DoZone Process zone tiles - placeholder for zones.py"""
     pass
 
 
-def FindPRoad() -> bool:
-    """Find if there's a powered road nearby - placeholder"""
+def find_p_road() -> bool:
+    """ported FindPRoad Find if there's a powered road nearby - placeholder"""
     return True  # Assume roads are powered for now
 
 
@@ -1614,15 +1623,17 @@ def FindPRoad() -> bool:
 # ============================================================================
 
 
-def SetCommonInits() -> None:
+def set_common_inits(context: AppContext) -> None:
     """
+    ported from SetCommonInits
     Set common initialization values.
 
     Ported from SetCommonInits() in s_sim.c.
+    :param context:
     """
     # evaluation.EvalInit() - placeholder
-    types.road_effect = 32
-    types.police_effect = 1000
-    types.fire_effect = 1000
-    types.tax_flag = 0
-    types.tax_fund = 0
+    context.road_effect = 32
+    context.police_effect = 1000
+    context.fire_effect = 1000
+    context.tax_flag = 0
+    context.tax_fund = 0

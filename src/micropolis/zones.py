@@ -29,7 +29,7 @@ def DoZone() -> None:
         types.un_pwrd_z_cnt += 1
 
     if types.cchr9 > types.PORTBASE:  # do Special Zones
-        simulation.DoSPZone(ZonePwrFlg)
+        simulation.do_sp_zone(context, ZonePwrFlg)
         return
 
     if types.cchr9 < types.HOSPITAL:
@@ -57,17 +57,17 @@ def DoHospChur() -> None:
     if types.cchr9 == types.HOSPITAL:
         types.hosp_pop += 1
         if (types.city_time & 15) == 0:
-            simulation.RepairZone(types.HOSPITAL, 3)  # post
+            simulation.repair_zone(context, types.HOSPITAL, 3)  # post
         if types.need_hosp == -1:
-            if simulation.Rand(20) == 0:
+            if simulation.rand(20) == 0:
                 ZonePlop(types.RESBASE)
 
     if types.cchr9 == types.CHURCH:
         types.church_pop += 1
         if (types.city_time & 15) == 0:
-            simulation.RepairZone(types.CHURCH, 3)  # post
+            simulation.repair_zone(context, types.CHURCH, 3)  # post
         if types.need_church == -1:
-            if simulation.Rand(20) == 0:
+            if simulation.rand(20) == 0:
                 ZonePlop(types.RESBASE)
 
 
@@ -129,26 +129,26 @@ def DoIndustrial(ZonePwrFlg: int) -> None:
     tpop = IZPop(types.cchr9)
     types.ind_pop += tpop
 
-    if tpop > simulation.Rand(5):
+    if tpop > simulation.rand(5):
         TrfGood = MakeTraf(2)
     else:
         TrfGood = True
 
     if TrfGood == -1:
-        DoIndOut(tpop, simulation.Rand16() & 1)
+        DoIndOut(tpop, simulation.rand16() & 1)
         return
 
-    if (simulation.Rand16() & 7) == 0:
+    if (simulation.rand16() & 7) == 0:
         zscore = types.i_value + EvalInd(TrfGood)
         if not ZonePwrFlg:
             zscore = -500
 
-        if (zscore > -350) and ((zscore - 26380) > simulation.Rand16Signed()):
-            DoIndIn(tpop, simulation.Rand16() & 1)
+        if (zscore > -350) and ((zscore - 26380) > simulation.rand16_signed()):
+            DoIndIn(tpop, simulation.rand16() & 1)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < simulation.Rand16Signed()):
-            DoIndOut(tpop, simulation.Rand16() & 1)
+        if (zscore < 350) and ((zscore + 26380) < simulation.rand16_signed()):
+            DoIndOut(tpop, simulation.rand16() & 1)
 
 
 def DoCommercial(ZonePwrFlg: int) -> None:
@@ -163,7 +163,7 @@ def DoCommercial(ZonePwrFlg: int) -> None:
     tpop = CZPop(types.cchr9)
     types.com_pop += tpop
 
-    if tpop > simulation.Rand(5):
+    if tpop > simulation.rand(5):
         TrfGood = MakeTraf(1)
     else:
         TrfGood = True
@@ -173,7 +173,7 @@ def DoCommercial(ZonePwrFlg: int) -> None:
         DoComOut(tpop, value)
         return
 
-    if (simulation.Rand16() & 7) == 0:
+    if (simulation.rand16() & 7) == 0:
         locvalve = EvalCom(TrfGood)
         zscore = types.c_value + locvalve
         if not ZonePwrFlg:
@@ -182,13 +182,13 @@ def DoCommercial(ZonePwrFlg: int) -> None:
         if (
             TrfGood
             and (zscore > -350)
-            and ((zscore - 26380) > simulation.Rand16Signed())
+            and ((zscore - 26380) > simulation.rand16_signed())
         ):
             value = GetCRVal()
             DoComIn(tpop, value)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < simulation.Rand16Signed()):
+        if (zscore < 350) and ((zscore + 26380) < simulation.rand16_signed()):
             value = GetCRVal()
             DoComOut(tpop, value)
 
@@ -209,7 +209,7 @@ def DoResidential(ZonePwrFlg: int) -> None:
 
     types.res_pop += tpop
 
-    if tpop > simulation.Rand(35):
+    if tpop > simulation.rand(35):
         TrfGood = MakeTraf(0)
     else:
         TrfGood = True
@@ -219,21 +219,21 @@ def DoResidential(ZonePwrFlg: int) -> None:
         DoResOut(tpop, value)
         return
 
-    if (types.cchr9 == types.FREEZ) or ((simulation.Rand16() & 7) == 0):
+    if (types.cchr9 == types.FREEZ) or ((simulation.rand16() & 7) == 0):
         locvalve = EvalRes(TrfGood)
         zscore = types.r_value + locvalve
         if not ZonePwrFlg:
             zscore = -500
 
-        if (zscore > -350) and ((zscore - 26380) > simulation.Rand16Signed()):
-            if (not tpop) and ((simulation.Rand16() & 3) == 0):
+        if (zscore > -350) and ((zscore - 26380) > simulation.rand16_signed()):
+            if (not tpop) and ((simulation.rand16() & 3) == 0):
                 MakeHosp()
                 return
             value = GetCRVal()
             DoResIn(tpop, value)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < simulation.Rand16Signed()):
+        if (zscore < 350) and ((zscore + 26380) < simulation.rand16_signed()):
             value = GetCRVal()
             DoResOut(tpop, value)
 
@@ -392,7 +392,7 @@ def DoResOut(pop: int, value: int) -> None:
                 if macros.TestBounds(x, y):
                     if (types.map_data[x][y] & types.LOMASK) != types.FREEZ:
                         types.map_data[x][y] = (
-                            types.LHTHR + value + simulation.Rand(2) + types.BLBNCNBIT
+                                types.LHTHR + value + simulation.rand(2) + types.BLBNCNBIT
                         )
 
     if pop < 16:
@@ -536,7 +536,7 @@ def BuildHouse(value: int) -> None:
                 if score > hscore:
                     hscore = score
                     BestLoc = z
-                if (score == hscore) and ((simulation.Rand16() & 7) == 0):
+                if (score == hscore) and ((simulation.rand16() & 7) == 0):
                     BestLoc = z
 
     if BestLoc:
@@ -544,7 +544,7 @@ def BuildHouse(value: int) -> None:
         yy = types.s_map_y + ZeY[BestLoc]
         if macros.TestBounds(xx, yy):
             types.map_data[xx][yy] = (
-                types.HOUSE + types.BLBNCNBIT + simulation.Rand(2) + (value * 3)
+                    types.HOUSE + types.BLBNCNBIT + simulation.rand(2) + (value * 3)
             )
 
 

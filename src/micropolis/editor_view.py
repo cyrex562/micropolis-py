@@ -12,30 +12,35 @@ Key features:
 - Support for different color depths and rendering modes
 """
 
-import micropolis.constants
-import micropolis.sim_view
 import pygame
 from result import Ok, Result
 
-from . import engine, graphics_setup, macros, map_view, types
+from .constants import LOMASK, ZONEBIT, WORLD_X, WORLD_Y
+from .context import AppContext
+from .engine import sim_update_editors
+from .graphics_setup import get_tile_surface
+from .map_view import dynamicFilter
 from .sim_view import SimView
+
 
 # ============================================================================
 # Editor View Rendering Functions
 # ============================================================================
 
 
-def drawBeegMaps() -> None:
+def draw_beeg_maps() -> None:
     """
+    ported from drawBeegMaps
     Update all editor views.
 
     Ported from drawBeegMaps() in g_bigmap.c.
     """
-    engine.sim_update_editors()
+    sim_update_editors()
 
 
-def MemDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
+def mem_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, w: int, h: int) -> None:
     """
+    ported from MemDrawBeegMapRect
     Draw a rectangle of tiles in the editor view using memory buffer.
 
     Ported from MemDrawBeegMapRect() in g_bigmap.c.
@@ -44,6 +49,7 @@ def MemDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
         view: The editor view to draw into
         x, y: Top-left tile coordinates
         w, h: Width and height in tiles
+        :param context: 
     """
     # Clip to view boundaries
     if x < view.tile_x:
@@ -78,17 +84,18 @@ def MemDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
         _draw_color_editor_rect(view, x, y, w, h, line_bytes, pixel_bytes)
     else:
         # Monochrome rendering mode
-        _draw_mono_editor_rect(view, x, y, w, h, line_bytes)
+        _draw_mono_editor_rect(context, view, x, y, w, h, line_bytes)
 
 
 def _draw_color_editor_rect(
-    view: SimView,
-    x: int,
-    y: int,
-    w: int,
-    h: int,
-    line_bytes: int,
-    pixel_bytes: int,
+        context: AppContext,
+        view: SimView,
+        x: int,
+        y: int,
+        w: int,
+        h: int,
+        line_bytes: int,
+        pixel_bytes: int,
 ) -> None:
     """
     Draw editor rectangle in color mode.
@@ -105,7 +112,7 @@ def _draw_color_editor_rect(
         return
 
     have = view.tiles
-    blink = types.flag_blink <= 0
+    blink = context.flag_blink <= 0
 
     for col in range(w):
         tile_x = x + col
@@ -116,19 +123,19 @@ def _draw_color_editor_rect(
             tile_y = y + row
             local_row = tile_y - view.tile_y
 
-            tile = types.map_data[tile_x][tile_y]
-            if (tile & macros.LOMASK) >= types.TILE_COUNT:
-                tile -= types.TILE_COUNT
+            tile = context.map_data[tile_x][tile_y]
+            if (tile & LOMASK) >= context.TILE_COUNT:
+                tile -= context.TILE_COUNT
 
-            if blink and (tile & macros.ZONEBIT) and not (tile & types.PWRBIT):
-                tile = types.LIGHTNINGBOLT
+            if blink and (tile & ZONEBIT) and not (tile & context.PWRBIT):
+                tile = context.LIGHTNINGBOLT
             else:
-                tile &= macros.LOMASK
+                tile &= LOMASK
 
             if (
-                tile > 63
-                and view.dynamic_filter != 0
-                and not map_view.dynamicFilter(tile_x, tile_y)
+                    tile > 63
+                    and view.dynamic_filter != 0
+                    and not dynamicFilter(tile_x, tile_y)
             ):
                 tile = 0
 
@@ -144,7 +151,8 @@ def _draw_color_editor_rect(
 
 
 def _draw_mono_editor_rect(
-    view: SimView, x: int, y: int, w: int, h: int, line_bytes: int
+        context: AppContext,
+        view: SimView, x: int, y: int, w: int, h: int, line_bytes: int
 ) -> None:
     """
     Draw editor rectangle in monochrome mode.
@@ -154,13 +162,14 @@ def _draw_mono_editor_rect(
         x, y: Top-left tile coordinates
         w, h: Width and height in tiles
         line_bytes: Bytes per line in display buffer
+        :param context:
     """
     surface = ensure_view_surface(view)
     if surface is None:
         return
 
     have = view.tiles
-    blink = types.flag_blink <= 0
+    blink = context.flag_blink <= 0
 
     for col in range(w):
         tile_x = x + col
@@ -171,14 +180,14 @@ def _draw_mono_editor_rect(
             tile_y = y + row
             local_row = tile_y - view.tile_y
 
-            tile = types.map_data[tile_x][tile_y]
-            if (tile & macros.LOMASK) >= types.TILE_COUNT:
-                tile -= types.TILE_COUNT
+            tile = context.map_data[tile_x][tile_y]
+            if (tile & LOMASK) >= context.TILE_COUNT:
+                tile -= context.TILE_COUNT
 
-            if blink and (tile & macros.ZONEBIT) and not (tile & types.PWRBIT):
-                tile = types.LIGHTNINGBOLT
+            if blink and (tile & ZONEBIT) and not (tile & context.PWRBIT):
+                tile = context.LIGHTNINGBOLT
             else:
-                tile &= macros.LOMASK
+                tile &= LOMASK
 
             if ha and ha[local_row] == tile:
                 continue
@@ -196,13 +205,14 @@ def _blit_tile(view: SimView, tile: int, dest_x: int, dest_y: int) -> None:
     if view.surface is None:
         return None
 
-    tile_surface = graphics_setup.get_tile_surface(tile, view)
+    tile_surface = get_tile_surface(tile, view)
     if tile_surface is not None:
         view.surface.blit(tile_surface, (dest_x, dest_y))
 
 
-def WireDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
+def wire_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, w: int, h: int) -> None:
     """
+    ported from WireDrawBeegMapRect
     Draw a rectangle of tiles using wire protocol (X11).
 
     Ported from WireDrawBeegMapRect() in g_bigmap.c.
@@ -213,6 +223,7 @@ def WireDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
         view: The editor view to draw into
         x, y: Top-left tile coordinates
         w, h: Width and height in tiles
+        :param context: 
     """
     # Clip to view boundaries (same as MemDrawBeegMapRect)
     if x < view.tile_x:
@@ -245,7 +256,7 @@ def WireDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
     have = view.tiles
 
     # Blinking state for lightning bolt
-    blink = types.flag_blink <= 0
+    blink = context.flag_blink <= 0
 
     # Process each column
     for col in range(w):
@@ -261,15 +272,15 @@ def WireDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
             local_row = row + (y - view.tile_y)
 
             # Get tile from map
-            tile = types.map_data[map_x][map_y + row]
-            if (tile & macros.LOMASK) >= types.TILE_COUNT:
-                tile -= types.TILE_COUNT
+            tile = context.map_data[map_x][map_y + row]
+            if (tile & LOMASK) >= context.TILE_COUNT:
+                tile -= context.TILE_COUNT
 
             # Handle blinking lightning bolt for unpowered zones
-            if blink and (tile & macros.ZONEBIT) and not (tile & types.PWRBIT):
-                tile = types.LIGHTNINGBOLT
+            if blink and (tile & ZONEBIT) and not (tile & context.PWRBIT):
+                tile = context.LIGHTNINGBOLT
             else:
-                tile &= macros.LOMASK
+                tile &= LOMASK
 
             # Check if tile changed
             if ha and ha[local_row] != tile:
@@ -289,8 +300,9 @@ def WireDrawBeegMapRect(view: SimView, x: int, y: int, w: int, h: int) -> None:
 # ============================================================================
 
 
-def DoUpdateEditor(view: SimView) -> None:
+def do_update_editor(context: AppContext, view: SimView) -> None:
     """
+    ported from DoUpdateEditor
     Update an editor view for pygame rendering.
 
     This replaces the placeholder in engine.py.
@@ -311,7 +323,7 @@ def DoUpdateEditor(view: SimView) -> None:
     h = view.tile_height
 
     # Draw the visible rectangle
-    MemDrawBeegMapRect(view, x, y, w, h)
+    mem_draw_beeg_map_rect(context, view, x, y, w, h)
 
     # Update pygame display (placeholder for pygame integration)
     # pygame.display.update() or similar
@@ -372,8 +384,8 @@ def ensure_view_surface(view: SimView) -> pygame.Surface:
     if surface is not None:
         return surface
 
-    width = view.width or (view.tile_width or micropolis.constants.WORLD_X) * 16
-    height = view.height or (view.tile_height or micropolis.constants.WORLD_Y) * 16
+    width = view.width or (view.tile_width or WORLD_X) * 16
+    height = view.height or (view.tile_height or WORLD_Y) * 16
 
     view.width = width
     view.height = height

@@ -60,35 +60,35 @@ class TestEditorView(Assertions):
     def test_drawBeegMaps(self):
         """Test drawBeegMaps function"""
         with patch("micropolis.engine.sim_update_editors") as mock_update:
-            editor_view.drawBeegMaps()
+            editor_view.draw_beeg_maps()
             mock_update.assert_called_once()
 
     def test_MemDrawBeegMapRect_clipping(self):
         """Test coordinate clipping in MemDrawBeegMapRect"""
         # Test with rectangle completely outside view bounds
-        editor_view.MemDrawBeegMapRect(self.view, -10, -10, 5, 5)
+        editor_view.mem_draw_beeg_map_rect(context, self.view, -10, -10, 5, 5)
         # Should return early due to clipping
 
         # Test with rectangle partially outside bounds
-        editor_view.MemDrawBeegMapRect(self.view, 5, 5, 50, 50)
+        editor_view.mem_draw_beeg_map_rect(context, self.view, 5, 5, 50, 50)
         # Should be clipped to view bounds
 
     def test_MemDrawBeegMapRect_normal_operation(self):
         """Test normal operation of MemDrawBeegMapRect"""
         # This would require mocking pygame surface operations
         # For now, just ensure it doesn't crash
-        editor_view.MemDrawBeegMapRect(self.view, 10, 10, 5, 5)
+        editor_view.mem_draw_beeg_map_rect(context, self.view, 10, 10, 5, 5)
 
     def test_WireDrawBeegMapRect(self):
         """Test WireDrawBeegMapRect function"""
         # This would require mocking X11 operations
         # For now, just ensure it doesn't crash
-        editor_view.WireDrawBeegMapRect(self.view, 10, 10, 5, 5)
+        editor_view.wire_draw_beeg_map_rect(context, self.view, 10, 10, 5, 5)
 
     def test_DoUpdateEditor(self):
         """Test DoUpdateEditor function"""
         with patch("micropolis.editor_view.MemDrawBeegMapRect") as mock_draw:
-            editor_view.DoUpdateEditor(self.view)
+            editor_view.do_update_editor(context, self.view)
             self.assertFalse(self.view.invalid)  # Should mark as valid
             mock_draw.assert_called_once()
 
@@ -96,7 +96,7 @@ class TestEditorView(Assertions):
         """Test DoUpdateEditor with invisible view"""
         self.view.visible = False
         with patch("micropolis.editor_view.MemDrawBeegMapRect") as mock_draw:
-            editor_view.DoUpdateEditor(self.view)
+            editor_view.do_update_editor(context, self.view)
             mock_draw.assert_not_called()
 
     def test_initialize_editor_tiles(self):
@@ -146,7 +146,7 @@ class TestEditorView(Assertions):
 
         # Test with blinking on
         types.flag_blink = -1  # Negative means blinking
-        editor_view.MemDrawBeegMapRect(self.view, 15, 15, 1, 1)
+        editor_view.mem_draw_beeg_map_rect(context, self.view, 15, 15, 1, 1)
         # Should be called with lightning bolt tile
 
     def test_dynamic_filtering(self):
@@ -162,7 +162,7 @@ class TestEditorView(Assertions):
         # Set up population density
         types.pop_density[15][15] = 50  # Within range
 
-        editor_view.MemDrawBeegMapRect(self.view, 15, 15, 1, 1)
+        editor_view.mem_draw_beeg_map_rect(context, self.view, 15, 15, 1, 1)
         # Should apply filtering
 
     def test_tile_caching(self):
@@ -175,4 +175,4 @@ class TestEditorView(Assertions):
         types.map_data[10][10] = macros.RESBASE
 
         # Just test that the function doesn't crash
-        editor_view.MemDrawBeegMapRect(self.view, 10, 10, 1, 1)
+        editor_view.mem_draw_beeg_map_rect(context, self.view, 10, 10, 1, 1)

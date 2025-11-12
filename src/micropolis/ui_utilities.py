@@ -260,8 +260,8 @@ def _open_budget_window() -> None:
     """Trigger the budget overlay and pause simulation for interaction."""
     from . import budget
 
-    budget.draw_budget_window()
-    budget.show_budget_window_and_start_waiting()
+    budget.draw_budget_window(context)
+    budget.show_budget_window_and_start_waiting(context)
 
 
 def toggle_graph_display() -> None:
@@ -284,7 +284,7 @@ def toggle_evaluation_display() -> None:
     evaluation_ui.set_evaluation_panel_visible(_evaluation_display_enabled)
 
     if _evaluation_display_enabled:
-        evaluation_ui.do_score_card()
+        evaluation_ui.do_score_card(context)
         evaluation_ui.draw_evaluation()
     else:
         evaluation_ui.update_evaluation()
@@ -347,17 +347,17 @@ def set_game_level_funds(level: int) -> None:
         level: Game difficulty level (0=easy, 1=medium, 2=hard)
     """
     if level == 0:
-        types.SetFunds(20000)
+        types.SetFunds(context, 20000)
         set_game_level(0)
     elif level == 1:
-        types.SetFunds(10000)
+        types.SetFunds(context, 10000)
         set_game_level(1)
     elif level == 2:
-        types.SetFunds(5000)
+        types.SetFunds(context, 5000)
         set_game_level(2)
     # Default to easy
     else:
-        types.SetFunds(20000)
+        types.SetFunds(context, 20000)
         set_game_level(0)
 
 

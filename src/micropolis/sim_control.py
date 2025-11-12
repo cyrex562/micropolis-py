@@ -272,49 +272,49 @@ def set_city_file_name(filename: str | None) -> None:
 
 def make_fire() -> None:
     """Start a fire disaster"""
-    disasters.MakeFire()
+    disasters.make_fire(context)
     kick()
 
 
 def make_flood() -> None:
     """Start a flood disaster"""
-    disasters.MakeFlood()
+    disasters.make_flood(context)
     kick()
 
 
 def make_tornado() -> None:
     """Start a tornado disaster"""
-    disasters.MakeTornado()
+    disasters.make_tornado()
     kick()
 
 
 def make_earthquake() -> None:
     """Start an earthquake disaster"""
-    disasters.MakeEarthquake()
+    disasters.make_earthquake(context)
     kick()
 
 
 def make_monster() -> None:
     """Create a monster"""
-    disasters.MakeMonster()
+    disasters.make_monster(context)
     kick()
 
 
 def make_meltdown() -> None:
     """Start a nuclear meltdown"""
-    disasters.MakeMeltdown()
+    disasters.make_meltdown(context)
     kick()
 
 
 def fire_bomb() -> None:
     """Drop a fire bomb (for debugging/testing)"""
-    disasters.FireBomb()
+    disasters.fire_bomb(context)
     kick()
 
 
 def make_explosion(x: int, y: int) -> None:
     """Create an explosion at coordinates"""
-    disasters.MakeExplosion(x, y)
+    disasters.make_explosion(x, y)
     kick()
 
 
@@ -407,7 +407,7 @@ def set_fire_fund_percentage(percent: int) -> None:
     if 0 <= percent <= 100:
         types.fire_percent = percent / 100.0
         types.fire_spend = (types.fire_max_value * percent) // 100
-        types.UpdateFundEffects()
+        types.update_fund_effects(context)
         kick()
 
 
@@ -421,7 +421,7 @@ def set_police_fund_percentage(percent: int) -> None:
     if 0 <= percent <= 100:
         types.police_percent = percent / 100.0
         types.police_spend = (types.police_max_value * percent) // 100
-        types.UpdateFundEffects()
+        types.update_fund_effects(context)
         kick()
 
 
@@ -435,7 +435,7 @@ def set_road_fund_percentage(percent: int) -> None:
     if 0 <= percent <= 100:
         types.road_percent = percent / 100.0
         types.road_spend = (types.road_max_value * percent) // 100
-        types.UpdateFundEffects()
+        types.update_fund_effects(context)
         kick()
 
 
@@ -683,12 +683,12 @@ def get_crime_average() -> int:
 
 def get_unemployment_rate() -> int:
     """Get unemployment rate"""
-    return evaluation.GetUnemployment()
+    return evaluation.GetUnemployment(context)
 
 
 def get_fire_coverage() -> int:
     """Get fire department coverage"""
-    return evaluation.GetFire()
+    return evaluation.GetFire(context)
 
 
 def get_pollution_average() -> int:
@@ -989,13 +989,13 @@ def update_budget_window() -> None:
 
 def do_budget() -> None:
     """Execute budget calculations"""
-    evaluation.DoBudget()
+    evaluation.DoBudget(context)
     kick()
 
 
 def do_budget_from_menu() -> None:
     """Execute budget from menu"""
-    evaluation.DoBudgetFromMenu()
+    evaluation.DoBudgetFromMenu(context)
     kick()
 
 

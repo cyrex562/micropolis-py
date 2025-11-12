@@ -334,32 +334,32 @@ class TestUtilityFunctions:
 
     def test_get_current_month_name(self):
         """Test getting current month name"""
-        month_name = date_display.get_current_month_name()
+        month_name = date_display.get_current_month_name(context)
         assert month_name == "Jan"
 
         # Advance to June (5 months * 4 ticks = 20 ticks)
         types.city_time = 20
-        month_name = date_display.get_current_month_name()
+        month_name = date_display.get_current_month_name(context)
         assert month_name == "Jun"
 
     def test_get_current_year(self):
         """Test getting current year"""
-        year = date_display.get_current_year()
+        year = date_display.get_current_year(context)
         assert year == 1900
 
         # Advance by 1 year (48 ticks)
         types.city_time = 48
-        year = date_display.get_current_year()
+        year = date_display.get_current_year(context)
         assert year == 1901
 
     def test_format_date_string(self):
         """Test formatting date string"""
-        date_str = date_display.format_date_string()
+        date_str = date_display.format_date_string(context)
         assert date_str == "Jan 1900"
 
         # Advance to June 1901
         types.city_time = 48 + 20  # 1 year + 5 months
-        date_str = date_display.format_date_string()
+        date_str = date_display.format_date_string(context)
         assert date_str == "Jun 1901"
 
 
