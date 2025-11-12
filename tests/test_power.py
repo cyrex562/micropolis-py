@@ -30,13 +30,13 @@ def test_power_bit_operations():
     types.power_map = array.array("H", [0] * power.PWRMAPSIZE)
 
     # Test setting and testing power bits
-    power.SetPowerBit(10, 20)
-    assert power.TestPowerBit(10, 20)
-    assert not power.TestPowerBit(11, 20)  # Adjacent bit should be clear
+    power.SetPowerBit(context, 10, 20)
+    assert power.TestPowerBit(context, 10, 20)
+    assert not power.TestPowerBit(context, 11, 20)  # Adjacent bit should be clear
 
     # Test clearing power bits
-    power.ClearPowerBit(10, 20)
-    assert not power.TestPowerBit(10, 20)
+    power.ClearPowerBit(context, 10, 20)
+    assert not power.TestPowerBit(context, 10, 20)
 
     print("✓ Power bit operations test passed")
 
@@ -65,15 +65,15 @@ def test_test_for_cond():
 
     # Test non-conductive tile
     types.map_data[5][5] = 0
-    assert not power.TestForCond(5, 5)
+    assert not power.TestForCond(context, 5, 5)
 
     # Test conductive tile
     types.map_data[5][5] = power.CONDBIT
-    assert power.TestForCond(5, 5)
+    assert power.TestForCond(context, 5, 5)
 
     # Test tile with other bits but conductive
     types.map_data[5][5] = power.CONDBIT | 0x1234
-    assert power.TestForCond(5, 5)
+    assert power.TestForCond(context, 5, 5)
 
     print("✓ TestForCond test passed")
 
@@ -90,21 +90,21 @@ def test_power_scan_basic():
     types.nuclear_pop = 0
 
     # Reset power stack
-    power.PowerStackNum = 0
-    power.MaxPower = 0
-    power.NumPower = 0
+    power.power_stack_num = 0
+    power.max_power = 0
+    power.num_power = 0
 
     # Place a power plant at (10, 10)
     types.map_data[10][10] = power.PWRBIT
 
     # Run power scan
-    power.DoPowerScan()
+    power.DoPowerScan(context)
 
     # Check that power plant has power
-    assert power.TestPowerBit(10, 10)
+    assert power.TestPowerBit(context, 10, 10)
 
     # Check that MaxPower was calculated correctly (CoalPop * 700)
-    assert power.MaxPower == 700
+    assert power.max_power == 700
 
     print("✓ Basic power scan test passed")
 

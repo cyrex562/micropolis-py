@@ -21,28 +21,15 @@ Adapted from w_print.c for the Python/pygame port.
 
 import pygame
 
-
-# ============================================================================
-# Constants (from original C code)
-# ============================================================================
-
-TILE_COUNT = 960  # From sim.h
-
-
-# ============================================================================
-# Global State
-# ============================================================================
-
-# Print output destination (could be file, stdout, etc.)
-_print_output: str | None = None
-_print_file: str | None = None
+from src.micropolis.constants import TILE_COUNT
+from src.micropolis.context import AppContext
 
 
 # ============================================================================
 # Print Functions (Stub Implementations)
 # ============================================================================
 
-def PrintRect(x: int, y: int, w: int, h: int) -> None:
+def PrintRect(context: AppContext, x: int, y: int, w: int, h: int) -> None:
     """
     Print a rectangular area of the map.
 
@@ -53,6 +40,7 @@ def PrintRect(x: int, y: int, w: int, h: int) -> None:
     Args:
         x, y: Top-left coordinates of the rectangle
         w, h: Width and height of the rectangle
+        :param context:
     """
     # Stub implementation - in a full implementation, this would:
     # 1. Count occurrences of each tile type in the rectangle
@@ -60,7 +48,7 @@ def PrintRect(x: int, y: int, w: int, h: int) -> None:
     # 3. Print tile definitions for used tiles
     # 4. Print the actual tile grid
 
-    PrintHeader(x, y, w, h)
+    PrintHeader(context, x, y, w, h)
 
     # Count tile occurrences (stub - would analyze actual map data)
     tally = [0] * TILE_COUNT
@@ -76,38 +64,40 @@ def PrintRect(x: int, y: int, w: int, h: int) -> None:
     # Print tile definitions for used tiles
     for tile_id in range(TILE_COUNT):
         if tally[tile_id] > 0:
-            PrintDefTile(tile_id)
+            PrintDefTile(context, tile_id)
 
     # Print the tile grid
-    FirstRow()
+    FirstRow(context)
     for yy in range(y, y + h):
         for xx in range(x, x + w):
             # In real implementation: tile = Map[xx][yy] & LOMASK
             tile = 0  # Stub: assume empty tiles
-            PrintTile(tile)
-        PrintNextRow()
+            PrintTile(context, tile)
+        PrintNextRow(context)
 
-    PrintFinish(x, y, w, h)
-    PrintTrailer(x, y, w, h)
+    PrintFinish(context, x, y, w, h)
+    PrintTrailer(context, x, y, w, h)
 
 
-def PrintHeader(x: int, y: int, w: int, h: int) -> None:
+def PrintHeader(context: AppContext, x: int, y: int, w: int, h: int) -> None:
     """
     Print header information for a map rectangle.
 
     Args:
         x, y: Top-left coordinates
         w, h: Width and height
+        :param context:
     """
-    _print(f"Map Rectangle: ({x}, {y}) to ({x+w-1}, {y+h-1}) - Size: {w}x{h}")
+    _print(context, f"Map Rectangle: ({x}, {y}) to ({x + w - 1}, {y + h - 1}) - Size: {w}x{h}")
 
 
-def PrintDefTile(tile: int) -> None:
+def PrintDefTile(context: AppContext, tile: int) -> None:
     """
     Print tile definition.
 
     Args:
         tile: Tile ID to define
+        :param context:
     """
     # Stub: In a full implementation, this would print tile name/description
     tile_names = {
@@ -117,22 +107,24 @@ def PrintDefTile(tile: int) -> None:
         # ... would include all tile type names
     }
     name = tile_names.get(tile, f"Tile_{tile}")
-    _print(f"Tile {tile}: {name}")
+    _print(context, f"Tile {tile}: {name}")
 
 
-def FirstRow() -> None:
+def FirstRow(context: AppContext) -> None:
     """
     Start printing the first row of tiles.
+    :param context:
     """
-    _print("Map Data:")
+    _print(context, "Map Data:")
 
 
-def PrintTile(tile: int) -> None:
+def PrintTile(context: AppContext, tile: int) -> None:
     """
     Print a single tile.
 
     Args:
         tile: Tile ID to print
+        :param context:
     """
     # Stub: Print tile as a character representation
     # In a full implementation, this might use ASCII art or symbols
@@ -143,43 +135,46 @@ def PrintTile(tile: int) -> None:
         # ... more tile representations
     }
     char = tile_chars.get(tile, "?")
-    _print(char, end="")
+    _print(context, char, end="")
 
 
-def PrintNextRow() -> None:
+def PrintNextRow(context: AppContext) -> None:
     """
     Move to the next row in printing.
+    :param context:
     """
-    _print()  # New line
+    _print(context)  # New line
 
 
-def PrintFinish(x: int, y: int, w: int, h: int) -> None:
+def PrintFinish(context: AppContext, x: int, y: int, w: int, h: int) -> None:
     """
     Finish printing the map rectangle.
 
     Args:
         x, y: Top-left coordinates
         w, h: Width and height
+        :param context:
     """
-    _print(f"End of map rectangle ({w}x{h} tiles)")
+    _print(context, f"End of map rectangle ({w}x{h} tiles)")
 
 
-def PrintTrailer(x: int, y: int, w: int, h: int) -> None:
+def PrintTrailer(context: AppContext, x: int, y: int, w: int, h: int) -> None:
     """
     Print trailer information.
 
     Args:
         x, y: Top-left coordinates
         w, h: Width and height
+        :param context:
     """
-    _print(f"Printed rectangle at ({x}, {y}) dimensions {w}x{h}")
+    _print(context, f"Printed rectangle at ({x}, {y}) dimensions {w}x{h}")
 
 
 # ============================================================================
 # Modern Print Alternatives
 # ============================================================================
 
-def print_map_to_file(filename: str, x: int = 0, y: int = 0,
+def print_map_to_file(context: AppContext, filename: str, x: int = 0, y: int = 0,
                      w: int = 120, h: int = 100) -> bool:
     """
     Print map to a file (modern alternative).
@@ -191,29 +186,30 @@ def print_map_to_file(filename: str, x: int = 0, y: int = 0,
 
     Returns:
         True if successful, False otherwise
+        :param context:
     """
-    global _print_file
+    # global _print_file
     try:
-        _print_file = filename
+        context.print_file = filename
         with open(filename, 'w') as f:
             # Redirect print output to file
-            global _print_output
-            _print_output = ""
-            PrintRect(x, y, w, h)
+            # global _print_output
+            context.print_output = ""
+            PrintRect(context, x, y, w, h)
 
             # Write accumulated output to file
-            f.write(_print_output)
+            f.write(context.print_output)
 
-        _print_file = None
-        _print_output = None
+        context.print_file = None
+        context.print_output = None
         return True
     except Exception:
-        _print_file = None
-        _print_output = None
+        context.print_file = None
+        context.print_output = None
         return False
 
 
-def print_map_to_console(x: int = 0, y: int = 0,
+def print_map_to_console(context: AppContext, x: int = 0, y: int = 0,
                         w: int = 120, h: int = 100) -> None:
     """
     Print map to console (modern alternative).
@@ -221,10 +217,11 @@ def print_map_to_console(x: int = 0, y: int = 0,
     Args:
         x, y: Top-left coordinates (default: entire map)
         w, h: Width and height (default: entire map)
+        :param context:
     """
-    global _print_output
-    _print_output = None  # Reset to use stdout
-    PrintRect(x, y, w, h)
+    # global _print_output
+    context.print_output = None  # Reset to use stdout
+    PrintRect(context, x, y, w, h)
 
 
 def print_map_to_surface(surface: pygame.Surface, x: int = 0, y: int = 0,
@@ -247,25 +244,26 @@ def print_map_to_surface(surface: pygame.Surface, x: int = 0, y: int = 0,
 # Internal Helper Functions
 # ============================================================================
 
-def _print(text: str = "", end: str = "\n") -> None:
+def _print(context: AppContext, text: str = "", end: str = "") -> None:
     """
     Internal print function that can redirect output.
 
     Args:
         text: Text to print
         end: End character (default: newline)
+        :param context:
     """
-    global _print_output, _print_file
+    # global _print_output, _print_file
 
-    if _print_file:
+    if context.print_file:
         # Accumulate output for file writing
-        if _print_output is None:
-            _print_output = ""
-        _print_output += text + end
+        if context.print_output is None:
+            context.print_output = ""
+        context.print_output += text + end
 
         # Immediately write to file if it's a direct print call
         try:
-            with open(_print_file, 'a') as f:
+            with open(context.print_file, 'a') as f:
                 f.write(text + end)
         except Exception:
             pass  # Ignore file write errors in stub implementation
@@ -278,46 +276,50 @@ def _print(text: str = "", end: str = "\n") -> None:
 # Configuration Functions
 # ============================================================================
 
-def set_print_destination(filename: str | None) -> None:
+def set_print_destination(context: AppContext, filename: str | None) -> None:
     """
     Set the print output destination.
 
     Args:
         filename: Filename to print to, or None for stdout
+        :param context:
     """
-    global _print_file
-    _print_file = filename
+    # global _print_file
+    context.print_file = filename
 
 
-def get_print_destination() -> str | None:
+def get_print_destination(context: AppContext) -> str | None:
     """
     Get the current print destination.
 
     Returns:
         Current print filename, or None for stdout
+        :param context:
     """
-    return _print_file
+    return context.print_file
 
 
 # ============================================================================
 # Initialization and Cleanup
 # ============================================================================
 
-def initialize_printing() -> None:
+def initialize_printing(context: AppContext) -> None:
     """
     Initialize the printing system.
     Called during program startup.
+    :param context:
     """
-    global _print_output, _print_file
-    _print_output = None
-    _print_file = None
+    # global _print_output, _print_file
+    context.print_output = None
+    context.print_file = None
 
 
-def cleanup_printing() -> None:
+def cleanup_printing(context: AppContext) -> None:
     """
     Clean up the printing system.
     Called during program shutdown.
+    :param context:
     """
-    global _print_output, _print_file
-    _print_output = None
-    _print_file = None
+    # global _print_output, _print_file
+    context.print_output = None
+    context.print_file = None

@@ -3,11 +3,10 @@
 # ============================================================================
 
 
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class SimSprite:
+class SimSprite(BaseModel):
     """Moving sprite object (cars, disasters, etc.)"""
 
     name: str = ""

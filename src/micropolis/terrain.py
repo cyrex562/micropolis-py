@@ -14,69 +14,73 @@ Based on the original C code from mapgener.c, terragen.c, and terra.c
 
 import random
 
-import micropolis.constants
+from src.micropolis.constants import WORLD_X, WORLD_Y, DIR_TAB_X, DIR_TAB_Y, RIVER, CHANNEL, BR_MATRIX, SR_MATRIX, \
+    WOODS, BLN, REDGE, RED_TAB, BN, TED_TAB, BURNBIT
+from src.micropolis.context import AppContext
 
-from . import types
 
-# Constants from the original C code
-WORLD_X = 120
-WORLD_Y = 100
-RIVER = 2
-REDGE = 3
-CHANNEL = 4
-WOODS = 37
-BL = 4096  # Burned land bit
-BN = 8192  # Tree bit
-BLN = BL + BN  # Burned tree bit
+def _init_random_state(seed: int) -> list[int]:
+    """Initialize the GRand random number generator state."""
+    # Based on original GRanArray initialization
+    state = [1018, 4521, 202, 419, 3]
+    state[0] = seed  # Use seed instead of TickCount()
+    return state
 
-# River smoothing lookup table
-RED_TAB = [
-    13 + BL,
-    13 + BL,
-    17 + BL,
-    15 + BL,
-    5 + BL,
-    2,
-    19 + BL,
-    17 + BL,
-    9 + BL,
-    11 + BL,
-    2,
-    13 + BL,
-    7 + BL,
-    9 + BL,
-    5 + BL,
-    2,
-]
 
-# Tree smoothing lookup table
-TED_TAB = [0, 0, 0, 34, 0, 0, 36, 35, 0, 32, 0, 33, 30, 31, 29, 37]
+def test_bounds(x: int, y: int) -> bool:
+    """
+    Test if coordinates are within world bounds.
 
-# Direction movement tables
-DIR_TAB_X = [0, 1, 1, 1, 0, -1, -1, -1]
-DIR_TAB_Y = [-1, -1, 0, 1, 1, 1, 0, -1]
+    Args:
+        x, y: Coordinates to test
 
-# River placement matrices
-BR_MATRIX = [
-    [0, 0, 0, 3, 3, 3, 0, 0, 0],
-    [0, 0, 3, 2, 2, 2, 3, 0, 0],
-    [0, 3, 2, 2, 2, 2, 2, 3, 0],
-    [3, 2, 2, 2, 2, 2, 2, 2, 3],
-    [3, 2, 2, 2, 4, 2, 2, 2, 3],
-    [3, 2, 2, 2, 2, 2, 2, 2, 3],
-    [0, 3, 2, 2, 2, 2, 2, 3, 0],
-    [0, 0, 3, 2, 2, 2, 3, 0, 0],
-    [0, 0, 0, 3, 3, 3, 0, 0, 0],
-]
+    Returns:
+        True if coordinates are valid
+    """
+    return 0 <= x < WORLD_X and 0 <= y < WORLD_Y
 
-SR_MATRIX = [
-    [0, 0, 3, 3, 0, 0],
-    [0, 3, 2, 2, 3, 0],
-    [3, 2, 2, 2, 2, 3],
-    [3, 2, 2, 2, 2, 3],
-    [0, 3, 2, 2, 3, 0],
-    [0, 0, 3, 3, 0, 0],
-]
+
+def clear_map(map_data: list[list[int]]) -> None:
+    """
+    Clear the entire map to zeros.
+
+    Args:
+        map_data: The map to clear
+    """
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            map_data[x][y] = 0
+
+
+def smooth_trees(map_data: list[list[int]]) -> None:
+    """
+    Smooth tree edges using lookup table.
+
+    Args:
+        map_data: The map to modify
+    """
+    dx = [-1, 0, 1, 0]
+    dy = [0, 1, 0, -1]
+
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            if (map_data[x][y] & BLN) == BLN:
+                bitindex = 0
+                for z in range(4):
+                    bitindex <<= 1
+                    xtem = x + dx[z]
+                    ytem = y + dy[z]
+                    if test_bounds(xtem, ytem) and (map_data[xtem][ytem] & BN):
+                        bitindex += 1
+
+                temp = TED_TAB[bitindex & 15]
+                if temp:
+                    if temp != 37 and (x + y) & 1:
+                        temp -= 8
+                    map_data[x][y] = temp + BLN
+                else:
+                    # Preserve tree bit when lookup produces no replacement.
+                    map_data[x][y] = WOODS + BLN
 
 
 class TerrainGenerator:
@@ -99,7 +103,7 @@ class TerrainGenerator:
             seed: Random seed for reproducible generation (uses system time if None)
         """
         self.seed = seed if seed is not None else random.randint(0, 2**31 - 1)
-        self.random_state = self._init_random_state(self.seed)
+        self.random_state = _init_random_state(self.seed)
 
         # Current position for terrain operations
         self.map_x = 0
@@ -110,13 +114,6 @@ class TerrainGenerator:
         self.y_start = 0
         self.dir = 0
         self.last_dir = 0
-
-    def _init_random_state(self, seed: int) -> list[int]:
-        """Initialize the GRand random number generator state."""
-        # Based on original GRanArray initialization
-        state = [1018, 4521, 202, 419, 3]
-        state[0] = seed  # Use seed instead of TickCount()
-        return state
 
     def grand(self, range_val: int) -> int:
         """
@@ -155,18 +152,6 @@ class TerrainGenerator:
         x = self.grand(limit)
         return min(z, x)
 
-    def test_bounds(self, x: int, y: int) -> bool:
-        """
-        Test if coordinates are within world bounds.
-
-        Args:
-            x, y: Coordinates to test
-
-        Returns:
-            True if coordinates are valid
-        """
-        return 0 <= x < WORLD_X and 0 <= y < WORLD_Y
-
     def move_map(self, direction: int) -> None:
         """
         Move current position based on direction.
@@ -198,7 +183,7 @@ class TerrainGenerator:
         x_loc = self.map_x + x_off
         y_loc = self.map_y + y_off
 
-        if not self.test_bounds(x_loc, y_loc):
+        if not test_bounds(x_loc, y_loc):
             return False
 
         existing = map_data[x_loc][y_loc]
@@ -211,17 +196,6 @@ class TerrainGenerator:
 
         map_data[x_loc][y_loc] = tile
         return True
-
-    def clear_map(self, map_data: list[list[int]]) -> None:
-        """
-        Clear the entire map to zeros.
-
-        Args:
-            map_data: The map to clear
-        """
-        for x in range(WORLD_X):
-            for y in range(WORLD_Y):
-                map_data[x][y] = 0
 
     def make_island(self, map_data: list[list[int]]) -> None:
         """
@@ -307,7 +281,7 @@ class TerrainGenerator:
 
     def _do_briv(self, map_data: list[list[int]]) -> None:
         """Generate a big river branch."""
-        while self.test_bounds(self.map_x + 4, self.map_y + 4):
+        while test_bounds(self.map_x + 4, self.map_y + 4):
             self._briv_plop(map_data)
             if self.grand(10) > 4:
                 self.dir += 1
@@ -319,7 +293,7 @@ class TerrainGenerator:
 
     def _do_sriv(self, map_data: list[list[int]]) -> None:
         """Generate a small river branch."""
-        while self.test_bounds(self.map_x + 3, self.map_y + 3):
+        while test_bounds(self.map_x + 3, self.map_y + 3):
             self._sriv_plop(map_data)
             if self.grand(10) > 5:
                 self.dir += 1
@@ -374,8 +348,8 @@ class TerrainGenerator:
             yloc = self.grand(99)
             self._tree_splash(xloc, yloc, map_data)
 
-        self.smooth_trees(map_data)
-        self.smooth_trees(map_data)
+        smooth_trees(map_data)
+        smooth_trees(map_data)
 
     def _tree_splash(self, xloc: int, yloc: int, map_data: list[list[int]]) -> None:
         """
@@ -392,7 +366,7 @@ class TerrainGenerator:
         for _ in range(dis):
             dir_val = self.grand(7)
             self.move_map(dir_val)
-            if not self.test_bounds(self.map_x, self.map_y):
+            if not test_bounds(self.map_x, self.map_y):
                 return
             if map_data[self.map_x][self.map_y] == 0:
                 map_data[self.map_x][self.map_y] = WOODS + BLN
@@ -415,43 +389,13 @@ class TerrainGenerator:
                         bitindex <<= 1
                         xtem = x + dx[z]
                         ytem = y + dy[z]
-                        if self.test_bounds(xtem, ytem) and map_data[xtem][ytem]:
+                        if test_bounds(xtem, ytem) and map_data[xtem][ytem]:
                             bitindex += 1
 
                     temp = RED_TAB[bitindex & 15]
                     if temp != 2 and self.grand(1):
                         temp += 1
                     map_data[x][y] = temp
-
-    def smooth_trees(self, map_data: list[list[int]]) -> None:
-        """
-        Smooth tree edges using lookup table.
-
-        Args:
-            map_data: The map to modify
-        """
-        dx = [-1, 0, 1, 0]
-        dy = [0, 1, 0, -1]
-
-        for x in range(WORLD_X):
-            for y in range(WORLD_Y):
-                if (map_data[x][y] & BLN) == BLN:
-                    bitindex = 0
-                    for z in range(4):
-                        bitindex <<= 1
-                        xtem = x + dx[z]
-                        ytem = y + dy[z]
-                        if self.test_bounds(xtem, ytem) and (map_data[xtem][ytem] & BN):
-                            bitindex += 1
-
-                    temp = TED_TAB[bitindex & 15]
-                    if temp:
-                        if temp != 37 and (x + y) & 1:
-                            temp -= 8
-                        map_data[x][y] = temp + BLN
-                    else:
-                        # Preserve tree bit when lookup produces no replacement.
-                        map_data[x][y] = WOODS + BLN
 
     def generate_map(self, map_data: list[list[int]]) -> None:
         """
@@ -463,14 +407,14 @@ class TerrainGenerator:
             map_data: The map to generate terrain on
         """
         # Reset random state for this generation
-        self.random_state = self._init_random_state(self.seed)
+        self.random_state = _init_random_state(self.seed)
 
         if not self.grand(10):  # 1 in 10 chance for island
             self.make_island(map_data)
             return
 
         # Generate river-based terrain
-        self.clear_map(map_data)
+        clear_map(map_data)
         self.get_rand_start()
         self.do_rivers(map_data)
         self.make_lakes(map_data)
@@ -491,55 +435,57 @@ def generate_terrain(map_data: list[list[int]], seed: int | None = None) -> None
     generator.generate_map(map_data)
 
 
-def clear_terrain(map_data: list[list[int]]) -> None:
+def clear_terrain(context: AppContext, map_data: list[list[int]]) -> None:
     """
     Clear all terrain from a map.
 
     Args:
         map_data: 120x100 tile map to clear
     """
-    generator = TerrainGenerator()
-    generator.clear_map(map_data)
+    context.generator = TerrainGenerator()
+    clear_map(map_data)
 
 
-_GLOBAL_GENERATOR: TerrainGenerator | None = None
 
 
-def _get_generator() -> TerrainGenerator:
+
+def _get_generator(context: AppContext) -> TerrainGenerator:
     """Return a cached generator for quick utility calls."""
-    global _GLOBAL_GENERATOR
-    if _GLOBAL_GENERATOR is None:
-        _GLOBAL_GENERATOR = TerrainGenerator()
-    return _GLOBAL_GENERATOR
+    # global _GLOBAL_GENERATOR
+    if context.global_generator is None:
+        context.global_generator = TerrainGenerator()
+    return context.global_generator
 
 
-def ClearMap() -> None:
-    """Legacy interface: clear the simulation map to bare terrain."""
-    generator = _get_generator()
-    generator.clear_map(types.map_data)
-    types.new_map = 1
+def ClearMap(context: AppContext) -> None:
+    """Legacy interface: clear the simulation map to bare terrain.
+    :param context:
+    """
+    context.generator = _get_generator(context)
+    clear_map(context.map_data)
+    context.new_map = 1
 
 
-def ClearUnnatural() -> None:
+def ClearUnnatural(context: AppContext) -> None:
     """Remove burned/unnatural tiles (placeholder implementation)."""
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
-            tile = types.map_data[x][y]
-            if tile & types.BURNBIT:
-                types.map_data[x][y] = tile & ~types.BURNBIT
-    types.new_map = 1
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            tile = context.map_data[x][y]
+            if tile & BURNBIT:
+                context.map_data[x][y] = tile & ~BURNBIT
+    context.new_map = 1
 
 
-def SmoothTrees() -> None:
+def SmoothTrees(context: AppContext) -> None:
     """Placeholder for tree smoothing to keep legacy APIs available."""
-    types.new_map = 1
+    context.new_map = 1
 
 
-def SmoothWater() -> None:
+def SmoothWater(context: AppContext) -> None:
     """Placeholder for water smoothing."""
-    types.new_map = 1
+    context.new_map = 1
 
 
-def SmoothRiver() -> None:
+def SmoothRiver(context: AppContext) -> None:
     """Placeholder for river smoothing."""
-    types.new_map = 1
+    context.new_map = 1

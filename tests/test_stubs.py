@@ -20,19 +20,19 @@ class TestFinancialFunctions:
         """Test spending money."""
         # Reset funds
         stubs.SetFunds(1000)
-        assert stubs.TotalFunds == 1000
+        assert stubs.total_funds == 1000
 
         # Spend some money
-        stubs.Spend(200)
-        assert stubs.TotalFunds == 800
+        stubs.Spend(context, 200)
+        assert stubs.total_funds == 800
 
     def test_set_funds(self):
         """Test setting funds directly."""
         stubs.SetFunds(500)
-        assert stubs.TotalFunds == 500
+        assert stubs.total_funds == 500
 
         stubs.SetFunds(0)
-        assert stubs.TotalFunds == 0
+        assert stubs.total_funds == 0
 
 
 class TestMacCompatibility:
@@ -162,10 +162,10 @@ class TestGameState:
     def test_sim_speed(self):
         """Test simulation speed getter/setter."""
         stubs.SetSimSpeed(3)
-        assert stubs.GetSimSpeed() == 3
+        assert stubs.GetSimSpeed(context) == 3
 
         stubs.SetSimSpeed(0)
-        assert stubs.GetSimSpeed() == 0
+        assert stubs.GetSimSpeed(context) == 0
 
     def test_no_disasters(self):
         """Test no disasters getter/setter."""
@@ -209,10 +209,10 @@ class TestGameState:
 
     def test_scenario_id(self):
         """Test scenario ID getter/setter."""
-        stubs.SetScenarioID(7)
+        stubs.SetScenarioID(context, 7)
         assert stubs.GetScenarioID() == 7
 
-        stubs.SetScenarioID(0)
+        stubs.SetScenarioID(context, 0)
         assert stubs.GetScenarioID() == 0
 
     def test_startup_mode(self):
@@ -279,7 +279,7 @@ class TestGlobalVariables:
         """Test that all global variables are properly initialized."""
         # Financial
         assert hasattr(stubs, 'TotalFunds')
-        assert isinstance(stubs.TotalFunds, int)
+        assert isinstance(stubs.total_funds, int)
 
         # Game state
         assert hasattr(stubs, 'PunishCnt')

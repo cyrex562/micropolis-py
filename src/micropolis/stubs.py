@@ -10,87 +10,62 @@ Adapted from w_stubs.c for the Python port.
 
 import time
 
-from . import types
+from src.micropolis.context import AppContext
+from src.micropolis.updates import UpdateFunds
+from .engine import sim_exit
+from .sim_control import set_city_name
+from .tkinter_bridge import invalidate_maps, invalidate_editors
+from .file_io import LoadCity
+from .tkinter_bridge import eval_command
+from .ui_utilities import set_speed
 
 
 # ============================================================================
 # Global Variables (from w_stubs.c)
 # ============================================================================
 
-# Financial variables
-TotalFunds: int = 0
 
-# Game state variables
-PunishCnt: int = 0
-autoBulldoze: int = 0
-autoBudget: int = 0
-LastMesTime: int = 0
-GameLevel: int = 0
-InitSimLoad: int = 0
-ScenarioID: int = 0
-SimSpeed: int = 0
-SimMetaSpeed: int = 0
-UserSoundOn: int = 0
-CityName: str = ""
-NoDisasters: int = 0
-MesNum: int = 0
-EvalChanged: int = 0
-flagBlink: int = 0
-
-# Game startup state
-startup: int = 0
-startup_name: str | None = None
-
-# Timing variables
-start_time: float | None = None
-_tick_base: float = time.perf_counter()
-
-# Simulation control variables
-sim_skips: int = 0
-sim_skip: int = 0
-sim_paused: int = 0
-sim_paused_speed: int = 0
-heat_steps: int = 0
 
 
 # ============================================================================
 # Financial Functions
 # ============================================================================
 
-def Spend(dollars: int) -> None:
+def Spend(context: AppContext,dollars: int) -> None:
     """
     Spend money from the city funds.
 
     Args:
         dollars: Amount to spend
+        :param context:
     """
-    SetFunds(TotalFunds - dollars)
+    SetFunds(context.total_funds - dollars)
 
 
-def SetFunds(dollars: int) -> None:
+def SetFunds(context: AppContext,dollars: int) -> None:
     """
     Set the total city funds.
 
     Args:
         dollars: New funds amount
     """
-    global TotalFunds
-    TotalFunds = dollars
-    types.UpdateFunds()
+    # global total_funds
+    context.total_funds = dollars
+    UpdateFunds()
 
 
 # ============================================================================
 # Mac Compatibility Functions
 # ============================================================================
 
-def TickCount() -> int:
+def TickCount(context: AppContext) -> int:
     """
     Get the current tick count (Mac-style timing).
 
     Returns:
         Current time in ticks (minutes since epoch)
     """
-    elapsed = time.perf_counter() - _tick_base
+    elapsed = time.perf_counter() - context._tick_base
     return int(elapsed * 60)
 
 
@@ -114,16 +89,14 @@ def NewPtr(size: int) -> bytes | None:
 # Game Lifecycle Functions
 # ============================================================================
 
-def GameStarted() -> None:
+def GameStarted(context: AppContext) -> None:
     """
     Called when the game has started.
     Handles initial game setup based on startup mode.
     """
-    from .tkinter_bridge import invalidate_maps, invalidate_editors
-    from .file_io import LoadCity
-    from .tkinter_bridge import eval_command
 
-    global startup, startup_name, start_time
+
+    # global startup, startup_name, start_time
 
     # Invalidate views to force redraw
     invalidate_maps()
@@ -133,319 +106,318 @@ def GameStarted() -> None:
     start_time = time.time()
 
     # Handle different startup modes
-    if Startup == -2:  # Load a city
-        if StartupName and LoadCity(StartupName):
+    if context.startup == -2:  # Load a city
+        if context.startup_name and LoadCity(context, context.startup_name):
             DoStartLoad()
-            StartupName = None
+            context.startup_name = None
         else:
-            StartupName = None
+            context.startup_name = None
             # Fall through to -1 case
-            Startup = -1
+            context.startup = -1
 
-    if Startup == -1:  # New city
-        if StartupName:
-            types.setCityName(StartupName)
-            StartupName = None
+    if context.startup == -1:  # New city
+        if context.startup_name:
+            set_city_name(context.startup_name)
+            context.startup_name = None
         else:
-            types.setCityName("NowHere")
+            set_city_name(context, "NowHere")
         DoPlayNewCity()
 
-    elif Startup == 0:  # Really start game
+    elif context.startup == 0:  # Really start game
         DoReallyStartGame()
 
     else:  # Scenario number
-        DoStartScenario(Startup)
+        DoStartScenario(context.startup)
 
 
-def DoPlayNewCity() -> None:
+def DoPlayNewCity(context: AppContext) -> None:
     """
     Start a new city game.
     """
-    from .tkinter_bridge import eval_command
-    eval_command("UIPlayNewCity")
+
+    eval_command(context, "UIPlayNewCity")
 
 
-def DoReallyStartGame() -> None:
+def DoReallyStartGame(context: AppContext) -> None:
     """
     Really start the game (after initialization).
     """
-    from .tkinter_bridge import eval_command
-    eval_command("UIReallyStartGame")
+    eval_command(context, "UIReallyStartGame")
 
 
-def DoStartLoad() -> None:
+def DoStartLoad(context: AppContext) -> None:
     """
     Start loading a saved city.
     """
-    from .tkinter_bridge import eval_command
-    eval_command("UIStartLoad")
+    eval_command(context, "UIStartLoad")
 
 
-def DoStartScenario(scenario: int) -> None:
+def DoStartScenario(context: AppContext, scenario: int) -> None:
     """
     Start a scenario game.
 
     Args:
         scenario: Scenario number to start
     """
-    from .tkinter_bridge import eval_command
-    eval_command(f"UIStartScenario {scenario}")
+    eval_command(context, f"UIStartScenario {scenario}")
 
 
-def DropFireBombs() -> None:
+def DropFireBombs(context: AppContext) -> None:
     """
     Drop fire bombs (disaster effect).
     """
-    from .tkinter_bridge import eval_command
-    eval_command("DropFireBombs")
+    eval_command(context, "DropFireBombs")
 
 
-def InitGame() -> None:
+def InitGame(context: AppContext) -> None:
     """
     Initialize game state variables.
     """
-    global sim_skips, sim_skip, sim_paused, sim_paused_speed, heat_steps
+    # global sim_skips, sim_skip, sim_paused, sim_paused_speed, heat_steps
 
-    sim_skips = 0
-    sim_skip = 0
-    sim_paused = 0
-    sim_paused_speed = 0
-    heat_steps = 0
+    context.sim_skips = 0
+    context.sim_skip = 0
+    context.sim_paused = 0
+    context.sim_paused_speed = 0
+    context.heat_steps = 0
 
-    types.setSpeed(context, 0)
+    set_speed(context, 0)
 
 
-def ReallyQuit() -> None:
+def ReallyQuit(context: AppContext) -> None:
     """
     Really quit the game.
     """
-    from .engine import sim_exit
-    sim_exit(0)
+    # from .engine import sim_exit
+    sim_exit(context, 0)
 
 
 # ============================================================================
 # Additional Stub Functions
 # ============================================================================
 
-def GetGameLevel() -> int:
+def GetGameLevel(context: AppContext) -> int:
     """
     Get the current game difficulty level.
 
     Returns:
         Current game level
     """
-    return GameLevel
+    return context.game_level
 
 
-def SetGameLevel(level: int) -> None:
+def SetGameLevel(context: AppContext, level: int) -> None:
     """
     Set the game difficulty level.
 
     Args:
         level: New game level
     """
-    global GameLevel
-    GameLevel = level
+    # global GameLevel
+    context.game_level = level
 
 
-def GetSimSpeed() -> int:
+def GetSimSpeed(context: AppContext) -> int:
     """
     Get the current simulation speed.
 
     Returns:
         Current simulation speed
+        :param context:
     """
-    return SimSpeed
+    return context.sim_speed
 
 
-def SetSimSpeed(speed: int) -> None:
+def SetSimSpeed(context: AppContext, speed: int) -> None:
     """
     Set the simulation speed.
 
     Args:
         speed: New simulation speed
     """
-    global SimSpeed
-    SimSpeed = speed
+    # global SimSpeed
+    context.sim_speed = speed
 
 
-def GetNoDisasters() -> bool:
+def GetNoDisasters(context: AppContext) -> bool:
     """
     Check if disasters are disabled.
 
     Returns:
         True if disasters are disabled
     """
-    return bool(NoDisasters)
+    return context.no_disasters
 
 
-def SetNoDisasters(disabled: bool) -> None:
+def SetNoDisasters(context: AppContext, disabled: bool) -> None:
     """
     Enable or disable disasters.
 
     Args:
         disabled: True to disable disasters
     """
-    global NoDisasters
-    NoDisasters = 1 if disabled else 0
+    # global no_disasters
+    context.no_disasters = 1 if disabled else 0
 
 
-def GetAutoBulldoze() -> bool:
+def GetAutoBulldoze(context: AppContext) -> bool:
     """
     Check if auto-bulldoze is enabled.
 
     Returns:
         True if auto-bulldoze is enabled
     """
-    return bool(autoBulldoze)
+    return context.auto_bulldoze
 
 
-def SetAutoBulldoze(enabled: bool) -> None:
+def SetAutoBulldoze(context: AppContext, enabled: bool) -> None:
     """
     Enable or disable auto-bulldoze.
 
     Args:
         enabled: True to enable auto-bulldoze
     """
-    global autoBulldoze
-    autoBulldoze = 1 if enabled else 0
+    # global auto_bulldoze
+    context.auto_bulldoze = 1 if enabled else 0
 
 
-def GetAutoBudget() -> bool:
+def GetAutoBudget(context: AppContext) -> bool:
     """
     Check if auto-budget is enabled.
 
     Returns:
         True if auto-budget is enabled
     """
-    return bool(autoBudget)
+    return context.auto_budget
 
 
-def SetAutoBudget(enabled: bool) -> None:
+def SetAutoBudget(context: AppContext, enabled: bool) -> None:
     """
     Enable or disable auto-budget.
 
     Args:
         enabled: True to enable auto-budget
     """
-    global autoBudget
-    autoBudget = 1 if enabled else 0
+    # global auto_budget
+    context.auto_budget = 1 if enabled else 0
 
 
-def GetUserSoundOn() -> bool:
+def GetUserSoundOn(context: AppContext) -> bool:
     """
     Check if user sound is enabled.
 
     Returns:
         True if user sound is enabled
     """
-    return bool(UserSoundOn)
+    return context.user_sound_on
 
 
-def SetUserSoundOn(enabled: bool) -> None:
+def SetUserSoundOn(context: AppContext, enabled: bool) -> None:
     """
     Enable or disable user sound.
 
     Args:
         enabled: True to enable user sound
     """
-    global UserSoundOn
-    UserSoundOn = 1 if enabled else 0
+    # global user_sound_on
+    context.user_sound_on = 1 if enabled else 0
 
 
-def GetCityName() -> str:
+def GetCityName(context: AppContext) -> str:
     """
     Get the current city name.
 
     Returns:
         Current city name
     """
-    return CityName or ""
+    return context.city_name or ""
 
 
-def SetCityName(name: str) -> None:
+def SetCityName(context: AppContext, name: str) -> None:
     """
     Set the city name.
 
     Args:
         name: New city name
     """
-    global CityName
-    CityName = name
+    # global CityName
+    context.city_name = name
 
 
-def GetScenarioID() -> int:
+def GetScenarioID(context: AppContext) -> int:
     """
     Get the current scenario ID.
 
     Returns:
         Current scenario ID
     """
-    return ScenarioID
+    return context.scenario_id
 
 
-def SetScenarioID(scenario_id: int) -> None:
+def SetScenarioID(context: AppContext, scenario_id: int) -> None:
     """
     Set the scenario ID.
 
     Args:
         scenario_id: New scenario ID
+        :param context:
     """
-    global ScenarioID
-    ScenarioID = scenario_id
+    # global scenario_id
+    context.scenario_id = scenario_id
 
 
-def GetStartupMode() -> int:
+def GetStartupMode(context: AppContext) -> int:
     """
     Get the startup mode.
 
     Returns:
         Current startup mode
     """
-    return startup
+    return context.startup
 
 
-def SetStartupMode(mode: int) -> None:
+def SetStartupMode(context: AppContext, mode: int) -> None:
     """
     Set the startup mode.
 
     Args:
         mode: New startup mode
     """
-    global startup
-    Startup = mode
+    # global startup
+    context.startup = mode
 
 
-def GetStartupName() -> str | None:
+def GetStartupName(context: AppContext) -> str | None:
     """
     Get the startup city name.
 
     Returns:
         Startup city name or None
     """
-    return startup_name
+    return context.startup_name
 
 
-def SetStartupName(name: str | None) -> None:
+def SetStartupName(context: AppContext, name: str | None) -> None:
     """
     Set the startup city name.
 
     Args:
         name: Startup city name
     """
-    global startup_name
-    StartupName = name
+    # global startup_name
+    context.startup_name = name
 
 
 # ============================================================================
 # Placeholder Functions for Future Implementation
 # ============================================================================
 
-def PlaceholderFunction(name: str, *args, **kwargs) -> None:
+def PlaceholderFunction(context: AppContext, name: str, *args, **kwargs) -> None:
     """
     Placeholder function for future implementation.
 
     Args:
+        context: Application context
         name: Function name for logging
         *args: Positional arguments
         **kwargs: Keyword arguments
@@ -459,16 +431,16 @@ def PlaceholderFunction(name: str, *args, **kwargs) -> None:
 # Initialization
 # ============================================================================
 
-def initialize_stubs() -> None:
+def initialize_stubs(context: AppContext) -> None:
     """
     Initialize stub system.
     Called during program startup.
     """
-    global start_time
-    start_time = time.time()
+    # global start_time
+    context.start_time = time.time()
 
 
-def cleanup_stubs() -> None:
+def cleanup_stubs(context: AppContext) -> None:
     """
     Clean up stub system.
     Called during program shutdown.

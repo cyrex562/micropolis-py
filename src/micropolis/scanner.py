@@ -5,9 +5,12 @@ This module contains the scanning and analysis functions ported from s_scan.c,
 implementing fire analysis, population density scanning, pollution/terrain/land value
 analysis, crime scanning, and various smoothing operations.
 """
-
-import micropolis.constants
-from . import simulation, types, zones
+from src.micropolis.constants import NMAPS, SM_X, SM_Y, DYMAP, FIMAP, WORLD_X, WORLD_Y, ZONEBIT, LOMASK, HWLDX, HWLDY, \
+    PDMAP, RGMAP, FREEZ, COMBASE, INDBASE, PORTBASE, QWX, QWY, RUBBLE, ROADBASE, PLMAP, LVMAP, POWERBASE, HTRFBASE, \
+    LTRFBASE, FIREBASE, RADTILE, LASTIND, LASTPOWERPLANT, CRMAP, POMAP
+from src.micropolis.context import AppContext
+from src.micropolis.simulation import rand16
+from src.micropolis.zones import DoFreePop, RZPop, CZPop, IZPop
 
 # ============================================================================
 # Global Scanner State
@@ -15,7 +18,7 @@ from . import simulation, types, zones
 
 # Map update flags
 NewMap: int = 0
-NewMapFlags: list[int] = [0] * micropolis.constants.NMAPS
+NewMapFlags: list[int] = [0] * NMAPS
 CCx: int = 0
 CCy: int = 0
 CCx2: int = 0
@@ -32,23 +35,24 @@ DonDither: int = 0
 # ============================================================================
 
 
-def FireAnalysis() -> None:
+def FireAnalysis(context: AppContext) -> None:
     """
     Make fire rate map from fire station map.
 
     Ported from FireAnalysis() in s_scan.c.
     Called during simulation initialization.
+    :param context: 
     """
-    SmoothFSMap()
-    SmoothFSMap()
-    SmoothFSMap()
+    SmoothFSMap(context)
+    SmoothFSMap(context)
+    SmoothFSMap(context)
 
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
-            types.fire_rate[x][y] = types.fire_st_map[x][y]
+    for x in range(SM_X):
+        for y in range(SM_Y):
+            context.fire_rate[x][y] = context.fire_st_map[x][y]
 
-    NewMapFlags[micropolis.constants.DYMAP] = 1
-    NewMapFlags[micropolis.constants.FIMAP] = 1
+    NewMapFlags[DYMAP] = 1
+    NewMapFlags[FIMAP] = 1
 
 
 # ============================================================================
@@ -56,87 +60,89 @@ def FireAnalysis() -> None:
 # ============================================================================
 
 
-def PopDenScan() -> None:
+def PopDenScan(context: AppContext) -> None:
     """
     Sets population density, commercial rate, and finds city center of mass.
 
     Ported from PopDenScan() in s_scan.c.
     Called during simulation initialization.
+    :param context: 
     """
     Xtot = 0
     Ytot = 0
     Ztot = 0
 
-    ClrTemArray()
+    ClrTemArray(context)
 
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
-            z = types.map_data[x][y]
-            if z & types.ZONEBIT:
-                z = z & types.LOMASK
-                types.s_map_x = x
-                types.s_map_y = y
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            z = context.map_data[x][y]
+            if z & ZONEBIT:
+                z = z & LOMASK
+                context.s_map_x = x
+                context.s_map_y = y
                 z = GetPDen(z) << 3
                 if z > 254:
                     z = 254
-                types.tem[x >> 1][y >> 1] = z
+                context.tem[x >> 1][y >> 1] = z
                 Xtot += x
                 Ytot += y
                 Ztot += 1
 
-    DoSmooth()  # T1 -> T2
-    DoSmooth2()  # T2 -> T1
-    DoSmooth()  # T1 -> T2
+    DoSmooth(context)  # T1 -> T2
+    DoSmooth2(context)  # T2 -> T1
+    DoSmooth(context)  # T1 -> T2
 
-    for x in range(micropolis.constants.HWLDX):
-        for y in range(micropolis.constants.HWLDY):
-            types.pop_density[x][y] = types.tem2[x][y] << 1
+    for x in range(HWLDX):
+        for y in range(HWLDY):
+            context.pop_density[x][y] = context.tem2[x][y] << 1
 
-    DistIntMarket()  # set ComRate w/ (/ComMap)
+    DistIntMarket(context)  # set ComRate w/ (/ComMap)
 
     # Find Center of Mass for City
-    global CCx, CCy, CCx2, CCy2
+    # global CCx, CCy, CCx2, CCy2
     if Ztot:
-        CCx = Xtot // Ztot
-        CCy = Ytot // Ztot
+        context.CCx = Xtot // Ztot
+        context.CCy = Ytot // Ztot
     else:
-        CCx = micropolis.constants.HWLDX  # if pop=0 center of Map is CC
-        CCy = micropolis.constants.HWLDY
+        context.CCx = HWLDX  # if pop=0 center of Map is CC
+        context.CCy = HWLDY
 
-    CCx2 = CCx >> 1
-    CCy2 = CCy >> 1
+    context.CCx2 = context.CCx >> 1
+    context.CCy2 = context.CCy >> 1
 
-    NewMapFlags[micropolis.constants.DYMAP] = 1
-    NewMapFlags[micropolis.constants.PDMAP] = 1
-    NewMapFlags[micropolis.constants.RGMAP] = 1
+    NewMapFlags[DYMAP] = 1
+    NewMapFlags[PDMAP] = 1
+    NewMapFlags[RGMAP] = 1
 
 
-def GetPDen(Ch9: int) -> int:
+def GetPDen(context: AppContext, Ch9: int) -> int:
     """
     Get population density for a zone tile.
 
     Ported from GetPDen() in s_scan.c.
 
     Args:
+        context: Application context
         Ch9: Zone tile value
 
     Returns:
         Population density value
     """
-    if Ch9 == types.FREEZ:
-        pop = zones.DoFreePop()
+    if Ch9 == FREEZ:
+        pop = DoFreePop(context)
         return pop
 
-    if Ch9 < types.COMBASE:
-        pop = zones.RZPop(Ch9)
+    if Ch9 < COMBASE:
+        pop = RZPop(Ch9)
         return pop
 
-    if Ch9 < types.INDBASE:
-        pop = zones.CZPop(Ch9) << 3
+    if Ch9 < INDBASE:
+        pop = CZPop(Ch9) << 3
         return pop
 
-    if Ch9 < types.PORTBASE:
-        pop = zones.IZPop(Ch9) << 3
+    if Ch9 < PORTBASE:
+        pop = IZPop(Ch9) << 3
         return pop
 
     return 0
@@ -147,24 +153,25 @@ def GetPDen(Ch9: int) -> int:
 # ============================================================================
 
 
-def PTLScan() -> None:
+def PTLScan(context: AppContext) -> None:
     """
     Does pollution, terrain, and land value scanning.
 
     Ported from PTLScan() in s_scan.c.
     Called during simulation initialization.
+    :param context: 
     """
     ptot = 0
     LVtot = 0
     LVnum = 0
 
     # Initialize Qtem array
-    for x in range(micropolis.constants.QWX):
-        for y in range(micropolis.constants.QWY):
-            types.Qtem[x][y] = 0
+    for x in range(QWX):
+        for y in range(QWY):
+            context.Qtem[x][y] = 0
 
-    for x in range(micropolis.constants.HWLDX):
-        for y in range(micropolis.constants.HWLDY):
+    for x in range(HWLDX):
+        for y in range(HWLDY):
             Plevel = 0
             LVflag = 0
             zx = x << 1
@@ -172,77 +179,77 @@ def PTLScan() -> None:
 
             for Mx in range(zx, zx + 2):
                 for My in range(zy, zy + 2):
-                    loc = types.map_data[Mx][My] & types.LOMASK
+                    loc = context.map_data[Mx][My] & LOMASK
                     if loc:
-                        if loc < types.RUBBLE:
-                            types.Qtem[x >> 1][y >> 1] += 15  # inc terrainMem
+                        if loc < RUBBLE:
+                            context.Qtem[x >> 1][y >> 1] += 15  # inc terrainMem
                             continue
                         Plevel += GetPValue(loc)
-                        if loc >= types.ROADBASE:
+                        if loc >= ROADBASE:
                             LVflag += 1
 
             # Cap pollution level
             if Plevel > 255:
                 Plevel = 255
 
-            types.tem[x][y] = Plevel
+            context.tem[x][y] = Plevel
 
             if LVflag:  # LandValue Equation
                 dis = 34 - GetDisCC(x, y)
                 dis = dis << 2
-                dis += types.terrain_mem[x >> 1][y >> 1]
-                dis -= types.pollution_mem[x][y]
-                if types.crime_mem[x][y] > 190:
+                dis += context.terrain_mem[x >> 1][y >> 1]
+                dis -= context.pollution_mem[x][y]
+                if context.crime_mem[x][y] > 190:
                     dis -= 20
                 if dis > 250:
                     dis = 250
                 if dis < 1:
                     dis = 1
-                types.land_value_mem[x][y] = dis
+                context.land_value_mem[x][y] = dis
                 LVtot += dis
                 LVnum += 1
             else:
-                types.land_value_mem[x][y] = 0
+                context.land_value_mem[x][y] = 0
 
     # Calculate land value average
     if LVnum:
-        types.lv_average = LVtot // LVnum
+        context.lv_average = LVtot // LVnum
     else:
-        types.lv_average = 0
+        context.lv_average = 0
 
-    DoSmooth()
-    DoSmooth2()
+    DoSmooth(context)
+    DoSmooth2(context)
 
     # Process pollution data
-    global PolMaxX, PolMaxY
+    # global PolMaxX, PolMaxY
     pmax = 0
     pnum = 0
     ptot = 0
 
-    for x in range(micropolis.constants.HWLDX):
-        for y in range(micropolis.constants.HWLDY):
-            z = types.tem[x][y]
-            types.pollution_mem[x][y] = z
+    for x in range(HWLDX):
+        for y in range(HWLDY):
+            z = context.tem[x][y]
+            context.pollution_mem[x][y] = z
             if z:  # get pollute average
                 pnum += 1
                 ptot += z
                 # find max pol for monster
-                if (z > pmax) or ((z == pmax) and ((simulation.rand16() & 3) == 0)):
+                if (z > pmax) or ((z == pmax) and ((rand16() & 3) == 0)):
                     pmax = z
-                    PolMaxX = x << 1
-                    PolMaxY = y << 1
+                    context.PolMaxX = x << 1
+                    context.PolMaxY = y << 1
 
     # Calculate pollution average
     if pnum:
-        types.pollute_average = ptot // pnum
+        context.pollute_average = ptot // pnum
     else:
-        types.pollute_average = 0
+        context.pollute_average = 0
 
-    SmoothTerrain()
+    SmoothTerrain(context)
 
-    NewMapFlags[micropolis.constants.DYMAP] = 1
-    NewMapFlags[micropolis.constants.PLMAP] = 1
-    NewMapFlags[micropolis.constants.LVMAP] = 1
+    NewMapFlags[DYMAP] = 1
+    NewMapFlags[PLMAP] = 1
+    NewMapFlags[LVMAP] = 1
 
 
 def GetPValue(loc: int) -> int:
@@ -257,22 +264,22 @@ def GetPValue(loc: int) -> int:
     Returns:
         Pollution contribution value
     """
-    if loc < types.POWERBASE:
-        if loc >= types.HTRFBASE:
+    if loc < POWERBASE:
+        if loc >= HTRFBASE:
             return 75  # heavy traf
-        if loc >= types.LTRFBASE:
+        if loc >= LTRFBASE:
             return 50  # light traf
-        if loc < types.ROADBASE:
-            if loc > types.FIREBASE:
+        if loc < ROADBASE:
+            if loc > FIREBASE:
                 return 90
-            if loc >= types.RADTILE:
+            if loc >= RADTILE:
                 return 255  # radioactivity
     else:
-        if loc <= types.LASTIND:
+        if loc <= LASTIND:
             return 0
-        if loc < types.PORTBASE:
+        if loc < PORTBASE:
             return 50  # Ind
-        if loc <= types.LASTPOWERPLANT:
+        if loc <= LASTPOWERPLANT:
             return 100  # prt, aprt, cpp
 
     return 0
@@ -313,62 +320,63 @@ def GetDisCC(x: int, y: int) -> int:
 # ============================================================================
 
 
-def CrimeScan() -> None:
+def CrimeScan(context: AppContext) -> None:
     """
     Analyze crime rates based on land value, population, and police coverage.
 
     Ported from CrimeScan() in s_scan.c.
     Called during simulation initialization.
+    :param context: 
     """
-    SmoothPSMap()
-    SmoothPSMap()
-    SmoothPSMap()
+    SmoothPSMap(context)
+    SmoothPSMap(context)
+    SmoothPSMap(context)
 
     totz = 0
     numz = 0
     cmax = 0
 
-    global CrimeMaxX, CrimeMaxY
+    # global CrimeMaxX, CrimeMaxY
 
-    for x in range(micropolis.constants.HWLDX):
-        for y in range(micropolis.constants.HWLDY):
-            z = types.land_value_mem[x][y]
+    for x in range(HWLDX):
+        for y in range(HWLDY):
+            z = context.land_value_mem[x][y]
             if z:
                 numz += 1
                 z = 128 - z
-                z += types.pop_density[x][y]
+                z += context.pop_density[x][y]
                 if z > 300:
                     z = 300
-                z -= types.police_map[x >> 2][y >> 2]
+                z -= context.police_map[x >> 2][y >> 2]
                 if z > 250:
                     z = 250
                 if z < 0:
                     z = 0
-                types.crime_mem[x][y] = z
+                context.crime_mem[x][y] = z
                 totz += z
 
                 # Find max crime for monster
-                if (z > cmax) or ((z == cmax) and ((simulation.rand16() & 3) == 0)):
+                if (z > cmax) or ((z == cmax) and ((rand16() & 3) == 0)):
                     cmax = z
-                    CrimeMaxX = x << 1
-                    CrimeMaxY = y << 1
+                    context.CrimeMaxX = x << 1
+                    context.CrimeMaxY = y << 1
             else:
-                types.crime_mem[x][y] = 0
+                context.crime_mem[x][y] = 0
 
     # Calculate crime average
     if numz:
-        types.crime_average = totz // numz
+        context.crime_average = totz // numz
     else:
-        types.crime_average = 0
+        context.crime_average = 0
 
     # Copy police map to effect map
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
-            types.police_map_effect[x][y] = types.police_map[x][y]
+    for x in range(SM_X):
+        for y in range(SM_Y):
+            context.police_map_effect[x][y] = context.police_map[x][y]
 
-    NewMapFlags[micropolis.constants.DYMAP] = 1
-    NewMapFlags[micropolis.constants.CRMAP] = 1
-    NewMapFlags[micropolis.constants.POMAP] = 1
+    NewMapFlags[DYMAP] = 1
+    NewMapFlags[CRMAP] = 1
+    NewMapFlags[POMAP] = 1
 
 
 # ============================================================================
@@ -376,210 +384,216 @@ def CrimeScan() -> None:
 # ============================================================================
 
 
-def SmoothTerrain() -> None:
+def SmoothTerrain(context: AppContext) -> None:
     """
     Smooth terrain data using dithering algorithm.
 
     Ported from SmoothTerrain() in s_scan.c.
+    :param context:
     """
     if DonDither & 1:
         x = 0
         y = 0
         z = 0
-        dir = 1
+        direction = 1
 
-        while x < micropolis.constants.QWX:
-            while (y != micropolis.constants.QWY) and (y != -1):
-                z += types.Qtem[x if x == 0 else x - 1][y]
-                z += types.Qtem[x if x == (micropolis.constants.QWX - 1) else x + 1][y]
-                z += types.Qtem[x][y if y == 0 else y - 1]
-                z += types.Qtem[x][y if y == (micropolis.constants.QWY - 1) else y + 1]
-                z += types.Qtem[x][y] << 2
-                types.terrain_mem[x][y] = (z >> 3) & 0xFF
+        while x < QWX:
+            while (y != QWY) and (y != -1):
+                z += context.Qtem[x if x == 0 else x - 1][y]
+                z += context.Qtem[x if x == (QWX - 1) else x + 1][y]
+                z += context.Qtem[x][y if y == 0 else y - 1]
+                z += context.Qtem[x][y if y == (QWY - 1) else y + 1]
+                z += context.Qtem[x][y] << 2
+                context.terrain_mem[x][y] = (z >> 3) & 0xFF
                 z &= 0x7
-                y += dir
+                y += direction
 
-            dir = -dir
-            y += dir
+            direction = -direction
+            y += direction
             x += 1
     else:
-        for x in range(micropolis.constants.QWX):
-            for y in range(micropolis.constants.QWY):
+        for x in range(QWX):
+            for y in range(QWY):
                 z = 0
                 if x > 0:
-                    z += types.Qtem[x - 1][y]
-                if x < (micropolis.constants.QWX - 1):
-                    z += types.Qtem[x + 1][y]
+                    z += context.Qtem[x - 1][y]
+                if x < (QWX - 1):
+                    z += context.Qtem[x + 1][y]
                 if y > 0:
-                    z += types.Qtem[x][y - 1]
-                if y < (micropolis.constants.QWY - 1):
-                    z += types.Qtem[x][y + 1]
-                types.terrain_mem[x][y] = ((z >> 2) + types.Qtem[x][y]) >> 1
+                    z += context.Qtem[x][y - 1]
+                if y < (QWY - 1):
+                    z += context.Qtem[x][y + 1]
+                context.terrain_mem[x][y] = ((z >> 2) + context.Qtem[x][y]) >> 1
 
 
-def DoSmooth() -> None:
+def DoSmooth(context: AppContext) -> None:
     """
     Smooth data in tem[x][y] into tem2[x][y].
 
     Ported from DoSmooth() in s_scan.c.
+    :param context:
     """
     if DonDither & 2:
         x = 0
         y = 0
         z = 0
-        dir = 1
+        direction = 1
 
-        while x < micropolis.constants.HWLDX:
-            while (y != micropolis.constants.HWLDY) and (y != -1):
-                z += types.tem[x if x == 0 else x - 1][y]
-                z += types.tem[x if x == (micropolis.constants.HWLDX - 1) else x + 1][y]
-                z += types.tem[x][y if y == 0 else y - 1]
-                z += types.tem[x][y if y == (micropolis.constants.HWLDY - 1) else y + 1]
-                z += types.tem[x][y]
-                types.tem2[x][y] = (z >> 2) & 0xFF
+        while x < HWLDX:
+            while (y != HWLDY) and (y != -1):
+                z += context.tem[x if x == 0 else x - 1][y]
+                z += context.tem[x if x == (HWLDX - 1) else x + 1][y]
+                z += context.tem[x][y if y == 0 else y - 1]
+                z += context.tem[x][y if y == (HWLDY - 1) else y + 1]
+                z += context.tem[x][y]
+                context.tem2[x][y] = (z >> 2) & 0xFF
                 z &= 3
-                y += dir
+                y += direction
 
-            dir = -dir
-            y += dir
+            direction = -direction
+            y += direction
             x += 1
     else:
-        for x in range(micropolis.constants.HWLDX):
-            for y in range(micropolis.constants.HWLDY):
+        for x in range(HWLDX):
+            for y in range(HWLDY):
                 z = 0
                 if x > 0:
-                    z += types.tem[x - 1][y]
-                if x < (micropolis.constants.HWLDX - 1):
-                    z += types.tem[x + 1][y]
+                    z += context.tem[x - 1][y]
+                if x < (HWLDX - 1):
+                    z += context.tem[x + 1][y]
                 if y > 0:
-                    z += types.tem[x][y - 1]
-                if y < (micropolis.constants.HWLDY - 1):
-                    z += types.tem[x][y + 1]
-                z = (z + types.tem[x][y]) >> 2
+                    z += context.tem[x][y - 1]
+                if y < (HWLDY - 1):
+                    z += context.tem[x][y + 1]
+                z = (z + context.tem[x][y]) >> 2
                 if z > 255:
                     z = 255
-                types.tem2[x][y] = z
+                context.tem2[x][y] = z
 
 
-def DoSmooth2() -> None:
+def DoSmooth2(context: AppContext) -> None:
     """
     Smooth data in tem2[x][y] into tem[x][y].
 
     Ported from DoSmooth2() in s_scan.c.
+    :param context:
     """
     if DonDither & 4:
         x = 0
         y = 0
         z = 0
-        dir = 1
+        direction = 1
 
-        while x < micropolis.constants.HWLDX:
-            while (y != micropolis.constants.HWLDY) and (y != -1):
-                z += types.tem2[x if x == 0 else x - 1][y]
-                z += types.tem2[x if x == (micropolis.constants.HWLDX - 1) else x + 1][
+        while x < HWLDX:
+            while (y != HWLDY) and (y != -1):
+                z += context.tem2[x if x == 0 else x - 1][y]
+                z += context.tem2[x if x == (HWLDX - 1) else x + 1][
                     y
                 ]
-                z += types.tem2[x][y if y == 0 else y - 1]
-                z += types.tem2[x][
-                    y if y == (micropolis.constants.HWLDY - 1) else y + 1
+                z += context.tem2[x][y if y == 0 else y - 1]
+                z += context.tem2[x][
+                    y if y == (HWLDY - 1) else y + 1
                 ]
-                z += types.tem2[x][y]
-                types.tem[x][y] = (z >> 2) & 0xFF
+                z += context.tem2[x][y]
+                context.tem[x][y] = (z >> 2) & 0xFF
                 z &= 3
-                y += dir
+                y += direction
 
-            dir = -dir
-            y += dir
+            direction = -direction
+            y += direction
             x += 1
     else:
-        for x in range(micropolis.constants.HWLDX):
-            for y in range(micropolis.constants.HWLDY):
+        for x in range(HWLDX):
+            for y in range(HWLDY):
                 z = 0
                 if x > 0:
-                    z += types.tem2[x - 1][y]
-                if x < (micropolis.constants.HWLDX - 1):
-                    z += types.tem2[x + 1][y]
+                    z += context.tem2[x - 1][y]
+                if x < (HWLDX - 1):
+                    z += context.tem2[x + 1][y]
                 if y > 0:
-                    z += types.tem2[x][y - 1]
-                if y < (micropolis.constants.HWLDY - 1):
-                    z += types.tem2[x][y + 1]
-                z = (z + types.tem2[x][y]) >> 2
+                    z += context.tem2[x][y - 1]
+                if y < (HWLDY - 1):
+                    z += context.tem2[x][y + 1]
+                z = (z + context.tem2[x][y]) >> 2
                 if z > 255:
                     z = 255
-                types.tem[x][y] = z
+                context.tem[x][y] = z
 
 
-def ClrTemArray() -> None:
+def ClrTemArray(context: AppContext) -> None:
     """
     Clear the temporary array.
 
     Ported from ClrTemArray() in s_scan.c.
+    :param context:
     """
     z = 0
-    for x in range(micropolis.constants.HWLDX):
-        for y in range(micropolis.constants.HWLDY):
-            types.tem[x][y] = z
+    for x in range(HWLDX):
+        for y in range(HWLDY):
+            context.tem[x][y] = z
 
 
-def SmoothFSMap() -> None:
+def SmoothFSMap(context: AppContext) -> None:
     """
     Smooth fire station map.
 
     Ported from SmoothFSMap() in s_scan.c.
+    :param context:
     """
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
+    for x in range(SM_X):
+        for y in range(SM_Y):
             edge = 0
             if x > 0:
-                edge += types.fire_st_map[x - 1][y]
-            if x < (micropolis.constants.SM_X - 1):
-                edge += types.fire_st_map[x + 1][y]
+                edge += context.fire_st_map[x - 1][y]
+            if x < (SM_X - 1):
+                edge += context.fire_st_map[x + 1][y]
             if y > 0:
-                edge += types.fire_st_map[x][y - 1]
-            if y < (micropolis.constants.SM_Y - 1):
-                edge += types.fire_st_map[x][y + 1]
-            edge = (edge >> 2) + types.fire_st_map[x][y]
-            types.stem[x][y] = edge >> 1
+                edge += context.fire_st_map[x][y - 1]
+            if y < (SM_Y - 1):
+                edge += context.fire_st_map[x][y + 1]
+            edge = (edge >> 2) + context.fire_st_map[x][y]
+            context.stem[x][y] = edge >> 1
 
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
-            types.fire_st_map[x][y] = types.stem[x][y]
+    for x in range(SM_X):
+        for y in range(SM_Y):
+            context.fire_st_map[x][y] = context.stem[x][y]
 
 
-def SmoothPSMap() -> None:
+def SmoothPSMap(context: AppContext) -> None:
     """
     Smooth police station map.
 
     Ported from SmoothPSMap() in s_scan.c.
     """
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
+    for x in range(SM_X):
+        for y in range(SM_Y):
             edge = 0
             if x > 0:
-                edge += types.police_map[x - 1][y]
-            if x < (micropolis.constants.SM_X - 1):
-                edge += types.police_map[x + 1][y]
+                edge += context.police_map[x - 1][y]
+            if x < (SM_X - 1):
+                edge += context.police_map[x + 1][y]
             if y > 0:
-                edge += types.police_map[x][y - 1]
-            if y < (micropolis.constants.SM_Y - 1):
-                edge += types.police_map[x][y + 1]
-            edge = (edge >> 2) + types.police_map[x][y]
-            types.stem[x][y] = edge >> 1
+                edge += context.police_map[x][y - 1]
+            if y < (SM_Y - 1):
+                edge += context.police_map[x][y + 1]
+            edge = (edge >> 2) + context.police_map[x][y]
+            context.stem[x][y] = edge >> 1
 
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
-            types.police_map[x][y] = types.stem[x][y]
+    for x in range(SM_X):
+        for y in range(SM_Y):
+            context.police_map[x][y] = context.stem[x][y]
 
 
-def DistIntMarket() -> None:
+def DistIntMarket(context: AppContext) -> None:
     """
     Distribute commercial rate based on distance from city center.
 
     Ported from DistIntMarket() in s_scan.c.
+    :param context:
     """
-    for x in range(micropolis.constants.SM_X):
-        for y in range(micropolis.constants.SM_Y):
+    for x in range(SM_X):
+        for y in range(SM_Y):
             z = GetDisCC(x << 2, y << 2)
             z = z << 2
             z = 64 - z
-            types.com_rate[x][y] = z
+            context.com_rate[x][y] = z

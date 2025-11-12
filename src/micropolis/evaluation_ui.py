@@ -203,10 +203,10 @@ def score_doer(context: AppContext) -> None:
     """
     if context.eval_changed:
         do_score_card(context)
-        context.eval_changed = 0
+        context.eval_changed = False
 
 
-def set_evaluation(
+def set_evaluation(context: AppContext,
     changed: str,
     score: str,
     ps0: str,
@@ -249,8 +249,8 @@ def set_evaluation(
     # In pygame version, this would pass data to the UI system
     # For now, store the evaluation data for UI access
 
-    global _evaluation_data
-    _evaluation_data = {
+    # global _evaluation_data
+    context._evaluation_data = {
         "title": title,
         "score": score,
         "changed": changed,
@@ -274,47 +274,47 @@ def set_evaluation(
 # ============================================================================
 
 
-def draw_evaluation() -> None:
+def draw_evaluation(context: AppContext) -> None:
     """
     Mark evaluation display for redraw.
 
     Ported from drawEvaluation() equivalent in w_eval.c.
     In pygame version, this sets a flag for UI update.
     """
-    global must_draw_evaluation, _evaluation_panel_dirty
-    must_draw_evaluation = True
-    if _evaluation_panel_visible:
-        _evaluation_panel_dirty = True
+    # global must_draw_evaluation, _evaluation_panel_dirty
+    context.must_draw_evaluation = True
+    if context._evaluation_panel_visible:
+        context._evaluation_panel_dirty = True
 
 
-def really_draw_evaluation() -> None:
+def really_draw_evaluation(context: AppContext) -> None:
     """
     Actually draw/update the evaluation display.
 
     Ported from ReallyDrawEvaluation() equivalent in w_eval.c.
     In pygame version, this would update the UI display.
     """
-    global must_draw_evaluation
+    # global must_draw_evaluation
 
     # In pygame version, this would render the evaluation data
     # For now, just mark as drawn
-    must_draw_evaluation = False
-    if _evaluation_panel_visible:
+    context.must_draw_evaluation = False
+    if context._evaluation_panel_visible:
         _render_evaluation_surface()
 
 
-def update_evaluation() -> None:
+def update_evaluation(context: AppContext) -> None:
     """
     Update evaluation display if needed.
 
     Ported from UpdateEvaluation() equivalent in w_eval.c.
     Checks flags and updates display accordingly.
     """
-    global must_draw_evaluation
+    # global must_draw_evaluation
 
-    if must_draw_evaluation:
+    if context.must_draw_evaluation:
         really_draw_evaluation()
-        must_draw_evaluation = False
+        context.must_draw_evaluation = False
 
 
 # ============================================================================
@@ -324,38 +324,38 @@ def update_evaluation() -> None:
 _evaluation_data: dict | None = None
 
 
-def get_evaluation_data() -> dict | None:
+def get_evaluation_data(context: AppContext) -> dict | None:
     """
     Get the current evaluation display data.
 
     Returns:
         Dictionary containing evaluation data, or None if not available
     """
-    return _evaluation_data
+    return context._evaluation_data
 
 
-def set_evaluation_panel_visible(visible: bool) -> None:
+def set_evaluation_panel_visible(context: AppContext, visible: bool) -> None:
     """
     Toggle the pygame evaluation overlay visibility.
     """
-    global _evaluation_panel_visible, _evaluation_panel_dirty
-    _evaluation_panel_visible = visible
+    # global _evaluation_panel_visible, _evaluation_panel_dirty
+    context._evaluation_panel_visible = visible
     if visible:
-        _evaluation_panel_dirty = True
+        context._evaluation_panel_dirty = True
     else:
-        _evaluation_panel_dirty = False
+        context._evaluation_panel_dirty = False
 
 
-def is_evaluation_panel_visible() -> bool:
+def is_evaluation_panel_visible(context: AppContext) -> bool:
     """Return True if the evaluation panel should be shown."""
-    return _evaluation_panel_visible
+    return context._evaluation_panel_visible
 
 
-def set_evaluation_panel_size(width: int, height: int) -> None:
+def set_evaluation_panel_size(context: AppContext, width: int, height: int) -> None:
     """Resize the evaluation panel surface used during rendering."""
-    global _evaluation_panel_size, _evaluation_panel_dirty
-    _evaluation_panel_size = (max(1, width), max(1, height))
-    _evaluation_panel_dirty = True
+    # global _evaluation_panel_size, _evaluation_panel_dirty
+    context._evaluation_panel_size = (max(1, width), max(1, height))
+    context._evaluation_panel_dirty = True
 
 
 def get_evaluation_surface() -> pygame.Surface | None:
@@ -459,7 +459,7 @@ def update_evaluation_command(context: AppContext) -> None:
     TCL command interface for updating evaluation UI.
     :param context:
     """
-    update_evaluation()
+    update_evaluation(context)
     sim_control.kick()
 
 
@@ -468,26 +468,26 @@ def update_evaluation_command(context: AppContext) -> None:
 # ============================================================================
 
 
-def _create_evaluation_surface() -> None:
+def _create_evaluation_surface(context: AppContext) -> None:
     """Create the pygame surface for evaluation data."""
-    global _evaluation_surface, _evaluation_panel_dirty
+    # global _evaluation_surface, _evaluation_panel_dirty
 
-    width, height = _evaluation_panel_size
-    _evaluation_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-    _evaluation_panel_dirty = True
+    width, height = context._evaluation_panel_size
+    context._evaluation_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    context._evaluation_panel_dirty = True
 
 
-def _render_evaluation_surface() -> None:
+def _render_evaluation_surface(context: AppContext) -> None:
     """Render evaluation data into the pygame surface."""
-    global _evaluation_panel_dirty
-    if not (_evaluation_panel_visible and _evaluation_surface):
-        _evaluation_panel_dirty = False
+    # global _evaluation_panel_dirty
+    if not (context._evaluation_panel_visible and context._evaluation_surface):
+        context._evaluation_panel_dirty = False
         return
 
-    surface = _evaluation_surface
+    surface = context._evaluation_surface
     surface.fill((0, 0, 0, 200))
 
-    data = _evaluation_data or {}
+    data = context._evaluation_data or {}
     # Draw a simple textual summary using pygame fonts if available; otherwise colored bars
     font = None
     if pygame.font.get_init() or pygame.font.get_init() is False:

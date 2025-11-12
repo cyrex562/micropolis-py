@@ -68,7 +68,7 @@ class TestMiniMaps(Assertions):
     def test_drawAll(self):
         """Test drawAll function"""
         with patch("micropolis.mini_maps._render_small_tile") as mock_render:
-            mini_maps.drawAll(self.view)
+            mini_maps.drawAll(context, self.view)
             # Should render all tiles
             self.assertTrue(mock_render.called)
 
@@ -78,7 +78,7 @@ class TestMiniMaps(Assertions):
         types.map_data[10][10] = 500  # Commercial zone tile
 
         with patch("micropolis.mini_maps._render_small_tile") as mock_render:
-            mini_maps.drawRes(self.view)
+            mini_maps.drawRes(context, context)
             # Should have been called with tile = 0 (filtered)
             mock_render.assert_called()
 
@@ -88,7 +88,7 @@ class TestMiniMaps(Assertions):
         types.map_data[10][10] = macros.RESBASE  # Residential zone
 
         with patch("micropolis.mini_maps._render_small_tile") as mock_render:
-            mini_maps.drawCom(self.view)
+            mini_maps.drawCom(context, context)
             # Should have been called with tile = 0 (filtered)
             mock_render.assert_called()
 
@@ -98,7 +98,7 @@ class TestMiniMaps(Assertions):
         types.map_data[10][10] = macros.RESBASE  # Residential zone
 
         with patch("micropolis.mini_maps._render_small_tile") as mock_render:
-            mini_maps.drawInd(self.view)
+            mini_maps.drawInd(context, context)
             # Should have been called with tile = 0 (filtered)
             mock_render.assert_called()
 
@@ -108,7 +108,7 @@ class TestMiniMaps(Assertions):
         types.map_data[10][10] = 250  # Some zone tile
 
         with patch("micropolis.mini_maps._render_small_tile") as mock_render:
-            mini_maps.drawLilTransMap(self.view)
+            mini_maps.drawLilTransMap(context, context)
             # Should have been called with tile = 0 (filtered)
             mock_render.assert_called()
 
@@ -120,7 +120,7 @@ class TestMiniMaps(Assertions):
         )  # Residential zone, unpowered
 
         # Just test that the function doesn't crash
-        mini_maps.drawPower(self.view)
+        mini_maps.drawPower(context, self.view)
 
     def test_drawPower_conductive(self):
         """Test drawPower conductive tile visualization"""
@@ -128,7 +128,7 @@ class TestMiniMaps(Assertions):
         types.map_data[10][10] = types.CONDBIT  # Conductive tile
 
         # Just test that the function doesn't crash
-        mini_maps.drawPower(self.view)
+        mini_maps.drawPower(context, self.view)
 
     def test_dynamicFilter_population(self):
         """Test dynamic filtering with population criteria"""
@@ -137,7 +137,7 @@ class TestMiniMaps(Assertions):
             types.dynamic_data[i] = 100  # Min values > max values
             types.dynamic_data[i + 1] = 0  # Max values
 
-        result = mini_maps.dynamicFilter(10, 10)
+        result = mini_maps.dynamicFilter(context, context, 10)
         self.assertEqual(result, 1)  # Should pass filter when all criteria are disabled
 
     def test_dynamicFilter_out_of_range(self):
@@ -149,7 +149,7 @@ class TestMiniMaps(Assertions):
         # Set up population density outside range
         types.pop_density[5][5] = 5  # Below minimum
 
-        result = mini_maps.dynamicFilter(10, 10)
+        result = mini_maps.dynamicFilter(context, context, 10)
         self.assertEqual(result, 0)  # Should fail filter
 
     def test_drawDynamic(self):
@@ -194,7 +194,7 @@ class TestMiniMaps(Assertions):
         ]
 
         with patch("micropolis.mini_maps._render_small_tile") as mock_render:
-            mini_maps.drawDynamic(self.view)
+            mini_maps.drawDynamic(context, context)
             mock_render.assert_called()
 
     def test_render_small_tile_bounds_check(self):

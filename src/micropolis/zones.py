@@ -4,9 +4,14 @@ zones.py - Zone processing and growth mechanics for Micropolis Python port
 This module contains the zone growth and management functions ported from s_zone.c,
 implementing residential, commercial, and industrial zone development logic.
 """
-
-import micropolis.power
-from . import types, macros, simulation
+from src.micropolis.constants import PORTBASE, HOSPITAL, COMBASE, INDBASE, CHURCH, RESBASE, IND1, IND2, IND4, IND6, \
+    IND8, IND3, IND5, IND7, IND9, IZB, LOMASK, ASCBIT, SMOKEBASE, REGBIT, FREEZ, BLBNCNBIT, ZONEBIT, LHTHR, HHTHR, \
+    INDCLR, RZB, COMCLR, CZB, HOUSE, LASTROAD, FLOOD, ROADBASE, BNCNBIT, BULLBIT, NUCLEAR, POWERPLANT, PWRMAPSIZE, \
+    PWRBIT
+from src.micropolis.context import AppContext
+from src.micropolis.macros import TestBounds
+from src.micropolis.power import powerword
+from src.micropolis.simulation import do_sp_zone, repair_zone, rand, rand16, rand16_signed
 
 
 # ============================================================================
@@ -14,64 +19,64 @@ from . import types, macros, simulation
 # ============================================================================
 
 
-def DoZone() -> None:
+def DoZone(context: AppContext) -> None:
     """
     Main zone processing function.
 
     Determines zone type and calls appropriate processing function.
     Ported from DoZone() in s_zone.c.
     """
-    ZonePwrFlg = SetZPower()  # Set Power Bit in Map from PowerMap
+    ZonePwrFlg = SetZPower(context)  # Set Power Bit in Map from PowerMap
 
     if ZonePwrFlg:
-        types.pwrd_z_cnt += 1
+        context.pwrd_z_cnt += 1
     else:
-        types.un_pwrd_z_cnt += 1
+        context.un_pwrd_z_cnt += 1
 
-    if types.cchr9 > types.PORTBASE:  # do Special Zones
-        simulation.do_sp_zone(context, ZonePwrFlg)
+    if context.cchr9 > PORTBASE:  # do Special Zones
+        do_sp_zone(context, ZonePwrFlg)
         return
 
-    if types.cchr9 < types.HOSPITAL:
-        DoResidential(ZonePwrFlg)
+    if context.cchr9 < HOSPITAL:
+        DoResidential(context,ZonePwrFlg)
         return
 
-    if types.cchr9 < types.COMBASE:
-        DoHospChur()
+    if context.cchr9 < COMBASE:
+        DoHospChur(context)
         return
 
-    if types.cchr9 < types.INDBASE:
-        DoCommercial(ZonePwrFlg)
+    if context.cchr9 < INDBASE:
+        DoCommercial(context,ZonePwrFlg)
         return
 
-    DoIndustrial(ZonePwrFlg)
+    DoIndustrial(context,ZonePwrFlg)
 
 
-def DoHospChur() -> None:
+def DoHospChur(context: AppContext) -> None:
     """
     Process hospital and church zones.
 
     Handles hospital and church population counting and repair.
     Ported from DoHospChur() in s_zone.c.
     """
-    if types.cchr9 == types.HOSPITAL:
-        types.hosp_pop += 1
-        if (types.city_time & 15) == 0:
-            simulation.repair_zone(context, types.HOSPITAL, 3)  # post
-        if types.need_hosp == -1:
-            if simulation.rand(20) == 0:
-                ZonePlop(types.RESBASE)
+    if context.cchr9 == HOSPITAL:
+        context.hosp_pop += 1
+        if (context.city_time & 15) == 0:
+            repair_zone(context, HOSPITAL, 3)  # post
+        if context.need_hosp == -1:
+            if rand(context, 20) == 0:
+                ZonePlop(context, RESBASE)
 
-    if types.cchr9 == types.CHURCH:
-        types.church_pop += 1
-        if (types.city_time & 15) == 0:
-            simulation.repair_zone(context, types.CHURCH, 3)  # post
-        if types.need_church == -1:
-            if simulation.rand(20) == 0:
-                ZonePlop(types.RESBASE)
+    if context.cchr9 == CHURCH:
+        context.church_pop += 1
+        if (context.city_time & 15) == 0:
+            repair_zone(context, CHURCH, 3)  # post
+        if context.need_church == -1:
+            if rand(context, 20) == 0:
+                ZonePlop(context, RESBASE)
 
 
-def SetSmoke(ZonePower: int) -> None:
+def SetSmoke(context: AppContext,ZonePower: int) -> None:
     """
     Set smoke animation for industrial zones.
 
@@ -88,70 +93,71 @@ def SetSmoke(ZonePower: int) -> None:
     DY2 = [-1, 0, 0, -1, 0, 0, -1, 0]
     AniTabA = [0, 0, 32, 40, 0, 0, 48, 56]
     AniTabB = [0, 0, 36, 44, 0, 0, 52, 60]
-    AniTabC = [types.IND1, 0, types.IND2, types.IND4, 0, 0, types.IND6, types.IND8]
-    AniTabD = [types.IND1, 0, types.IND3, types.IND5, 0, 0, types.IND7, types.IND9]
+    AniTabC = [IND1, 0, IND2, IND4, 0, 0, IND6, IND8]
+    AniTabD = [IND1, 0, IND3, IND5, 0, 0, IND7, IND9]
 
-    if types.cchr9 < types.IZB:
+    if context.cchr9 < IZB:
         return
 
-    z = (types.cchr9 - types.IZB) >> 3
+    z = (context.cchr9 - IZB) >> 3
     z = z & 7
 
     if AniThis[z]:
-        xx = types.s_map_x + DX1[z]
-        yy = types.s_map_y + DY1[z]
-        if macros.TestBounds(xx, yy):
+        xx = context.s_map_x + DX1[z]
+        yy = context.s_map_y + DY1[z]
+        if TestBounds(xx, yy):
             if ZonePower:
-                if (types.map_data[xx][yy] & types.LOMASK) == AniTabC[z]:
-                    types.map_data[xx][yy] = types.ASCBIT | (
-                        types.SMOKEBASE + AniTabA[z]
+                if (context.map_data[xx][yy] & LOMASK) == AniTabC[z]:
+                    context.map_data[xx][yy] = ASCBIT | (
+                        SMOKEBASE + AniTabA[z]
                     )
                     # Note: Original has duplicate line, keeping for compatibility
-                    types.map_data[xx][yy] = types.ASCBIT | (
-                        types.SMOKEBASE + AniTabB[z]
+                    context.map_data[xx][yy] = ASCBIT | (
+                        SMOKEBASE + AniTabB[z]
                     )
             else:
-                if (types.map_data[xx][yy] & types.LOMASK) > AniTabC[z]:
-                    types.map_data[xx][yy] = types.REGBIT | AniTabC[z]
+                if (context.map_data[xx][yy] & LOMASK) > AniTabC[z]:
+                    context.map_data[xx][yy] = REGBIT | AniTabC[z]
                     # Note: Original has duplicate line, keeping for compatibility
-                    types.map_data[xx][yy] = types.REGBIT | AniTabD[z]
+                    context.map_data[xx][yy] = REGBIT | AniTabD[z]
 
 
-def DoIndustrial(ZonePwrFlg: int) -> None:
+def DoIndustrial(context: AppContext, ZonePwrFlg: int) -> None:
     """
     Process industrial zone growth.
 
     Ported from DoIndustrial() in s_zone.c.
 
     Args:
+        context: Application context
         ZonePwrFlg: Whether zone is powered
     """
-    tpop = IZPop(types.cchr9)
-    types.ind_pop += tpop
+    tpop = IZPop(context.cchr9)
+    context.ind_pop += tpop
 
-    if tpop > simulation.rand(5):
+    if tpop > rand(context, 5):
         TrfGood = MakeTraf(2)
     else:
         TrfGood = True
 
     if TrfGood == -1:
-        DoIndOut(tpop, simulation.rand16() & 1)
+        DoIndOut(context,tpop, rand16(context) & 1)
         return
 
-    if (simulation.rand16() & 7) == 0:
-        zscore = types.i_value + EvalInd(TrfGood)
+    if (rand16(context) & 7) == 0:
+        zscore = context.i_value + EvalInd(TrfGood)
         if not ZonePwrFlg:
             zscore = -500
 
-        if (zscore > -350) and ((zscore - 26380) > simulation.rand16_signed()):
-            DoIndIn(tpop, simulation.rand16() & 1)
+        if (zscore > -350) and ((zscore - 26380) > rand16_signed(context)):
+            DoIndIn(context,tpop, rand16(context,) & 1)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < simulation.rand16_signed()):
-            DoIndOut(tpop, simulation.rand16() & 1)
+        if (zscore < 350) and ((zscore + 26380) < rand16_signed(context)):
+            DoIndOut(context,tpop, rand16(context,) & 1)
 
 
-def DoCommercial(ZonePwrFlg: int) -> None:
+def DoCommercial(context: AppContext, ZonePwrFlg: int) -> None:
     """
     Process commercial zone growth.
 
@@ -160,40 +166,40 @@ def DoCommercial(ZonePwrFlg: int) -> None:
     Args:
         ZonePwrFlg: Whether zone is powered
     """
-    tpop = CZPop(types.cchr9)
-    types.com_pop += tpop
+    tpop = CZPop(context.cchr9)
+    context.com_pop += tpop
 
-    if tpop > simulation.rand(5):
+    if tpop > rand(context, 5):
         TrfGood = MakeTraf(1)
     else:
         TrfGood = True
 
     if TrfGood == -1:
-        value = GetCRVal()
-        DoComOut(tpop, value)
+        value = GetCRVal(context,)
+        DoComOut(context,tpop, value)
         return
 
-    if (simulation.rand16() & 7) == 0:
-        locvalve = EvalCom(TrfGood)
-        zscore = types.c_value + locvalve
+    if (rand16(context) & 7) == 0:
+        locvalve = EvalCom(context, TrfGood)
+        zscore = context.c_value + locvalve
         if not ZonePwrFlg:
             zscore = -500
 
         if (
             TrfGood
             and (zscore > -350)
-            and ((zscore - 26380) > simulation.rand16_signed())
+            and ((zscore - 26380) > rand16_signed(context))
         ):
-            value = GetCRVal()
-            DoComIn(tpop, value)
+            value = GetCRVal(context,)
+            DoComIn(context,tpop, value)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < simulation.rand16_signed()):
-            value = GetCRVal()
-            DoComOut(tpop, value)
+        if (zscore < 350) and ((zscore + 26380) < rand16_signed(context)):
+            value = GetCRVal(context,)
+            DoComOut(context,tpop, value)
 
 
-def DoResidential(ZonePwrFlg: int) -> None:
+def DoResidential(context: AppContext, ZonePwrFlg: int) -> None:
     """
     Process residential zone growth.
 
@@ -202,59 +208,59 @@ def DoResidential(ZonePwrFlg: int) -> None:
     Args:
         ZonePwrFlg: Whether zone is powered
     """
-    if types.cchr9 == types.FREEZ:
-        tpop = DoFreePop()
+    if context.cchr9 == FREEZ:
+        tpop = DoFreePop(context)
     else:
-        tpop = RZPop(types.cchr9)
+        tpop = RZPop(context.cchr9)
 
-    types.res_pop += tpop
+    context.res_pop += tpop
 
-    if tpop > simulation.rand(35):
+    if tpop > rand(context, 35):
         TrfGood = MakeTraf(0)
     else:
         TrfGood = True
 
     if TrfGood == -1:
-        value = GetCRVal()
-        DoResOut(tpop, value)
+        value = GetCRVal(context,)
+        DoResOut(context,tpop, value)
         return
 
-    if (types.cchr9 == types.FREEZ) or ((simulation.rand16() & 7) == 0):
-        locvalve = EvalRes(TrfGood)
-        zscore = types.r_value + locvalve
+    if (context.cchr9 == FREEZ) or ((rand16(context) & 7) == 0):
+        locvalve = EvalRes(context,TrfGood)
+        zscore = context.r_value + locvalve
         if not ZonePwrFlg:
             zscore = -500
 
-        if (zscore > -350) and ((zscore - 26380) > simulation.rand16_signed()):
-            if (not tpop) and ((simulation.rand16() & 3) == 0):
-                MakeHosp()
+        if (zscore > -350) and ((zscore - 26380) > rand16_signed(context)):
+            if (not tpop) and ((rand16(context) & 3) == 0):
+                MakeHosp(context)
                 return
-            value = GetCRVal()
-            DoResIn(tpop, value)
+            value = GetCRVal(context,)
+            DoResIn(context,tpop, value)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < simulation.rand16_signed()):
-            value = GetCRVal()
-            DoResOut(tpop, value)
+        if (zscore < 350) and ((zscore + 26380) < rand16_signed(context)):
+            value = GetCRVal(context,)
+            DoResOut(context,tpop, value)
 
 
-def MakeHosp() -> None:
+def MakeHosp(context: AppContext) -> None:
     """
     Create hospital or church if needed.
 
     Ported from MakeHosp() in s_zone.c.
     """
-    if types.need_hosp > 0:
-        ZonePlop(types.HOSPITAL - 4)
-        types.need_hosp = False
+    if context.need_hosp > 0:
+        ZonePlop(context, HOSPITAL - 4)
+        context.need_hosp = False
         return
 
-    if types.need_church > 0:
-        ZonePlop(types.CHURCH - 4)
-        types.need_church = False
+    if context.need_church > 0:
+        ZonePlop(context, CHURCH - 4)
+        context.need_church = False
 
 
-def GetCRVal() -> int:
+def GetCRVal(context: AppContext) -> int:
     """
     Get commercial/residential value based on land value and pollution.
 
@@ -263,8 +269,8 @@ def GetCRVal() -> int:
     Returns:
         Value from 0-3 based on land value minus pollution
     """
-    LVal = types.land_value_mem[types.s_map_x >> 1][types.s_map_y >> 1]
-    LVal -= types.pollution_mem[types.s_map_x >> 1][types.s_map_y >> 1]
+    LVal = context.land_value_mem[context.s_map_x >> 1][context.s_map_y >> 1]
+    LVal -= context.pollution_mem[context.s_map_x >> 1][context.s_map_y >> 1]
 
     if LVal < 30:
         return 0
@@ -280,72 +286,75 @@ def GetCRVal() -> int:
 # ============================================================================
 
 
-def DoResIn(pop: int, value: int) -> None:
+def DoResIn(context: AppContext, pop: int, value: int) -> None:
     """
     Handle residential zone growth inward.
 
     Ported from DoResIn() in s_zone.c.
 
     Args:
+        context: Application context
         pop: Current population
         value: Land value rating
     """
-    z = types.pollution_mem[types.s_map_x >> 1][types.s_map_y >> 1]
+    z = context.pollution_mem[context.s_map_x >> 1][context.s_map_y >> 1]
     if z > 128:
         return
 
-    if types.cchr9 == types.FREEZ:
+    if context.cchr9 == FREEZ:
         if pop < 8:
-            BuildHouse(value)
-            IncROG(1)
+            BuildHouse(context,value)
+            IncROG(context, 1)
             return
-        if types.pop_density[types.s_map_x >> 1][types.s_map_y >> 1] > 64:
-            ResPlop(0, value)
-            IncROG(8)
+        if context.pop_density[context.s_map_x >> 1][context.s_map_y >> 1] > 64:
+            ResPlop(context,0, value)
+            IncROG(context, 8)
             return
         return
 
     if pop < 40:
-        ResPlop((pop // 8) - 1, value)
-        IncROG(8)
+        ResPlop(context,(pop // 8) - 1, value)
+        IncROG(context, 8)
 
 
-def DoComIn(pop: int, value: int) -> None:
+def DoComIn(context: AppContext,pop: int, value: int) -> None:
     """
     Handle commercial zone growth inward.
 
     Ported from DoComIn() in s_zone.c.
 
     Args:
+        context: Application context
         pop: Current population
         value: Land value rating
     """
-    z = types.land_value_mem[types.s_map_x >> 1][types.s_map_y >> 1]
+    z = context.land_value_mem[context.s_map_x >> 1][context.s_map_y >> 1]
     z = z >> 5
     if pop > z:
         return
 
     if pop < 5:
-        ComPlop(pop, value)
-        IncROG(8)
+        ComPlop(context, pop, value)
+        IncROG(context, 8)
 
 
-def DoIndIn(pop: int, value: int) -> None:
+def DoIndIn(context: AppContext, pop: int, value: int) -> None:
     """
     Handle industrial zone growth inward.
 
     Ported from DoIndIn() in s_zone.c.
 
     Args:
+        context: Application context
         pop: Current population
         value: Land value rating
     """
     if pop < 4:
-        IndPlop(pop, value)
-        IncROG(8)
+        IndPlop(context,pop, value)
+        IncROG(context, 8)
 
 
-def IncROG(amount: int) -> None:
+def IncROG(context: AppContext, amount: int) -> None:
     """
     Increment rate of growth.
 
@@ -353,8 +362,9 @@ def IncROG(amount: int) -> None:
 
     Args:
         amount: Amount to increment
+        :param context:
     """
-    types.rate_og_mem[types.s_map_x >> 3][types.s_map_y >> 3] += amount << 2
+    context.rate_og_mem[context.s_map_x >> 3][context.s_map_y >> 3] += amount << 2
 
 
 # ============================================================================
@@ -362,13 +372,14 @@ def IncROG(amount: int) -> None:
 # ============================================================================
 
 
-def DoResOut(pop: int, value: int) -> None:
+def DoResOut(context: AppContext, pop: int, value: int) -> None:
     """
     Handle residential zone shrinkage outward.
 
     Ported from DoResOut() in s_zone.c.
 
     Args:
+        context: Application context
         pop: Current population
         value: Land value rating
     """
@@ -378,39 +389,39 @@ def DoResOut(pop: int, value: int) -> None:
         return
 
     if pop > 16:
-        ResPlop(((pop - 24) // 8), value)
-        IncROG(-8)
+        ResPlop(context,((pop - 24) // 8), value)
+        IncROG(context, -8)
         return
 
     if pop == 16:
-        IncROG(-8)
-        types.map_data[types.s_map_x][types.s_map_y] = (
-            types.FREEZ | types.BLBNCNBIT | types.ZONEBIT
+        IncROG(context, -8)
+        context.map_data[context.s_map_x][context.s_map_y] = (
+            FREEZ | BLBNCNBIT | ZONEBIT
         )
-        for x in range(types.s_map_x - 1, types.s_map_x + 2):
-            for y in range(types.s_map_y - 1, types.s_map_y + 2):
-                if macros.TestBounds(x, y):
-                    if (types.map_data[x][y] & types.LOMASK) != types.FREEZ:
-                        types.map_data[x][y] = (
-                                types.LHTHR + value + simulation.rand(2) + types.BLBNCNBIT
+        for x in range(context.s_map_x - 1, context.s_map_x + 2):
+            for y in range(context.s_map_y - 1, context.s_map_y + 2):
+                if TestBounds(x, y):
+                    if (context.map_data[x][y] & LOMASK) != FREEZ:
+                        context.map_data[x][y] = (
+                                LHTHR + value + rand(context, 2) + BLBNCNBIT
                         )
 
     if pop < 16:
-        IncROG(-1)
+        IncROG(context, -1)
         z = 0
-        for x in range(types.s_map_x - 1, types.s_map_x + 2):
-            for y in range(types.s_map_y - 1, types.s_map_y + 2):
-                if macros.TestBounds(x, y):
-                    loc = types.map_data[x][y] & types.LOMASK
-                    if (loc >= types.LHTHR) and (loc <= types.HHTHR):
-                        types.map_data[x][y] = (
-                            Brdr[z] + types.BLBNCNBIT + types.FREEZ - 4
+        for x in range(context.s_map_x - 1, context.s_map_x + 2):
+            for y in range(context.s_map_y - 1, context.s_map_y + 2):
+                if TestBounds(x, y):
+                    loc = context.map_data[x][y] & LOMASK
+                    if (loc >= LHTHR) and (loc <= HHTHR):
+                        context.map_data[x][y] = (
+                            Brdr[z] + BLBNCNBIT + FREEZ - 4
                         )
                         return
                 z += 1
 
 
-def DoComOut(pop: int, value: int) -> None:
+def DoComOut(context: AppContext, pop: int, value: int) -> None:
     """
     Handle commercial zone shrinkage outward.
 
@@ -421,16 +432,16 @@ def DoComOut(pop: int, value: int) -> None:
         value: Land value rating
     """
     if pop > 1:
-        ComPlop(pop - 2, value)
-        IncROG(-8)
+        ComPlop(context, pop - 2, value)
+        IncROG(context, -8)
         return
 
     if pop == 1:
-        ZonePlop(types.COMBASE)
-        IncROG(-8)
+        ZonePlop(context, COMBASE)
+        IncROG(context, -8)
 
 
-def DoIndOut(pop: int, value: int) -> None:
+def DoIndOut(context: AppContext, pop: int, value: int) -> None:
     """
     Handle industrial zone shrinkage outward.
 
@@ -441,13 +452,13 @@ def DoIndOut(pop: int, value: int) -> None:
         value: Land value rating
     """
     if pop > 1:
-        IndPlop(pop - 2, value)
-        IncROG(-8)
+        IndPlop(context,pop - 2, value)
+        IncROG(context, -8)
         return
 
     if pop == 1:
-        ZonePlop(types.INDCLR - 4)
-        IncROG(-8)
+        ZonePlop(context, INDCLR - 4)
+        IncROG(context, -8)
 
 
 # ============================================================================
@@ -467,7 +478,7 @@ def RZPop(Ch9: int) -> int:
     Returns:
         Population count
     """
-    CzDen = ((Ch9 - types.RZB) // 9) % 4
+    CzDen = ((Ch9 - RZB) // 9) % 4
     return (CzDen * 8) + 16
 
 
@@ -483,9 +494,9 @@ def CZPop(Ch9: int) -> int:
     Returns:
         Population count
     """
-    if Ch9 == types.COMCLR:
+    if Ch9 == COMCLR:
         return 0
-    CzDen = (((Ch9 - types.CZB) // 9) % 5) + 1
+    CzDen = (((Ch9 - CZB) // 9) % 5) + 1
     return CzDen
 
 
@@ -501,9 +512,9 @@ def IZPop(Ch9: int) -> int:
     Returns:
         Population count
     """
-    if Ch9 == types.INDCLR:
+    if Ch9 == INDCLR:
         return 0
-    CzDen = (((Ch9 - types.IZB) // 9) % 4) + 1
+    CzDen = (((Ch9 - IZB) // 9) % 4) + 1
     return CzDen
 
 
@@ -512,13 +523,14 @@ def IZPop(Ch9: int) -> int:
 # ============================================================================
 
 
-def BuildHouse(value: int) -> None:
+def BuildHouse(context: AppContext, value: int) -> None:
     """
     Build a house in an empty residential lot.
 
     Ported from BuildHouse() in s_zone.c.
 
     Args:
+        context: Application context
         value: Land value rating
     """
     ZeX = [0, -1, 0, 1, -1, 1, -1, 0, 1]
@@ -528,41 +540,42 @@ def BuildHouse(value: int) -> None:
     hscore = 0
 
     for z in range(1, 9):
-        xx = types.s_map_x + ZeX[z]
-        yy = types.s_map_y + ZeY[z]
-        if macros.TestBounds(xx, yy):
-            score = EvalLot(xx, yy)
+        xx = context.s_map_x + ZeX[z]
+        yy = context.s_map_y + ZeY[z]
+        if TestBounds(xx, yy):
+            score = EvalLot(context, xx, yy)
             if score != 0:
                 if score > hscore:
                     hscore = score
                     BestLoc = z
-                if (score == hscore) and ((simulation.rand16() & 7) == 0):
+                if (score == hscore) and ((rand16(context,) & 7) == 0):
                     BestLoc = z
 
     if BestLoc:
-        xx = types.s_map_x + ZeX[BestLoc]
-        yy = types.s_map_y + ZeY[BestLoc]
-        if macros.TestBounds(xx, yy):
-            types.map_data[xx][yy] = (
-                    types.HOUSE + types.BLBNCNBIT + simulation.rand(2) + (value * 3)
+        xx = context.s_map_x + ZeX[BestLoc]
+        yy = context.s_map_y + ZeY[BestLoc]
+        if TestBounds(xx, yy):
+            context.map_data[xx][yy] = (
+                    HOUSE + BLBNCNBIT + rand(context, 2) + (value * 3)
             )
 
 
-def ResPlop(Den: int, Value: int) -> None:
+def ResPlop(context: AppContext, Den: int, Value: int) -> None:
     """
     Place residential zone tiles.
 
     Ported from ResPlop() in s_zone.c.
 
     Args:
+        context: Application context
         Den: Density level
         Value: Land value rating
     """
-    base = (((Value * 4) + Den) * 9) + types.RZB - 4
-    ZonePlop(base)
+    base = (((Value * 4) + Den) * 9) + RZB - 4
+    ZonePlop(context, base)
 
 
-def ComPlop(Den: int, Value: int) -> None:
+def ComPlop(context: AppContext, Den: int, Value: int) -> None:
     """
     Place commercial zone tiles.
 
@@ -571,26 +584,28 @@ def ComPlop(Den: int, Value: int) -> None:
     Args:
         Den: Density level
         Value: Land value rating
+        :param context:
     """
-    base = (((Value * 5) + Den) * 9) + types.CZB - 4
-    ZonePlop(base)
+    base = (((Value * 5) + Den) * 9) + CZB - 4
+    ZonePlop(context, base)
 
 
-def IndPlop(Den: int, Value: int) -> None:
+def IndPlop(context: AppContext, Den: int, Value: int) -> None:
     """
     Place industrial zone tiles.
 
     Ported from IndPlop() in s_zone.c.
 
     Args:
+        context: Application context
         Den: Density level
         Value: Land value rating
     """
-    base = (((Value * 4) + Den) * 9) + (types.IZB - 4)
-    ZonePlop(base)
+    base = (((Value * 4) + Den) * 9) + (IZB - 4)
+    ZonePlop(context, base)
 
 
-def EvalLot(x: int, y: int) -> int:
+def EvalLot(context: AppContext, x: int, y: int) -> int:
     """
     Evaluate a lot for building suitability.
 
@@ -602,13 +617,14 @@ def EvalLot(x: int, y: int) -> int:
 
     Returns:
         Score from -1 (bad) to 4 (good)
+        :param context:
     """
     DX = [0, 1, 0, -1]
     DY = [-1, 0, 1, 0]
 
     # test for clear lot
-    z = types.map_data[x][y] & types.LOMASK
-    if z and ((z < types.RESBASE) or (z > types.RESBASE + 8)):
+    z = context.map_data[x][y] & LOMASK
+    if z and ((z < RESBASE) or (z > RESBASE + 8)):
         return -1
 
     score = 1
@@ -616,16 +632,16 @@ def EvalLot(x: int, y: int) -> int:
         xx = x + DX[z]
         yy = y + DY[z]
         if (
-            macros.TestBounds(xx, yy)
-            and types.map_data[xx][yy]
-            and ((types.map_data[xx][yy] & types.LOMASK) <= types.LASTROAD)
+            TestBounds(xx, yy)
+            and context.map_data[xx][yy]
+            and ((context.map_data[xx][yy] & LOMASK) <= LASTROAD)
         ):
             score += 1  # look for road
 
     return score
 
 
-def ZonePlop(base: int) -> bool:
+def ZonePlop(context: AppContext, base: int) -> bool:
     """
     Place a zone of 3x3 tiles.
 
@@ -636,30 +652,31 @@ def ZonePlop(base: int) -> bool:
 
     Returns:
         True if successful, False if blocked by fire/flood
+        :param context:
     """
     Zx = [-1, 0, 1, -1, 0, 1, -1, 0, 1]
     Zy = [-1, -1, -1, 0, 0, 0, 1, 1, 1]
 
     # check for fire/flood
     for z in range(9):
-        xx = types.s_map_x + Zx[z]
-        yy = types.s_map_y + Zy[z]
-        if macros.TestBounds(xx, yy):
-            x = types.map_data[xx][yy] & types.LOMASK
-            if (x >= types.FLOOD) and (x < types.ROADBASE):
+        xx = context.s_map_x + Zx[z]
+        yy = context.s_map_y + Zy[z]
+        if TestBounds(xx, yy):
+            x = context.map_data[xx][yy] & LOMASK
+            if (x >= FLOOD) and (x < ROADBASE):
                 return False
 
     # place zone tiles
     for z in range(9):
-        xx = types.s_map_x + Zx[z]
-        yy = types.s_map_y + Zy[z]
-        if macros.TestBounds(xx, yy):
-            types.map_data[xx][yy] = base + types.BNCNBIT
+        xx = context.s_map_x + Zx[z]
+        yy = context.s_map_y + Zy[z]
+        if TestBounds(xx, yy):
+            context.map_data[xx][yy] = base + BNCNBIT
         base += 1
 
-    types.cchr = types.map_data[types.s_map_x][types.s_map_y]
-    SetZPower()
-    types.map_data[types.s_map_x][types.s_map_y] |= types.ZONEBIT | types.BULLBIT
+    context.cchr = context.map_data[context.s_map_x][context.s_map_y]
+    SetZPower(context,)
+    context.map_data[context.s_map_x][context.s_map_y] |= ZONEBIT | BULLBIT
     return True
 
 
@@ -668,13 +685,14 @@ def ZonePlop(base: int) -> bool:
 # ============================================================================
 
 
-def EvalRes(traf: int) -> int:
+def EvalRes(context: AppContext, traf: int) -> int:
     """
     Evaluate residential zone desirability.
 
     Ported from EvalRes() in s_zone.c.
 
     Args:
+        context: Application context
         traf: Traffic rating
 
     Returns:
@@ -683,8 +701,8 @@ def EvalRes(traf: int) -> int:
     if traf < 0:
         return -3000
 
-    Value = types.land_value_mem[types.s_map_x >> 1][types.s_map_y >> 1]
-    Value -= types.pollution_mem[types.s_map_x >> 1][types.s_map_y >> 1]
+    Value = context.land_value_mem[context.s_map_x >> 1][context.s_map_y >> 1]
+    Value -= context.pollution_mem[context.s_map_x >> 1][context.s_map_y >> 1]
 
     if Value < 0:
         Value = 0  # Cap at 0
@@ -698,13 +716,14 @@ def EvalRes(traf: int) -> int:
     return Value
 
 
-def EvalCom(traf: int) -> int:
+def EvalCom(context: AppContext, traf: int) -> int:
     """
     Evaluate commercial zone desirability.
 
     Ported from EvalCom() in s_zone.c.
 
     Args:
+        context: Application context
         traf: Traffic rating
 
     Returns:
@@ -713,7 +732,7 @@ def EvalCom(traf: int) -> int:
     if traf < 0:
         return -3000
 
-    Value = types.com_rate[types.s_map_x >> 3][types.s_map_y >> 3]
+    Value = context.com_rate[context.s_map_x >> 3][context.s_map_y >> 3]
     return Value
 
 
@@ -739,7 +758,7 @@ def EvalInd(traf: int) -> int:
 # ============================================================================
 
 
-def DoFreePop() -> int:
+def DoFreePop(context: AppContext) -> int:
     """
     Count population in free zone area.
 
@@ -747,13 +766,14 @@ def DoFreePop() -> int:
 
     Returns:
         Population count
+        :param context:
     """
     count = 0
-    for x in range(types.s_map_x - 1, types.s_map_x + 2):
-        for y in range(types.s_map_y - 1, types.s_map_y + 2):
-            if macros.TestBounds(x, y):
-                loc = types.map_data[x][y] & types.LOMASK
-                if (loc >= types.LHTHR) and (loc <= types.HHTHR):
+    for x in range(context.s_map_x - 1, context.s_map_x + 2):
+        for y in range(context.s_map_y - 1, context.s_map_y + 2):
+            if TestBounds(x, y):
+                loc = context.map_data[x][y] & LOMASK
+                if (loc >= LHTHR) and (loc <= HHTHR):
                     count += 1
     return count
 
@@ -763,7 +783,7 @@ def DoFreePop() -> int:
 # ============================================================================
 
 
-def SetZPower() -> int:
+def SetZPower(context: AppContext) -> int:
     """
     Set power bit in map based on power grid connectivity.
 
@@ -774,25 +794,25 @@ def SetZPower() -> int:
     """
     # Test for special power cases or power map connectivity
     if (
-        (types.cchr9 == types.NUCLEAR)
-        or (types.cchr9 == types.POWERPLANT)
+        (context.cchr9 == NUCLEAR)
+        or (context.cchr9 == POWERPLANT)
         or (
             (
-                micropolis.power.powerword(types.s_map_x, types.s_map_y)
-                < types.PWRMAPSIZE
+                powerword(context.s_map_x, context.s_map_y)
+                < PWRMAPSIZE
             )
             and (
-                types.power_map[
-                    micropolis.power.powerword(types.s_map_x, types.s_map_y)
+                context.power_map[
+                    powerword(context.s_map_x, context.s_map_y)
                 ]
-                & (1 << (types.s_map_x & 15))
+                & (1 << (context.s_map_x & 15))
             )
         )
     ):
-        types.map_data[types.s_map_x][types.s_map_y] = types.cchr | types.PWRBIT
+        context.map_data[context.s_map_x][context.s_map_y] = context.cchr | PWRBIT
         return 1
     else:
-        types.map_data[types.s_map_x][types.s_map_y] = types.cchr & (~types.PWRBIT)
+        context.map_data[context.s_map_x][context.s_map_y] = context.cchr & (~PWRBIT)
         return 0
 
 

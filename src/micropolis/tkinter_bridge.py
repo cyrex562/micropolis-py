@@ -9,57 +9,24 @@ Adapted from w_tk.c for pygame compatibility while maintaining Sugar
 activity integration through stdin/stdout communication.
 """
 
-from collections.abc import Callable
 import select
 import sys
 import threading
-from queue import Queue
+from collections.abc import Callable
 
 import pygame
 
-from . import types
 from .audio import make_sound
+from .constants import SIM_TIMER_EVENT, EARTHQUAKE_TIMER_EVENT, UPDATE_EVENT
+from .context import AppContext
 from .disasters import do_earth_quake
 from .engine import sim_loop, sim_update
-from .types import Eval as TypesEval
 from .sim_view import SimView
 
-Sim = None  # Optional override for tests
 
-
-# Global state (equivalent to w_tk.c globals)
-tk_main_interp = None  # Simplified - no TCL interpreter
-main_window = None  # Pygame screen surface
-update_delayed = False
-auto_scroll_edge = 16
-auto_scroll_step = 16
-auto_scroll_delay = 10
-
-# Timer management
-sim_timer_token: int | None = None  # pygame timer event ID
-sim_timer_idle = False
-sim_timer_set = False
-earthquake_timer_token: int | None = None  # pygame timer event ID
-earthquake_timer_set = False
-earthquake_delay = 3000
-SIM_TIMER_EVENT = pygame.USEREVENT + 2
-EARTHQUAKE_TIMER_EVENT = pygame.USEREVENT + 3
-UPDATE_EVENT = pygame.USEREVENT + 4
-
-# Performance timing
-performance_timing = False
-flush_time = 0.0
-
-# Command system
-command_callbacks: dict[str, Callable] = {}
-stdin_thread: threading.Thread | None = None
-stdin_queue = Queue()
-running = False
-
-
-def _current_sim():
+def _current_sim(context: AppContext):
     """Return the active simulation object, allowing tests to inject one."""
-    return Sim if Sim is not None else types.sim
+    return context.sim
 
 
 class TkTimer:
@@ -93,92 +60,98 @@ class TkTimer:
             self.callback(self.data)
 
 
-def tk_main_init(screen: pygame.Surface) -> None:
+def tk_main_init(context: AppContext, screen: pygame.Surface) -> None:
     """
     Initialize the TK bridge system.
 
     Args:
         screen: Pygame screen surface to use as main window
+        :param context:
     """
-    global main_window, tk_main_interp, running
+    # global main_window, tk_main_interp, running
 
-    main_window = screen
-    tk_main_interp = {}  # Simplified command registry
-    running = True
+    context.main_window = screen
+    context.tk_main_interp = {}  # Simplified command registry
+    context.running = True
 
     # Register core commands
-    register_command("UIEarthQuake", lambda: do_earth_quake(context))
-    register_command("UISaveCityAs", lambda: None)  # Placeholder
-    register_command("UIDidLoadCity", lambda: None)  # Placeholder
-    register_command("UIDidSaveCity", lambda: None)  # Placeholder
+    register_command(context, "UIEarthQuake", lambda: do_earth_quake(context))
+    register_command(context, "UISaveCityAs", lambda: None)  # Placeholder
+    register_command(context, "UIDidLoadCity", lambda: None)  # Placeholder
+    register_command(context, "UIDidSaveCity", lambda: None)  # Placeholder
 
     # Start stdin processing thread for Sugar integration
-    start_stdin_processing()
+    start_stdin_processing(context)
 
 
-def tk_main_loop() -> None:
-    """Main event loop - replaces TK's Tk_MainLoop()."""
-    global running
+def tk_main_loop(context: AppContext) -> None:
+    """Main event loop - replaces TK's Tk_MainLoop().
+    :param context:
+    """
+    # global running
 
     clock = pygame.time.Clock()
 
-    while running:
+    while context.running:
         # Handle pygame events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                context.running = False
                 break
             elif event.type == pygame.USEREVENT + 1:
                 # Timer event - handled by individual timers
                 pass
             elif event.type == SIM_TIMER_EVENT:
-                _sim_timer_callback()
+                _sim_timer_callback(context)
             elif event.type == EARTHQUAKE_TIMER_EVENT:
-                _earthquake_timer_callback()
-            elif event.type == UPDATE_EVENT and update_delayed:
-                _do_delayed_update()
+                _earthquake_timer_callback(context)
+            elif event.type == UPDATE_EVENT and context.update_delayed:
+                _do_delayed_update(context)
             # Additional event handling can be added here
 
         # Process stdin commands
-        _process_stdin_commands()
+        _process_stdin_commands(context)
 
         # Update display if needed
-        if update_delayed:
-            _do_delayed_update()
+        if context.update_delayed:
+            _do_delayed_update(context)
 
         # Maintain frame rate
         clock.tick(60)  # Target 60 FPS
 
     # Cleanup
-    stop_stdin_processing()
+    stop_stdin_processing(context)
 
 
-def tk_main_cleanup() -> None:
-    """Clean up TK bridge resources."""
-    global running, update_delayed
+def tk_main_cleanup(context: AppContext) -> None:
+    """Clean up TK bridge resources.
+    :param context:
+    """
+    # global running, update_delayed
 
-    running = False
+    context.running = False
 
-    stop_micropolis_timer()
-    stop_earthquake()
+    stop_micropolis_timer(context)
+    stop_earthquake(context)
     pygame.time.set_timer(UPDATE_EVENT, 0)
-    update_delayed = False
+    context.update_delayed = False
 
-    stop_stdin_processing()
+    stop_stdin_processing(context)
 
 
-def register_command(name: str, callback: Callable) -> None:
+def register_command(context: AppContext, name: str, callback: Callable) -> None:
     """
     Register a command callback.
 
     Args:
         name: Command name
         callback: Function to call when command is executed
+        :param context:
     """
-    command_callbacks[name] = callback
+    context.command_callbacks[name] = callback
 
 
-def eval_command(cmd: str) -> int:
+def eval_command(context: AppContext, cmd: str) -> int:
     """
     Evaluate a command string.
 
@@ -187,6 +160,7 @@ def eval_command(cmd: str) -> int:
 
     Returns:
         0 on success, non-zero on error
+        :param context:
     """
     try:
         # Parse command (simplified - assumes single command per call)
@@ -197,8 +171,8 @@ def eval_command(cmd: str) -> int:
         command_name = parts[0]
         args = parts[1:]
 
-        if command_name in command_callbacks:
-            callback = command_callbacks[command_name]
+        if command_name in context.command_callbacks:
+            callback = context.command_callbacks[command_name]
             if args:
                 callback(*args)
             else:
@@ -216,128 +190,140 @@ def eval_command(cmd: str) -> int:
 # Timer management functions
 
 
-def start_micropolis_timer() -> None:
+def start_micropolis_timer(context: AppContext) -> None:
     """Start the simulation timer."""
-    global sim_timer_token, sim_timer_idle, sim_timer_set
+    # global sim_timer_token, sim_timer_idle, sim_timer_set
 
-    sim_timer_idle = False
-    delay = max(1, _calculate_sim_delay())
+    context.sim_timer_idle = False
+    delay = max(1, _calculate_sim_delay(context))
     pygame.time.set_timer(SIM_TIMER_EVENT, delay)
-    sim_timer_token = SIM_TIMER_EVENT
-    sim_timer_set = True
+    context.sim_timer_token = SIM_TIMER_EVENT
+    context.sim_timer_set = True
 
 
-def stop_micropolis_timer() -> None:
-    """Stop the simulation timer."""
-    global sim_timer_token, sim_timer_idle, sim_timer_set
+def stop_micropolis_timer(context: AppContext) -> None:
+    """Stop the simulation timer.
+    :param context:
+    """
+    # global sim_timer_token, sim_timer_idle, sim_timer_set
 
-    if sim_timer_set:
+    if context.sim_timer_set:
         pygame.time.set_timer(SIM_TIMER_EVENT, 0)
-        sim_timer_set = False
-    sim_timer_token = None
-    sim_timer_idle = False
+        context.sim_timer_set = False
+    context.sim_timer_token = None
+    context.sim_timer_idle = False
 
 
-def fix_micropolis_timer() -> None:
+def fix_micropolis_timer(context: AppContext) -> None:
     """Restart simulation timer if it was set."""
-    global sim_timer_set
+    # global sim_timer_set
 
-    if sim_timer_set:
-        start_micropolis_timer()
+    if context.sim_timer_set:
+        start_micropolis_timer(context)
 
 
-def _calculate_sim_delay() -> int:
-    """Calculate simulation delay based on current state."""
-    delay = types.sim_delay
+def _calculate_sim_delay(context: AppContext) -> int:
+    """Calculate simulation delay based on current state.
+    :param context:
+    """
+    delay = context.sim_delay
 
     # Adjust for special conditions (earthquake, etc.)
-    if types.shake_now or types.need_rest > 0:
+    if context.shake_now or context.need_rest > 0:
         delay = max(delay, 50000)
 
     # Convert to milliseconds, ensuring at least 1
     return max(1, delay // 1000)
 
 
-def _sim_timer_callback() -> None:
-    """Simulation timer callback."""
-    global sim_timer_token, sim_timer_set
+def _sim_timer_callback(context: AppContext) -> None:
+    """Simulation timer callback.
+    :param context:
+    """
+    # global sim_timer_token, sim_timer_set
 
-    sim_timer_token = None
-    sim_timer_set = False
+    context.sim_timer_token = None
+    context.sim_timer_set = False
 
-    if types.need_rest > 0:
-        types.need_rest -= 1
+    if context.need_rest > 0:
+        context.need_rest -= 1
 
-    if types.sim_speed:
+    if context.sim_speed:
         sim_loop(context, True)  # Changed from 1 to True
-        start_micropolis_timer()
+        start_micropolis_timer(context)
     else:
-        stop_micropolis_timer()
+        stop_micropolis_timer(context)
 
 
-def really_start_micropolis_timer() -> None:
+def really_start_micropolis_timer(context: AppContext) -> None:
     """Actually start the simulation timer (called from idle handler)."""
-    global sim_timer_idle
+    # global sim_timer_idle
 
-    sim_timer_idle = False
-    stop_micropolis_timer()
-    start_micropolis_timer()
+    context.sim_timer_idle = False
+    stop_micropolis_timer(context)
+    start_micropolis_timer(context)
 
 
-def do_earthquake() -> None:
-    """Trigger earthquake effect."""
-    global earthquake_timer_token, earthquake_timer_set
+def do_earthquake(context: AppContext) -> None:
+    """Trigger earthquake effect.
+    :param context:
+    """
+    # global earthquake_timer_token, earthquake_timer_set
 
-    make_sound("city", "Explosion-Low")
-    eval_command("UIEarthQuake")
-    types.shake_now = 1
+    make_sound(context, "city", "Explosion-Low")
+    eval_command(context, "UIEarthQuake")
+    context.shake_now = 1
 
     # Start earthquake timer
-    pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, earthquake_delay)
-    earthquake_timer_token = EARTHQUAKE_TIMER_EVENT
-    earthquake_timer_set = True
+    pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, context.earthquake_delay)
+    context.earthquake_timer_token = EARTHQUAKE_TIMER_EVENT
+    context.earthquake_timer_set = True
 
 
-def stop_earthquake() -> None:
-    """Stop earthquake effect."""
-    global earthquake_timer_set, earthquake_timer_token
+def stop_earthquake(context: AppContext) -> None:
+    """Stop earthquake effect.
+    :param context:
+    """
+    # global earthquake_timer_set, earthquake_timer_token
 
-    types.shake_now = 0
+    context.shake_now = 0
     pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, 0)
-    earthquake_timer_set = False
-    earthquake_timer_token = None
+    context.earthquake_timer_set = False
+    context.earthquake_timer_token = None
 
 
-def _earthquake_timer_callback() -> None:
+def _earthquake_timer_callback(context: AppContext) -> None:
     """Earthquake timer callback."""
-    stop_earthquake()
+    stop_earthquake(context)
 
 
 # Stdin processing for Sugar integration
 
 
-def start_stdin_processing() -> None:
-    """Start stdin processing thread for Sugar integration."""
-    global stdin_thread
+def start_stdin_processing(context: AppContext) -> None:
+    """Start stdin processing thread for Sugar integration.
+    :param context:
+    """
+    # global stdin_thread
 
-    if stdin_thread is None:
+    if context.stdin_thread is None:
         stdin_thread = threading.Thread(target=_stdin_reader_thread, daemon=True)
         stdin_thread.start()
 
 
-def stop_stdin_processing() -> None:
+def stop_stdin_processing(context: AppContext) -> None:
     """Stop stdin processing."""
-    global stdin_thread
+    # global stdin_thread
 
-    if stdin_thread:
-        stdin_thread.join(timeout=1.0)
-        stdin_thread = None
+    if context.stdin_thread:
+        context.stdin_thread.join(timeout=1.0)
+        context.stdin_thread = None
 
 
-def _stdin_reader_thread() -> None:
+def _stdin_reader_thread(context: AppContext) -> None:
     """Thread function to read from stdin."""
     try:
-        while running:
+        while context.running:
             # Use select to check if stdin has data
             if sys.stdin in select.select([sys.stdin], [], [], 0.1)[0]:
                 line = sys.stdin.readline()
@@ -345,17 +331,17 @@ def _stdin_reader_thread() -> None:
                     break
                 line = line.strip()
                 if line:
-                    stdin_queue.put(line)
+                    context.stdin_queue.put(line)
     except Exception as e:
         print(f"Stdin reader error: {e}")
 
 
-def _process_stdin_commands() -> None:
+def _process_stdin_commands(context: AppContext) -> None:
     """Process commands from stdin queue."""
-    while not stdin_queue.empty():
+    while not context.stdin_queue.empty():
         try:
-            cmd = stdin_queue.get_nowait()
-            eval_command(cmd)
+            cmd = context.stdin_queue.get_nowait()
+            eval_command(context, cmd)
         except Exception as e:
             print(f"Error processing stdin command: {e}")
 
@@ -363,31 +349,31 @@ def _process_stdin_commands() -> None:
 # Update management
 
 
-def kick() -> None:
+def kick(context: AppContext) -> None:
     """Kick start an update cycle."""
-    global update_delayed
+    # global update_delayed
 
-    if not update_delayed:
-        update_delayed = True
+    if not context.update_delayed:
+        context.update_delayed = True
         # Schedule delayed update
         pygame.time.set_timer(UPDATE_EVENT, 1)
 
 
-def _do_delayed_update() -> None:
+def _do_delayed_update(context: AppContext) -> None:
     """Perform delayed update."""
-    global update_delayed
+    # global update_delayed
 
-    update_delayed = False
+    context.update_delayed = False
     pygame.time.set_timer(UPDATE_EVENT, 0)
-    sim_update()
+    sim_update(context)
 
 
 # View management coordination
 
 
-def invalidate_maps() -> None:
+def invalidate_maps(context: AppContext) -> None:
     """Invalidate all map views."""
-    sim_obj = _current_sim()
+    sim_obj = _current_sim(context)
     if sim_obj:
         view = sim_obj.map
         while view:
@@ -397,9 +383,9 @@ def invalidate_maps() -> None:
             view = view.next
 
 
-def invalidate_editors() -> None:
+def invalidate_editors(context: AppContext) -> None:
     """Invalidate all editor views."""
-    sim_obj = _current_sim()
+    sim_obj = _current_sim(context)
     if sim_obj:
         view = sim_obj.editor
         while view:
@@ -409,9 +395,9 @@ def invalidate_editors() -> None:
             view = view.next
 
 
-def redraw_maps() -> None:
+def redraw_maps(context: AppContext) -> None:
     """Redraw all map views."""
-    sim_obj = _current_sim()
+    sim_obj = _current_sim(context)
     if sim_obj:
         view = sim_obj.map
         while view:
@@ -420,9 +406,9 @@ def redraw_maps() -> None:
             view = view.next
 
 
-def redraw_editors() -> None:
+def redraw_editors(context: AppContext) -> None:
     """Redraw all editor views."""
-    sim_obj = _current_sim()
+    sim_obj = _current_sim(context)
     if sim_obj:
         view = sim_obj.editor
         while view:
@@ -440,17 +426,17 @@ def _eventually_redraw_view(view: SimView) -> None:
 # Auto-scroll functionality (simplified)
 
 
-def start_auto_scroll(view: SimView, x: int, y: int) -> None:
+def start_auto_scroll(context: AppContext, view: SimView, x: int, y: int) -> None:
     """Start auto-scrolling for a view (simplified implementation)."""
     if view.tool_mode == 0:
         return
 
     # Check if cursor is near edge
     edge_triggered = (
-        x < auto_scroll_edge
-        or x > (view.w_width - auto_scroll_edge)
-        or y < auto_scroll_edge
-        or y > (view.w_height - auto_scroll_edge)
+            x < context.auto_scroll_edge
+            or x > (view.w_width - context.auto_scroll_edge)
+            or y < context.auto_scroll_edge
+            or y > (view.w_height - context.auto_scroll_edge)
     )
 
     if edge_triggered:
@@ -471,10 +457,6 @@ def _do_auto_scroll(view: SimView, x: int, y: int) -> None:
 
 
 # Override the placeholder Eval function in types.py
-def eval_override(cmd: str) -> None:
+def eval_override(context: AppContext, cmd: str) -> None:
     """Override for types.Eval to use our command system."""
-    eval_command(cmd)
-
-
-# Initialize the override
-TypesEval.__code__ = eval_override.__code__
+    eval_command(context, cmd)

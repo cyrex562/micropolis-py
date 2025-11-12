@@ -113,7 +113,7 @@ class TestAudio(Assertions):
             with patch("micropolis.audio.pygame.mixer.Channel") as mock_channel_class:
                 mock_channel_class.return_value = mock_channel
 
-                audio.make_sound("city", "test")
+                audio.make_sound(context, "city", "test")
 
                 mock_get_sound.assert_called_once_with("test")
                 mock_channel_class.assert_called_once_with(0)  # city channel
@@ -124,7 +124,7 @@ class TestAudio(Assertions):
         types.user_sound_on = 0
 
         with patch.object(audio, "get_sound") as mock_get_sound:
-            audio.make_sound("city", "test")
+            audio.make_sound(context, "city", "test")
 
             mock_get_sound.assert_not_called()
 
@@ -133,7 +133,7 @@ class TestAudio(Assertions):
         audio.SoundInitialized = False
 
         with patch.object(audio, "get_sound") as mock_get_sound:
-            audio.make_sound("city", "test")
+            audio.make_sound(context, "city", "test")
 
             mock_get_sound.assert_not_called()
 
@@ -144,7 +144,7 @@ class TestAudio(Assertions):
         with patch.object(audio, "get_sound") as mock_get_sound:
             mock_get_sound.return_value = None
 
-            audio.make_sound("city", "nonexistent")
+            audio.make_sound(context, "city", "nonexistent")
 
             mock_get_sound.assert_called_once_with("nonexistent")
 
@@ -172,7 +172,7 @@ class TestAudio(Assertions):
             with patch("micropolis.audio.pygame.mixer.Channel") as mock_channel_class:
                 mock_channel_class.return_value = mock_channel
 
-                audio.start_bulldozer()
+                audio.start_bulldozer_sound()
 
                 self.assertTrue(audio.Dozing)
                 mock_get_sound.assert_called_once_with("bulldozer")
@@ -184,7 +184,7 @@ class TestAudio(Assertions):
         audio.Dozing = True
 
         with patch.object(audio, "get_sound") as mock_get_sound:
-            audio.start_bulldozer()
+            audio.start_bulldozer_sound()
 
             mock_get_sound.assert_not_called()
 
@@ -197,7 +197,7 @@ class TestAudio(Assertions):
             mock_channel = MagicMock()
             mock_channel_class.return_value = mock_channel
 
-            audio.stop_bulldozer()
+            audio.stop_bulldozer_sound()
 
             self.assertFalse(audio.Dozing)
             mock_channel_class.assert_called_once_with(1)  # edit channel
@@ -208,7 +208,7 @@ class TestAudio(Assertions):
         audio.SoundInitialized = True
         audio.Dozing = True
 
-        audio.sound_off()
+        audio.sound_off(context)
 
         self.assertFalse(audio.Dozing)
         self.mock_mixer.stop.assert_called_once()
@@ -329,7 +329,7 @@ class TestAudio(Assertions):
     def test_tcl_commands_initialize_sound(self):
         """Test TCL initialize_sound command."""
         with patch.object(audio, "initialize_sound") as mock_init:
-            result = audio.AudioCommand.handle_command("initialize_sound")
+            result = audio.AudioCommand.handle_command(context, context, "initialize_sound")
 
             self.assertEqual(result, "")
             mock_init.assert_called_once()
@@ -337,7 +337,7 @@ class TestAudio(Assertions):
     def test_tcl_commands_make_sound(self):
         """Test TCL make_sound command."""
         with patch.object(audio, "make_sound") as mock_make:
-            result = audio.AudioCommand.handle_command("make_sound", "city", "test")
+            result = audio.AudioCommand.handle_command(context, context, "make_sound", "city", "test")
 
             self.assertEqual(result, "")
             mock_make.assert_called_once_with("city", "test")
@@ -345,7 +345,7 @@ class TestAudio(Assertions):
     def test_tcl_commands_start_bulldozer(self):
         """Test TCL start_bulldozer command."""
         with patch.object(audio, "start_bulldozer") as mock_start:
-            result = audio.AudioCommand.handle_command("start_bulldozer")
+            result = audio.AudioCommand.handle_command(context, context, "start_bulldozer")
 
             self.assertEqual(result, "")
             mock_start.assert_called_once()
@@ -353,7 +353,7 @@ class TestAudio(Assertions):
     def test_tcl_commands_stop_bulldozer(self):
         """Test TCL stop_bulldozer command."""
         with patch.object(audio, "stop_bulldozer") as mock_stop:
-            result = audio.AudioCommand.handle_command("stop_bulldozer")
+            result = audio.AudioCommand.handle_command(context, context, "stop_bulldozer")
 
             self.assertEqual(result, "")
             mock_stop.assert_called_once()
@@ -361,7 +361,7 @@ class TestAudio(Assertions):
     def test_tcl_commands_sound_off(self):
         """Test TCL sound_off command."""
         with patch.object(audio, "sound_off") as mock_off:
-            result = audio.AudioCommand.handle_command("sound_off")
+            result = audio.AudioCommand.handle_command(context, context, "sound_off")
 
             self.assertEqual(result, "")
             mock_off.assert_called_once()
@@ -369,9 +369,9 @@ class TestAudio(Assertions):
     def test_tcl_commands_invalid(self):
         """Test invalid TCL command."""
         with self.assertRaises(ValueError):
-            audio.AudioCommand.handle_command("invalid_command")
+            audio.AudioCommand.handle_command(context, context, "invalid_command")
 
     def test_tcl_commands_make_sound_wrong_args(self):
         """Test TCL make_sound command with wrong number of args."""
         with self.assertRaises(ValueError):
-            audio.AudioCommand.handle_command("make_sound", "onlyonearg")
+            audio.AudioCommand.handle_command(context, context, "make_sound", "onlyonearg")

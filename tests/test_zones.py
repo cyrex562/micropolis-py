@@ -314,7 +314,7 @@ class TestZoneIntegration(Assertions):
         for density, value, expected_base in test_cases:
             with self.subTest(density=density, value=value):
                 with unittest.mock.patch("src.micropolis.zones.ZonePlop") as mock_plop:
-                    ComPlop(density, value)
+                    ComPlop(context, density, value)
                     mock_plop.assert_called_once_with(expected_base)
 
     def test_zone_placement_industrial(self):
@@ -345,7 +345,7 @@ class TestZoneIntegration(Assertions):
         types.map_data[types.s_map_x][types.s_map_y] = types.HHTHR
         types.map_data[types.s_map_x + 1][types.s_map_y + 1] = types.LHTHR + 5
 
-        result = DoFreePop()
+        result = DoFreePop(context)
         self.assertEqual(result, 3)  # Should count 3 houses
 
     def test_zone_plop_blocked_by_disaster(self):
@@ -362,7 +362,7 @@ class TestZoneIntegration(Assertions):
         fire_tile = types.FLOOD + 10  # Some fire tile
         types.map_data[types.s_map_x][types.s_map_y] = fire_tile
 
-        result = ZonePlop(types.RZB)
+        result = ZonePlop(context, types.RZB)
         self.assertFalse(result)  # Should fail due to fire
 
     def test_zone_plop_success(self):
@@ -375,7 +375,7 @@ class TestZoneIntegration(Assertions):
             if macros.TestBounds(xx, yy):
                 types.map_data[xx][yy] = 0
 
-        result = ZonePlop(types.RZB)
+        result = ZonePlop(context, types.RZB)
         self.assertTrue(result)  # Should succeed
 
         # Check center tile has ZONEBIT and BULLBIT set
@@ -392,18 +392,18 @@ class TestZoneIntegration(Assertions):
 
         # Test invalid lot (occupied by non-residential)
         types.map_data[x][y] = types.ROADBASE + 10
-        result = EvalLot(x, y)
+        result = EvalLot(context, x, y)
         self.assertEqual(result, -1)
 
         # Test clear lot with no roads
         types.map_data[x][y] = 0
-        result = EvalLot(x, y)
+        result = EvalLot(context, x, y)
         self.assertEqual(result, 1)  # Base score
 
         # Add roads around the lot
         types.map_data[x][y - 1] = types.ROADBASE  # North
         types.map_data[x + 1][y] = types.ROADBASE  # East
-        result = EvalLot(x, y)
+        result = EvalLot(context, x, y)
         self.assertEqual(result, 3)  # Base + 2 roads
 
     def test_residential_growth_logic(self):

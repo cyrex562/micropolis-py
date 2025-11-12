@@ -9,8 +9,13 @@ It handles the binary city file format with proper endianness conversion and dat
 import os
 import struct
 
-import micropolis.constants
-from . import types, initialization, simulation, engine
+from src.micropolis.constants import HISTLEN, MISCHISTLEN, WORLD_X, WORLD_Y
+from src.micropolis.context import AppContext
+from src.micropolis.engine import InitFundingLevel, invalidate_errors, invalidate_maps
+from src.micropolis.initialization import InitWillStuff
+from src.micropolis.simulation import do_sim_init
+from src.micropolis.ui_utilities import eval_cmd_str
+
 
 # ============================================================================
 # Endianness Handling
@@ -195,7 +200,7 @@ def _save_long(buf: list, length: int, file_obj) -> bool:
 # ============================================================================
 
 
-def _load_file(filename: str, directory: str | None = None) -> bool:
+def _load_file(context: AppContext, filename: str, directory: str | None = None) -> bool:
     """
     Load city data from a .cty file.
 
@@ -205,6 +210,7 @@ def _load_file(filename: str, directory: str | None = None) -> bool:
 
     Returns:
         True on success, False on failure
+        :param context:
     """
     filepath = filename
     if directory:
@@ -221,33 +227,33 @@ def _load_file(filename: str, directory: str | None = None) -> bool:
                 return False  # Invalid file size
 
             # Load history data
-            if not _load_short(types.res_his, types.HISTLEN // 2, f):
+            if not _load_short(context.res_his, HISTLEN // 2, f):
                 return False
-            if not _load_short(types.com_his, types.HISTLEN // 2, f):
+            if not _load_short(context.com_his, HISTLEN // 2, f):
                 return False
-            if not _load_short(types.ind_his, types.HISTLEN // 2, f):
+            if not _load_short(context.ind_his, HISTLEN // 2, f):
                 return False
-            if not _load_short(types.crime_his, types.HISTLEN // 2, f):
+            if not _load_short(context.crime_his, HISTLEN // 2, f):
                 return False
-            if not _load_short(types.pollution_his, types.HISTLEN // 2, f):
+            if not _load_short(context.pollution_his, HISTLEN // 2, f):
                 return False
-            if not _load_short(types.money_his, types.HISTLEN // 2, f):
+            if not _load_short(context.money_his, HISTLEN // 2, f):
                 return False
-            if not _load_short(types.misc_his, types.MISCHISTLEN // 2, f):
+            if not _load_short(context.misc_his, MISCHISTLEN // 2, f):
                 return False
 
             # Load main map data
             map_data = []
             if not _load_short(
-                map_data, micropolis.constants.WORLD_X * micropolis.constants.WORLD_Y, f
+                map_data, WORLD_X * WORLD_Y, f
             ):
                 return False
 
             # Convert flat array to 2D map
-            for x in range(micropolis.constants.WORLD_X):
-                for y in range(micropolis.constants.WORLD_Y):
-                    types.map_data[x][y] = map_data[
-                        x * micropolis.constants.WORLD_Y + y
+            for x in range(WORLD_X):
+                for y in range(WORLD_Y):
+                    context.map_data[x][y] = map_data[
+                        x * WORLD_Y + y
                     ]
 
             return True
@@ -256,7 +262,7 @@ def _load_file(filename: str, directory: str | None = None) -> bool:
         return False
 
 
-def loadFile(filename: str) -> int:
+def loadFile(context: AppContext, filename: str) -> int:
     """
     Load a city file and initialize the simulation state.
 
@@ -265,67 +271,68 @@ def loadFile(filename: str) -> int:
 
     Returns:
         1 on success, 0 on failure
+        :param context:
     """
-    if not _load_file(filename, None):
+    if not _load_file(context, filename, None):
         return 0
 
     # Extract total funds from MiscHis (stored as two shorts at positions 50-51)
-    total_funds = types.misc_his[50] | (types.misc_his[51] << 16)
+    total_funds = context.misc_his[50] | (context.misc_his[51] << 16)
     total_funds_buf = [total_funds]
     _half_swap_longs(total_funds_buf, 1)
-    types.total_funds = total_funds_buf[0]
+    context.total_funds = total_funds_buf[0]
 
     # Extract city time from MiscHis (position 8)
-    city_time = types.misc_his[8]
+    city_time = context.misc_his[8]
     city_time_buf = [city_time]
     _half_swap_longs(city_time_buf, 1)
-    types.city_time = city_time_buf[0]
+    context.city_time = city_time_buf[0]
 
     # Extract game settings from MiscHis
-    types.auto_bulldoze = types.misc_his[52]  # Auto bulldoze flag
-    types.auto_budget = types.misc_his[53]  # Auto budget flag
-    types.auto_go = types.misc_his[54]  # Auto go flag
-    types.user_sound_on = types.misc_his[55]  # Sound on/off flag
-    types.city_tax = types.misc_his[56]  # City tax rate
-    types.sim_speed = types.misc_his[57]  # Simulation speed
+    context.auto_bulldoze = context.misc_his[52]  # Auto bulldoze flag
+    context.auto_budget = context.misc_his[53]  # Auto budget flag
+    context.auto_go = context.misc_his[54]  # Auto go flag
+    context.user_sound_on = context.misc_his[55]  # Sound on/off flag
+    context.city_tax = context.misc_his[56]  # City tax rate
+    context.sim_speed = context.misc_his[57]  # Simulation speed
 
     # Extract budget percentages (stored as fixed-point values)
-    police_pct = types.misc_his[58] | (types.misc_his[59] << 16)
+    police_pct = context.misc_his[58] | (context.misc_his[59] << 16)
     police_pct_buf = [police_pct]
     _half_swap_longs(police_pct_buf, 1)
-    types.police_percent = police_pct_buf[0] / 65536.0
+    context.police_percent = police_pct_buf[0] / 65536.0
 
-    fire_pct = types.misc_his[60] | (types.misc_his[61] << 16)
+    fire_pct = context.misc_his[60] | (context.misc_his[61] << 16)
     fire_pct_buf = [fire_pct]
     _half_swap_longs(fire_pct_buf, 1)
-    types.fire_percent = fire_pct_buf[0] / 65536.0
+    context.fire_percent = fire_pct_buf[0] / 65536.0
 
-    road_pct = types.misc_his[62] | (types.misc_his[63] << 16)
+    road_pct = context.misc_his[62] | (context.misc_his[63] << 16)
     road_pct_buf = [road_pct]
     _half_swap_longs(road_pct_buf, 1)
-    types.road_percent = road_pct_buf[0] / 65536.0
+    context.road_percent = road_pct_buf[0] / 65536.0
 
     # Validate and clamp values
-    if types.city_time < 0:
-        types.city_time = 0
-    if types.city_tax > 20 or types.city_tax < 0:
-        types.city_tax = 7
-    if types.sim_speed < 0 or types.sim_speed > 3:
-        types.sim_speed = 3
+    if context.city_time < 0:
+        context.city_time = 0
+    if context.city_tax > 20 or context.city_tax < 0:
+        context.city_tax = 7
+    if context.sim_speed < 0 or context.sim_speed > 3:
+        context.sim_speed = 3
 
     # Update simulation state
-    types.setSpeed(context, types.sim_speed)
-    types.setSkips(0)
+    context.setSpeed(context, context.sim_speed)
+    context.setSkips(0)
 
     # Initialize funding and evaluation
-    initialization.InitFundingLevel()
-    initialization.InitWillStuff()
-    types.scenario_id = 0
-    types.init_sim_load = 1
-    types.do_initial_eval = 0
-    simulation.do_sim_init(context)
-    engine.invalidate_errors()
-    engine.invalidate_maps()
+    InitFundingLevel(context)
+    InitWillStuff()
+    context.scenario_id = 0
+    context.init_sim_load = 1
+    context.do_initial_eval = 0
+    do_sim_init(context)
+    invalidate_errors(context.sim)
+    invalidate_maps(context.sim)
 
     return 1
 
@@ -335,7 +342,7 @@ def loadFile(filename: str) -> int:
 # ============================================================================
 
 
-def saveFile(filename: str) -> int:
+def saveFile(context: AppContext, filename: str) -> int:
     """
     Save the current city state to a .cty file.
 
@@ -344,67 +351,68 @@ def saveFile(filename: str) -> int:
 
     Returns:
         1 on success, 0 on failure
+        :param context:
     """
     try:
         with open(filename, "wb") as f:
             # Store total funds in MiscHis (positions 50-51)
-            total_funds = types.total_funds
+            total_funds = context.total_funds
             _half_swap_longs([total_funds], 1)
-            types.misc_his[50] = total_funds & 0xFFFF
-            types.misc_his[51] = (total_funds >> 16) & 0xFFFF
+            context.misc_his[50] = total_funds & 0xFFFF
+            context.misc_his[51] = (total_funds >> 16) & 0xFFFF
 
             # Store city time in MiscHis (position 8)
-            city_time = types.city_time
+            city_time = context.city_time
             _half_swap_longs([city_time], 1)
-            types.misc_his[8] = city_time & 0xFFFF
+            context.misc_his[8] = city_time & 0xFFFF
 
             # Store game settings in MiscHis
-            types.misc_his[52] = types.auto_bulldoze
-            types.misc_his[53] = types.auto_budget
-            types.misc_his[54] = types.auto_go
-            types.misc_his[55] = types.user_sound_on
-            types.misc_his[57] = types.sim_speed
-            types.misc_his[56] = types.city_tax
+            context.misc_his[52] = context.auto_bulldoze
+            context.misc_his[53] = context.auto_budget
+            context.misc_his[54] = context.auto_go
+            context.misc_his[55] = context.user_sound_on
+            context.misc_his[57] = context.sim_speed
+            context.misc_his[56] = context.city_tax
 
             # Store budget percentages as fixed-point values
-            police_pct = int(types.police_percent * 65536)
+            police_pct = int(context.police_percent * 65536)
             _half_swap_longs([police_pct], 1)
-            types.misc_his[58] = police_pct & 0xFFFF
-            types.misc_his[59] = (police_pct >> 16) & 0xFFFF
+            context.misc_his[58] = police_pct & 0xFFFF
+            context.misc_his[59] = (police_pct >> 16) & 0xFFFF
 
-            fire_pct = int(types.fire_percent * 65536)
+            fire_pct = int(context.fire_percent * 65536)
             _half_swap_longs([fire_pct], 1)
-            types.misc_his[60] = fire_pct & 0xFFFF
-            types.misc_his[61] = (fire_pct >> 16) & 0xFFFF
+            context.misc_his[60] = fire_pct & 0xFFFF
+            context.misc_his[61] = (fire_pct >> 16) & 0xFFFF
 
-            road_pct = int(types.road_percent * 65536)
+            road_pct = int(context.road_percent * 65536)
             _half_swap_longs([road_pct], 1)
-            types.misc_his[62] = road_pct & 0xFFFF
-            types.misc_his[63] = (road_pct >> 16) & 0xFFFF
+            context.misc_his[62] = road_pct & 0xFFFF
+            context.misc_his[63] = (road_pct >> 16) & 0xFFFF
 
             # Convert 2D map to flat array for saving
             map_data = []
-            for x in range(micropolis.constants.WORLD_X):
-                for y in range(micropolis.constants.WORLD_Y):
-                    map_data.append(types.map_data[x][y])
+            for x in range(WORLD_X):
+                for y in range(WORLD_Y):
+                    map_data.append(context.map_data[x][y])
 
             # Save all data sections
-            if not _save_short(types.res_his, types.HISTLEN // 2, f):
+            if not _save_short(context.res_his, HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.com_his, types.HISTLEN // 2, f):
+            if not _save_short(context.com_his, HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.ind_his, types.HISTLEN // 2, f):
+            if not _save_short(context.ind_his, HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.crime_his, types.HISTLEN // 2, f):
+            if not _save_short(context.crime_his, HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.pollution_his, types.HISTLEN // 2, f):
+            if not _save_short(context.pollution_his, HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.money_his, types.HISTLEN // 2, f):
+            if not _save_short(context.money_his, HISTLEN // 2, f):
                 return 0
-            if not _save_short(types.misc_his, types.MISCHISTLEN // 2, f):
+            if not _save_short(context.misc_his, MISCHISTLEN // 2, f):
                 return 0
             if not _save_short(
-                map_data, micropolis.constants.WORLD_X * micropolis.constants.WORLD_Y, f
+                map_data, WORLD_X * WORLD_Y, f
             ):
                 return 0
 
@@ -419,19 +427,20 @@ def saveFile(filename: str) -> int:
 # ============================================================================
 
 
-def LoadScenario(scenario_id: int) -> None:
+def LoadScenario(context: AppContext, scenario_id: int) -> None:
     """
     Load a predefined scenario city.
 
     Args:
         scenario_id: Scenario number (1-8)
+        :param context:
     """
     # Clear current city file name
-    if types.city_file_name:
-        types.city_file_name = ""
+    if context.city_file_name:
+        context.city_file_name = ""
 
     # Set game level to 0 (scenarios override difficulty)
-    types.SetGameLevel(0)
+    context.SetGameLevel(0)
 
     # Validate scenario ID
     if scenario_id < 1 or scenario_id > 8:
@@ -452,34 +461,34 @@ def LoadScenario(scenario_id: int) -> None:
     name, fname, year, month, funds = scenarios[scenario_id]
 
     # Set scenario parameters
-    types.scenario_id = scenario_id
-    types.city_time = ((year - 1900) * 48) + month
-    types.SetFunds(context, funds)
+    context.scenario_id = scenario_id
+    context.city_time = ((year - 1900) * 48) + month
+    context.SetFunds(context, funds)
 
     # Set city name
-    types.setCityName(name)
+    context.setCityName(name)
 
     # Reset simulation state
-    types.setSkips(0)
-    engine.invalidate_maps()
-    engine.invalidate_errors()
-    types.setSpeed(context, 3)
-    types.city_tax = 7
+    context.setSkips(0)
+    invalidate_maps(context.sim)
+    invalidate_errors(context.sim)
+    context.setSpeed(context, 3)
+    context.city_tax = 7
 
     # Load scenario file
-    _load_file(fname, types.resource_dir)
+    _load_file(context, fname, context.resource_dir)
 
     # Initialize simulation
-    initialization.InitWillStuff()
-    initialization.InitFundingLevel()
-    types.UpdateFunds()
-    engine.invalidate_errors()
-    engine.invalidate_maps()
-    types.init_sim_load = 1
-    types.do_initial_eval = 0
-    simulation.do_sim_init(context)
-    types.DidLoadScenario()
-    types.Kick()
+    InitWillStuff()
+    InitFundingLevel(context)
+    context.UpdateFunds()
+    invalidate_errors(context.sim)
+    invalidate_maps(context.sim)
+    context.init_sim_load = 1
+    context.do_initial_eval = 0
+    do_sim_init(context)
+    context.DidLoadScenario()
+    context.Kick()
 
 
 # ============================================================================
@@ -487,7 +496,7 @@ def LoadScenario(scenario_id: int) -> None:
 # ============================================================================
 
 
-def LoadCity(filename: str) -> int:
+def LoadCity(context: AppContext, filename: str) -> int:
     """
     Load a city file with proper error handling and UI updates.
 
@@ -496,12 +505,13 @@ def LoadCity(filename: str) -> int:
 
     Returns:
         1 on success, 0 on failure
+        :param context:
     """
-    if loadFile(filename):
+    if loadFile(context, filename):
         # Store filename
-        if types.city_file_name:
-            types.city_file_name = ""
-        types.city_file_name = filename
+        if context.city_file_name:
+            context.city_file_name = ""
+        context.city_file_name = filename
 
         # Extract city name from filename
         base_name = os.path.basename(filename)
@@ -514,53 +524,56 @@ def LoadCity(filename: str) -> int:
         elif "/" in base_name:
             base_name = base_name.rsplit("/", 1)[1]
 
-        types.setCityName(base_name)
+        context.setCityName(base_name)
 
         # Update UI and simulation state
-        engine.invalidate_maps()
-        engine.invalidate_errors()
-        types.DidLoadCity()
+        invalidate_maps(context.sim)
+        invalidate_errors(context.sim)
+        context.DidLoadCity()
         return 1
     else:
         # Handle load failure
-        types.DidntLoadCity(f"Unable to load city from file: {filename}")
+        context.DidntLoadCity(f"Unable to load city from file: {filename}")
         return 0
 
 
-def SaveCity() -> None:
+def SaveCity(context: AppContext) -> None:
     """
     Save the current city, prompting for filename if needed.
+    :param context:
     """
-    if not types.city_file_name:
-        types.DoSaveCityAs()
+    if not context.city_file_name:
+        context.DoSaveCityAs()
     else:
-        if saveFile(types.city_file_name):
-            types.DidSaveCity()
+        if saveFile(context, context.city_file_name):
+            context.DidSaveCity()
         else:
-            msg = f"Unable to save city to file: {types.city_file_name}"
-            types.DidntSaveCity(msg)
+            msg = f"Unable to save city to file: {context.city_file_name}"
+            context.DidntSaveCity(msg)
 
 
-def DoSaveCityAs() -> None:
+def DoSaveCityAs(context: AppContext) -> None:
     """
     Prompt user to choose a save filename.
+    :param context:
     """
     # This would be implemented when UI is available
     # For now, delegate to TCL/Tk interface
-    types.Eval("UISaveCityAs")
+    context.Eval("UISaveCityAs")
 
 
-def SaveCityAs(filename: str) -> None:
+def SaveCityAs(context: AppContext, filename: str) -> None:
     """
     Save city to a specific filename.
 
     Args:
         filename: Target filename
+        :param context:
     """
     # Store filename
-    if types.city_file_name:
-        types.city_file_name = ""
-    types.city_file_name = filename
+    if context.city_file_name:
+        context.city_file_name = ""
+    context.city_file_name = filename
 
     # Extract city name from filename
     base_name = os.path.basename(filename)
@@ -573,12 +586,12 @@ def SaveCityAs(filename: str) -> None:
     elif "/" in base_name:
         base_name = base_name.rsplit("/", 1)[1]
 
-    if saveFile(types.city_file_name):
-        types.setCityName(base_name)
-        types.DidSaveCity()
+    if saveFile(context, context.city_file_name):
+        context.setCityName(base_name)
+        context.DidSaveCity()
     else:
-        msg = f"Unable to save city to file: {types.city_file_name}"
-        types.DidntSaveCity(msg)
+        msg = f"Unable to save city to file: {context.city_file_name}"
+        context.DidntSaveCity(msg)
 
 
 # ============================================================================
@@ -586,29 +599,39 @@ def SaveCityAs(filename: str) -> None:
 # ============================================================================
 
 
-def DidLoadScenario() -> None:
-    """Callback when scenario is loaded."""
-    types.Eval("UIDidLoadScenario")
+def DidLoadScenario(context: AppContext) -> None:
+    """Callback when scenario is loaded.
+    :param context:
+    """
+    eval_cmd_str(context, "UIDidLoadScenario")
 
 
-def DidLoadCity() -> None:
-    """Callback when city is loaded."""
-    types.Eval("UIDidLoadCity")
+def DidLoadCity(context: AppContext) -> None:
+    """Callback when city is loaded.
+    :param context:
+    """
+    eval_cmd_str(context, "UIDidLoadCity")
 
 
-def DidntLoadCity(msg: str) -> None:
-    """Callback when city load fails."""
-    types.Eval(f"UIDidntLoadCity {{{msg}}}")
+def DidntLoadCity(context: AppContext, msg: str) -> None:
+    """Callback when city load fails.
+    :param context:
+    """
+    eval_cmd_str(context, f"UIDidntLoadCity {{{msg}}}")
 
 
-def DidSaveCity() -> None:
-    """Callback when city is saved."""
-    types.Eval("UIDidSaveCity")
+def DidSaveCity(context: AppContext) -> None:
+    """Callback when city is saved.
+    :param context:
+    """
+    eval_cmd_str(context, "UIDidSaveCity")
 
 
-def DidntSaveCity(msg: str) -> None:
-    """Callback when city save fails."""
-    types.Eval(f"UIDidntSaveCity {{{msg}}}")
+def DidntSaveCity(context: AppContext, msg: str) -> None:
+    """Callback when city save fails.
+    :param context:
+    """
+    eval_cmd_str(context, f"UIDidntSaveCity {{{msg}}}")
 
 
 # ============================================================================
@@ -616,18 +639,22 @@ def DidntSaveCity(msg: str) -> None:
 # ============================================================================
 
 
-def save_city(filename: str) -> bool:
+def save_current_city_state(context: AppContext, filename: str) -> bool:
     """
     Save the current city state (Pythonic helper used by higher-level modules).
+    :param filename:
+    :param context:
     """
-    return bool(saveFile(filename))
+    return bool(saveFile(context, filename))
 
 
-def load_city(filename: str) -> bool:
+def load_city_from_file(context: AppContext, filename: str) -> bool:
     """
     Load a city file with success/failure semantics.
+    :param filename:
+    :param context:
     """
-    return bool(LoadCity(filename))
+    return bool(LoadCity(context, filename))
 
 
 # ============================================================================
@@ -701,9 +728,9 @@ def getCityFileInfo(filename: str) -> dict | None:
                 return None
 
             # Read some basic info from MiscHis
-            f.seek(6 * (types.HISTLEN // 2) * 2)  # Skip history arrays
-            misc_data = f.read(types.MISCHISTLEN * 2)
-            misc_shorts = struct.unpack(f"<{types.MISCHISTLEN}H", misc_data)
+            f.seek(6 * (HISTLEN // 2) * 2)  # Skip history arrays
+            misc_data = f.read(MISCHISTLEN * 2)
+            misc_shorts = struct.unpack(f"<{MISCHISTLEN}H", misc_data)
 
             # Extract basic info
             city_tax = misc_shorts[56]

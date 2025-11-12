@@ -34,7 +34,7 @@ class TestTkinterBridge:
 
     def teardown_method(self):
         """Clean up test environment."""
-        tkinter_bridge.tk_main_cleanup()
+        tkinter_bridge.tk_main_cleanup(context)
         if pygame.get_init():
             pygame.quit()
 
@@ -44,7 +44,7 @@ class TestTkinterBridge:
         # Reset global state
         types.shake_now = 0
 
-        tkinter_bridge.do_earthquake()
+        tkinter_bridge.do_earthquake(context)
 
         # Check that sound was played
         mock_make_sound.assert_called_once_with("city", "Explosion-Low")
@@ -58,7 +58,7 @@ class TestTkinterBridge:
         types.shake_now = 1
         tkinter_bridge.earthquake_timer_set = True
 
-        tkinter_bridge.stop_earthquake()
+        tkinter_bridge.stop_earthquake(context)
 
         # Check that ShakeNow was reset
         assert types.shake_now == 0
@@ -67,25 +67,25 @@ class TestTkinterBridge:
     def test_eval_command_registered(self):
         """Test evaluating a registered command."""
         callback_mock = Mock()
-        tkinter_bridge.register_command("test_command", callback_mock)
+        tkinter_bridge.register_command(context, "test_command", callback_mock)
 
-        result = tkinter_bridge.eval_command("test_command arg1 arg2")
+        result = tkinter_bridge.eval_command(context, "test_command arg1 arg2")
 
         assert result == 0
         callback_mock.assert_called_once_with("arg1", "arg2")
 
     def test_eval_command_unregistered(self):
         """Test evaluating an unregistered command."""
-        result = tkinter_bridge.eval_command("unknown_command")
+        result = tkinter_bridge.eval_command(context, "unknown_command")
 
         assert result == 1
 
     def test_eval_command_no_args(self):
         """Test evaluating a command with no arguments."""
         callback_mock = Mock()
-        tkinter_bridge.register_command("test_cmd", callback_mock)
+        tkinter_bridge.register_command(context, "test_cmd", callback_mock)
 
-        result = tkinter_bridge.eval_command("test_cmd")
+        result = tkinter_bridge.eval_command(context, "test_cmd")
 
         assert result == 0
         callback_mock.assert_called_once_with()
@@ -96,7 +96,7 @@ class TestTkinterBridge:
         def test_callback():
             pass
 
-        tkinter_bridge.register_command("test_cmd", test_callback)
+        tkinter_bridge.register_command(context, "test_cmd", test_callback)
 
         assert "test_cmd" in tkinter_bridge.command_callbacks
         assert tkinter_bridge.command_callbacks["test_cmd"] == test_callback
@@ -108,7 +108,7 @@ class TestTkinterBridge:
         types.sim_speed = 1
         types.need_rest = 0
 
-        tkinter_bridge._sim_timer_callback()
+        tkinter_bridge._sim_timer_callback(context)
 
         mock_sim_loop.assert_called_once_with(True)
         mock_start_timer.assert_called_once()
@@ -118,7 +118,7 @@ class TestTkinterBridge:
         """Test simulation timer callback when speed is zero."""
         types.sim_speed = 0
 
-        tkinter_bridge._sim_timer_callback()
+        tkinter_bridge._sim_timer_callback(context)
 
         mock_stop_timer.assert_called_once()
 
@@ -135,7 +135,7 @@ class TestTkinterBridge:
         tkinter_bridge.sim_timer_set = True
         tkinter_bridge.sim_timer_token = pygame.USEREVENT + 2
 
-        tkinter_bridge.stop_micropolis_timer()
+        tkinter_bridge.stop_micropolis_timer(context)
 
         assert not tkinter_bridge.sim_timer_set
         assert tkinter_bridge.sim_timer_token is None
@@ -264,7 +264,7 @@ class TestTkinterBridge:
     def test_process_stdin_commands_with_command(self):
         """Test processing stdin commands."""
         callback_mock = Mock()
-        tkinter_bridge.register_command("test_cmd", callback_mock)
+        tkinter_bridge.register_command(context, "test_cmd", callback_mock)
         tkinter_bridge.stdin_queue.put("test_cmd arg")
 
         tkinter_bridge._process_stdin_commands()
@@ -277,7 +277,7 @@ class TestTkinterBridge:
         tkinter_bridge.sim_timer_token = pygame.USEREVENT + 2
         tkinter_bridge.earthquake_timer_token = pygame.USEREVENT + 3
 
-        tkinter_bridge.tk_main_cleanup()
+        tkinter_bridge.tk_main_cleanup(context)
 
         assert not tkinter_bridge.running
         assert tkinter_bridge.sim_timer_token is None
@@ -350,7 +350,7 @@ class TestTkinterBridgeIntegration:
 
     def teardown_method(self):
         """Clean up integration test environment."""
-        tkinter_bridge.tk_main_cleanup()
+        tkinter_bridge.tk_main_cleanup(context)
         if pygame.get_init():
             pygame.quit()
 
@@ -359,7 +359,7 @@ class TestTkinterBridgeIntegration:
         """Test TK main initialization."""
         screen = pygame.display.set_mode((800, 600))
 
-        tkinter_bridge.tk_main_init(screen)
+        tkinter_bridge.tk_main_init(context, screen)
 
         assert tkinter_bridge.main_window == screen
         assert tkinter_bridge.running
@@ -369,10 +369,10 @@ class TestTkinterBridgeIntegration:
         """Test that event loop can be initialized."""
         screen = pygame.display.set_mode((800, 600))
 
-        tkinter_bridge.tk_main_init(screen)
+        tkinter_bridge.tk_main_init(context, screen)
 
         # Should not raise any exceptions
         assert tkinter_bridge.running
         assert tkinter_bridge.main_window == screen
 
-        tkinter_bridge.tk_main_cleanup()
+        tkinter_bridge.tk_main_cleanup(context)

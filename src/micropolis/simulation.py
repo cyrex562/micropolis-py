@@ -7,12 +7,17 @@ ported from s_sim.c, implementing the city simulation mechanics.
 
 import time
 
-from . import macros, power, zones, sprite_manager as sprites
 from .constants import WORLD_X, CENSUSRATE, TAXFREQ, TDMAP, RDMAP, ALMAP, REMAP, COMAP, INMAP, DYMAP, HWLDX, HWLDY, \
     SM_X, SM_Y, WORLD_Y
 from .context import AppContext
+from .macros import TestBounds
 from .messages import clear_mes, send_mes_at
+from .power import DoPowerScan, PushPowerStack
 from .random import sim_rand, sim_srand
+from .sprite_manager import GenerateTrain, GenerateBus, MakeExplosionAt, GeneratePlane, GenerateCopter, GetSprite, \
+    GenerateShip, MakeExplosion
+from .zones import SetZPower
+
 
 # ============================================================================
 # Simulation Control Variables (from s_sim.c globals)
@@ -186,7 +191,7 @@ def simulate(context: AppContext, mod16: int) -> None:
 
     elif mod16 == 11:
         if (context.scycle % spd_pwr[x]) == 0:
-            do_power_scan()
+            do_power_scan(context)
             context.new_power = 1  # post-release change
 
     elif mod16 == 12:
@@ -233,7 +238,7 @@ def do_sim_init(context: AppContext) -> None:
     set_valves(context)
     clear_census(context)
     # MapScan(0, WORLD_X)  # XXX: commented out in original
-    power.DoPowerScan()
+    DoPowerScan(context)
     context.new_power = 1  # post rel
     # PTLScan() - placeholder
     # CrimeScan() - placeholder
@@ -333,7 +338,7 @@ def init_sim_memory(context: AppContext) -> None:
     # Clear power map
     for z in range(context.PWRMAPSIZE):
         context.power_map[z] = ~0  # set power Map
-    power.DoPowerScan()
+    DoPowerScan(context)
     context.new_power = 1  # post rel
 
     context.init_sim_load = 0
@@ -439,7 +444,7 @@ def do_nil_power(context: AppContext) -> None:
                 context.s_map_x = x
                 context.s_map_y = y
                 context.cchr = z
-                zones.SetZPower()
+                SetZPower()
 
 
 # ============================================================================
@@ -651,7 +656,7 @@ def clear_census(context: AppContext) -> None:
     context.nuclear_pop = z
     context.port_pop = z
     context.airport_pop = z
-    power.PowerStackNum = z  # Reset before Mapscan
+    context.power_stack_num = z  # Reset before Mapscan
 
     for x in range(SM_X):
         for y in range(SM_Y):
@@ -896,7 +901,7 @@ def map_scan(context: AppContext, x1: int, x2: int) -> None:
                         continue
 
                     if context.new_power and (context.cchr & context.CONDBIT):
-                        zones.SetZPower()
+                        SetZPower()
 
                     if (context.cchr9 >= context.ROADBASE) and (
                         context.cchr9 < context.POWERBASE
@@ -938,7 +943,7 @@ def do_rail(context: AppContext) -> None:
     :param context:
     """
     context.rail_total += 1
-    sprites.GenerateTrain(context.s_map_x, context.s_map_y)
+    GenerateTrain(context, context.s_map_x, context.s_map_y)
     if context.road_effect < 30:  # Deteriorating Rail
         if (rand16() & 511) == 0:
             if (context.cchr & context.CONDBIT) == 0:
@@ -977,7 +982,7 @@ def do_road(context: AppContext) -> None:
     den_tab = [context.ROADBASE, context.LTRFBASE, context.HTRFBASE]
 
     context.road_total += 1
-    sprites.GenerateBus(context.s_map_x, context.s_map_y)
+    GenerateBus(context, context.s_map_x, context.s_map_y)
 
     if context.road_effect < 30:  # Deteriorating Roads
         if (rand16() & 511) == 0:
@@ -1077,7 +1082,7 @@ def do_bridge(context: AppContext) -> bool:
             for z in range(7):  # Close
                 x = context.s_map_x + v_dx[z]
                 y = context.s_map_y + v_dy[z]
-                if macros.TestBounds(x, y):
+                if TestBounds(x, y):
                     if (context.map_data[x][y] & context.LOMASK) == (
                         vbrtab[z] & context.LOMASK
                     ):
@@ -1089,7 +1094,7 @@ def do_bridge(context: AppContext) -> bool:
             for z in range(7):  # Close
                 x = context.s_map_x + h_dx[z]
                 y = context.s_map_y + h_dy[z]
-                if macros.TestBounds(x, y):
+                if TestBounds(x, y):
                     if (context.map_data[x][y] & context.LOMASK) == (
                         hbrtab[z] & context.LOMASK
                     ):
@@ -1103,7 +1108,7 @@ def do_bridge(context: AppContext) -> bool:
                     for z in range(7):
                         x = context.s_map_x + v_dx[z]
                         y = context.s_map_y + v_dy[z]
-                        if macros.TestBounds(x, y):
+                        if TestBounds(x, y):
                             m_ptem = context.map_data[x][y]
                             if (m_ptem == context.CHANNEL) or (
                                 (m_ptem & 15) == (vbrtab2[z] & 15)
@@ -1117,7 +1122,7 @@ def do_bridge(context: AppContext) -> bool:
                     for z in range(7):
                         x = context.s_map_x + h_dx[z]
                         y = context.s_map_y + h_dy[z]
-                        if macros.TestBounds(x, y):
+                        if TestBounds(x, y):
                             m_ptem = context.map_data[x][y]
                             if ((m_ptem & 15) == (hbrtab2[z] & 15)) or (
                                 m_ptem == context.CHANNEL
@@ -1175,13 +1180,13 @@ def do_fire(context: AppContext) -> None:
         if (rand16() & 7) == 0:
             xtem = context.s_map_x + dx[z]
             ytem = context.s_map_y + dy[z]
-            if macros.TestBounds(xtem, ytem):
+            if TestBounds(xtem, ytem):
                 c = context.map_data[xtem][ytem]
                 if c & context.BURNBIT:
                     if c & context.ZONEBIT:
                         fire_zone(context, xtem, ytem, c)
                         if (c & context.LOMASK) > context.IZB:  # Explode
-                            sprites.MakeExplosionAt((xtem << 4) + 8, (ytem << 4) + 8)
+                            MakeExplosionAt((xtem << 4) + 8, (ytem << 4) + 8)
                     context.map_data[xtem][ytem] = (
                             context.FIRE + (rand16() & 3) + context.ANIMBIT
                     )
@@ -1194,7 +1199,7 @@ def do_fire(context: AppContext) -> None:
             rate = 2
         if z > 100:
             rate = 1
-    if rand(rate) == 0:
+    if rand(context, rate) == 0:
         context.map_data[context.s_map_x][context.s_map_y] = (
                 context.RUBBLE + (rand16() & 3) + context.BULLBIT
         )
@@ -1260,7 +1265,7 @@ def repair_zone(context: AppContext, z_cent: int, zsize: int) -> None:
             xx = context.s_map_x + x
             yy = context.s_map_y + y
             cnt += 1
-            if macros.TestBounds(xx, yy):
+            if TestBounds(xx, yy):
                 th_ch = context.map_data[xx][yy]
                 if th_ch & context.ZONEBIT:
                     continue
@@ -1288,20 +1293,20 @@ def do_sp_zone(context: AppContext, pwr_on: int) -> None:
         context.coal_pop += 1
         if (context.city_time & 7) == 0:
             repair_zone(context, context.POWERPLANT, 4)  # post
-        power.PushPowerStack()
+        PushPowerStack(context)
         coal_smoke(context, context.s_map_x, context.s_map_y)
         return
 
     if context.cchr9 == context.NUCLEAR:
         if (not context.no_disasters) and (
-                rand(context.MltdwnTab[context.game_level]) == 0
+                rand(context, context.MltdwnTab[context.game_level]) == 0
         ):
             do_meltdown(context, context.s_map_x, context.s_map_y)
             return
         context.nuclear_pop += 1
         if (context.city_time & 7) == 0:
             repair_zone(context, context.NUCLEAR, 4)  # post
-        power.PushPowerStack()
+        PushPowerStack(context)
         return
 
     if context.cchr9 == context.FIRESTATION:
@@ -1384,8 +1389,8 @@ def do_sp_zone(context: AppContext, pwr_on: int) -> None:
         context.port_pop += 1
         if (context.city_time & 15) == 0:
             repair_zone(context, context.PORT, 4)
-        if pwr_on and (sprites.GetSprite(context.SHI) is None):
-            sprites.GenerateShip()
+        if pwr_on and (GetSprite(context, context.SHI) is None):
+            GenerateShip(context)
         return
 
 
@@ -1415,11 +1420,11 @@ def do_airport(context: AppContext) -> None:
     Ported from DoAirport() in s_sim.c.
     :param context:
     """
-    if rand(5) == 0:
-        sprites.GeneratePlane(context.s_map_x, context.s_map_y)
+    if rand(context, 5) == 0:
+        GeneratePlane(context, context.s_map_x, context.s_map_y)
         return
-    if rand(12) == 0:
-        sprites.GenerateCopter(context.s_map_x, context.s_map_y)
+    if rand(context, 12) == 0:
+        GenerateCopter(context.s_map_x, context.s_map_y)
 
 
 def coal_smoke(context: AppContext, mx: int, my: int) -> None:
@@ -1461,10 +1466,10 @@ def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
     context.melt_x = sx
     context.melt_y = sy
 
-    sprites.MakeExplosion(sx - 1, sy - 1)
-    sprites.MakeExplosion(sx - 1, sy + 2)
-    sprites.MakeExplosion(sx + 2, sy - 1)
-    sprites.MakeExplosion(sx + 2, sy + 2)
+    MakeExplosion(sx - 1, sy - 1)
+    MakeExplosion(sx - 1, sy + 2)
+    MakeExplosion(sx + 2, sy - 1)
+    MakeExplosion(sx + 2, sy + 2)
 
     for x in range(sx - 1, sx + 3):
         for y in range(sy - 1, sy + 3):
@@ -1473,8 +1478,8 @@ def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
             )
 
     for z in range(200):
-        x = sx - 20 + rand(40)
-        y = sy - 15 + rand(30)
+        x = sx - 20 + rand(context, 40)
+        y = sy - 15 + rand(context, 30)
         if (
             (x < 0)
             or (x >= WORLD_X)
@@ -1488,8 +1493,8 @@ def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
         if (t & context.BURNBIT) or (t == 0):
             context.map_data[x][y] = context.RADTILE
 
-    clear_mes()
-    send_mes_at(-43, sx, sy)
+    clear_mes(context)
+    send_mes_at(context, -43, sx, sy)
 
 
 # ============================================================================
@@ -1499,7 +1504,7 @@ def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
 RANDOM_RANGE = 0xFFFF
 
 
-def rand(range_val: int) -> int:
+def rand(context: AppContext, range_val: int) -> int:
     """
     ported for Rand
     Generate random number in range.
@@ -1511,18 +1516,19 @@ def rand(range_val: int) -> int:
 
     Returns:
         Random number between 0 and range_val-1
+        :param context:
     """
     range_val += 1
     max_multiple = RANDOM_RANGE // range_val
     max_multiple *= range_val
     while True:
-        rnum = rand16()
+        rnum = rand16(context)
         if rnum < max_multiple:
             break
     return rnum % range_val
 
 
-def rand16() -> int:
+def rand16(context: AppContext) -> int:
     """
     ported Rand16
     Generate 16-bit random number.
@@ -1532,10 +1538,10 @@ def rand16() -> int:
     Returns:
         Random number from sim_rand()
     """
-    return sim_rand()
+    return sim_rand(context)
 
 
-def rand16_signed() -> int:
+def rand16_signed(context: AppContext) -> int:
     """
     ported from Rand16Signed
 
@@ -1545,8 +1551,9 @@ def rand16_signed() -> int:
 
     Returns:
         Signed random number
+        :param context:
     """
-    i = sim_rand()
+    i = sim_rand(context)
     if i > 32767:
         i = 32767 - i
     return i
@@ -1593,9 +1600,11 @@ def send_messages() -> None:
     pass
 
 
-def do_power_scan() -> None:
-    """ported from DoPowerScan Power grid scanning - implemented in power.py"""
-    power.DoPowerScan()
+def do_power_scan(context: AppContext) -> None:
+    """ported from DoPowerScan Power grid scanning - implemented in power.py
+    :param context:
+    """
+    DoPowerScan(context)
 
 
 def do_disasters() -> None:

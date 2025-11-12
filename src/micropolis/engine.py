@@ -409,7 +409,7 @@ def _blit_overlay_panels(screen) -> None:
     """Render graph/evaluation overlays when their toggles are enabled."""
     overlays = []
 
-    graph_surface = render_graph_panel()
+    graph_surface = render_graph_panel(context)
     if graph_surface is not None:
         overlays.append(graph_surface)
 
@@ -812,7 +812,7 @@ def StopEarthquake() -> None:
 
 def ResetMapState() -> None:
     """Reset map view states (placeholder)"""
-    initialization.ResetMapState()
+    initialization.ResetMapState(context)
 
 
 def ResetEditorState() -> None:
@@ -862,8 +862,8 @@ def setSkips(context: AppContext, skips: int) -> int:
 
 def graphDoer() -> None:
     """Update graph history buffers and refresh pygame overlays."""
-    update_all_graphs()
-    request_graph_panel_redraw()
+    update_all_graphs(context)
+    request_graph_panel_redraw(context)
 
 
 def UpdateBudgetWindow() -> None:
@@ -900,7 +900,7 @@ def DoUpdateMap(view) -> bool:
     if not view or not view.visible:
         return False
 
-    MemDrawMap(view)
+    MemDrawMap(context, view)
     view.invalid = False
     return True
 
@@ -1097,7 +1097,7 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
     """
     logger.debug("Initializing pygame graphics...")
     # Initialize graphics
-    if not init_graphics():
+    if not init_graphics(context):
         return Err(ValueError("Failed to initialize graphics"))
 
     # Set up display
@@ -1163,7 +1163,7 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
                             continue
                         if handle_tool_hotkey(context, event.key, tool_hotkeys):
                             continue
-                        if handle_keyboard_shortcut(event.key):
+                        if handle_keyboard_shortcut(context, event.key):
                             continue
                     elif event.type == pygame.MOUSEBUTTONDOWN:
                         if handle_map_click(context, context.sim, event.pos, map_area, event.button):

@@ -114,16 +114,16 @@ class TestCurrentYear(Assertions):
         # CurrentYear = (CityTime // 48) + StartingYear
 
         self.mock_types.CityTime = 0
-        self.assertEqual(evaluation_ui.current_year(), 1900)
+        self.assertEqual(evaluation_ui.current_year(context), 1900)
 
         self.mock_types.CityTime = 48  # 1 year
-        self.assertEqual(evaluation_ui.current_year(), 1901)
+        self.assertEqual(evaluation_ui.current_year(context), 1901)
 
         self.mock_types.CityTime = 480  # 10 years
-        self.assertEqual(evaluation_ui.current_year(), 1910)
+        self.assertEqual(evaluation_ui.current_year(context), 1910)
 
         self.mock_types.CityTime = 47  # Less than 1 year (47/48)
-        self.assertEqual(evaluation_ui.current_year(), 1900)
+        self.assertEqual(evaluation_ui.current_year(context), 1900)
 
 
 class TestEvaluationDisplay(Assertions):

@@ -177,10 +177,10 @@ class TestUIUpdateManager:
 
     def test_make_dollar_decimal_str(self):
         """Test dollar formatting."""
-        assert self.manager.make_dollar_decimal_str(0) == "0"
-        assert self.manager.make_dollar_decimal_str(123) == "123"
-        assert self.manager.make_dollar_decimal_str(1234) == "1,234"
-        assert self.manager.make_dollar_decimal_str(1234567) == "1,234,567"
+        assert make_dollar_decimal_str(0) == "0"
+        assert make_dollar_decimal_str(123) == "123"
+        assert make_dollar_decimal_str(1234) == "1,234"
+        assert make_dollar_decimal_str(1234567) == "1,234,567"
 
     def test_do_time_stuff(self):
         """Test do_time_stuff method."""

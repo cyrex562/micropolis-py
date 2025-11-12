@@ -25,8 +25,8 @@ class TestPrintFunctions:
             f.close()  # Close the file so printing can open it
 
             try:
-                printing.set_print_destination(temp_filename)
-                printing.PrintHeader(10, 20, 30, 40)
+                printing.set_print_destination(context, temp_filename)
+                printing.PrintHeader(context, 10, 20, 30, 40)
 
                 # Read back the output
                 with open(temp_filename, 'r') as rf:
@@ -34,7 +34,7 @@ class TestPrintFunctions:
                     assert "Map Rectangle: (10, 20) to (39, 59)" in content
                     assert "Size: 30x40" in content
             finally:
-                printing.set_print_destination(None)
+                printing.set_print_destination(context, None)
                 if os.path.exists(temp_filename):
                     os.unlink(temp_filename)
 
@@ -45,10 +45,10 @@ class TestPrintFunctions:
             f.close()
 
             try:
-                printing.set_print_destination(temp_filename)
-                printing.PrintDefTile(0)
-                printing.PrintDefTile(2)
-                printing.PrintDefTile(999)  # Unknown tile
+                printing.set_print_destination(context, temp_filename)
+                printing.PrintDefTile(context, 0)
+                printing.PrintDefTile(context, 2)
+                printing.PrintDefTile(context, 999)  # Unknown tile
 
                 with open(temp_filename, 'r') as rf:
                     content = rf.read()
@@ -56,7 +56,7 @@ class TestPrintFunctions:
                     assert "Tile 2: River" in content
                     assert "Tile_999" in content
             finally:
-                printing.set_print_destination(None)
+                printing.set_print_destination(context, None)
                 if os.path.exists(temp_filename):
                     os.unlink(temp_filename)
 
@@ -67,11 +67,11 @@ class TestPrintFunctions:
             f.close()
 
             try:
-                printing.set_print_destination(temp_filename)
-                printing.PrintTile(0)  # Empty
-                printing.PrintTile(1)  # Dirt
-                printing.PrintTile(2)  # Water
-                printing.PrintTile(999)  # Unknown
+                printing.set_print_destination(context, temp_filename)
+                printing.PrintTile(context, 0)  # Empty
+                printing.PrintTile(context, 1)  # Dirt
+                printing.PrintTile(context, 2)  # Water
+                printing.PrintTile(context, 999)  # Unknown
 
                 with open(temp_filename, 'r') as rf:
                     content = rf.read()
@@ -80,7 +80,7 @@ class TestPrintFunctions:
                     assert "~" in content  # Water
                     assert "?" in content  # Unknown
             finally:
-                printing.set_print_destination(None)
+                printing.set_print_destination(context, None)
                 if os.path.exists(temp_filename):
                     os.unlink(temp_filename)
 
@@ -91,13 +91,13 @@ class TestPrintFunctions:
             f.close()
 
             try:
-                printing.set_print_destination(temp_filename)
-                printing.FirstRow()
-                printing.PrintTile(0)
-                printing.PrintTile(1)
-                printing.PrintNextRow()
-                printing.PrintTile(2)
-                printing.PrintNextRow()
+                printing.set_print_destination(context, temp_filename)
+                printing.FirstRow(context)
+                printing.PrintTile(context, 0)
+                printing.PrintTile(context, 1)
+                printing.PrintNextRow(context)
+                printing.PrintTile(context, 2)
+                printing.PrintNextRow(context)
 
                 with open(temp_filename, 'r') as rf:
                     content = rf.read()
@@ -106,7 +106,7 @@ class TestPrintFunctions:
                     assert ".#" in lines[1]  # First row
                     assert "~" in lines[2]   # Second row
             finally:
-                printing.set_print_destination(None)
+                printing.set_print_destination(context, None)
                 if os.path.exists(temp_filename):
                     os.unlink(temp_filename)
 
@@ -117,16 +117,16 @@ class TestPrintFunctions:
             f.close()
 
             try:
-                printing.set_print_destination(temp_filename)
-                printing.PrintFinish(5, 10, 15, 20)
-                printing.PrintTrailer(5, 10, 15, 20)
+                printing.set_print_destination(context, temp_filename)
+                printing.PrintFinish(context, 5, 10, 15, 20)
+                printing.PrintTrailer(context, 5, 10, 15, 20)
 
                 with open(temp_filename, 'r') as rf:
                     content = rf.read()
                     assert "End of map rectangle (15x20 tiles)" in content
                     assert "Printed rectangle at (5, 10) dimensions 15x20" in content
             finally:
-                printing.set_print_destination(None)
+                printing.set_print_destination(context, None)
                 if os.path.exists(temp_filename):
                     os.unlink(temp_filename)
 
@@ -141,8 +141,8 @@ class TestPrintRect:
             f.close()
 
             try:
-                printing.set_print_destination(temp_filename)
-                printing.PrintRect(0, 0, 2, 2)
+                printing.set_print_destination(context, temp_filename)
+                printing.PrintRect(context, 0, 0, 2, 2)
 
                 with open(temp_filename, 'r') as rf:
                     content = rf.read()
@@ -151,15 +151,15 @@ class TestPrintRect:
                     assert "Map Data:" in content
                     assert "End of map rectangle" in content
             finally:
-                printing.set_print_destination(None)
+                printing.set_print_destination(context, None)
                 if os.path.exists(temp_filename):
                     os.unlink(temp_filename)
 
     def test_print_rect_console(self):
         """Test printing rectangle to console (no file redirection)."""
         # This should not crash
-        printing.set_print_destination(None)
-        printing.PrintRect(0, 0, 1, 1)
+        printing.set_print_destination(context, None)
+        printing.PrintRect(context, 0, 0, 1, 1)
 
 
 class TestModernAlternatives:
@@ -171,7 +171,7 @@ class TestModernAlternatives:
             f.close()  # Close so printing can open it
 
             try:
-                result = printing.print_map_to_file(f.name, 0, 0, 3, 3)
+                result = printing.print_map_to_file(context, f.name, 0, 0, 3, 3)
                 assert result is True
 
                 # Check that file was created and has content
@@ -187,13 +187,13 @@ class TestModernAlternatives:
         """Test printing to invalid file."""
         # Try to print to a directory (should fail)
         with tempfile.TemporaryDirectory() as tmpdir:
-            result = printing.print_map_to_file(tmpdir)
+            result = printing.print_map_to_file(context, tmpdir)
             assert result is False
 
     def test_print_map_to_console(self):
         """Test printing map to console."""
         # This should not crash
-        printing.print_map_to_console(0, 0, 2, 2)
+        printing.print_map_to_console(context, 0, 0, 2, 2)
 
     def test_print_map_to_surface(self):
         """Test printing map to pygame surface."""
@@ -213,15 +213,15 @@ class TestConfiguration:
     def test_set_get_print_destination(self):
         """Test setting and getting print destination."""
         # Initially None
-        assert printing.get_print_destination() is None
+        assert printing.get_print_destination(context) is None
 
         # Set a filename
-        printing.set_print_destination("test.txt")
-        assert printing.get_print_destination() == "test.txt"
+        printing.set_print_destination(context, "test.txt")
+        assert printing.get_print_destination(context) == "test.txt"
 
         # Reset to None
-        printing.set_print_destination(None)
-        assert printing.get_print_destination() is None
+        printing.set_print_destination(context, None)
+        assert printing.get_print_destination(context) is None
 
 
 class TestSystemLifecycle:
@@ -229,14 +229,14 @@ class TestSystemLifecycle:
 
     def test_initialize_printing(self):
         """Test initializing printing system."""
-        printing.initialize_printing()
-        assert printing.get_print_destination() is None
+        printing.initialize_printing(context)
+        assert printing.get_print_destination(context) is None
 
     def test_cleanup_printing(self):
         """Test cleaning up printing system."""
-        printing.set_print_destination("test.txt")
-        printing.cleanup_printing()
-        assert printing.get_print_destination() is None
+        printing.set_print_destination(context, "test.txt")
+        printing.cleanup_printing(context)
+        assert printing.get_print_destination(context) is None
 
 
 class TestConstants:
@@ -257,25 +257,25 @@ class TestInternalFunctions:
             f.close()
 
             try:
-                printing.set_print_destination(temp_filename)
-                printing._print("Hello")
-                printing._print("World", end="")
-                printing._print("!")
+                printing.set_print_destination(context, temp_filename)
+                printing._print(context, "Hello")
+                printing._print(context, "World", end="")
+                printing._print(context, "!")
 
                 with open(temp_filename, 'r') as rf:
                     content = rf.read()
                     assert content == "Hello\nWorld!\n"
             finally:
-                printing.set_print_destination(None)
+                printing.set_print_destination(context, None)
                 if os.path.exists(temp_filename):
                     os.unlink(temp_filename)
 
     def test_private_print_to_stdout(self, capsys):
         """Test internal _print function to stdout."""
-        printing.set_print_destination(None)
-        printing._print("Test output")
-        printing._print("No newline", end="")
-        printing._print("!")
+        printing.set_print_destination(context, None)
+        printing._print(context, "Test output")
+        printing._print(context, "No newline", end="")
+        printing._print(context, "!")
 
         captured = capsys.readouterr()
         assert captured.out == "Test output\nNo newline!\n"

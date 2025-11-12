@@ -1,16 +1,17 @@
-from dataclasses import dataclass, field
 from typing import Any
 
 from . import view_types
 from .constants import ALMAP, EDITOR_H, EDITOR_W, MAP_H, MAP_W, DOZE_STATE
+from .context import AppContext
 from .sim_sprite import SimSprite
 from .editor_view import initialize_editor_tiles
 from .engine import get_or_create_display
 from .terrain import WORLD_X, WORLD_Y
 import pygame
+from pydantic import BaseModel
 
-@dataclass
-class SimView:
+
+class SimView(BaseModel):
     """View for displaying map/editor"""
 
     # Basic properties
@@ -19,7 +20,7 @@ class SimView:
     class_id: int = 0  # renamed from 'class' to avoid Python keyword
 
     # Graphics
-    pixels: list[int] = field(default_factory=list[int])
+    pixels: list[int] = []
     line_bytes: int = 0
     pixel_bytes: int = 0
     depth: int = 0
@@ -87,7 +88,7 @@ class SimView:
     flags: int = 0
 
     # Tile cache for rendering optimization (short **tiles in C)
-    tiles: list[list[int]] = field(default_factory=list)
+    tiles: list[list[int]] = []
 
     # X11 display (adapted for pygame)
     x: Any | None = None
@@ -125,9 +126,9 @@ class SimView:
 
 
 def populate_common_view_fields(
-    view: SimView, width: int, height: int, class_id: int
+    context: AppContext, view: SimView, width: int, height: int, class_id: int
 ) -> None:
-    display = get_or_create_display()
+    display = get_or_create_display(context)
     view.class_id = class_id
     view.type = view_types.X_Mem_View
     view.visible = True
@@ -156,24 +157,24 @@ def populate_common_view_fields(
     view.next = None
 
 
-def create_editor_view() -> SimView:
+def create_editor_view(context: AppContext) -> SimView:
     view = SimView()
     view.tool_state = DOZE_STATE
     view.tool_state_save = -1
     # _populate_common_view_fields(
     #     view, types.EDITOR_W, types.EDITOR_H, view_types.Editor_Class
     # )
-    populate_common_view_fields(view, EDITOR_W, EDITOR_H, view_types.Editor_Class)
+    populate_common_view_fields(context, view, EDITOR_W, EDITOR_H, view_types.Editor_Class)
     initialize_editor_tiles(view)
     return view
 
 
-def create_map_view() -> SimView:
+def create_map_view(context: AppContext) -> SimView:
     view = SimView()
     # _populate_common_view_fields(
     #     view, types.MAP_W, types.MAP_H, view_types.Map_Class
     # )
-    populate_common_view_fields(view, MAP_W, MAP_H, view_types.Map_Class)
+    populate_common_view_fields(context, view, MAP_W, MAP_H, view_types.Map_Class)
 
     return view
 

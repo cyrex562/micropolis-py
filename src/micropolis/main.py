@@ -19,7 +19,7 @@ from pathlib import Path
 
 from rich.logging import RichHandler
 
-from micropolis.engine import main
+from src.micropolis.engine import main
 
 
 def init_logging():

@@ -231,7 +231,7 @@ def VoteProblems(context: AppContext) -> None:
 
     # Simulate 100 votes with diminishing returns
     while (z < 100) and (count < 600):
-        if rand(300) < context.problem_table[x]:
+        if rand(context, 300) < context.problem_table[x]:
             context.problem_votes[x] += 1
             z += 1
         x += 1
@@ -423,7 +423,7 @@ def DoVotes(context: AppContext) -> None:
 
     # Simulate 100 votes
     for z in range(100):
-        if rand(1000) < context.city_score:
+        if rand(context, 1000) < context.city_score:
             context.city_yes += 1
         else:
             context.city_no += 1

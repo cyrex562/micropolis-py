@@ -20,6 +20,29 @@ Key responsibilities:
 from collections.abc import Callable
 
 
+def make_dollar_decimal_str(amount: int) -> str:
+    """
+    Format a dollar amount with decimal places.
+    Equivalent to makeDollarDecimalStr() in w_update.c
+    """
+    if amount < 0:
+        return "0"
+
+    # Format with commas and decimal
+    amount_str = f"{amount}"
+    if len(amount_str) <= 3:
+        return amount_str
+
+    # Add commas for thousands
+    result = ""
+    for i, char in enumerate(reversed(amount_str)):
+        if i > 0 and i % 3 == 0:
+            result = "," + result
+        result = char + result
+
+    return result
+
+
 class UIUpdateManager:
     """
     Manages UI updates for various Micropolis components.
@@ -151,7 +174,7 @@ class UIUpdateManager:
 
         if self.total_funds != self.last_funds:
             self.last_funds = self.total_funds
-            funds_str = self.make_dollar_decimal_str(self.total_funds)
+            funds_str = make_dollar_decimal_str(self.total_funds)
             local_str = f"Funds: {funds_str}"
 
             # Call UI update callback
@@ -302,27 +325,6 @@ class UIUpdateManager:
             self.callbacks['options'](option_flags)
 
     # Utility methods
-    def make_dollar_decimal_str(self, amount: int) -> str:
-        """
-        Format a dollar amount with decimal places.
-        Equivalent to makeDollarDecimalStr() in w_update.c
-        """
-        if amount < 0:
-            return "0"
-
-        # Format with commas and decimal
-        amount_str = f"{amount}"
-        if len(amount_str) <= 3:
-            return amount_str
-
-        # Add commas for thousands
-        result = ""
-        for i, char in enumerate(reversed(amount_str)):
-            if i > 0 and i % 3 == 0:
-                result = "," + result
-            result = char + result
-
-        return result
 
     # Stub methods for functionality that would be implemented elsewhere
     def invalidate_editors(self):

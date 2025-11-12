@@ -241,10 +241,10 @@ class TestResources(Assertions):
 
     def test_tcl_commands_getresource(self):
         """Test TCL getresource command."""
-        result = resources.ResourcesCommand.handle_command("getresource", "test", "1")
+        result = resources.ResourcesCommand.handle_command(context, context, "getresource", "test", "1")
         self.assertEqual(result, "1")  # Should succeed
 
-        result = resources.ResourcesCommand.handle_command("getresource", "nonexistent", "999")
+        result = resources.ResourcesCommand.handle_command(context, context, "getresource", "nonexistent", "999")
         self.assertEqual(result, "0")  # Should fail
 
     def test_tcl_commands_resourceloaded(self):
@@ -252,40 +252,40 @@ class TestResources(Assertions):
         # Load a resource first
         resources.get_resource("test", 1)
 
-        result = resources.ResourcesCommand.handle_command("resourceloaded", "test", "1")
+        result = resources.ResourcesCommand.handle_command(context, context, "resourceloaded", "test", "1")
         self.assertEqual(result, "1")  # Should be loaded
 
-        result = resources.ResourcesCommand.handle_command("resourceloaded", "test", "2")
+        result = resources.ResourcesCommand.handle_command(context, context, "resourceloaded", "test", "2")
         self.assertEqual(result, "0")  # Should not be loaded
 
     def test_tcl_commands_getindstring(self):
         """Test TCL getindstring command."""
-        result = resources.ResourcesCommand.handle_command("getindstring", "100", "1")
+        result = resources.ResourcesCommand.handle_command(context, context, "getindstring", "100", "1")
         self.assertEqual(result, "First string")
 
-        result = resources.ResourcesCommand.handle_command("getindstring", "100", "2")
+        result = resources.ResourcesCommand.handle_command(context, context, "getindstring", "100", "2")
         self.assertEqual(result, "Second string")
 
     def test_tcl_commands_setresourcedir(self):
         """Test TCL setresourcedir command."""
         test_path = "/test/path"
-        result = resources.ResourcesCommand.handle_command("setresourcedir", test_path)
+        result = resources.ResourcesCommand.handle_command(context, context, "setresourcedir", test_path)
         self.assertEqual(result, "")
         self.assertEqual(resources.ResourceDir, test_path)
 
     def test_tcl_commands_getresourcedir(self):
         """Test TCL getresourcedir command."""
         resources.ResourceDir = "/test/path"
-        result = resources.ResourcesCommand.handle_command("getresourcedir")
+        result = resources.ResourcesCommand.handle_command(context, context, "getresourcedir")
         self.assertEqual(result, "/test/path")
 
     def test_tcl_commands_invalid(self):
         """Test TCL command error handling."""
         with self.assertRaises(ValueError):
-            resources.ResourcesCommand.handle_command("invalidcommand")
+            resources.ResourcesCommand.handle_command(context, context, "invalidcommand")
 
         with self.assertRaises(ValueError):
-            resources.ResourcesCommand.handle_command("getresource", "onlyonearg")
+            resources.ResourcesCommand.handle_command(context, context, "getresource", "onlyonearg")
 
         with self.assertRaises(ValueError):
-            resources.ResourcesCommand.handle_command("getresource", "name", "notanumber")
+            resources.ResourcesCommand.handle_command(context, context, "getresource", "name", "notanumber")

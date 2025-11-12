@@ -10,44 +10,20 @@ view management, and drawing operations.
 from dataclasses import dataclass
 from typing import Any
 
+import pygame
+
 from .constants import (
     COLOR_LIGHTBROWN,
     COLOR_WHITE,
     EDITOR_H,
     EDITOR_W,
     WORLD_X,
-    WORLD_Y,
+    WORLD_Y, COLOR_INTENSITIES,
 )
-
+from .context import AppContext
 from .sim import Sim
-
 from .sim_view import SimView
-import pygame
-
-from .constants import (
-    COLOR_BLACK,
-)
 from .view_types import Editor_Class, Map_Class, X_Mem_View
-
-# Color intensity mapping (from original X implementation)
-COLOR_INTENSITIES = [
-    255,  # COLOR_WHITE
-    170,  # COLOR_YELLOW
-    127,  # COLOR_ORANGE
-    85,  # COLOR_RED
-    63,  # COLOR_DARKRED
-    76,  # COLOR_DARKBLUE
-    144,  # COLOR_LIGHTBLUE
-    118,  # COLOR_BROWN
-    76,  # COLOR_LIGHTGREEN
-    42,  # COLOR_DARKGREEN
-    118,  # COLOR_OLIVE
-    144,  # COLOR_LIGHTBROWN
-    191,  # COLOR_LIGHTGRAY
-    127,  # COLOR_MEDIUMGRAY
-    63,  # COLOR_DARKGRAY
-    0,  # COLOR_BLACK
-]
 
 
 @dataclass
@@ -72,22 +48,22 @@ view_surfaces: dict[int, pygame.Surface] = {}
 view_overlay_surfaces: dict[int, pygame.Surface] = {}
 
 
-def initialize_platform() -> bool:
+def initialize_platform(context: AppContext) -> bool:
     """
     Initialize pygame platform support.
 
     Returns:
         bool: True if initialization successful
     """
-    global pygame_display
+    # global pygame_display
 
     try:
         pygame.init()
-        pygame_display = PygameDisplay()
-        pygame_display.initialized = True
+        context.pygame_display = PygameDisplay()
+        context.pygame_display.initialized = True
 
         # Set up color palette
-        _setup_color_palette()
+        _setup_color_palette(context)
 
         return True
     except Exception as e:
@@ -95,27 +71,27 @@ def initialize_platform() -> bool:
         return False
 
 
-def shutdown_platform() -> None:
+def shutdown_platform(context: AppContext) -> None:
     """Shutdown pygame platform support."""
-    global pygame_display
+    # global pygame_display
 
-    if pygame_display and pygame_display.initialized:
+    if context.pygame_display and context.pygame_display.initialized:
         pygame.quit()
-        pygame_display = None
+        context.pygame_display = None
 
 
-def _setup_color_palette() -> None:
+def _setup_color_palette(context: AppContext) -> None:
     """Set up the color palette for pygame rendering."""
-    global pygame_display
+    # global pygame_display
 
-    if not pygame_display:
+    if not context.pygame_display:
         return
 
     # Create pygame colors from intensity values
-    pygame_display.pixels = []
+    context.pygame_display.pixels = []
 
     for intensity in COLOR_INTENSITIES:
-        if pygame_display.color:
+        if context.pygame_display.color:
             # RGB color
             color = (intensity, intensity, intensity)
         else:
@@ -124,10 +100,10 @@ def _setup_color_palette() -> None:
 
         # Convert to pygame color value
         pygame_color = pygame.Color(color[0], color[1], color[2])
-        pygame_display.pixels.append(pygame_color)
+        context.pygame_display.pixels.append(pygame_color)
 
 
-def set_display_mode(width: int, height: int, fullscreen: bool = False) -> bool:
+def set_display_mode(context: AppContext, width: int, height: int, fullscreen: bool = False) -> bool:
     """
     Set the pygame display mode.
 
@@ -139,17 +115,17 @@ def set_display_mode(width: int, height: int, fullscreen: bool = False) -> bool:
     Returns:
         bool: True if successful
     """
-    global pygame_display
+    # global pygame_display
 
-    if not pygame_display or not pygame_display.initialized:
+    if not context.pygame_display or not context.pygame_display.initialized:
         return False
 
     try:
         flags = pygame.FULLSCREEN if fullscreen else 0
         screen = pygame.display.set_mode((width, height), flags)
-        pygame_display.screen = screen
-        pygame_display.width = width
-        pygame_display.height = height
+        context.pygame_display.screen = screen
+        context.pygame_display.width = width
+        context.pygame_display.height = height
         return True
     except Exception as e:
         print(f"Failed to set display mode: {e}")
@@ -300,8 +276,8 @@ def create_sim_view(title: str, view_class: int, width: int, height: int) -> Sim
     view.screen_x = view.screen_y = 0
     view.screen_width = view.screen_height = 0
     view.last_x = view.last_y = view.last_button = 0
-    view.track_info = None
-    view.message_var = None
+    view.track_info = ""
+    view.message_var = ""
     view.updates = 0
     view.update_real = view.update_user = view.update_system = 0.0
     view.update_context = 0
@@ -638,12 +614,11 @@ def catch_error() -> bool:
     return False
 
 
-def do_stop_micropolis(sim: Sim) -> None:
+def do_stop_micropolis(context: AppContext, sim: Sim) -> None:
     """Stop Micropolis and clean up views (adapted for pygame)."""
     # Clean up all view surfaces
-    global view_surfaces, view_overlay_surfaces
-    view_surfaces.clear()
-    view_overlay_surfaces.clear()
+    context.view_surfaces.clear()
+    context.view_overlay_surfaces.clear()
 
     # Reset sim counters
     sim.editors = 0

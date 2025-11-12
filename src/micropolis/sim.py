@@ -2,9 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from micropolis.engine import create_editor_view
-from micropolis.sim_view import SimView
-from micropolis.sim_sprite import SimSprite
+from src.micropolis.sim_sprite import SimSprite
+from src.micropolis.sim_view import SimView, create_editor_view
 
 
 class Sim(BaseModel):

@@ -6,8 +6,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Any
 
-# Import simulation modules
-from . import types
+from src.micropolis.context import AppContext
 
 # ============================================================================
 # Type Definitions
@@ -70,7 +69,7 @@ StringTables: "StringTable | None" = None  # Head of string table linked list
 # Resource Management Functions
 # ============================================================================
 
-def get_resource(name: str, id: QUAD) -> "Handle | None":
+def get_resource(context: AppContext, name: str, id: QUAD) -> "Handle | None":
     """
     Get a resource by name and ID, loading it from file if necessary.
 
@@ -84,10 +83,10 @@ def get_resource(name: str, id: QUAD) -> "Handle | None":
     Returns:
         Handle to resource data, or None if not found/failed to load
     """
-    global Resources
+    # global Resources
 
     # Check if resource is already loaded
-    current = Resources
+    current = context.Resources
     while current is not None:
         if (current.id == id and
             len(current.name) >= 4 and len(name) >= 4 and
@@ -226,7 +225,7 @@ def resource_id(handle: Handle) -> QUAD:
     return 0
 
 
-def get_ind_string(str_buffer: list[str], id: int, num: int) -> None:
+def get_ind_string(context: AppContext, str_buffer: list[str], id: int, num: int) -> None:
     """
     Get a string from a string table resource.
 
@@ -238,10 +237,10 @@ def get_ind_string(str_buffer: list[str], id: int, num: int) -> None:
         id: String table resource ID
         num: String index (1-based)
     """
-    global StringTables
+    # global StringTables
 
     # Find existing string table
-    table_ptr = StringTables
+    table_ptr = context.StringTables
     while table_ptr is not None:
         if table_ptr.id == id:
             break
@@ -253,7 +252,7 @@ def get_ind_string(str_buffer: list[str], id: int, num: int) -> None:
         table.id = id
 
         # Load the string table resource
-        handle = get_resource("stri", id)
+        handle = get_resource(context, "stri", id)
         if handle is None:
             str_buffer[0] = "Well I'll be a monkey's uncle!"
             return
@@ -313,7 +312,7 @@ class ResourcesCommand:
     """
 
     @staticmethod
-    def handle_command(command: str, *args: str) -> str:
+    def handle_command(context: AppContext, command : str, *args: str) -> str:
         """
         Handle TCL resource commands.
 
@@ -370,14 +369,14 @@ class ResourcesCommand:
         elif command == "setresourcedir":
             if len(args) != 1:
                 raise ValueError("Usage: setresourcedir <path>")
-            global ResourceDir
-            ResourceDir = args[0]
+            # global ResourceDir
+            context.ResourceDir = args[0]
             return ""
 
         elif command == "getresourcedir":
             if len(args) != 0:
                 raise ValueError("Usage: getresourcedir")
-            return ResourceDir
+            return context.ResourceDir
 
         else:
             raise ValueError(f"Unknown resources command: {command}")
@@ -387,16 +386,16 @@ class ResourcesCommand:
 # Utility Functions
 # ============================================================================
 
-def initialize_resource_paths() -> None:
+def initialize_resource_paths(context: AppContext) -> None:
     """
     Initialize resource directory paths.
 
     Sets up default paths for resource loading.
     """
-    global ResourceDir, HomeDir
+    # global ResourceDir, HomeDir
 
     # Set default resource directory
-    if not ResourceDir:
+    if not context.ResourceDir:
         # Try to find resources relative to the script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         potential_dirs = [
@@ -407,20 +406,20 @@ def initialize_resource_paths() -> None:
 
         for res_dir in potential_dirs:
             if os.path.exists(res_dir):
-                ResourceDir = os.path.abspath(res_dir)
+                context.ResourceDir = os.path.abspath(res_dir)
                 break
 
     # Set home directory
-    if not HomeDir:
-        HomeDir = os.path.expanduser("~")
+    if not context.HomeDir:
+        context.HomeDir = os.path.expanduser("~")
 
 
-def clear_resource_cache() -> None:
+def clear_resource_cache(context: AppContext) -> None:
     """
     Clear all cached resources.
 
     Frees memory by clearing the resource linked list.
     """
-    global Resources, StringTables
-    Resources = None
-    StringTables = None
+    # global Resources, StringTables
+    context.Resources = None
+    context.StringTables = None

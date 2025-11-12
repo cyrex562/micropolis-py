@@ -37,7 +37,7 @@ class TestSpriteLifecycle:
 
     def test_new_sprite(self):
         """Test creating a new sprite"""
-        sprite = sprite_manager.new_sprite("test_sprite", types.TRA, 100, 200)
+        sprite = sprite_manager.new_sprite(context, "test_sprite", types.TRA, 100, 200)
 
         assert sprite.name == "test_sprite"
         assert sprite.type == types.TRA
@@ -50,7 +50,7 @@ class TestSpriteLifecycle:
         """Test initializing a train sprite"""
         sprite = types.SimSprite()
         sprite.type = types.TRA
-        sprite_manager.init_sprite(sprite, 100, 200)
+        sprite_manager.init_sprite(context, sprite, 100, 200)
 
         assert sprite.width == 32
         assert sprite.height == 32
@@ -65,7 +65,7 @@ class TestSpriteLifecycle:
         """Test initializing a ship sprite"""
         sprite = types.SimSprite()
         sprite.type = types.SHI
-        sprite_manager.init_sprite(sprite, 100, 200)
+        sprite_manager.init_sprite(context, sprite, 100, 200)
 
         assert sprite.width == 48
         assert sprite.height == 48
@@ -80,7 +80,7 @@ class TestSpriteLifecycle:
         """Test initializing a monster sprite"""
         sprite = types.SimSprite()
         sprite.type = types.GOD
-        sprite_manager.init_sprite(sprite, 100, 200)
+        sprite_manager.init_sprite(context, sprite, 100, 200)
 
         assert sprite.width == 48
         assert sprite.height == 48
@@ -94,7 +94,7 @@ class TestSpriteLifecycle:
         """Test initializing a helicopter sprite"""
         sprite = types.SimSprite()
         sprite.type = types.COP
-        sprite_manager.init_sprite(sprite, 100, 200)
+        sprite_manager.init_sprite(context, sprite, 100, 200)
 
         assert sprite.width == 32
         assert sprite.height == 32
@@ -109,7 +109,7 @@ class TestSpriteLifecycle:
         """Test initializing an airplane sprite"""
         sprite = types.SimSprite()
         sprite.type = types.AIR
-        sprite_manager.init_sprite(sprite, 100, 200)
+        sprite_manager.init_sprite(context, sprite, 100, 200)
 
         assert sprite.width == 48
         assert sprite.height == 48
@@ -122,7 +122,7 @@ class TestSpriteLifecycle:
         """Test initializing a tornado sprite"""
         sprite = types.SimSprite()
         sprite.type = types.TOR
-        sprite_manager.init_sprite(sprite, 100, 200)
+        sprite_manager.init_sprite(context, sprite, 100, 200)
 
         assert sprite.width == 48
         assert sprite.height == 48
@@ -137,7 +137,7 @@ class TestSpriteLifecycle:
         """Test initializing an explosion sprite"""
         sprite = types.SimSprite()
         sprite.type = types.EXP
-        sprite_manager.init_sprite(sprite, 100, 200)
+        sprite_manager.init_sprite(context, sprite, 100, 200)
 
         assert sprite.width == 48
         assert sprite.height == 48
@@ -151,7 +151,7 @@ class TestSpriteLifecycle:
         """Test initializing a bus sprite"""
         sprite = types.SimSprite()
         sprite.type = types.BUS
-        sprite_manager.init_sprite(sprite, 100, 200)
+        sprite_manager.init_sprite(context, sprite, 100, 200)
 
         assert sprite.width == 32
         assert sprite.height == 32
@@ -166,7 +166,7 @@ class TestSpriteLifecycle:
         """Test that make_sprite reuses global sprites"""
         # Create a global sprite
         sprite1 = sprite_manager.make_sprite(types.TRA, 100, 200)
-        assert sprite_manager.GlobalSprites[types.TRA] == sprite1
+        assert sprite_manager.global_sprites[types.TRA] == sprite1
 
         # Make another sprite of same type - should reuse
         sprite2 = sprite_manager.make_sprite(types.TRA, 300, 400)
@@ -176,8 +176,8 @@ class TestSpriteLifecycle:
 
     def test_make_new_sprite_always_new(self):
         """Test that make_new_sprite always creates new instances"""
-        sprite1 = sprite_manager.make_new_sprite(types.TRA, 100, 200)
-        sprite2 = sprite_manager.make_new_sprite(types.TRA, 300, 400)
+        sprite1 = sprite_manager.make_new_sprite(context, types.TRA, 100, 200)
+        sprite2 = sprite_manager.make_new_sprite(context, types.TRA, 300, 400)
 
         assert sprite1 != sprite2
         assert sprite1.x == 100
@@ -187,13 +187,13 @@ class TestSpriteLifecycle:
 
     def test_destroy_sprite(self):
         """Test destroying a sprite"""
-        sprite = sprite_manager.new_sprite("test", types.TRA, 100, 200)
+        sprite = sprite_manager.new_sprite(context, "test", types.TRA, 100, 200)
 
         # Verify sprite is in simulation
         assert types.sim.sprites == 1
         assert types.sim.sprite == sprite
 
-        sprite_manager.destroy_sprite(sprite)
+        sprite_manager.destroy_sprite(context, sprite)
 
         # Verify sprite is removed
         assert types.sim.sprites == 0
@@ -202,15 +202,15 @@ class TestSpriteLifecycle:
     def test_get_sprite(self):
         """Test getting global sprites"""
         # No sprite initially
-        assert sprite_manager.get_sprite(types.TRA) is None
+        assert sprite_manager.get_sprite(context, types.TRA) is None
 
         # Create sprite
         sprite = sprite_manager.make_sprite(types.TRA, 100, 200)
-        assert sprite_manager.get_sprite(types.TRA) == sprite
+        assert sprite_manager.get_sprite(context, types.TRA) == sprite
 
         # Deactivate sprite
         sprite.frame = 0
-        assert sprite_manager.get_sprite(types.TRA) is None
+        assert sprite_manager.get_sprite(context, types.TRA) is None
 
 
 class TestSpriteMovement:
@@ -222,7 +222,7 @@ class TestSpriteMovement:
         original_x = sprite.x
         original_y = sprite.y
 
-        sprite_manager.do_train_sprite(sprite)
+        sprite_manager.do_train_sprite(context, sprite)
 
         # Train should have moved
         assert sprite.x != original_x or sprite.y != original_y
@@ -244,7 +244,7 @@ class TestSpriteMovement:
         original_x = sprite.x
         original_y = sprite.y
 
-        sprite_manager.do_airplane_sprite(sprite)
+        sprite_manager.do_airplane_sprite(context, sprite)
 
         # Airplane should have moved
         assert sprite.x != original_x or sprite.y != original_y
@@ -255,7 +255,7 @@ class TestSpriteMovement:
         original_x = sprite.x
         original_y = sprite.y
 
-        sprite_manager.do_ship_sprite(sprite)
+        sprite_manager.do_ship_sprite(context, sprite)
 
         # Ship should have moved
         assert sprite.x != original_x or sprite.y != original_y
@@ -266,7 +266,7 @@ class TestSpriteMovement:
         original_x = sprite.x
         original_y = sprite.y
 
-        sprite_manager.do_monster_sprite(sprite)
+        sprite_manager.do_monster_sprite(context, sprite)
 
         # Monster should have moved
         assert sprite.x != original_x or sprite.y != original_y
@@ -277,7 +277,7 @@ class TestSpriteMovement:
         original_x = sprite.x
         original_y = sprite.y
 
-        sprite_manager.do_tornado_sprite(sprite)
+        sprite_manager.do_tornado_sprite(context, sprite)
 
         # Tornado should have moved
         assert sprite.x != original_x or sprite.y != original_y
@@ -287,7 +287,7 @@ class TestSpriteMovement:
         sprite = sprite_manager.make_sprite(types.EXP, 100, 200)
         original_frame = sprite.frame
 
-        sprite_manager.do_explosion_sprite(sprite)
+        sprite_manager.do_explosion_sprite(context, sprite)
 
         # Frame should have advanced
         assert sprite.frame > original_frame
@@ -298,7 +298,7 @@ class TestSpriteMovement:
         original_x = sprite.x
         original_y = sprite.y
 
-        sprite_manager.do_bus_sprite(sprite)
+        sprite_manager.do_bus_sprite(context, sprite)
 
         # Bus should have moved
         assert sprite.x != original_x or sprite.y != original_y
@@ -313,7 +313,7 @@ class TestSpriteMovement:
         original_x2 = sprite2.x
         original_y2 = sprite2.y
 
-        sprite_manager.move_objects()
+        sprite_manager.move_objects(context)
 
         # Both sprites should have moved
         assert sprite1.x != original_x1 or sprite1.y != original_y1
@@ -362,12 +362,12 @@ class TestUtilityFunctions:
         # Set up a test tile
         types.Map[5][5] = types.ROADBASE
 
-        tile = sprite_manager.get_char(80, 80)  # 80 >> 4 = 5, so tile (5,5)
+        tile = sprite_manager.get_char(context, 80, 80)  # 80 >> 4 = 5, so tile (5,5)
         assert tile == types.ROADBASE
 
     def test_get_char_out_of_bounds(self):
         """Test get_char for out of bounds coordinates"""
-        tile = sprite_manager.get_char(-10, -10)
+        tile = sprite_manager.get_char(context, -10, -10)
         assert tile == -1
 
     def test_turn_to_same_direction(self):
@@ -414,21 +414,21 @@ class TestSpriteGeneration:
 
         # Low population - should not generate
         types.TotalPop = 10
-        sprite_manager.generate_train(100, 200)
-        assert sprite_manager.get_sprite(types.TRA) is None
+        sprite_manager.generate_train(context, 100, 200)
+        assert sprite_manager.get_sprite(context, types.TRA) is None
 
         # High population - should generate
         types.TotalPop = 30
-        sprite_manager.generate_train(100, 200)
-        assert sprite_manager.get_sprite(types.TRA) is not None
+        sprite_manager.generate_train(context, 100, 200)
+        assert sprite_manager.get_sprite(context, types.TRA) is not None
 
     @patch('sprite_manager.random.Rand')
     def test_generate_bus_no_existing_bus(self, mock_rand):
         """Test bus generation when no bus exists"""
         mock_rand.return_value = 10  # Low enough for generation
 
-        sprite_manager.generate_bus(100, 200)
-        assert sprite_manager.get_sprite(types.BUS) is not None
+        sprite_manager.generate_bus(context, 100, 200)
+        assert sprite_manager.get_sprite(context, types.BUS) is not None
 
     def test_generate_bus_existing_bus(self):
         """Test bus generation when bus already exists"""
@@ -436,7 +436,7 @@ class TestSpriteGeneration:
         sprite_manager.make_sprite(types.BUS, 100, 200)
 
         # Try to generate another - should not create
-        sprite_manager.generate_bus(300, 400)
+        sprite_manager.generate_bus(context, 300, 400)
         # Should still only be one bus (the existing one)
 
     @patch('micropolis.sprite_manager.random.Rand16')
@@ -447,20 +447,20 @@ class TestSpriteGeneration:
         # Set up a channel at the top
         types.Map[5][0] = types.CHANNEL
 
-        sprite_manager.generate_ship()
+        sprite_manager.generate_ship(context)
         # Ship generation is probabilistic, just verify it doesn't crash
 
     def test_make_monster_no_existing(self):
         """Test monster creation when none exists"""
-        sprite_manager.make_monster()
-        assert sprite_manager.get_sprite(types.GOD) is not None
+        sprite_manager.spawn_monster_disaster()
+        assert sprite_manager.get_sprite(context, types.GOD) is not None
 
     def test_make_monster_existing(self):
         """Test monster creation when one already exists"""
         # Create existing monster
         monster = sprite_manager.make_sprite(types.GOD, 100, 200)
 
-        sprite_manager.make_monster()
+        sprite_manager.spawn_monster_disaster()
 
         # Should update existing monster
         assert monster.count == 1000  # Reset to 1000
@@ -468,7 +468,7 @@ class TestSpriteGeneration:
     def test_generate_copter_no_existing(self):
         """Test helicopter generation when none exists"""
         sprite_manager.generate_copter(100, 200)
-        assert sprite_manager.get_sprite(types.COP) is not None
+        assert sprite_manager.get_sprite(context, types.COP) is not None
 
     def test_generate_copter_existing(self):
         """Test helicopter generation when one already exists"""
@@ -481,8 +481,8 @@ class TestSpriteGeneration:
 
     def test_generate_plane_no_existing(self):
         """Test airplane generation when none exists"""
-        sprite_manager.generate_plane(100, 200)
-        assert sprite_manager.get_sprite(types.AIR) is not None
+        sprite_manager.generate_plane(context, 100, 200)
+        assert sprite_manager.get_sprite(context, types.AIR) is not None
 
     def test_generate_plane_existing(self):
         """Test airplane generation when one already exists"""
@@ -490,27 +490,27 @@ class TestSpriteGeneration:
         sprite_manager.make_sprite(types.AIR, 100, 200)
 
         # Try to generate another - should not create
-        sprite_manager.generate_plane(300, 400)
+        sprite_manager.generate_plane(context, 300, 400)
         # Should still only be one airplane
 
     def test_make_tornado_no_existing(self):
         """Test tornado creation when none exists"""
-        sprite_manager.make_tornado()
-        assert sprite_manager.get_sprite(types.TOR) is not None
+        sprite_manager.spawn_tornado_disaster()
+        assert sprite_manager.get_sprite(context, types.TOR) is not None
 
     def test_make_tornado_existing(self):
         """Test tornado creation when one already exists"""
         # Create existing tornado
         tornado = sprite_manager.make_sprite(types.TOR, 100, 200)
 
-        sprite_manager.make_tornado()
+        sprite_manager.spawn_tornado_disaster()
 
         # Should update existing tornado
         assert tornado.count == 200  # Reset to 200
 
     def test_make_explosion_at(self):
         """Test explosion creation at specific location"""
-        sprite_manager.make_explosion_at(100, 200)
+        sprite_manager.make_explosion_at(context, 100, 200)
 
         # Find the explosion sprite
         explosion = None
@@ -539,60 +539,60 @@ class TestTCLCommandInterface:
 
     def test_sprite_command_name(self):
         """Test TCL name command"""
-        command = sprite_manager.sprite_command("test_sprite", types.TRA)
+        command = sprite_manager
 
-        result = command.handle_command("name")
+        result = command.handle_command(context, context, "name")
         assert result == "test_sprite"
 
     def test_sprite_command_type(self):
         """Test TCL type command"""
-        command = sprite_manager.sprite_command("test_sprite", types.TRA)
+        command = sprite_manager
 
         # Get current type
-        result = command.handle_command("type")
+        result = command.handle_command(context, context, "type")
         assert result == str(types.TRA)
 
         # Set new type
-        result = command.handle_command("type", "2")
+        result = command.handle_command(context, context, "type", "2")
         assert result == "2"
         assert command.sprite.type == 2
 
     def test_sprite_command_frame(self):
         """Test TCL frame command"""
-        command = sprite_manager.sprite_command("test_sprite", types.TRA)
+        command = sprite_manager
 
         # Get current frame
-        result = command.handle_command("frame")
+        result = command.handle_command(context, context, "frame")
         assert result == "1"  # Train starts with frame 1
 
         # Set new frame
-        result = command.handle_command("frame", "5")
+        result = command.handle_command(context, context, "frame", "5")
         assert result == "5"
         assert command.sprite.frame == 5
 
     def test_sprite_command_position(self):
         """Test TCL position commands"""
-        command = sprite_manager.sprite_command("test_sprite", types.TRA)
+        command = sprite_manager
 
         # Test x coordinate
-        result = command.handle_command("x")
+        result = command.handle_command(context, context, "x")
         assert result == "0"  # Default x position
 
-        result = command.handle_command("x", "100")
+        result = command.handle_command(context, context, "x", "100")
         assert result == "100"
         assert command.sprite.x == 100
 
         # Test y coordinate
-        result = command.handle_command("y", "200")
+        result = command.handle_command(context, context, "y", "200")
         assert result == "200"
         assert command.sprite.y == 200
 
     def test_sprite_command_invalid_command(self):
         """Test handling of invalid TCL commands"""
-        command = sprite_manager.sprite_command("test_sprite", types.TRA)
+        command = sprite_manager
 
         with pytest.raises(ValueError):
-            command.handle_command("invalid_command")
+            command.handle_command(context, context, "invalid_command")
 
 
 class TestSpriteEffects:
@@ -602,7 +602,7 @@ class TestSpriteEffects:
         """Test exploding a sprite"""
         sprite = sprite_manager.make_sprite(types.TRA, 100, 200)
 
-        sprite_manager.explode_sprite(sprite)
+        sprite_manager.explode_sprite(context, sprite)
 
         assert sprite.frame == 0  # Sprite should be deactivated
 
@@ -611,7 +611,7 @@ class TestSpriteEffects:
         # Set up a test tile
         types.Map[5][5] = types.TREEBASE
 
-        sprite_manager.destroy(80, 80)  # 80 >> 4 = 5
+        sprite_manager.destroy(context, 80, 80)  # 80 >> 4 = 5
 
         # Tree should be destroyed
         assert types.Map[5][5] != types.TREEBASE
@@ -621,7 +621,7 @@ class TestSpriteEffects:
         # Set up a burnable tile
         types.Map[5][5] = types.TREEBASE
 
-        sprite_manager.start_fire(80, 80)
+        sprite_manager.start_fire(context, 80, 80)
 
         # Should have started a fire
         assert (types.Map[5][5] & types.LOMASK) == types.FIRE
@@ -641,11 +641,11 @@ class TestInitialization:
         """Test sprite system initialization"""
         sprite_manager.initialize_sprite_system()
 
-        assert sprite_manager.GlobalSprites == [None] * types.OBJN
-        assert sprite_manager.FreeSprites is None
-        assert sprite_manager.Cycle == 0
-        assert sprite_manager.CrashX == 0
-        assert sprite_manager.CrashY == 0
+        assert sprite_manager.global_sprites == [None] * types.OBJN
+        assert sprite_manager.free_sprites is None
+        assert sprite_manager.cycle == 0
+        assert sprite_manager.crash_x == 0
+        assert sprite_manager.crash_y == 0
 
     def test_destroy_all_sprites(self):
         """Test destroying all sprites"""
@@ -657,7 +657,7 @@ class TestInitialization:
         sprite1.frame = 0
         sprite2.frame = 0
 
-        sprite_manager.destroy_all_sprites()
+        sprite_manager.destroy_all_sprites(context)
 
         # Sprites should be deactivated
         assert sprite1.frame == 0
@@ -671,33 +671,33 @@ class TestCanDriveOn:
         """Test driving on road tiles"""
         types.Map[5][5] = types.ROADBASE
 
-        result = sprite_manager.can_drive_on(5, 5)
+        result = sprite_manager.can_drive_on(context, 5, 5)
         assert result == 1
 
     def test_can_drive_on_rail(self):
         """Test driving on rail tiles"""
         types.Map[5][5] = types.HRAILROAD
 
-        result = sprite_manager.can_drive_on(5, 5)
+        result = sprite_manager.can_drive_on(context, 5, 5)
         assert result == 1
 
     def test_can_drive_on_dirt(self):
         """Test driving on dirt (bumpy)"""
         types.Map[5][5] = types.DIRT
 
-        result = sprite_manager.can_drive_on(5, 5)
+        result = sprite_manager.can_drive_on(context, 5, 5)
         assert result == -1
 
     def test_can_drive_on_obstacle(self):
         """Test driving on obstacles"""
         types.Map[5][5] = types.TREEBASE
 
-        result = sprite_manager.can_drive_on(5, 5)
+        result = sprite_manager.can_drive_on(context, 5, 5)
         assert result == 0
 
     def test_can_drive_on_out_of_bounds(self):
         """Test driving out of bounds"""
-        result = sprite_manager.can_drive_on(-1, 5)
+        result = sprite_manager.can_drive_on(context, -1, 5)
         assert result == 0
 
 

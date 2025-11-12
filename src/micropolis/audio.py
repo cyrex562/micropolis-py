@@ -6,6 +6,8 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Any
+
+from .constants import MAX_CHANNELS, SOUND_CHANNELS, SOUND_EXTENSIONS
 from .context import AppContext
 from result import Result, Err, Ok
 
@@ -18,18 +20,7 @@ logger = logging.getLogger(__name__)
 # Type Definitions and Constants
 # ============================================================================
 
-# Sound channel constants (matching original TCL interface)
-SOUND_CHANNELS = {
-    "city": 0,  # City-wide sound effects
-    "edit": 1,  # Editor/bulldozer sounds
-    "sprite": 2,  # Sprite/moving object sounds
-}
 
-# Maximum number of sound channels
-MAX_CHANNELS = 8
-
-# Sound file extensions to try
-SOUND_EXTENSIONS = [".wav", ".ogg", ".mp3"]
 
 
 # ============================================================================
@@ -105,16 +96,14 @@ def initialize_sound(context: AppContext) -> Result[None, Exception]:
     return Ok(None)
 
 
-def shutdown_sound() -> Result[None, Exception]:
+def shutdown_sound(context: AppContext) -> Result[None, Exception]:
     """
     Shut down the sound system.
 
     Ported from ShutDownSound() in w_sound.c.
     Stops all sounds and cleans up resources.
     """
-    global SoundInitialized, Dozing
-
-    if not SoundInitialized:
+    if not context.sound_initialized:
         return Ok(None)
 
     try:
@@ -124,8 +113,8 @@ def shutdown_sound() -> Result[None, Exception]:
         sound_cache.clear()
         active_channels.clear()
 
-        SoundInitialized = False
-        Dozing = False
+        context.sound_initialized = False
+        context.dozing = False
         logger.info("Sound system shut down")
 
     except Exception as e:
@@ -189,24 +178,24 @@ def make_sound_on(context: AppContext, view: Any, channel: str, sound_id: str) -
     return make_sound(context, channel, sound_id)
 
 
-def start_bulldozer(context: AppContext) -> Result[None, Exception]:
+def start_bulldozer_sound(context: AppContext) -> Result[None, Exception]:
     """
     Start the bulldozer sound loop.
 
     Ported from StartBulldozer() in w_sound.c.
     Starts looping bulldozer sound when bulldozing begins.
     """
-    global Dozing
+    # global Dozing
 
     if not context.user_sound_on or not SoundInitialized:
         return Ok(None)
 
-    if Dozing:
+    if context.dozing:
         return Ok(None)  # Already playing
 
     try:
         # Get bulldozer sound
-        sound_info = get_sound("bulldozer")
+        sound_info = get_sound(context, "bulldozer")
         if sound_info.is_err():
             return Err(ValueError("failed to get bulldozer sound"))
         sound_info = sound_info.unwrap()
@@ -231,16 +220,16 @@ def start_bulldozer(context: AppContext) -> Result[None, Exception]:
     return Ok(None)
 
 
-def stop_bulldozer() -> Result[None, Exception]:
+def stop_bulldozer_sound(context: AppContext) -> Result[None, Exception]:
     """
     Stop the bulldozer sound loop.
 
     Ported from StopBulldozer() in w_sound.c.
     Stops the looping bulldozer sound.
     """
-    global Dozing
+    # global Dozing
 
-    if not SoundInitialized:
+    if not context.sound_initialized:
         return Ok(None)
 
     try:
@@ -249,7 +238,7 @@ def stop_bulldozer() -> Result[None, Exception]:
         channel = pygame.mixer.Channel(channel_num)
         channel.stop()
 
-        Dozing = False
+        context.dozing = False
 
     except Exception as e:
         logger.exception(f"Error stopping bulldozer sound: {e}")
@@ -258,16 +247,16 @@ def stop_bulldozer() -> Result[None, Exception]:
     return Ok(None)
 
 
-def sound_off() -> Result[None, Exception]:
+def sound_off(context: AppContext) -> Result[None, Exception]:
     """
     Turn off all sounds.
 
     Ported from SoundOff() in w_sound.c.
     Stops all playing sounds and resets bulldozer state.
     """
-    global Dozing
+    # global Dozing
 
-    if not SoundInitialized:
+    if not context.sound_initialized:
         return Ok(None)
 
     try:
@@ -432,13 +421,13 @@ def preload_sounds(sound_names: list[str]) -> None:
         get_sound(sound_name)  # This will load and cache the sound
 
 
-def _stop_all_channels() -> Result[None, Exception]:
+def _stop_all_channels(context: AppContext) -> Result[None, Exception]:
     """
     Stop playback on every mixer channel and reset cached state.
     """
-    global Dozing
+    # global Dozing
 
-    if not SoundInitialized:
+    if not context.sound_initialized:
         return Err(RuntimeError("sound not initialized"))
 
     pygame.mixer.stop()
@@ -501,11 +490,11 @@ class AudioCommand:
             return Ok("")
 
         elif command == "start_bulldozer":
-            start_bulldozer(context)
+            start_bulldozer_sound(context)
             return Ok("")
 
         elif command == "stop_bulldozer":
-            stop_bulldozer()
+            stop_bulldozer_sound()
             return Ok("")
 
         elif command == "sound_off":

@@ -6,54 +6,41 @@ This module implements the city generation system ported from s_gen.c,
 responsible for creating new city maps with rivers, lakes, trees, and terrain
 features using procedural generation algorithms.
 """
-
-import micropolis.constants
-import micropolis.utilities
-from . import types, macros
+from src.micropolis.constants import RIVER, WORLD_X, WORLD_Y, DIRT, WOODS, LOMASK, CHANNEL, \
+    BLBNBIT, BULLBIT, REDGE, WOODS_LOW, WOODS_HIGH, WATER_LOW, WATER_HIGH
+from src.micropolis.context import AppContext
+from src.micropolis.macros import TestBounds
+from src.micropolis.simulation import rand16, rand
+from src.micropolis.ui_utilities import update_funds, kick
 
 
 # ============================================================================
 # Generation Control Variables
 # ============================================================================
 
-XStart: int = 0
-YStart: int = 0
-MapX: int = 0
-MapY: int = 0
-Dir: int = 0
-LastDir: int = 0
-
-# Generation parameters (can be set externally)
-TreeLevel: int = -1  # Level for tree creation (-1 = random, 0 = none, >0 = amount)
-LakeLevel: int = -1  # Level for lake creation (-1 = random, 0 = none, >0 = amount)
-CurveLevel: int = -1  # Level for river curviness (-1 = random, 0 = none, >0 = amount)
-CreateIsland: int = -1  # Island creation (-1 = 10% chance, 0 = never, 1 = always)
 
 # ============================================================================
 # Terrain Constants
 # ============================================================================
 
-WATER_LOW = types.RIVER  # 2
-WATER_HIGH = types.LASTRIVEDGE  # 20
-WOODS_LOW = types.TREEBASE  # 21
-WOODS_HIGH = 39  # UNUSED_TRASH2 (woods tile range end)
 
 # ============================================================================
 # Main Generation Functions
 # ============================================================================
 
 
-def GenerateNewCity() -> None:
+def GenerateNewCity(context: AppContext) -> None:
     """
     Generate a new random city.
 
     Ported from GenerateNewCity() in s_gen.c.
     Main entry point for city generation.
+    :param context: 
     """
-    GenerateSomeCity(micropolis.utilities.rand16())
+    GenerateSomeCity(context, rand16())
 
 
-def GenerateSomeCity(r: int) -> None:
+def GenerateSomeCity(context: AppContext, r: int) -> None:
     """
     Generate a city with a specific random seed.
 
@@ -62,21 +49,22 @@ def GenerateSomeCity(r: int) -> None:
 
     Args:
         r: Random seed for reproducible generation
+        :param context: 
     """
     # Clear any existing city file reference
-    types.city_file_name = ""
+    context.city_file_name = ""
 
     # Record start time (placeholder for timing)
     # gettimeofday(&start_time, NULL);
 
     # Generate the map
-    GenerateMap(r)
+    GenerateMap(context, r)
 
     # Reset simulation state
-    types.scenario_id = 0
-    types.city_time = 0
-    types.init_sim_load = 2
-    types.do_initial_eval = 0
+    context.scenario_id = 0
+    context.city_time = 0
+    context.init_sim_load = 2
+    context.do_initial_eval = 0
 
     # Initialize simulation components (placeholders for now)
     # types.InitWillStuff()
@@ -84,13 +72,13 @@ def GenerateSomeCity(r: int) -> None:
     # types.ResetEditorState()
     # types.InvalidateEditors()
     # types.InvalidateMaps()
-    types.UpdateFunds()
+    update_funds(context)
     # types.DoSimInit()
 
     # UI callback (placeholder)
     # Eval("UIDidGenerateNewCity");
 
-    types.Kick()
+    kick(context)
 
 
 def ERand(limit: int) -> int:
@@ -106,12 +94,12 @@ def ERand(limit: int) -> int:
     Returns:
         Random number between 0 and limit-1
     """
-    z = micropolis.utilities.rand(limit)
-    x = micropolis.utilities.rand(limit)
+    z = rand(context, limit)
+    x = rand(context, limit)
     return z if z < x else x
 
 
-def GenerateMap(r: int) -> None:
+def GenerateMap(context: AppContext, r: int) -> None:
     """
     Core map generation algorithm.
 
@@ -120,6 +108,7 @@ def GenerateMap(r: int) -> None:
 
     Args:
         r: Random seed
+        :param context: 
     """
     # Seed the random number generator
     import random as python_random
@@ -127,28 +116,28 @@ def GenerateMap(r: int) -> None:
     python_random.seed(r)
 
     # Island generation logic
-    if CreateIsland < 0:
-        if micropolis.utilities.rand(100) < 10:  # 10% chance for island
-            MakeIsland()
+    if context.create_island < 0:
+        if rand(context, 100) < 10:  # 10% chance for island
+            MakeIsland(context)
             return
-    elif CreateIsland == 1:
-        MakeNakedIsland()
+    elif context.create_island == 1:
+        MakeNakedIsland(context)
     else:
-        ClearMap()
+        ClearMap(context)
 
     # Generate terrain features
-    GetRandStart()
+    GetRandStart(context)
 
-    if CurveLevel != 0:
-        DoRivers()
+    if context.curve_level != 0:
+        DoRivers(context)
 
-    if LakeLevel != 0:
-        MakeLakes()
+    if context.lake_level != 0:
+        MakeLakes(context)
 
-    SmoothRiver()
+    SmoothRiver(context)
 
-    if TreeLevel != 0:
-        DoTrees()
+    if context.tree_level != 0:
+        DoTrees(context)
 
     # Randomize the seed again for additional randomness
     import random as python_random
@@ -161,29 +150,31 @@ def GenerateMap(r: int) -> None:
 # ============================================================================
 
 
-def ClearMap() -> None:
+def ClearMap(context: AppContext) -> None:
     """
     Initialize the entire map to dirt tiles.
 
     Ported from ClearMap() in s_gen.c.
     Sets all map cells to DIRT.
+    :param context: 
     """
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
-            types.map_data[x][y] = types.DIRT
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            context.map_data[x][y] = DIRT
 
 
-def ClearUnnatural() -> None:
+def ClearUnnatural(context: AppContext) -> None:
     """
     Clear all man-made structures, leaving only natural terrain.
 
     Ported from ClearUnnatural() in s_gen.c.
     Removes any tiles above WOODS (buildings, roads, etc.).
+    :param context: 
     """
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
-            if types.map_data[x][y] > types.WOODS:
-                types.map_data[x][y] = types.DIRT
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            if context.map_data[x][y] > WOODS:
+                context.map_data[x][y] = DIRT
 
 
 # ============================================================================
@@ -193,60 +184,62 @@ def ClearUnnatural() -> None:
 RADIUS = 18
 
 
-def MakeNakedIsland() -> None:
+def MakeNakedIsland(context: AppContext) -> None:
     """
     Create a basic island surrounded by water.
 
     Ported from MakeNakedIsland() in s_gen.c.
     Creates a land mass in the center surrounded by rivers, with some
     river branches extending toward the edges.
+    :param context: 
     """
     # Fill entire map with river
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
-            types.map_data[x][y] = types.RIVER
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            context.map_data[x][y] = RIVER
 
     # Create central land area
-    for x in range(5, micropolis.constants.WORLD_X - 5):
-        for y in range(5, micropolis.constants.WORLD_Y - 5):
-            types.map_data[x][y] = types.DIRT
+    for x in range(5, WORLD_X - 5):
+        for y in range(5, WORLD_Y - 5):
+            context.map_data[x][y] = DIRT
 
     # Add river branches horizontally
-    for x in range(0, micropolis.constants.WORLD_X - 5, 2):
-        global MapX, MapY
-        MapX = x
-        MapY = ERand(RADIUS)
-        BRivPlop()
-        MapY = (micropolis.constants.WORLD_Y - 10) - ERand(RADIUS)
-        BRivPlop()
-        MapY = 0
-        SRivPlop()
-        MapY = micropolis.constants.WORLD_Y - 6
-        SRivPlop()
+    for x in range(0, WORLD_X - 5, 2):
+        # global map_x, map_y
+        context.map_x = x
+        context.map_y = ERand(RADIUS)
+        BRivPlop(context)
+        context.map_y = (WORLD_Y - 10) - ERand(RADIUS)
+        BRivPlop(context)
+        context.map_y = 0
+        SRivPlop(context)
+        context.map_y = WORLD_Y - 6
+        SRivPlop(context)
 
     # Add river branches vertically
-    for y in range(0, micropolis.constants.WORLD_Y - 5, 2):
-        MapY = y
-        MapX = ERand(RADIUS)
-        BRivPlop()
-        MapX = (micropolis.constants.WORLD_X - 10) - ERand(RADIUS)
-        BRivPlop()
-        MapX = 0
-        SRivPlop()
-        MapX = micropolis.constants.WORLD_X - 6
-        SRivPlop()
+    for y in range(0, WORLD_Y - 5, 2):
+        context.map_y = y
+        context.map_x = ERand(RADIUS)
+        BRivPlop(context)
+        context.map_x = (WORLD_X - 10) - ERand(RADIUS)
+        BRivPlop(context)
+        context.map_x = 0
+        SRivPlop(context)
+        context.map_x = WORLD_X - 6
+        SRivPlop(context)
 
 
-def MakeIsland() -> None:
+def MakeIsland(context: AppContext) -> None:
     """
     Create a complete island with smoothed rivers and trees.
 
     Ported from MakeIsland() in s_gen.c.
     Calls MakeNakedIsland then adds smoothing and trees.
+    :param context: 
     """
-    MakeNakedIsland()
-    SmoothRiver()
-    DoTrees()
+    MakeNakedIsland(context)
+    SmoothRiver(context)
+    DoTrees(context)
 
 
 # ============================================================================
@@ -254,31 +247,32 @@ def MakeIsland() -> None:
 # ============================================================================
 
 
-def MakeLakes() -> None:
+def MakeLakes(context: AppContext) -> None:
     """
     Generate lakes on the map.
 
     Ported from MakeLakes() in s_gen.c.
     Places multiple lake clusters using river placement functions.
+    :param context:
     """
-    if LakeLevel < 0:
-        Lim1 = micropolis.utilities.rand(10)
+    if context.lake_level < 0:
+        Lim1 = rand(context, 10)
     else:
-        Lim1 = LakeLevel // 2
+        Lim1 = context.lake_level // 2
 
     for t in range(Lim1):
-        x = micropolis.utilities.rand(micropolis.constants.WORLD_X - 21) + 10
-        y = micropolis.utilities.rand(micropolis.constants.WORLD_Y - 20) + 10
-        Lim2 = micropolis.utilities.rand(12) + 2
+        x = rand(context, WORLD_X - 21) + 10
+        y = rand(context, WORLD_Y - 20) + 10
+        Lim2 = rand(context, 12) + 2
 
         for z in range(Lim2):
-            global MapX, MapY
-            MapX = x - 6 + micropolis.utilities.rand(12)
-            MapY = y - 6 + micropolis.utilities.rand(12)
-            if micropolis.utilities.rand(4):
-                SRivPlop()
+            # global map_x, map_y
+            context.map_x = x - 6 + rand(context, 12)
+            context.map_y = y - 6 + rand(context, 12)
+            if rand(context, 4):
+                SRivPlop(context)
             else:
-                BRivPlop()
+                BRivPlop(context)
 
 
 # ============================================================================
@@ -286,21 +280,22 @@ def MakeLakes() -> None:
 # ============================================================================
 
 
-def GetRandStart() -> None:
+def GetRandStart(context: AppContext) -> None:
     """
     Choose a random starting position for river generation.
 
     Ported from GetRandStart() in s_gen.c.
     Sets XStart, YStart, MapX, MapY to a random position in the central area.
+    :param context:
     """
-    global XStart, YStart, MapX, MapY
-    XStart = 40 + micropolis.utilities.rand(micropolis.constants.WORLD_X - 80)
-    YStart = 33 + micropolis.utilities.rand(micropolis.constants.WORLD_Y - 67)
-    MapX = XStart
-    MapY = YStart
+    # global x_start, y_start, map_x, map_y
+    context.x_start = 40 + rand(context, WORLD_X - 80)
+    context.y_start = 33 + rand(context, WORLD_Y - 67)
+    context.map_x = context.x_start
+    context.map_y = context.y_start
 
 
-def MoveMap(dir: int) -> None:
+def MoveMap(context: AppContext, direction: int) -> None:
     """
     Move the current map position in a specified direction.
 
@@ -308,96 +303,100 @@ def MoveMap(dir: int) -> None:
     Updates MapX and MapY based on direction (0-7).
 
     Args:
-        dir: Direction to move (0-7, where 0=north, 2=east, 4=south, 6=west)
+        direction: Direction to move (0-7, where 0=north, 2=east, 4=south, 6=west)
+        :param context:
     """
-    global MapX, MapY
+    # global map_x, map_y
     DirTab = [[0, 1, 1, 1, 0, -1, -1, -1], [-1, -1, 0, 1, 1, 1, 0, -1]]
-    dir = dir & 7
-    MapX += DirTab[0][dir]
-    MapY += DirTab[1][dir]
+    direction = direction & 7
+    context.map_x += DirTab[0][direction]
+    context.map_y += DirTab[1][direction]
 
 
-def DoRivers() -> None:
+def DoRivers(context: AppContext) -> None:
     """
     Generate the main river system.
 
     Ported from DoRivers() in s_gen.c.
     Creates rivers starting from the center and extending in different directions.
+    :param context:
     """
-    global LastDir, Dir, MapX, MapY
-    LastDir = micropolis.utilities.rand(3)
-    Dir = LastDir
-    DoBRiv()
+    # global last_dir, dir, map_x, map_y
+    context.last_dir = rand(context, 3)
+    context.dir = context.last_dir
+    DoBRiv(context)
 
-    MapX = XStart
-    MapY = YStart
-    LastDir = LastDir ^ 4
-    Dir = LastDir
-    DoBRiv()
+    context.map_x = context.x_start
+    context.map_y = context.y_start
+    context.last_dir = context.last_dir ^ 4
+    context.dir = context.last_dir
+    DoBRiv(context)
 
-    MapX = XStart
-    MapY = YStart
-    LastDir = micropolis.utilities.rand(3)
-    DoSRiv()
+    context.map_x = context.x_start
+    context.map_y = context.y_start
+    context.last_dir = rand(context, 3)
+    DoSRiv(context)
 
 
-def DoBRiv() -> None:
+def DoBRiv(context: AppContext) -> None:
     """
     Generate a big river branch.
 
     Ported from DoBRiv() in s_gen.c.
     Creates a wide river path with some curvature.
+    :param context:
     """
-    global Dir, LastDir, MapX, MapY
+    # global dir, last_dir, map_x, map_y
 
-    if CurveLevel < 0:
+    if context.curve_level < 0:
         r1 = 100
         r2 = 200
     else:
-        r1 = CurveLevel + 10
-        r2 = CurveLevel + 100
+        r1 = context.curve_level + 10
+        r2 = context.curve_level + 100
 
-    while macros.TestBounds(MapX + 4, MapY + 4):
-        BRivPlop()
-        if micropolis.utilities.rand(r1) < 10:
-            Dir = LastDir
+    while TestBounds(context.map_x + 4, context.map_y + 4):
+        BRivPlop(context)
+        if rand(context, r1) < 10:
+            context.dir = context.last_dir
         else:
-            if micropolis.utilities.rand(r2) > 90:
-                Dir += 1
-            if micropolis.utilities.rand(r2) > 90:
-                Dir -= 1
-        MoveMap(Dir)
+            if rand(context, r2) > 90:
+                context.dir += 1
+            if rand(context, r2) > 90:
+                context.dir -= 1
+        MoveMap(context, context.dir)
 
 
-def DoSRiv() -> None:
+def DoSRiv(context: AppContext) -> None:
     """
     Generate a small river branch.
 
     Ported from DoSRiv() in s_gen.c.
     Creates a narrow river path with some curvature.
+    :param context:
     """
-    global Dir, LastDir, MapX, MapY
+    # global dir, last_dir, map_x, map_y
 
-    if CurveLevel < 0:
+    if context.curve_level < 0:
         r1 = 100
         r2 = 200
     else:
-        r1 = CurveLevel + 10
-        r2 = CurveLevel + 100
+        r1 = context.curve_level + 10
+        r2 = context.curve_level + 100
 
-    while macros.TestBounds(MapX + 3, MapY + 3):
-        SRivPlop()
-        if micropolis.utilities.rand(r1) < 10:
-            Dir = LastDir
+    while TestBounds(context.map_x + 3, context.map_y + 3):
+        SRivPlop(context)
+        if rand(context, r1) < 10:
+            context.dir = context.last_dir
         else:
-            if micropolis.utilities.rand(r2) > 90:
-                Dir += 1
-            if micropolis.utilities.rand(r2) > 90:
-                Dir -= 1
-        MoveMap(Dir)
+            if rand(context, r2) > 90:
+                context.dir += 1
+            if rand(context, r2) > 90:
+                context.dir -= 1
+        MoveMap(context, context.dir)
 
 
-def PutOnMap(Mchar: int, Xoff: int, Yoff: int) -> None:
+def PutOnMap(context: AppContext, Mchar: int, Xoff: int, Yoff: int) -> None:
     """
     Place a terrain tile on the map at an offset from current position.
 
@@ -408,34 +407,36 @@ def PutOnMap(Mchar: int, Xoff: int, Yoff: int) -> None:
         Mchar: Tile type to place (0 = no tile)
         Xoff: X offset from MapX
         Yoff: Y offset from MapY
+        :param context:
     """
     if Mchar == 0:
         return
 
-    Xloc = MapX + Xoff
-    Yloc = MapY + Yoff
+    Xloc = context.map_x + Xoff
+    Yloc = context.map_y + Yoff
 
-    if not macros.TestBounds(Xloc, Yloc):
+    if not TestBounds(Xloc, Yloc):
         return
 
-    temp = types.map_data[Xloc][Yloc]
+    temp = context.map_data[Xloc][Yloc]
     if temp:
-        temp = temp & types.LOMASK
-        if temp == types.RIVER:
-            if Mchar != types.CHANNEL:
+        temp = temp & LOMASK
+        if temp == RIVER:
+            if Mchar != CHANNEL:
                 return
-        if temp == types.CHANNEL:
+        if temp == CHANNEL:
             return
 
-    types.map_data[Xloc][Yloc] = Mchar
+    context.map_data[Xloc][Yloc] = Mchar
 
 
-def BRivPlop() -> None:
+def BRivPlop(context: AppContext) -> None:
     """
     Place a big river segment (9x9 area).
 
     Ported from BRivPlop() in s_gen.c.
     Uses a predefined matrix to place river tiles in a 9x9 pattern.
+    :param context:
     """
     BRMatrix = [
         [0, 0, 0, 3, 3, 3, 0, 0, 0],
@@ -451,15 +452,16 @@ def BRivPlop() -> None:
 
     for x in range(9):
         for y in range(9):
-            PutOnMap(BRMatrix[y][x], x, y)
+            PutOnMap(context, BRMatrix[y][x], x, y)
 
 
-def SRivPlop() -> None:
+def SRivPlop(context: AppContext) -> None:
     """
     Place a small river segment (6x6 area).
 
     Ported from SRivPlop() in s_gen.c.
     Uses a predefined matrix to place river tiles in a 6x6 pattern.
+    :param context:
     """
     SRMatrix = [
         [0, 0, 3, 3, 0, 0],
@@ -472,7 +474,7 @@ def SRivPlop() -> None:
 
     for x in range(6):
         for y in range(6):
-            PutOnMap(SRMatrix[y][x], x, y)
+            PutOnMap(context, SRMatrix[y][x], x, y)
 
 
 # ============================================================================
@@ -480,7 +482,7 @@ def SRivPlop() -> None:
 # ============================================================================
 
 
-def TreeSplash(xloc: int, yloc: int) -> None:
+def TreeSplash(context: AppContext, xloc: int, yloc: int) -> None:
     """
     Create a cluster of trees starting from a location.
 
@@ -490,45 +492,47 @@ def TreeSplash(xloc: int, yloc: int) -> None:
     Args:
         xloc: Starting X coordinate
         yloc: Starting Y coordinate
+        :param context:
     """
-    global MapX, MapY
+    # global map_x, map_y
 
-    if TreeLevel < 0:
-        dis = micropolis.utilities.rand(150) + 50
+    if context.tree_level < 0:
+        dis = rand(context, 150) + 50
     else:
-        dis = micropolis.utilities.rand(100 + (TreeLevel * 2)) + 50
+        dis = rand(context, 100 + (context.tree_level * 2)) + 50
 
-    MapX = xloc
-    MapY = yloc
+    context.map_x = xloc
+    context.map_y = yloc
 
     for z in range(dis):
-        dir = micropolis.utilities.rand(7)
-        MoveMap(dir)
-        if not macros.TestBounds(MapX, MapY):
+        direction = rand(context, 7)
+        MoveMap(context, direction)
+        if not TestBounds(context.map_x, context.map_y):
             return
-        if (types.map_data[MapX][MapY] & types.LOMASK) == types.DIRT:
-            types.map_data[MapX][MapY] = types.WOODS + types.BLBNBIT
+        if (context.map_data[context.map_x][context.map_y] & LOMASK) == DIRT:
+            context.map_data[context.map_x][context.map_y] = WOODS + BLBNBIT
 
 
-def DoTrees() -> None:
+def DoTrees(context: AppContext) -> None:
     """
     Generate trees across the map.
 
     Ported from DoTrees() in s_gen.c.
     Creates multiple tree clusters at random locations.
+    :param context:
     """
-    if TreeLevel < 0:
-        Amount = micropolis.utilities.rand(100) + 50
+    if context.tree_level < 0:
+        Amount = rand(context, 100) + 50
     else:
-        Amount = TreeLevel + 3
+        Amount = context.tree_level + 3
 
     for x in range(Amount):
-        xloc = micropolis.utilities.rand(micropolis.constants.WORLD_X - 1)
-        yloc = micropolis.utilities.rand(micropolis.constants.WORLD_Y - 1)
-        TreeSplash(xloc, yloc)
+        xloc = rand(context, WORLD_X - 1)
+        yloc = rand(context, WORLD_Y - 1)
+        TreeSplash(context, xloc, yloc)
 
-    SmoothTrees()
-    SmoothTrees()
+    SmoothTrees(context)
+    SmoothTrees(context)
 
 
 # ============================================================================
@@ -536,58 +540,59 @@ def DoTrees() -> None:
 # ============================================================================
 
 
-def SmoothRiver() -> None:
+def SmoothRiver(context: AppContext) -> None:
     """
     Smooth river edges to create more natural transitions.
 
     Ported from SmoothRiver() in s_gen.c.
     Converts REDGE tiles to appropriate river edge tiles based on neighboring terrain.
+    :param context:
     """
     DX = [-1, 0, 1, 0]
     DY = [0, 1, 0, -1]
     REdTab = [
-        13 + types.BULLBIT,
-        13 + types.BULLBIT,
-        17 + types.BULLBIT,
-        15 + types.BULLBIT,
-        5 + types.BULLBIT,
+        13 + BULLBIT,
+        13 + BULLBIT,
+        17 + BULLBIT,
+        15 + BULLBIT,
+        5 + BULLBIT,
         2,
-        19 + types.BULLBIT,
-        17 + types.BULLBIT,
-        9 + types.BULLBIT,
-        11 + types.BULLBIT,
+        19 + BULLBIT,
+        17 + BULLBIT,
+        9 + BULLBIT,
+        11 + BULLBIT,
         2,
-        13 + types.BULLBIT,
-        7 + types.BULLBIT,
-        9 + types.BULLBIT,
-        5 + types.BULLBIT,
+        13 + BULLBIT,
+        7 + BULLBIT,
+        9 + BULLBIT,
+        5 + BULLBIT,
         2,
     ]
 
-    for MapX in range(micropolis.constants.WORLD_X):
-        for MapY in range(micropolis.constants.WORLD_Y):
-            if types.map_data[MapX][MapY] == types.REDGE:
+    for MapX in range(WORLD_X):
+        for MapY in range(WORLD_Y):
+            if context.map_data[MapX][MapY] == REDGE:
                 bitindex = 0
                 for z in range(4):
                     bitindex = bitindex << 1
                     Xtem = MapX + DX[z]
                     Ytem = MapY + DY[z]
                     if (
-                        macros.TestBounds(Xtem, Ytem)
-                        and ((types.map_data[Xtem][Ytem] & types.LOMASK) != types.DIRT)
-                        and (
-                            ((types.map_data[Xtem][Ytem] & types.LOMASK) < WOODS_LOW)
+                            TestBounds(Xtem, Ytem)
+                            and ((context.map_data[Xtem][Ytem] & LOMASK) != DIRT)
+                            and (
+                            ((context.map_data[Xtem][Ytem] & LOMASK) < WOODS_LOW)
                             or (
-                                (types.map_data[Xtem][Ytem] & types.LOMASK) > WOODS_HIGH
+                                    (context.map_data[Xtem][Ytem] & LOMASK) > WOODS_HIGH
                             )
-                        )
+                    )
                     ):
                         bitindex += 1
 
                 temp = REdTab[bitindex & 15]
-                if (temp != types.RIVER) and micropolis.utilities.rand(1):
+                if (temp != RIVER) and rand(context, 1):
                     temp += 1
-                types.map_data[MapX][MapY] = temp
+                context.map_data[MapX][MapY] = temp
 
 
 def IsTree(cell: int) -> bool:
@@ -602,150 +607,152 @@ def IsTree(cell: int) -> bool:
     Returns:
         True if the cell contains a tree
     """
-    cell_type = cell & types.LOMASK
+    cell_type = cell & LOMASK
     return WOODS_LOW <= cell_type <= WOODS_HIGH
 
 
-def SmoothTrees() -> None:
+def SmoothTrees(context: AppContext) -> None:
     """
     Smooth tree edges to create more natural forest boundaries.
 
     Ported from SmoothTrees() in s_gen.c.
     Converts tree tiles to appropriate forest edge tiles based on neighboring trees.
+    :param context:
     """
     DX = [-1, 0, 1, 0]
     DY = [0, 1, 0, -1]
     TEdTab = [0, 0, 0, 34, 0, 0, 36, 35, 0, 32, 0, 33, 30, 31, 29, 37]
 
-    for MapX in range(micropolis.constants.WORLD_X):
-        for MapY in range(micropolis.constants.WORLD_Y):
-            if IsTree(types.map_data[MapX][MapY]):
+    for MapX in range(WORLD_X):
+        for MapY in range(WORLD_Y):
+            if IsTree(context.map_data[MapX][MapY]):
                 bitindex = 0
                 for z in range(4):
                     bitindex = bitindex << 1
                     Xtem = MapX + DX[z]
                     Ytem = MapY + DY[z]
-                    if macros.TestBounds(Xtem, Ytem) and IsTree(
-                        types.map_data[Xtem][Ytem]
+                    if TestBounds(Xtem, Ytem) and IsTree(
+                            context.map_data[Xtem][Ytem]
                     ):
                         bitindex += 1
 
                 temp = TEdTab[bitindex & 15]
                 if temp:
-                    if temp != types.WOODS:
+                    if temp != WOODS:
                         if (MapX + MapY) & 1:
                             temp = temp - 8
-                    types.map_data[MapX][MapY] = temp + types.BLBNBIT
+                    context.map_data[MapX][MapY] = temp + BLBNBIT
                 else:
-                    types.map_data[MapX][MapY] = temp
+                    context.map_data[MapX][MapY] = temp
 
 
-def SmoothWater() -> None:
+def SmoothWater(context: AppContext) -> None:
     """
     Smooth water edges and transitions.
 
     Ported from SmoothWater() in s_gen.c.
     Complex algorithm that adjusts water tiles based on neighboring terrain.
+    :param context:
     """
     # First pass: Mark river edges
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
             # If water:
-            if WATER_LOW <= (types.map_data[x][y] & types.LOMASK) <= WATER_HIGH:
+            if WATER_LOW <= (context.map_data[x][y] & LOMASK) <= WATER_HIGH:
                 # Check neighbors for non-water
                 if x > 0:
                     if not (
-                        WATER_LOW
-                        <= (types.map_data[x - 1][y] & types.LOMASK)
-                        <= WATER_HIGH
+                            WATER_LOW
+                            <= (context.map_data[x - 1][y] & LOMASK)
+                            <= WATER_HIGH
                     ):
-                        types.map_data[x][y] = types.REDGE
+                        context.map_data[x][y] = REDGE
                         continue
-                if x < (micropolis.constants.WORLD_X - 1):
+                if x < (WORLD_X - 1):
                     if not (
-                        WATER_LOW
-                        <= (types.map_data[x + 1][y] & types.LOMASK)
-                        <= WATER_HIGH
+                            WATER_LOW
+                            <= (context.map_data[x + 1][y] & LOMASK)
+                            <= WATER_HIGH
                     ):
-                        types.map_data[x][y] = types.REDGE
+                        context.map_data[x][y] = REDGE
                         continue
                 if y > 0:
                     if not (
-                        WATER_LOW
-                        <= (types.map_data[x][y - 1] & types.LOMASK)
-                        <= WATER_HIGH
+                            WATER_LOW
+                            <= (context.map_data[x][y - 1] & LOMASK)
+                            <= WATER_HIGH
                     ):
-                        types.map_data[x][y] = types.REDGE
+                        context.map_data[x][y] = REDGE
                         continue
-                if y < (micropolis.constants.WORLD_Y - 1):
+                if y < (WORLD_Y - 1):
                     if not (
-                        WATER_LOW
-                        <= (types.map_data[x][y + 1] & types.LOMASK)
-                        <= WATER_HIGH
+                            WATER_LOW
+                            <= (context.map_data[x][y + 1] & LOMASK)
+                            <= WATER_HIGH
                     ):
-                        types.map_data[x][y] = types.REDGE
+                        context.map_data[x][y] = REDGE
                         continue
 
     # Second pass: Convert isolated water to river
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
             # If water which is not a channel:
-            if (types.map_data[x][y] & types.LOMASK) != types.CHANNEL and WATER_LOW <= (
-                types.map_data[x][y] & types.LOMASK
+            if (context.map_data[x][y] & LOMASK) != CHANNEL and WATER_LOW <= (
+                    context.map_data[x][y] & LOMASK
             ) <= WATER_HIGH:
                 # Check if all neighbors are water
                 is_isolated = True
                 if x > 0:
                     if not (
-                        WATER_LOW
-                        <= (types.map_data[x - 1][y] & types.LOMASK)
-                        <= WATER_HIGH
+                            WATER_LOW
+                            <= (context.map_data[x - 1][y] & LOMASK)
+                            <= WATER_HIGH
                     ):
                         is_isolated = False
-                if x < (micropolis.constants.WORLD_X - 1):
+                if x < (WORLD_X - 1):
                     if not (
-                        WATER_LOW
-                        <= (types.map_data[x + 1][y] & types.LOMASK)
-                        <= WATER_HIGH
+                            WATER_LOW
+                            <= (context.map_data[x + 1][y] & LOMASK)
+                            <= WATER_HIGH
                     ):
                         is_isolated = False
                 if y > 0:
                     if not (
-                        WATER_LOW
-                        <= (types.map_data[x][y - 1] & types.LOMASK)
-                        <= WATER_HIGH
+                            WATER_LOW
+                            <= (context.map_data[x][y - 1] & LOMASK)
+                            <= WATER_HIGH
                     ):
                         is_isolated = False
-                if y < (micropolis.constants.WORLD_Y - 1):
+                if y < (WORLD_Y - 1):
                     if not (
-                        WATER_LOW
-                        <= (types.map_data[x][y + 1] & types.LOMASK)
-                        <= WATER_HIGH
+                            WATER_LOW
+                            <= (context.map_data[x][y + 1] & LOMASK)
+                            <= WATER_HIGH
                     ):
                         is_isolated = False
 
                 if is_isolated:
-                    types.map_data[x][y] = types.RIVER
+                    context.map_data[x][y] = RIVER
 
     # Third pass: Adjust woods near water
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
             # If woods:
-            if WOODS_LOW <= (types.map_data[x][y] & types.LOMASK) <= WOODS_HIGH:
+            if WOODS_LOW <= (context.map_data[x][y] & LOMASK) <= WOODS_HIGH:
                 # Check if adjacent to water
                 if x > 0:
-                    if types.map_data[x - 1][y] in (types.RIVER, types.CHANNEL):
-                        types.map_data[x][y] = types.REDGE
+                    if context.map_data[x - 1][y] in (RIVER, CHANNEL):
+                        context.map_data[x][y] = REDGE
                         continue
-                if x < (micropolis.constants.WORLD_X - 1):
-                    if types.map_data[x + 1][y] in (types.RIVER, types.CHANNEL):
-                        types.map_data[x][y] = types.REDGE
+                if x < (WORLD_X - 1):
+                    if context.map_data[x + 1][y] in (RIVER, CHANNEL):
+                        context.map_data[x][y] = REDGE
                         continue
                 if y > 0:
-                    if types.map_data[x][y - 1] in (types.RIVER, types.CHANNEL):
-                        types.map_data[x][y] = types.REDGE
+                    if context.map_data[x][y - 1] in (RIVER, CHANNEL):
+                        context.map_data[x][y] = REDGE
                         continue
-                if y < (micropolis.constants.WORLD_Y - 1):
-                    if types.map_data[x][y + 1] in (types.RIVER, types.CHANNEL):
-                        types.map_data[x][y] = types.REDGE
+                if y < (WORLD_Y - 1):
+                    if context.map_data[x][y + 1] in (RIVER, CHANNEL):
+                        context.map_data[x][y] = REDGE
                         continue

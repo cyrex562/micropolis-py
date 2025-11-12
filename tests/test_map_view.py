@@ -164,7 +164,7 @@ class TestMapView(Assertions):
         types.map_data[2][0] = macros.INDBASE  # Industrial tile
 
         # This should work without errors
-        map_view.drawAll(self.mock_view)
+        map_view.drawAll(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -175,7 +175,7 @@ class TestMapView(Assertions):
         types.map_data[0][0] = macros.RESBASE  # Residential
         types.map_data[1][0] = macros.COMBASE  # Commercial (should be filtered)
 
-        map_view.drawRes(self.mock_view)
+        map_view.drawRes(context, context)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -186,7 +186,7 @@ class TestMapView(Assertions):
         types.map_data[0][0] = macros.RESBASE  # Residential (should be filtered)
         types.map_data[1][0] = macros.COMBASE  # Commercial
 
-        map_view.drawCom(self.mock_view)
+        map_view.drawCom(context, context)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -197,7 +197,7 @@ class TestMapView(Assertions):
         types.map_data[0][0] = macros.RESBASE  # Residential (should be filtered)
         types.map_data[1][0] = macros.INDBASE  # Industrial
 
-        map_view.drawInd(self.mock_view)
+        map_view.drawInd(context, context)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -210,7 +210,7 @@ class TestMapView(Assertions):
         )  # Powered residential
         types.map_data[1][0] = macros.RESBASE | macros.ZONEBIT  # Unpowered residential
 
-        map_view.drawPower(self.mock_view)
+        map_view.drawPower(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -220,7 +220,7 @@ class TestMapView(Assertions):
         # Set up population density data
         types.pop_density[0][0] = 100  # Medium density
 
-        map_view.drawPopDensity(self.mock_view)
+        map_view.drawPopDensity(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -230,7 +230,7 @@ class TestMapView(Assertions):
         # Set up growth rate data
         types.rate_og_mem[0][0] = 50  # Positive growth
 
-        map_view.drawRateOfGrowth(self.mock_view)
+        map_view.drawRateOfGrowth(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -240,7 +240,7 @@ class TestMapView(Assertions):
         # Set up traffic density data
         types.trf_density[0][0] = 75  # Medium traffic
 
-        map_view.drawTrafMap(self.mock_view)
+        map_view.drawTrafMap(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -250,7 +250,7 @@ class TestMapView(Assertions):
         # Set up pollution data
         types.pollution_mem[0][0] = 50  # Some pollution
 
-        map_view.drawPolMap(self.mock_view)
+        map_view.drawPolMap(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -260,7 +260,7 @@ class TestMapView(Assertions):
         # Set up crime data
         types.crime_mem[0][0] = 25  # Low crime
 
-        map_view.drawCrimeMap(self.mock_view)
+        map_view.drawCrimeMap(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -270,7 +270,7 @@ class TestMapView(Assertions):
         # Set up land value data
         types.land_value_mem[0][0] = 150  # High value
 
-        map_view.drawLandMap(self.mock_view)
+        map_view.drawLandMap(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -280,7 +280,7 @@ class TestMapView(Assertions):
         # Set up fire coverage data
         types.fire_rate[0][0] = 30  # Some coverage
 
-        map_view.drawFireRadius(self.mock_view)
+        map_view.drawFireRadius(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -290,7 +290,7 @@ class TestMapView(Assertions):
         # Set up police coverage data
         types.police_map_effect[0][0] = 40  # Some coverage
 
-        map_view.drawPoliceRadius(self.mock_view)
+        map_view.drawPoliceRadius(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -326,7 +326,7 @@ class TestMapView(Assertions):
         types.dynamic_data[15] = 100  # Fire max
 
         # Test filtering
-        result = map_view.dynamicFilter(0, 0)
+        result = map_view.dynamicFilter(context, context, 0)
         self.assertTrue(result)  # Should pass all filters
 
     def test_drawDynamic(self):
@@ -339,7 +339,7 @@ class TestMapView(Assertions):
         types.dynamic_data[0] = 0
         types.dynamic_data[1] = 100
 
-        map_view.drawDynamic(self.mock_view)
+        map_view.drawDynamic(context, context)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -353,7 +353,7 @@ class TestMapView(Assertions):
             micropolis.constants.PDMAP,
         ]:
             self.mock_view.map_state = map_state
-            map_view.MemDrawMap(self.mock_view)
+            map_view.MemDrawMap(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)

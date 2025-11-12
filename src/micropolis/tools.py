@@ -20,180 +20,73 @@ Ported from w_tool.c with pygame integration.
 
 from dataclasses import dataclass
 
-import micropolis.constants
-import micropolis.sim_view
+from src.micropolis.constants import LOMASK, ROADBASE, BNCNBIT, RAILBASE, POWERBASE, CONDBIT, FIRSTRIVEDGE, LASTRIVEDGE, \
+    TREEBASE, LASTTREE, RUBBLE, LASTRUBBLE, FLOOD, LASTFLOOD, RADTILE, FIRE, LASTFIRE, LASTROAD, TINYEXP, LASTTINYEXP, \
+    RESBASE, PORTBASE, LASTPOWERPLANT, POLICESTATION, LASTPORT, COALBASE, STADIUMBASE, LASTZONE, POWERPLANT, PORT, \
+    NUCLEAR, STADIUM, COALSMOKE3, AIRPORT, FOUNTAIN, BURNBIT, BULLBIT, ANIMBIT, WOODS2, TELEBASE, ZONEBIT, DIRT, RIVER, \
+    COMBASE, INDBASE, AIRPORTBASE, FIRESTBASE, POLICESTBASE, NUCLEARBASE, INDBASE2, FOOTBALLGAME1, VBRDG0, COALSMOKE1, \
+    REDGE, CHANNEL, SOMETINYEXP, CostOf, WORLD_X, WORLD_Y, COLOR_WHITE
+from src.micropolis.context import AppContext
+from src.micropolis.macros import TestBounds
+from src.micropolis.messages import make_sound, clear_mes, send_mes
+from src.micropolis.random import Rand
+from src.micropolis.sim_view import SimView
+from src.micropolis.ui_utilities import update_funds
 
-from . import macros, messages, random, types
 
 # ============================================================================
 # Tool State Constants (from w_tool.c)
 # ============================================================================
 
-# Tool state enumeration
-residentialState = 0
-commercialState = 1
-industrialState = 2
-fireState = 3
-queryState = 4
-policeState = 5
-wireState = 6
-dozeState = 7
-rrState = 8
-roadState = 9
-chalkState = 10
-eraserState = 11
-stadiumState = 12
-parkState = 13
-seaportState = 14
-powerState = 15
-nuclearState = 16
-airportState = 17
-networkState = 18
 
-# Tool state range
-firstState = residentialState
-lastState = networkState
 
 # ============================================================================
 # Tool Configuration Arrays (from w_tool.c)
 # ============================================================================
 
-# Cost of each tool
-CostOf: list[int] = [
-    100,
-    100,
-    100,
-    500,  # residential, commercial, industrial, fire
-    0,
-    500,
-    5,
-    1,  # query, police, wire, bulldoze
-    20,
-    10,
-    0,
-    0,  # rail, road, chalk, eraser
-    5000,
-    10,
-    3000,
-    3000,  # stadium, park, seaport, coal power
-    5000,
-    10000,
-    100,  # nuclear, airport, network
-]
 
-# Size of each tool (radius from center)
-toolSize: list[int] = [
-    3,
-    3,
-    3,
-    3,  # residential, commercial, industrial, fire (3x3)
-    1,
-    3,
-    1,
-    1,  # query, police, wire, bulldoze (1x1 or 3x3)
-    1,
-    1,
-    0,
-    0,  # rail, road, chalk, eraser (1x1 or freeform)
-    4,
-    1,
-    4,
-    4,  # stadium, park, seaport, coal power (4x4)
-    4,
-    6,
-    1,
-    0,  # nuclear, airport, network (4x4, 6x6, 1x1)
-]
 
-# Offset from map coordinates to tool center
-toolOffset: list[int] = [
-    1,
-    1,
-    1,
-    1,  # residential, commercial, industrial, fire
-    0,
-    1,
-    0,
-    0,  # query, police, wire, bulldoze
-    0,
-    0,
-    0,
-    0,  # rail, road, chalk, eraser
-    1,
-    0,
-    1,
-    1,  # stadium, park, seaport, coal power
-    1,
-    1,
-    0,
-    0,  # nuclear, airport, network
-]
 
-# Tool colors for overlay display (RGB pairs)
-toolColors: list[int] = [
-    0x00FF00,
-    0x00FFFF,
-    0xFFFF00,
-    0x00FF00,  # residential (green), commercial (cyan), industrial (yellow), fire (green/red)
-    0xFF8000,
-    0x00FF00,
-    0x808080,
-    0x808080,  # query (orange), police (green/cyan), wire (gray/yellow), bulldoze (brown/gray)
-    0x808080,
-    0xFFFFFF,
-    0xC0C0C0,
-    0x808080,  # rail (gray/olive), road (gray/white), chalk (gray/gray), eraser (gray/gray)
-    0xC0C0FF,
-    0x806040,
-    0xC0C0FF,
-    0xC0C0FF,  # stadium (gray/green), park (brown/green), seaport (gray/blue), power (gray/yellow)
-    0xC0C0FF,
-    0xC0C0FF,
-    0xC0C0FF,
-    0xFF0000,  # nuclear (gray/yellow), airport (gray/brown), network (gray/red), (unused)
-]
+
+
+
+
 
 # ============================================================================
 # Global Variables (from w_tool.c)
 # ============================================================================
 
-specialBase: int = types.CHURCH
-OverRide: int = 0
-Expensive: int = 1000
-Players: int = 1
-Votes: int = 0
-PendingTool: int = -1
-PendingX: int = 0
-PendingY: int = 0
+
 
 # ============================================================================
 # Utility Functions
 # ============================================================================
 
 
-def Spend(amount: int) -> None:
+def Spend(context: AppContext, amount: int) -> None:
     """
     Deduct funds from city treasury.
 
     Args:
         amount: Amount to spend
     """
-    types.total_funds -= amount
+    context.total_funds -= amount
 
 
-def MakeSound(channel: str, sound_name: str) -> None:
+def MakeSound(context: AppContext, channel: str, sound_name: str) -> None:
     """
     Play a sound effect.
 
     Args:
         channel: Sound channel ("city", "edit", etc.)
         sound_name: Name of sound to play
+        :param context: 
     """
-    messages.make_sound(channel, sound_name)
+    make_sound(context, channel, sound_name)
 
 
-def MakeSoundOn(
-    view: "micropolis.sim_view.SimView", channel: str, sound_name: str
+def MakeSoundOn(context: AppContext,
+    view: SimView, channel: str, sound_name: str
 ) -> None:
     """
     Play a sound effect if view has sound enabled.
@@ -204,10 +97,10 @@ def MakeSoundOn(
         sound_name: Name of sound to play
     """
     if view.sound:
-        MakeSound(channel, sound_name)
+        MakeSound(context, channel, sound_name)
 
 
-def ConnecTile(x: int, y: int, tile_ptr: list[int], command: int) -> int:
+def ConnecTile(context: AppContext, x: int, y: int, tile_ptr: list[int], command: int) -> int:
     """
     Connect infrastructure tiles (roads, rails, power lines).
 
@@ -222,29 +115,30 @@ def ConnecTile(x: int, y: int, tile_ptr: list[int], command: int) -> int:
 
     Returns:
         1 if successful, 0 if failed
+        :param context: 
     """
     # Placeholder - need to implement actual connection logic
     # For now, just place the tile without connection logic
-    if not macros.TestBounds(x, y):
+    if not TestBounds(x, y):
         return 0
 
-    current_tile = types.map_data[x][y] & types.LOMASK
+    current_tile = context.map_data[x][y] & LOMASK
 
     # Simple connection logic placeholder
     if command == 2:  # Road
         if current_tile == 0:  # Empty tile
-            types.map_data[x][y] = types.ROADBASE | types.BNCNBIT
-            Spend(CostOf[roadState])
+            context.map_data[x][y] = ROADBASE | BNCNBIT
+            Spend(context, CostOf[context.road_state])
             return 1
     elif command == 3:  # Rail
         if current_tile == 0:  # Empty tile
-            types.map_data[x][y] = types.RAILBASE | types.BNCNBIT
-            Spend(CostOf[rrState])
+            context.map_data[x][y] = RAILBASE | BNCNBIT
+            Spend(context, CostOf[context.rail_state])
             return 1
     elif command == 4:  # Wire
         if current_tile == 0:  # Empty tile
-            types.map_data[x][y] = types.POWERBASE | types.BNCNBIT | types.CONDBIT
-            Spend(CostOf[wireState])
+            context.map_data[x][y] = POWERBASE | BNCNBIT | CONDBIT
+            Spend(context, CostOf[context.wire_state])
             return 1
 
     return 0
@@ -263,28 +157,28 @@ def tally(tileValue: int) -> int:
     Returns:
         1 if tile can be auto-bulldozed, 0 otherwise
     """
-    tile_base = tileValue & types.LOMASK
+    tile_base = tileValue & LOMASK
 
     # Can bulldoze: rivers, trees, rubble, flood, radioactive waste, fire, roads
     bulldozable_ranges = [
-        (types.FIRSTRIVEDGE, types.LASTRIVEDGE),  # Rivers and edges
-        (types.TREEBASE, types.LASTTREE),  # Trees
-        (types.RUBBLE, types.LASTRUBBLE),  # Rubble
-        (types.FLOOD, types.LASTFLOOD),  # Flood water
-        (types.RADTILE, types.RADTILE),  # Radioactive waste
-        (types.FIRE, types.LASTFIRE),  # Fire
-        (types.ROADBASE, types.LASTROAD),  # Roads
+        (FIRSTRIVEDGE, LASTRIVEDGE),  # Rivers and edges
+        (TREEBASE, LASTTREE),  # Trees
+        (RUBBLE, LASTRUBBLE),  # Rubble
+        (FLOOD, LASTFLOOD),  # Flood water
+        (RADTILE, RADTILE),  # Radioactive waste
+        (FIRE, LASTFIRE),  # Fire
+        (ROADBASE, LASTROAD),  # Roads
     ]
 
     # Check power lines (specific ranges)
-    if (tile_base >= (types.POWERBASE + 2) and tile_base <= (types.POWERBASE + 12)) or (
-        tile_base >= types.TINYEXP and tile_base <= (types.LASTTINYEXP + 2)
+    if ((POWERBASE + 2) <= tile_base <= (POWERBASE + 12)) or (
+            TINYEXP <= tile_base <= (LASTTINYEXP + 2)
     ):
         return 1
 
     # Check bulldozable ranges
     for start, end in bulldozable_ranges:
-        if tile_base >= start and tile_base <= end:
+        if start <= tile_base <= end:
             return 1
 
     return 0
@@ -303,16 +197,16 @@ def checkSize(temp: int) -> int:
         3 for 3x3 zones, 4 for 4x4 buildings, 0 for other sizes
     """
     # 3x3 zones: residential, commercial, industrial, fire dept, police dept
-    if (temp >= (types.RESBASE - 1) and temp <= (types.PORTBASE - 1)) or (
-        temp >= (types.LASTPOWERPLANT + 1) and temp <= (types.POLICESTATION + 4)
+    if ((RESBASE - 1) <= temp <= (PORTBASE - 1)) or (
+            (LASTPOWERPLANT + 1) <= temp <= (POLICESTATION + 4)
     ):
         return 3
 
     # 4x4 buildings: seaports, coal/nuclear plants, stadium
     if (
-        (temp >= types.PORTBASE and temp <= types.LASTPORT)
-        or (temp >= types.COALBASE and temp <= types.LASTPOWERPLANT)
-        or (temp >= types.STADIUMBASE and temp <= types.LASTZONE)
+        (PORTBASE <= temp <= LASTPORT)
+        or (COALBASE <= temp <= LASTPOWERPLANT)
+        or (STADIUMBASE <= temp <= LASTZONE)
     ):
         return 4
 
@@ -339,26 +233,26 @@ def checkBigZone(tile_id: int, deltaHPtr: list[int], deltaVPtr: list[int]) -> in
 
     # 4x4 buildings: coal plant, seaport, nuclear plant, stadium
     four_by_four = [
-        (types.POWERPLANT, 0, 0),
-        (types.PORT, 0, 0),
-        (types.NUCLEAR, 0, 0),
-        (types.STADIUM, 0, 0),
+        (POWERPLANT, 0, 0),
+        (PORT, 0, 0),
+        (NUCLEAR, 0, 0),
+        (STADIUM, 0, 0),
         # Additional tiles within 4x4 buildings
-        (types.POWERPLANT + 1, -1, 0),
-        (types.COALSMOKE3, -1, 0),  # Coal plant smoke
-        (types.COALSMOKE3 + 1, -1, 0),
-        (types.COALSMOKE3 + 2, -1, 0),
-        (types.PORT + 1, -1, 0),
-        (types.NUCLEAR + 1, -1, 0),
-        (types.STADIUM + 1, -1, 0),
-        (types.POWERPLANT + 4, 0, -1),
-        (types.PORT + 4, 0, -1),
-        (types.NUCLEAR + 4, 0, -1),
-        (types.STADIUM + 4, 0, -1),
-        (types.POWERPLANT + 5, -1, -1),
-        (types.PORT + 5, -1, -1),
-        (types.NUCLEAR + 5, -1, -1),
-        (types.STADIUM + 5, -1, -1),
+        (POWERPLANT + 1, -1, 0),
+        (COALSMOKE3, -1, 0),  # Coal plant smoke
+        (COALSMOKE3 + 1, -1, 0),
+        (COALSMOKE3 + 2, -1, 0),
+        (PORT + 1, -1, 0),
+        (NUCLEAR + 1, -1, 0),
+        (STADIUM + 1, -1, 0),
+        (POWERPLANT + 4, 0, -1),
+        (PORT + 4, 0, -1),
+        (NUCLEAR + 4, 0, -1),
+        (STADIUM + 4, 0, -1),
+        (POWERPLANT + 5, -1, -1),
+        (PORT + 5, -1, -1),
+        (NUCLEAR + 5, -1, -1),
+        (STADIUM + 5, -1, -1),
     ]
 
     for check_tile, dh, dv in four_by_four:
@@ -370,25 +264,25 @@ def checkBigZone(tile_id: int, deltaHPtr: list[int], deltaVPtr: list[int]) -> in
     # 6x6 airport
     airport_tiles = [
         # First row
-        (types.AIRPORT, 0, 0),
-        (types.AIRPORT + 1, -1, 0),
-        (types.AIRPORT + 2, -2, 0),
-        (types.AIRPORT + 3, -3, 0),
+        (AIRPORT, 0, 0),
+        (AIRPORT + 1, -1, 0),
+        (AIRPORT + 2, -2, 0),
+        (AIRPORT + 3, -3, 0),
         # Second row
-        (types.AIRPORT + 6, 0, -1),
-        (types.AIRPORT + 7, -1, -1),
-        (types.AIRPORT + 8, -2, -1),
-        (types.AIRPORT + 9, -3, -1),
+        (AIRPORT + 6, 0, -1),
+        (AIRPORT + 7, -1, -1),
+        (AIRPORT + 8, -2, -1),
+        (AIRPORT + 9, -3, -1),
         # Third row
-        (types.AIRPORT + 12, 0, -2),
-        (types.AIRPORT + 13, -1, -2),
-        (types.AIRPORT + 14, -2, -2),
-        (types.AIRPORT + 15, -3, -2),
+        (AIRPORT + 12, 0, -2),
+        (AIRPORT + 13, -1, -2),
+        (AIRPORT + 14, -2, -2),
+        (AIRPORT + 15, -3, -2),
         # Fourth row
-        (types.AIRPORT + 18, 0, -3),
-        (types.AIRPORT + 19, -1, -3),
-        (types.AIRPORT + 20, -2, -3),
-        (types.AIRPORT + 21, -3, -3),
+        (AIRPORT + 18, 0, -3),
+        (AIRPORT + 19, -1, -3),
+        (AIRPORT + 20, -2, -3),
+        (AIRPORT + 21, -3, -3),
     ]
 
     for check_tile, dh, dv in airport_tiles:
@@ -405,7 +299,7 @@ def checkBigZone(tile_id: int, deltaHPtr: list[int], deltaVPtr: list[int]) -> in
 # ============================================================================
 
 
-def putDownPark(view: "micropolis.sim_view.SimView", mapH: int, mapV: int) -> int:
+def putDownPark(context: AppContext, view: SimView, mapH: int, mapV: int) -> int:
     """
     Place a park at the specified location.
 
@@ -418,26 +312,27 @@ def putDownPark(view: "micropolis.sim_view.SimView", mapH: int, mapV: int) -> in
 
     Returns:
         1 if successful, -1 if tile occupied, -2 if insufficient funds
+        :param context:
     """
-    if types.total_funds - CostOf[parkState] < 0:
+    if context.total_funds - CostOf[context.park_state] < 0:
         return -2
 
-    value = random.Rand(4)
+    value = Rand(context, 4)
     if value == 3:
-        tile = types.FOUNTAIN | types.BURNBIT | types.BULLBIT | types.ANIMBIT
+        tile = FOUNTAIN | BURNBIT | BULLBIT | ANIMBIT
     else:
-        tile = (types.WOODS2 + value) | types.BURNBIT | types.BULLBIT
+        tile = (WOODS2 + value) | BURNBIT | BULLBIT
 
-    if types.map_data[mapH][mapV] == 0:
-        Spend(CostOf[parkState])
-        types.UpdateFunds()
-        types.map_data[mapH][mapV] = tile
+    if context.map_data[mapH][mapV] == 0:
+        Spend(context, CostOf[context.park_state])
+        update_funds(context)
+        context.map_data[mapH][mapV] = tile
         return 1
 
     return -1
 
 
-def putDownNetwork(view: "micropolis.sim_view.SimView", mapH: int, mapV: int) -> int:
+def putDownNetwork(context: AppContext, view: SimView, mapH: int, mapV: int) -> int:
     """
     Place or remove a network/telecommunications tower.
 
@@ -451,23 +346,24 @@ def putDownNetwork(view: "micropolis.sim_view.SimView", mapH: int, mapV: int) ->
 
     Returns:
         1 if placed, -1 if tile occupied, -2 if insufficient funds
+        :param context:
     """
-    tile = types.map_data[mapH][mapV] & types.LOMASK
+    tile = context.map_data[mapH][mapV] & LOMASK
 
-    if (types.total_funds > 0) and tally(tile):
-        types.map_data[mapH][mapV] = tile = 0
-        Spend(1)
+    if (context.total_funds > 0) and tally(tile):
+        context.map_data[mapH][mapV] = tile = 0
+        Spend(context, 1)
 
     if tile == 0:
-        if (types.total_funds - CostOf[view.tool_state]) >= 0:
-            types.map_data[mapH][mapV] = (
-                types.TELEBASE
-                | types.CONDBIT
-                | types.BURNBIT
-                | types.BULLBIT
-                | types.ANIMBIT
+        if (context.total_funds - CostOf[context.tool_state]) >= 0:
+            context.map_data[mapH][mapV] = (
+                TELEBASE
+                | CONDBIT
+                | BURNBIT
+                | BULLBIT
+                | ANIMBIT
             )
-            Spend(CostOf[view.tool_state])
+            Spend(context, CostOf[context.tool_state])
             return 1
         else:
             return -2
@@ -480,21 +376,22 @@ def putDownNetwork(view: "micropolis.sim_view.SimView", mapH: int, mapV: int) ->
 # ============================================================================
 
 
-def check3x3border(xMap: int, yMap: int) -> None:
+def check3x3border(context: AppContext, xMap: int, yMap: int) -> None:
     """
     Update tile connections around a 3x3 building.
 
     Args:
         xMap: X coordinate of building center
         yMap: Y coordinate of building center
+        :param context:
     """
     xPos = xMap
     yPos = yMap - 1
 
     # Update upper bordering row
     for cnt in range(3):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         xPos += 1
 
     xPos = xMap - 1
@@ -502,8 +399,8 @@ def check3x3border(xMap: int, yMap: int) -> None:
 
     # Update left bordering row
     for cnt in range(3):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         yPos += 1
 
     xPos = xMap
@@ -511,8 +408,8 @@ def check3x3border(xMap: int, yMap: int) -> None:
 
     # Update bottom bordering row
     for cnt in range(3):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         xPos += 1
 
     xPos = xMap + 3
@@ -520,13 +417,13 @@ def check3x3border(xMap: int, yMap: int) -> None:
 
     # Update right bordering row
     for cnt in range(3):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         yPos += 1
 
 
-def check3x3(
-    view: "micropolis.sim_view.SimView", mapH: int, mapV: int, base: int, tool: int
+def check3x3(context: AppContext,
+    view: SimView, mapH: int, mapV: int, base: int, tool: int
 ) -> int:
     """
     Check and place a 3x3 building.
@@ -546,9 +443,9 @@ def check3x3(
 
     if (
         (mapH < 0)
-        or (mapH > (micropolis.constants.WORLD_X - 3))
+        or (mapH > (WORLD_X - 3))
         or (mapV < 0)
-        or (mapV > (micropolis.constants.WORLD_Y - 3))
+        or (mapV > (WORLD_Y - 3))
     ):
         return -1
 
@@ -562,9 +459,9 @@ def check3x3(
     for rowNum in range(3):
         mapH = holdMapH
         for columnNum in range(3):
-            tileValue = types.map_data[mapH][mapV] & types.LOMASK
+            tileValue = context.map_data[mapH][mapV] & LOMASK
 
-            if types.auto_bulldoze:
+            if context.auto_bulldoze:
                 if tileValue != 0:
                     if tally(tileValue):
                         cost += 1
@@ -581,21 +478,21 @@ def check3x3(
 
     cost += CostOf[tool]
 
-    if (types.total_funds - cost) < 0:
+    if (context.total_funds - cost) < 0:
         return -2
 
     if (
-        (types.players > 1)
-        and (types.over_ride == 0)
-        and (cost >= types.expensive)
+        (context.players > 1)
+        and (context.over_ride == 0)
+        and (cost >= context.expensive)
         and (view is not None)
         and (view.super_user == 0)
     ):
         return -3
 
     # Spend the money
-    Spend(cost)
-    types.UpdateFunds()
+    Spend(context, cost)
+    update_funds(context)
 
     mapV = holdMapV
 
@@ -604,32 +501,33 @@ def check3x3(
         mapH = holdMapH
         for columnNum in range(3):
             if columnNum == 1 and rowNum == 1:
-                types.map_data[mapH][mapV] = base + types.BNCNBIT + types.ZONEBIT
+                context.map_data[mapH][mapV] = base + BNCNBIT + ZONEBIT
             else:
-                types.map_data[mapH][mapV] = base + types.BNCNBIT
+                context.map_data[mapH][mapV] = base + BNCNBIT
             base += 1
             mapH += 1
         mapV += 1
 
-    check3x3border(xPos, yPos)
+    check3x3border(context, xPos, yPos)
     return 1
 
 
-def check4x4border(xMap: int, yMap: int) -> None:
+def check4x4border(context: AppContext, xMap: int, yMap: int) -> None:
     """
     Update tile connections around a 4x4 building.
 
     Args:
         xMap: X coordinate of building center
         yMap: Y coordinate of building center
+        :param context:
     """
     xPos = xMap
     yPos = yMap - 1
 
     # Update upper bordering row
     for cnt in range(4):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         xPos += 1
 
     xPos = xMap - 1
@@ -637,8 +535,8 @@ def check4x4border(xMap: int, yMap: int) -> None:
 
     # Update left bordering row
     for cnt in range(4):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         yPos += 1
 
     xPos = xMap
@@ -646,8 +544,8 @@ def check4x4border(xMap: int, yMap: int) -> None:
 
     # Update bottom bordering row
     for cnt in range(4):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         xPos += 1
 
     xPos = xMap + 4
@@ -655,13 +553,13 @@ def check4x4border(xMap: int, yMap: int) -> None:
 
     # Update right bordering row
     for cnt in range(4):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         yPos += 1
 
 
-def check4x4(
-    view: "micropolis.sim_view.SimView",
+def check4x4(context: AppContext,
+    view: SimView,
     mapH: int,
     mapV: int,
     base: int,
@@ -681,15 +579,16 @@ def check4x4(
 
     Returns:
         1 if successful, -1 if area occupied or out of bounds
+        :param context:
     """
     mapH -= 1
     mapV -= 1
 
     if (
         (mapH < 0)
-        or (mapH > (micropolis.constants.WORLD_X - 4))
+        or (mapH > (WORLD_X - 4))
         or (mapV < 0)
-        or (mapV > (micropolis.constants.WORLD_Y - 4))
+        or (mapV > (WORLD_Y - 4))
     ):
         return -1
 
@@ -703,9 +602,9 @@ def check4x4(
     for rowNum in range(4):
         mapH = holdMapH
         for columnNum in range(4):
-            tileValue = types.map_data[mapH][mapV] & types.LOMASK
+            tileValue = context.map_data[mapH][mapV] & LOMASK
 
-            if types.auto_bulldoze:
+            if context.auto_bulldoze:
                 if tileValue != 0:
                     if tally(tileValue):
                         cost += 1
@@ -722,21 +621,21 @@ def check4x4(
 
     cost += CostOf[tool]
 
-    if (types.total_funds - cost) < 0:
+    if (context.total_funds - cost) < 0:
         return -2
 
     if (
-        (types.players > 1)
-        and (types.over_ride == 0)
-        and (cost >= types.expensive)
+        (context.players > 1)
+        and (context.over_ride == 0)
+        and (cost >= context.expensive)
         and (view is not None)
         and (view.super_user == 0)
     ):
         return -3
 
     # Spend the money
-    Spend(cost)
-    types.UpdateFunds()
+    Spend(context, cost)
+    update_funds(context)
 
     mapV = v
     holdMapH = h
@@ -746,34 +645,35 @@ def check4x4(
         mapH = holdMapH
         for columnNum in range(4):
             if columnNum == 1 and rowNum == 1:
-                types.map_data[mapH][mapV] = base + types.BNCNBIT + types.ZONEBIT
+                context.map_data[mapH][mapV] = base + BNCNBIT + ZONEBIT
             elif columnNum == 1 and rowNum == 2 and aniFlag:
-                types.map_data[mapH][mapV] = base + types.BNCNBIT + types.ANIMBIT
+                context.map_data[mapH][mapV] = base + BNCNBIT + ANIMBIT
             else:
-                types.map_data[mapH][mapV] = base + types.BNCNBIT
+                context.map_data[mapH][mapV] = base + BNCNBIT
             base += 1
             mapH += 1
         mapV += 1
 
-    check4x4border(xMap, yMap)
+    check4x4border(context, xMap, yMap)
     return 1
 
 
-def check6x6border(xMap: int, yMap: int) -> None:
+def check6x6border(context: AppContext, xMap: int, yMap: int) -> None:
     """
     Update tile connections around a 6x6 building.
 
     Args:
         xMap: X coordinate of building center
         yMap: Y coordinate of building center
+        :param context:
     """
     xPos = xMap
     yPos = yMap - 1
 
     # Update upper bordering row
     for cnt in range(6):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         xPos += 1
 
     xPos = xMap - 1
@@ -781,8 +681,8 @@ def check6x6border(xMap: int, yMap: int) -> None:
 
     # Update left bordering row
     for cnt in range(6):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         yPos += 1
 
     xPos = xMap
@@ -790,8 +690,8 @@ def check6x6border(xMap: int, yMap: int) -> None:
 
     # Update bottom bordering row
     for cnt in range(6):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         xPos += 1
 
     xPos = xMap + 6
@@ -799,13 +699,13 @@ def check6x6border(xMap: int, yMap: int) -> None:
 
     # Update right bordering row
     for cnt in range(6):
-        if macros.TestBounds(xPos, yPos):
-            ConnecTile(xPos, yPos, [types.map_data[xPos][yPos]], 0)
+        if TestBounds(xPos, yPos):
+            ConnecTile(context, xPos, yPos, [context.map_data[xPos][yPos]], 0)
         yPos += 1
 
 
-def check6x6(
-    view: "micropolis.sim_view.SimView", mapH: int, mapV: int, base: int, tool: int
+def check6x6(context: AppContext,
+    view: SimView, mapH: int, mapV: int, base: int, tool: int
 ) -> int:
     """
     Check and place a 6x6 building.
@@ -819,15 +719,16 @@ def check6x6(
 
     Returns:
         1 if successful, -1 if area occupied or out of bounds
+        :param context:
     """
     mapH -= 1
     mapV -= 1
 
     if (
         (mapH < 0)
-        or (mapH > (micropolis.constants.WORLD_X - 6))
+        or (mapH > (WORLD_X - 6))
         or (mapV < 0)
-        or (mapV > (micropolis.constants.WORLD_Y - 6))
+        or (mapV > (WORLD_Y - 6))
     ):
         return -1
 
@@ -841,9 +742,9 @@ def check6x6(
     for rowNum in range(6):
         mapH = holdMapH
         for columnNum in range(6):
-            tileValue = types.map_data[mapH][mapV] & types.LOMASK
+            tileValue = context.map_data[mapH][mapV] & LOMASK
 
-            if types.auto_bulldoze:
+            if context.auto_bulldoze:
                 if tileValue != 0:
                     if tally(tileValue):
                         cost += 1
@@ -860,21 +761,21 @@ def check6x6(
 
     cost += CostOf[tool]
 
-    if (types.total_funds - cost) < 0:
+    if (context.total_funds - cost) < 0:
         return -2
 
     if (
-        (types.players > 1)
-        and (types.over_ride == 0)
-        and (cost >= types.expensive)
+        (context.players > 1)
+        and (context.over_ride == 0)
+        and (cost >= context.expensive)
         and (view is not None)
         and (view.super_user == 0)
     ):
         return -3
 
     # Spend the money
-    Spend(cost)
-    types.UpdateFunds()
+    Spend(context, cost)
+    update_funds(context)
 
     mapV = v
     holdMapH = h
@@ -884,14 +785,14 @@ def check6x6(
         mapH = holdMapH
         for columnNum in range(6):
             if columnNum == 1 and rowNum == 1:
-                types.map_data[mapH][mapV] = base + types.BNCNBIT + types.ZONEBIT
+                context.map_data[mapH][mapV] = base + BNCNBIT + ZONEBIT
             else:
-                types.map_data[mapH][mapV] = base + types.BNCNBIT
+                context.map_data[mapH][mapV] = base + BNCNBIT
             base += 1
             mapH += 1
         mapV += 1
 
-    check6x6border(xMap, yMap)
+    check6x6border(context, xMap, yMap)
     return 1
 
 
@@ -901,38 +802,38 @@ def check6x6(
 
 # Search table for zone status string match
 idArray: list[int] = [
-    types.DIRT,
-    types.RIVER,
-    types.TREEBASE,
-    types.RUBBLE,
-    types.FLOOD,
-    types.RADTILE,
-    types.FIRE,
-    types.ROADBASE,
-    types.POWERBASE,
-    types.RAILBASE,
-    types.RESBASE,
-    types.COMBASE,
-    types.INDBASE,
-    types.PORTBASE,
-    types.AIRPORTBASE,
-    types.COALBASE,
-    types.FIRESTBASE,
-    types.POLICESTBASE,
-    types.STADIUMBASE,
-    types.NUCLEARBASE,
+    DIRT,
+    RIVER,
+    TREEBASE,
+    RUBBLE,
+    FLOOD,
+    RADTILE,
+    FIRE,
+    ROADBASE,
+    POWERBASE,
+    RAILBASE,
+    RESBASE,
+    COMBASE,
+    INDBASE,
+    PORTBASE,
+    AIRPORTBASE,
+    COALBASE,
+    FIRESTBASE,
+    POLICESTBASE,
+    STADIUMBASE,
+    NUCLEARBASE,
     827,
     832,
-    types.FOUNTAIN,
-    types.INDBASE2,
-    types.FOOTBALLGAME1,
-    types.VBRDG0,
+    FOUNTAIN,
+    INDBASE2,
+    FOOTBALLGAME1,
+    VBRDG0,
     952,
     956,
 ]
 
 
-def getDensityStr(catNo: int, mapH: int, mapV: int) -> int:
+def getDensityStr(context: AppContext,catNo: int, mapH: int, mapV: int) -> int:
     """
     Get density string index for zone status display.
 
@@ -943,14 +844,15 @@ def getDensityStr(catNo: int, mapH: int, mapV: int) -> int:
 
     Returns:
         String index for the density display
+        :param context:
     """
     if catNo == 0:  # Population density
-        z = types.pop_density[mapH >> 1][mapV >> 1]
+        z = context.pop_density[mapH >> 1][mapV >> 1]
         z = z >> 6
         z = z & 3
         return z
     elif catNo == 1:  # Land value
-        z = types.land_value_mem[mapH >> 1][mapV >> 1]
+        z = context.land_value_mem[mapH >> 1][mapV >> 1]
         if z < 30:
             return 4
         elif z < 80:
@@ -960,19 +862,19 @@ def getDensityStr(catNo: int, mapH: int, mapV: int) -> int:
         else:
             return 7
     elif catNo == 2:  # Crime
-        z = types.crime_mem[mapH >> 1][mapV >> 1]
+        z = context.crime_mem[mapH >> 1][mapV >> 1]
         z = z >> 6
         z = z & 3
         return z + 8
     elif catNo == 3:  # Pollution
-        z = types.pollution_mem[mapH >> 1][mapV >> 1]
+        z = context.pollution_mem[mapH >> 1][mapV >> 1]
         if (z < 64) and (z > 0):
             return 13
         z = z >> 6
         z = z & 3
         return z + 12
     elif catNo == 4:  # Rate of growth
-        z = types.rate_og_mem[mapH >> 3][mapV >> 3]
+        z = context.rate_og_mem[mapH >> 3][mapV >> 3]
         if z < 0:
             return 16
         elif z == 0:
@@ -985,7 +887,7 @@ def getDensityStr(catNo: int, mapH: int, mapV: int) -> int:
     return 0
 
 
-def doZoneStatus(mapH: int, mapV: int) -> None:
+def doZoneStatus(context: AppContext, mapH: int, mapV: int) -> None:
     """
     Display zone status information for a tile.
 
@@ -995,12 +897,13 @@ def doZoneStatus(mapH: int, mapV: int) -> None:
     Args:
         mapH: X coordinate
         mapV: Y coordinate
+        :param context:
     """
-    tileNum = types.map_data[mapH][mapV] & types.LOMASK
+    tileNum = context.map_data[mapH][mapV] & LOMASK
 
     # Normalize coal smoke tiles to coal base
-    if tileNum >= types.COALSMOKE1 and tileNum < types.FOOTBALLGAME1:
-        tileNum = types.COALBASE
+    if COALSMOKE1 <= tileNum < FOOTBALLGAME1:
+        tileNum = COALBASE
 
     found = 1
     for x in range(1, 29):
@@ -1015,7 +918,7 @@ def doZoneStatus(mapH: int, mapV: int) -> None:
     # Get density strings for each category
     statusStr = []
     for category in range(5):
-        id_val = getDensityStr(category, mapH, mapV)
+        id_val = getDensityStr(context, category, mapH, mapV)
         id_val += 1
         if id_val <= 0:
             id_val = 1
@@ -1066,7 +969,7 @@ def DoShowZoneStatus(
 # ============================================================================
 
 
-def query_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def query_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Query tool - show zone status information.
 
@@ -1077,21 +980,22 @@ def query_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
 
     Returns:
         1 if successful, -1 if out of bounds
+        :param context:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    doZoneStatus(x, y)
-    DidTool(view, "Qry", x, y)
+    doZoneStatus(context, x, y)
+    DidTool(context, view, "Qry", x, y)
     return 1
 
 
-def bulldozer_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def bulldozer_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Bulldozer tool - destroy buildings and clear tiles.
 
@@ -1102,26 +1006,27 @@ def bulldozer_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
 
     Returns:
         1 if successful, -1 if out of bounds
+        :param context:
     """
     result = 0  # Initialize result
-    currTile = types.map_data[x][y]
-    temp = currTile & types.LOMASK
+    currTile = context.map_data[x][y]
+    temp = currTile & LOMASK
 
-    if currTile & types.ZONEBIT:  # Zone center bit is set
-        if types.total_funds > 0:
-            Spend(1)
+    if currTile & ZONEBIT:  # Zone center bit is set
+        if context.total_funds > 0:
+            Spend(context, 1)
             zoneSize = checkSize(temp)
 
             if zoneSize == 3:
-                MakeSound("city", "Explosion-High")
-                put3x3Rubble(x, y)
+                MakeSound(context, "city", "Explosion-High")
+                put3x3Rubble(context, x, y)
             elif zoneSize == 4:
-                put4x4Rubble(x, y)
-                MakeSound("city", "Explosion-Low")
+                put4x4Rubble(context, x, y)
+                MakeSound(context, "city", "Explosion-Low")
             elif zoneSize == 6:
-                MakeSound("city", "Explosion-High")
-                MakeSound("city", "Explosion-Low")
-                put6x6Rubble(x, y)
+                MakeSound(context, "city", "Explosion-High")
+                MakeSound(context, "city", "Explosion-Low")
+                put6x6Rubble(context, x, y)
             result = 1
     else:
         deltaH = [0]
@@ -1129,41 +1034,42 @@ def bulldozer_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
         zoneSize = checkBigZone(temp, deltaH, deltaV)
 
         if zoneSize > 0:
-            if types.total_funds > 0:
-                Spend(1)
+            if context.total_funds > 0:
+                Spend(context, 1)
 
                 if zoneSize == 3:
-                    MakeSound("city", "Explosion-High")
+                    MakeSound(context, "city", "Explosion-High")
                 elif zoneSize == 4:
-                    put4x4Rubble(x + deltaH[0], y + deltaV[0])
-                    MakeSound("city", "Explosion-Low")
+                    put4x4Rubble(context, x + deltaH[0], y + deltaV[0])
+                    MakeSound(context, "city", "Explosion-Low")
                 elif zoneSize == 6:
-                    MakeSound("city", "Explosion-High")
-                    MakeSound("city", "Explosion-Low")
-                    put6x6Rubble(x + deltaH[0], y + deltaV[0])
+                    MakeSound(context, "city", "Explosion-High")
+                    MakeSound(context, "city", "Explosion-Low")
+                    put6x6Rubble(context, x + deltaH[0], y + deltaV[0])
         else:
             # Handle rivers and other tiles
-            if temp == types.RIVER or temp == types.REDGE or temp == types.CHANNEL:
-                if types.total_funds >= 6:
-                    result = ConnecTile(x, y, [types.map_data[x][y]], 1)
-                    if temp != (types.map_data[x][y] & types.LOMASK):
-                        Spend(5)
+            if temp == RIVER or temp == REDGE or temp == CHANNEL:
+                if context.total_funds >= 6:
+                    result = ConnecTile(context, x, y, [context.map_data[x][y]], 1)
+                    if temp != (context.map_data[x][y] & LOMASK):
+                        Spend(context, 5)
                 else:
                     result = 0
             else:
-                result = ConnecTile(x, y, [types.map_data[x][y]], 1)
+                result = ConnecTile(context, x, y, [context.map_data[x][y]], 1)
 
-    types.UpdateFunds()
+    update_funds(context)
     if result == 1:
-        DidTool(view, "Dozr", x, y)
+        DidTool(context, view, "Dozr", x, y)
     return result
 
 
-def road_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def road_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Road tool - place road infrastructure.
 
     Args:
+        context: Application context
         view: View placing the road
         x: X coordinate
         y: Y coordinate
@@ -1173,20 +1079,20 @@ def road_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = ConnecTile(x, y, [types.map_data[x][y]], 2)
-    types.UpdateFunds()
+    result = ConnecTile(context, x, y, [context.map_data[x][y]], 2)
+    update_funds(context)
     if result == 1:
-        DidTool(view, "Road", x, y)
+        DidTool(context, view, "Road", x, y)
     return result
 
 
-def rail_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def rail_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Rail tool - place rail infrastructure.
 
@@ -1200,20 +1106,20 @@ def rail_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = ConnecTile(x, y, [types.map_data[x][y]], 3)
-    types.UpdateFunds()
+    result = ConnecTile(context, x, y, [context.map_data[x][y]], 3)
+    update_funds(context)
     if result == 1:
-        DidTool(view, "Rail", x, y)
+        DidTool(context,view, "Rail", x, y)
     return result
 
 
-def wire_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def wire_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Wire tool - place power line infrastructure.
 
@@ -1227,20 +1133,20 @@ def wire_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = ConnecTile(x, y, [types.map_data[x][y]], 4)
-    types.UpdateFunds()
+    result = ConnecTile(context, x, y, [context.map_data[x][y]], 4)
+    update_funds(context)
     if result == 1:
-        DidTool(view, "Wire", x, y)
+        DidTool(context,view, "Wire", x, y)
     return result
 
 
-def park_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def park_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Park tool - place parks and fountains.
 
@@ -1254,23 +1160,24 @@ def park_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = putDownPark(view, x, y)
+    result = putDownPark(context, view, x, y)
     if result == 1:
-        DidTool(view, "Park", x, y)
+        DidTool(context,view, "Park", x, y)
     return result
 
 
-def residential_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def residential_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Residential zone tool - place residential buildings.
 
     Args:
+        context: Application context
         view: View placing the zone
         x: X coordinate
         y: Y coordinate
@@ -1280,19 +1187,19 @@ def residential_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check3x3(view, x, y, types.RESBASE, residentialState)
+    result = check3x3(context, view, x, y, RESBASE, context.residental_state)
     if result == 1:
-        DidTool(view, "Res", x, y)
+        DidTool(context,view, "Res", x, y)
     return result
 
 
-def commercial_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def commercial_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Commercial zone tool - place commercial buildings.
 
@@ -1306,19 +1213,19 @@ def commercial_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check3x3(view, x, y, types.COMBASE, commercialState)
+    result = check3x3(context, view, x, y, COMBASE, context.commercial_state)
     if result == 1:
-        DidTool(view, "Com", x, y)
+        DidTool(context,view, "Com", x, y)
     return result
 
 
-def industrial_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def industrial_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Industrial zone tool - place industrial buildings.
 
@@ -1332,19 +1239,19 @@ def industrial_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check3x3(view, x, y, types.INDBASE, industrialState)
+    result = check3x3(context, view, x, y, INDBASE, context.industrial_state)
     if result == 1:
-        DidTool(view, "Ind", x, y)
+        DidTool(context,view, "Ind", x, y)
     return result
 
 
-def police_dept_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def police_dept_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Police department tool - place police stations.
 
@@ -1358,19 +1265,19 @@ def police_dept_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check3x3(view, x, y, types.POLICESTBASE, policeState)
+    result = check3x3(context, view, x, y, POLICESTBASE, context.police_state)
     if result == 1:
-        DidTool(view, "Pol", x, y)
+        DidTool(context,view, "Pol", x, y)
     return result
 
 
-def fire_dept_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def fire_dept_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Fire department tool - place fire stations.
 
@@ -1384,19 +1291,19 @@ def fire_dept_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check3x3(view, x, y, types.FIRESTBASE, fireState)
+    result = check3x3(context, view, x, y, FIRESTBASE, context.fire_state)
     if result == 1:
-        DidTool(view, "Fire", x, y)
+        DidTool(context,view, "Fire", x, y)
     return result
 
 
-def stadium_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def stadium_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Stadium tool - place stadiums.
 
@@ -1410,19 +1317,19 @@ def stadium_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check4x4(view, x, y, types.STADIUMBASE, 0, stadiumState)
+    result = check4x4(context, view, x, y, STADIUMBASE, 0, context.stadium_state)
     if result == 1:
-        DidTool(view, "Stad", x, y)
+        DidTool(context,view, "Stad", x, y)
     return result
 
 
-def coal_power_plant_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def coal_power_plant_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Coal power plant tool - place coal power plants.
 
@@ -1436,21 +1343,19 @@ def coal_power_plant_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check4x4(view, x, y, types.COALBASE, 1, powerState)
+    result = check4x4(context, view, x, y, COALBASE, 1, context.power_state)
     if result == 1:
-        DidTool(view, "Coal", x, y)
+        DidTool(context,view, "Coal", x, y)
     return result
 
 
-def nuclear_power_plant_tool(
-    view: "micropolis.sim_view.SimView", x: int, y: int
-) -> int:
+def nuclear_power_plant_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Nuclear power plant tool - place nuclear power plants.
 
@@ -1464,19 +1369,19 @@ def nuclear_power_plant_tool(
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check4x4(view, x, y, types.NUCLEARBASE, 1, nuclearState)
+    result = check4x4(context, view, x, y, NUCLEARBASE, 1, context.nuclear_state)
     if result == 1:
-        DidTool(view, "Nuc", x, y)
+        DidTool(context,view, "Nuc", x, y)
     return result
 
 
-def seaport_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def seaport_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Seaport tool - place seaports.
 
@@ -1490,19 +1395,19 @@ def seaport_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check4x4(view, x, y, types.PORTBASE, 0, seaportState)
+    result = check4x4(context, view, x, y, PORTBASE, 0, context.seaport_state)
     if result == 1:
-        DidTool(view, "Seap", x, y)
+        DidTool(context,view, "Seap", x, y)
     return result
 
 
-def airport_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def airport_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Airport tool - place airports.
 
@@ -1516,19 +1421,19 @@ def airport_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = check6x6(view, x, y, types.AIRPORTBASE, airportState)
+    result = check6x6(context, view, x, y, AIRPORTBASE, context.airport_state)
     if result == 1:
-        DidTool(view, "Airp", x, y)
+        DidTool(context,view, "Airp", x, y)
     return result
 
 
-def network_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def network_tool(context: AppContext, view:SimView, x: int, y: int) -> int:
     """
     Network tool - place telecommunications networks.
 
@@ -1542,15 +1447,15 @@ def network_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     """
     if (
         (x < 0)
-        or (x > (micropolis.constants.WORLD_X - 1))
+        or (x > (WORLD_X - 1))
         or (y < 0)
-        or (y > (micropolis.constants.WORLD_Y - 1))
+        or (y > (WORLD_Y - 1))
     ):
         return -1
 
-    result = putDownNetwork(view, x, y)
+    result = putDownNetwork(context, view, x, y)
     if result == 1:
-        DidTool(view, "Net", x, y)
+        DidTool(context,view, "Net", x, y)
     return result
 
 
@@ -1559,31 +1464,32 @@ def network_tool(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
 # ============================================================================
 
 
-def put3x3Rubble(x: int, y: int) -> None:
+def put3x3Rubble(context: AppContext, x: int, y: int) -> None:
     """
     Generate rubble from demolishing a 3x3 building.
 
     Args:
+        context: Application context
         x: X coordinate of building center
         y: Y coordinate of building center
     """
     for xx in range(x - 1, x + 2):
         for yy in range(y - 1, y + 2):
-            if macros.TestBounds(xx, yy):
-                zz = types.map_data[xx][yy] & types.LOMASK
-                if (zz != types.RADTILE) and (zz != 0):
-                    types.map_data[xx][yy] = (
+            if TestBounds(xx, yy):
+                zz = context.map_data[xx][yy] & LOMASK
+                if (zz != RADTILE) and (zz != 0):
+                    context.map_data[xx][yy] = (
                         (
-                            (types.TINYEXP + random.Rand(2))
-                            if types.do_animation
-                            else types.SOMETINYEXP
+                            (TINYEXP + Rand(context, 2))
+                            if context.do_animation
+                            else SOMETINYEXP
                         )
-                        | types.ANIMBIT
-                        | types.BULLBIT
+                        | ANIMBIT
+                        | BULLBIT
                     )
 
 
-def put4x4Rubble(x: int, y: int) -> None:
+def put4x4Rubble(context: AppContext, x: int, y: int) -> None:
     """
     Generate rubble from demolishing a 4x4 building.
 
@@ -1593,21 +1499,21 @@ def put4x4Rubble(x: int, y: int) -> None:
     """
     for xx in range(x - 1, x + 3):
         for yy in range(y - 1, y + 3):
-            if macros.TestBounds(xx, yy):
-                zz = types.map_data[xx][yy] & types.LOMASK
-                if (zz != types.RADTILE) and (zz != 0):
-                    types.map_data[xx][yy] = (
+            if TestBounds(xx, yy):
+                zz = context.map_data[xx][yy] & LOMASK
+                if (zz != RADTILE) and (zz != 0):
+                    context.map_data[xx][yy] = (
                         (
-                            (types.TINYEXP + random.Rand(2))
-                            if types.do_animation
-                            else types.SOMETINYEXP
+                            (TINYEXP + Rand(context, 2))
+                            if context.do_animation
+                            else SOMETINYEXP
                         )
-                        | types.ANIMBIT
-                        | types.BULLBIT
+                        | ANIMBIT
+                        | BULLBIT
                     )
 
 
-def put6x6Rubble(x: int, y: int) -> None:
+def put6x6Rubble(context: AppContext, x: int, y: int) -> None:
     """
     Generate rubble from demolishing a 6x6 building.
 
@@ -1617,17 +1523,17 @@ def put6x6Rubble(x: int, y: int) -> None:
     """
     for xx in range(x - 1, x + 5):
         for yy in range(y - 1, y + 5):
-            if macros.TestBounds(xx, yy):
-                zz = types.map_data[xx][yy] & types.LOMASK
-                if (zz != types.RADTILE) and (zz != 0):
-                    types.map_data[xx][yy] = (
+            if TestBounds(xx, yy):
+                zz = context.map_data[xx][yy] & LOMASK
+                if (zz != RADTILE) and (zz != 0):
+                    context.map_data[xx][yy] = (
                         (
-                            (types.TINYEXP + random.Rand(2))
-                            if types.do_animation
-                            else types.SOMETINYEXP
+                            (TINYEXP + Rand(context, 2))
+                            if context.do_animation
+                            else SOMETINYEXP
                         )
-                        | types.ANIMBIT
-                        | types.BULLBIT
+                        | ANIMBIT
+                        | BULLBIT
                     )
 
 
@@ -1636,7 +1542,7 @@ def put6x6Rubble(x: int, y: int) -> None:
 # ============================================================================
 
 
-def DidTool(view: "micropolis.sim_view.SimView", name: str, x: int, y: int) -> None:
+def DidTool(context: AppContext, view: SimView, name: str, x: int, y: int) -> None:
     """
     Notify the UI that a tool was used.
 
@@ -1650,7 +1556,7 @@ def DidTool(view: "micropolis.sim_view.SimView", name: str, x: int, y: int) -> N
     print(f"Tool {name} used at ({x},{y})")
 
 
-def DoSetWandState(view: "micropolis.sim_view.SimView", state: int) -> None:
+def DoSetWandState(context: AppContext, view: SimView, state: int) -> None:
     """
     Set the current tool state in the UI.
 
@@ -1662,7 +1568,7 @@ def DoSetWandState(view: "micropolis.sim_view.SimView", state: int) -> None:
     print(f"Tool state set to {state}")
 
 
-def setWandState(view: "micropolis.sim_view.SimView", state: int) -> None:
+def setWandState(context: AppContext, view: SimView, state: int) -> None:
     """
     Set the tool state for a view.
 
@@ -1672,7 +1578,7 @@ def setWandState(view: "micropolis.sim_view.SimView", state: int) -> None:
     """
     view.tool_state = state
     # DoUpdateHeads() - placeholder
-    DoSetWandState(view, state)
+    DoSetWandState(context, view, state)
 
 
 # ============================================================================
@@ -1681,12 +1587,13 @@ def setWandState(view: "micropolis.sim_view.SimView", state: int) -> None:
 
 
 def do_tool(
-    view: "micropolis.sim_view.SimView", state: int, x: int, y: int, first: int
+    context: AppContext, view: SimView, state: int, x: int, y: int, first: int
 ) -> int:
     """
     Apply a tool at the specified coordinates.
 
     Args:
+        context: Application context
         view: View applying the tool
         state: Tool state to apply
         x: X coordinate (in pixels)
@@ -1700,27 +1607,27 @@ def do_tool(
 
     # Tool state dispatch table
     tool_functions = {
-        residentialState: residential_tool,
-        commercialState: commercial_tool,
-        industrialState: industrial_tool,
-        fireState: fire_dept_tool,
-        queryState: query_tool,
-        policeState: police_dept_tool,
-        wireState: wire_tool,
-        dozeState: bulldozer_tool,
-        rrState: rail_tool,
-        roadState: road_tool,
-        chalkState: lambda v, px, py: ChalkTool(
-            v, px - 5, py + 11, micropolis.constants.COLOR_WHITE, first
+        context.residential_state: residential_tool,
+        context.commercial_state: commercial_tool,
+        context.industrial_state: industrial_tool,
+        context.fire_state: fire_dept_tool,
+        context.query_state: query_tool,
+        context.police_state: police_dept_tool,
+        context.wire_state: wire_tool,
+        context.bulldozer_state: bulldozer_tool,
+        context.rail_state: rail_tool,
+        context.road_state: road_tool,
+        context.chalk_state: lambda v, px, py: ChalkTool(context,
+            v, px - 5, py + 11, COLOR_WHITE, first
         ),
-        eraserState: lambda v, px, py: EraserTool(v, px, py, first),
-        stadiumState: stadium_tool,
-        parkState: park_tool,
-        seaportState: seaport_tool,
-        powerState: coal_power_plant_tool,
-        nuclearState: nuclear_power_plant_tool,
-        airportState: airport_tool,
-        networkState: network_tool,
+        context.eraser_state: lambda v, px, py: EraserTool(context, v, px, py, 1),
+        context.stadium_state: stadium_tool,
+        context.park_state: park_tool,
+        context.seaport_state: seaport_tool,
+        context.power_state: coal_power_plant_tool,
+        context.nuclear_state: nuclear_power_plant_tool,
+        context.airport_state: airport_tool,
+        context.network_state: network_tool,
     }
 
     tool_func = tool_functions.get(state)
@@ -1728,15 +1635,15 @@ def do_tool(
         # Convert pixel coordinates to tile coordinates
         tile_x = x >> 4
         tile_y = y >> 4
-        result = tool_func(view, tile_x, tile_y)
+        result = tool_func(context, view, tile_x, tile_y)
     else:
         result = 0
 
     return result
 
 
-def current_tool(
-    view: "micropolis.sim_view.SimView", x: int, y: int, first: int
+def current_tool(context: AppContext,
+    view: SimView, x: int, y: int, first: int
 ) -> int:
     """
     Apply the current tool of the view.
@@ -1749,15 +1656,17 @@ def current_tool(
 
     Returns:
         1 if successful, negative values for errors
+        :param context:
     """
-    return do_tool(view, view.tool_state, x, y, first)
+    return do_tool(context,view, view.tool_state, x, y, first)
 
 
-def ToolDown(view: "micropolis.sim_view.SimView", x: int, y: int) -> None:
+def ToolDown(context: AppContext, view: SimView, x: int, y: int) -> None:
     """
     Handle tool down event (mouse click).
 
     Args:
+        context: Application context
         view: View receiving the event
         x: X coordinate (in pixels)
         y: Y coordinate (in pixels)
@@ -1769,30 +1678,31 @@ def ToolDown(view: "micropolis.sim_view.SimView", x: int, y: int) -> None:
     view.last_x = pixel_x
     view.last_y = pixel_y
 
-    result = current_tool(view, pixel_x, pixel_y, 1)
+    result = current_tool(context,view, pixel_x, pixel_y, 1)
 
     if result == -1:
-        messages.clear_mes()
-        messages.send_mes(34)  # "That area is not in your jurisdiction"
-        MakeSoundOn(view, "edit", "UhUh")
+        clear_mes(context)
+        send_mes(context, 34)  # "That area is not in your jurisdiction"
+        MakeSoundOn(context,view, "edit", "UhUh")
     elif result == -2:
-        messages.clear_mes()
-        messages.send_mes(33)  # "You are out of funds"
-        MakeSoundOn(view, "edit", "Sorry")
+        clear_mes(context)
+        send_mes(context, 33)  # "You are out of funds"
+        MakeSoundOn(context,view, "edit", "Sorry")
     elif result == -3:
-        DoPendTool(view, view.tool_state, pixel_x >> 4, pixel_y >> 4)
+        DoPendTool(context,view, view.tool_state, pixel_x >> 4, pixel_y >> 4)
 
-    types.sim_skip = 0
+    context.sim_skip = 0
     view.skip = 0
     view.invalid = True
     # InvalidateEditors() - placeholder
 
 
-def ToolUp(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
+def ToolUp(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Handle tool up event (mouse release).
 
     Args:
+        context: Application context
         view: View receiving the event
         x: X coordinate (in pixels)
         y: Y coordinate (in pixels)
@@ -1800,11 +1710,11 @@ def ToolUp(view: "micropolis.sim_view.SimView", x: int, y: int) -> int:
     Returns:
         Result of the tool operation
     """
-    result = ToolDrag(view, x, y)
+    result = ToolDrag(context, view, x, y)
     return result
 
 
-def ToolDrag(view: "micropolis.sim_view.SimView", px: int, py: int) -> int:
+def ToolDrag(context: AppContext, view: SimView, px: int, py: int) -> int:
     """
     Handle tool drag event (mouse movement while tool is active).
 
@@ -1815,6 +1725,7 @@ def ToolDrag(view: "micropolis.sim_view.SimView", px: int, py: int) -> int:
 
     Returns:
         1 if successful, 0 otherwise
+        :param context:
     """
     # Convert screen coordinates to pixel coordinates
     x = px
@@ -1824,13 +1735,13 @@ def ToolDrag(view: "micropolis.sim_view.SimView", px: int, py: int) -> int:
     view.tool_y = y
 
     # Handle freeform tools (chalk, eraser) differently
-    if (view.tool_state == chalkState) or (view.tool_state == eraserState):
-        current_tool(view, x, y, 0)
+    if (view.tool_state == context.chalk_state) or (view.tool_state == context.eraser_state):
+        current_tool(context,view, x, y, 0)
         view.last_x = x
         view.last_y = y
     else:
         # Handle tile-based tools with interpolation
-        dist = toolSize[view.tool_state]
+        dist = context.tool_size[view.tool_state]
 
         x >>= 4  # Convert to tile coordinates
         y >>= 4
@@ -1866,12 +1777,12 @@ def ToolDrag(view: "micropolis.sim_view.SimView", px: int, py: int) -> int:
                     # Fill in corners
                     if dtx >= 1 and dty >= 1:
                         if dtx > dty:
-                            current_tool(view, ((int(tx) + rx) << 4), ly << 4, 0)
+                            current_tool(context,view, ((int(tx) + rx) << 4), ly << 4, 0)
                         else:
-                            current_tool(view, lx << 4, ((int(ty) + ry) << 4), 0)
+                            current_tool(context,view, lx << 4, ((int(ty) + ry) << 4), 0)
                     lx = int(tx) + rx
                     ly = int(ty) + ry
-                    current_tool(view, lx << 4, ly << 4, 0)
+                    current_tool(context,view, lx << 4, ly << 4, 0)
         else:
             # Multi-tile tool - place at intervals
             for i in range(0, int(1 + step), int(step)):
@@ -1881,44 +1792,45 @@ def ToolDrag(view: "micropolis.sim_view.SimView", px: int, py: int) -> int:
                 dty = abs(ty - ly)
                 lx = int(tx) + rx
                 ly = int(ty) + ry
-                current_tool(view, lx << 4, ly << 4, 0)
+                current_tool(context,view, lx << 4, ly << 4, 0)
 
         view.last_x = (lx << 4) + 8
         view.last_y = (ly << 4) + 8
 
-    types.sim_skip = 0  # Update editors overlapping this one
+    context.sim_skip = 0  # Update editors overlapping this one
     view.skip = 0
     view.invalid = True
     return 1
 
 
-def DoTool(view: "micropolis.sim_view.SimView", tool: int, x: int, y: int) -> None:
+def DoTool(context: AppContext, view: SimView, tool: int, x: int, y: int) -> None:
     """
     Apply a specific tool at tile coordinates.
 
     Args:
+        context: Application context
         view: View applying the tool
         tool: Tool state to apply
         x: X coordinate (in tiles)
         y: Y coordinate (in tiles)
     """
-    result = do_tool(view, tool, x << 4, y << 4, 1)
+    result = do_tool(context,view, tool, x << 4, y << 4, 1)
 
     if result == -1:
-        messages.clear_mes()
-        messages.send_mes(34)
-        MakeSoundOn(view, "edit", "UhUh")
+        clear_mes(context)
+        send_mes(context, 34)
+        MakeSoundOn(context,view, "edit", "UhUh")
     elif result == -2:
-        messages.clear_mes()
-        messages.send_mes(33)
-        MakeSoundOn(view, "edit", "Sorry")
+        clear_mes(context)
+        send_mes(context, 33)
+        MakeSoundOn(context,view, "edit", "Sorry")
 
-    types.sim_skip = 0
+    context.sim_skip = 0
     view.skip = 0
     # InvalidateEditors() - placeholder
 
 
-def DoPendTool(view: "micropolis.sim_view.SimView", tool: int, x: int, y: int) -> None:
+def DoPendTool(context: AppContext, view: SimView, tool: int, x: int, y: int) -> None:
     """
     Handle pending tool operations for multiplayer scenarios.
 
@@ -2022,13 +1934,14 @@ def AddInk(ink: Ink, x: int, y: int) -> None:
         ink.bottom = y
 
 
-def ChalkTool(
-    view: "micropolis.sim_view.SimView", x: int, y: int, color: int, first: int
+def ChalkTool(context: AppContext,
+    view: SimView, x: int, y: int, color: int, first: int
 ) -> int:
     """
     Chalk drawing tool.
 
     Args:
+        context: Application context
         view: View using the chalk
         x: X coordinate
         y: Y coordinate
@@ -2039,18 +1952,19 @@ def ChalkTool(
         1 if successful
     """
     if first:
-        ChalkStart(view, x, y, color)
+        ChalkStart(context,view, x, y, color)
     else:
         ChalkTo(view, x, y)
-    DidTool(view, "Chlk", x, y)
+    DidTool(context,view, "Chlk", x, y)
     return 1
 
 
-def ChalkStart(view: "micropolis.sim_view.SimView", x: int, y: int, color: int) -> None:
+def ChalkStart(context: AppContext, view: SimView, x: int, y: int, color: int) -> None:
     """
     Start a chalk stroke.
 
     Args:
+        context: Application context
         view: View starting the stroke
         x: Starting X coordinate
         y: Starting Y coordinate
@@ -2065,7 +1979,7 @@ def ChalkStart(view: "micropolis.sim_view.SimView", x: int, y: int, color: int) 
     # Set tool event time - placeholder
 
 
-def ChalkTo(view: "micropolis.sim_view.SimView", x: int, y: int) -> None:
+def ChalkTo(view: SimView, x: int, y: int) -> None:
     """
     Continue a chalk stroke.
 
@@ -2080,7 +1994,7 @@ def ChalkTo(view: "micropolis.sim_view.SimView", x: int, y: int) -> None:
     view.last_y = y
 
 
-def EraserTool(view: "micropolis.sim_view.SimView", x: int, y: int, first: int) -> int:
+def EraserTool(context: AppContext, view: SimView, x: int, y: int, first: int) -> int:
     """
     Eraser tool for removing chalk strokes.
 
@@ -2092,12 +2006,13 @@ def EraserTool(view: "micropolis.sim_view.SimView", x: int, y: int, first: int) 
 
     Returns:
         1 if successful
+        :param context:
     """
     if first:
         EraserStart(view, x, y)
     else:
         EraserTo(view, x, y)
-    DidTool(view, "Eraser", x, y)
+    DidTool(context,view, "Eraser", x, y)
     return 1
 
 
@@ -2147,7 +2062,7 @@ def InkInBox(ink: Ink, left: int, top: int, right: int, bottom: int) -> bool:
     return False
 
 
-def EraserStart(view: "micropolis.sim_view.SimView", x: int, y: int) -> None:
+def EraserStart(view: SimView, x: int, y: int) -> None:
     """
     Start an eraser operation.
 
@@ -2159,7 +2074,7 @@ def EraserStart(view: "micropolis.sim_view.SimView", x: int, y: int) -> None:
     EraserTo(view, x, y)
 
 
-def EraserTo(view: "micropolis.sim_view.SimView", x: int, y: int) -> None:
+def EraserTo(view: SimView, x: int, y: int) -> None:
     """
     Continue an eraser operation.
 

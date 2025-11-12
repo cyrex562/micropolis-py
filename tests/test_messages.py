@@ -76,11 +76,11 @@ class TestMessages(Assertions):
         messages.load_message_strings()
 
         # Test valid message numbers
-        msg = messages.get_message_string(1)
+        msg = messages.get_message_string(context, 1)
         self.assertIsInstance(msg, str)
 
         # Test invalid message numbers
-        msg = messages.get_message_string(999)
+        msg = messages.get_message_string(context, 999)
         self.assertEqual(msg, "")
 
     def test_tick_count(self):
@@ -96,9 +96,9 @@ class TestMessages(Assertions):
         """Test sound playing function."""
         mock_types.Sound = 1
         # Should not raise an exception
-        messages.make_sound("city", "test")
+        messages.make_sound(context, "city", "test")
         mock_types.Sound = 0
-        messages.make_sound("city", "test")
+        messages.make_sound(context, "city", "test")
 
     def test_clear_mes(self):
         """Test clearing message state."""
@@ -107,7 +107,7 @@ class TestMessages(Assertions):
         types.mes_y = 20
         types.last_pic_num = 3
 
-        messages.clear_mes()
+        messages.clear_mes(context)
 
         self.assertEqual(types.message_port, 0)
         self.assertEqual(types.mes_x, 0)
@@ -120,33 +120,33 @@ class TestMessages(Assertions):
         types.message_port = 0
 
         # Should send positive message
-        result = messages.send_mes(1)
+        result = messages.send_mes(context, 1)
         self.assertEqual(result, 1)
         self.assertEqual(types.message_port, 1)
         self.assertEqual(types.mes_x, 0)
         self.assertEqual(types.mes_y, 0)
 
         # Should not send duplicate positive message
-        result = messages.send_mes(1)
+        result = messages.send_mes(context, 1)
         self.assertEqual(result, 0)
 
         # Clear and test negative message
         types.message_port = 0
         types.last_pic_num = 0
-        result = messages.send_mes(-10)
+        result = messages.send_mes(context, -10)
         self.assertEqual(result, 1)
         self.assertEqual(types.message_port, -10)
         self.assertEqual(types.last_pic_num, -10)
 
         # Should not send duplicate negative message
-        result = messages.send_mes(-10)
+        result = messages.send_mes(context, -10)
         self.assertEqual(result, 0)
 
     def test_send_mes_at(self):
         """Test sending messages at specific locations."""
         types.message_port = 0
 
-        messages.send_mes_at(5, 100, 200)
+        messages.send_mes_at(context, 5, 100, 200)
 
         self.assertEqual(types.message_port, 5)
         self.assertEqual(types.mes_x, 100)
@@ -164,7 +164,7 @@ class TestMessages(Assertions):
         types.ind_pop = 0
         types.city_time = 4  # Multiple of 4 to trigger check
 
-        messages.check_growth()
+        messages.check_growth(context)
 
         # Should not trigger any messages yet
         self.assertEqual(types.last_city_pop, 200)  # (10+0+0)*20 = 200
@@ -174,7 +174,7 @@ class TestMessages(Assertions):
         # Test town milestone
         types.last_city_pop = 1999
         types.res_pop = 100  # Should give population of 2000
-        messages.check_growth()
+        messages.check_growth(context)
 
         # Should have sent message -35 (town)
         self.assertEqual(types.message_port, -35)
@@ -186,7 +186,7 @@ class TestMessages(Assertions):
         types.score_type = 1  # Dullsville
         types.city_class = 3  # Less than required 4
 
-        messages.do_scenario_score(1)
+        messages.do_scenario_score(context, 1)
 
         # Should call lose game
         mock_lose_game.assert_called_once()
@@ -197,7 +197,7 @@ class TestMessages(Assertions):
         types.score_type = 1  # Dullsville
         types.city_class = 4  # Meets requirement
 
-        messages.do_scenario_score(1)
+        messages.do_scenario_score(context, 1)
 
         # Should send win message (-100)
         self.assertEqual(types.message_port, -100)
@@ -211,7 +211,7 @@ class TestMessages(Assertions):
         mock_types.LastMessage = ""
         mock_types.Eval = MagicMock()
 
-        messages.set_message_field("Test message")
+        messages.set_message_field(context, "Test message")
 
         mock_types.Eval.assert_called_with("UISetMessage {Test message}")
         self.assertEqual(mock_types.LastMessage, "Test message")
@@ -219,7 +219,7 @@ class TestMessages(Assertions):
 
         # Test duplicate message (should not call Eval again)
         mock_types.Eval.reset_mock()
-        messages.set_message_field("Test message")
+        messages.set_message_field(context, "Test message")
         mock_types.Eval.assert_not_called()
 
     @patch("src.micropolis.messages.types")
@@ -227,7 +227,7 @@ class TestMessages(Assertions):
         """Test auto-goto functionality."""
         mock_types.Eval = MagicMock()
 
-        messages.do_auto_goto(50, 75, "Test message")
+        messages.do_auto_goto(context, 50, 75, "Test message")
 
         mock_types.Eval.assert_any_call("UISetMessage {Test message}")
         mock_types.Eval.assert_any_call("UIAutoGoto 50 75")
@@ -237,7 +237,7 @@ class TestMessages(Assertions):
         """Test showing pictures."""
         mock_types.Eval = MagicMock()
 
-        messages.do_show_picture(42)
+        messages.do_show_picture(context, 42)
 
         mock_types.Eval.assert_called_with("UIShowPicture 42")
 
@@ -246,7 +246,7 @@ class TestMessages(Assertions):
         """Test game loss handling."""
         mock_types.Eval = MagicMock()
 
-        messages.do_lose_game()
+        messages.do_lose_game(context)
 
         mock_types.Eval.assert_called_with("UILoseGame")
 
@@ -255,7 +255,7 @@ class TestMessages(Assertions):
         """Test game win handling."""
         mock_types.Eval = MagicMock()
 
-        messages.do_win_game()
+        messages.do_win_game(context)
 
         mock_types.Eval.assert_called_with("UIWinGame")
 

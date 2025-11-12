@@ -10,245 +10,15 @@ from typing import Any
 
 import pygame
 
-from . import types, view_types
+from src.micropolis.constants import SIM_GSMTILE, TILE_COUNT, STIPPLE_WIDTH, STIPPLE_HEIGHT, TRA, COP, AIR, SHI, GOD, \
+    TOR, EXP, BUS, GRAY25_BITS, GRAY50_BITS, GRAY75_BITS, VERT_BITS, HORIZ_BITS, DIAG_BITS, OBJN
+from src.micropolis.context import AppContext
+from src.micropolis.view_types import XDisplay, IsEditorView, IsMapView, X_Mem_View, X_Wire_View, MakeNewXDisplay
 
 
 # ============================================================================
 # Graphics Constants (from g_setup.c)
 # ============================================================================
-
-# Tile constants
-SIM_SMTILE = 385
-SIM_BWTILE = 386
-SIM_GSMTILE = 388
-SIM_LGTILE = 544
-
-# Stipple pattern dimensions
-STIPPLE_WIDTH = 16
-STIPPLE_HEIGHT = 16
-
-# Stipple pattern bitmaps (from g_setup.c)
-GRAY25_BITS = bytes(
-    [
-        0x77,
-        0x77,
-        0xDD,
-        0xDD,
-        0x77,
-        0x77,
-        0xDD,
-        0xDD,
-        0x77,
-        0x77,
-        0xDD,
-        0xDD,
-        0x77,
-        0x77,
-        0xDD,
-        0xDD,
-        0x77,
-        0x77,
-        0xDD,
-        0xDD,
-        0x77,
-        0x77,
-        0xDD,
-        0xDD,
-        0x77,
-        0x77,
-        0xDD,
-        0xDD,
-        0x77,
-        0x77,
-        0xDD,
-        0xDD,
-    ]
-)
-
-GRAY50_BITS = bytes(
-    [
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-        0x55,
-        0x55,
-        0xAA,
-        0xAA,
-    ]
-)
-
-GRAY75_BITS = bytes(
-    [
-        0x88,
-        0x88,
-        0x22,
-        0x22,
-        0x88,
-        0x88,
-        0x22,
-        0x22,
-        0x88,
-        0x88,
-        0x22,
-        0x22,
-        0x88,
-        0x88,
-        0x22,
-        0x22,
-        0x88,
-        0x88,
-        0x22,
-        0x22,
-        0x88,
-        0x88,
-        0x22,
-        0x22,
-        0x88,
-        0x88,
-        0x22,
-        0x22,
-        0x88,
-        0x88,
-        0x22,
-        0x22,
-    ]
-)
-
-VERT_BITS = bytes(
-    [
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-        0xAA,
-    ]
-)
-
-HORIZ_BITS = bytes(
-    [
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-        0xFF,
-        0xFF,
-        0x00,
-        0x00,
-    ]
-)
-
-DIAG_BITS = bytes(
-    [
-        0x55,
-        0x55,
-        0xEE,
-        0xEE,
-        0x55,
-        0x55,
-        0xBA,
-        0xBB,
-        0x55,
-        0x55,
-        0xEE,
-        0xEE,
-        0x55,
-        0x55,
-        0xBA,
-        0xBB,
-        0x55,
-        0x55,
-        0xEE,
-        0xEE,
-        0x55,
-        0x55,
-        0xBA,
-        0xBB,
-        0x55,
-        0x55,
-        0xEE,
-        0xEE,
-        0x55,
-        0x55,
-        0xBA,
-        0xBB,
-    ]
-)
 
 
 # ============================================================================
@@ -355,7 +125,7 @@ def create_small_tiles_surface() -> Any | None:
 
     # The hexa data is 4 pixels wide × 3 pixels high × TILE_COUNT tiles
     # We need to convert this to 4×4 pixels per tile with padding
-    expected_size = 4 * 3 * types.TILE_COUNT  # 11520
+    expected_size = 4 * 3 * TILE_COUNT  # 11520
     if len(hexa_data) < expected_size:
         print(
             f"Warning: Hexa data too small {len(hexa_data)}, expected at least {expected_size}"
@@ -369,14 +139,14 @@ def create_small_tiles_surface() -> Any | None:
         # Create surface for 4×4 tiles: TILE_COUNT tiles × 4×4 pixels × 4 bytes per pixel (RGBA)
         surface_width = 4  # 4 pixels per tile
         surface_height = (
-            4 * types.TILE_COUNT
+                4 * TILE_COUNT
         )  # 4 pixels high per tile × TILE_COUNT tiles
 
         surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
 
         # Process each tile
         data_index = 0
-        for tile in range(types.TILE_COUNT):
+        for tile in range(TILE_COUNT):
             # Read 3 rows of 4 pixels each from hexa data
             for y in range(3):
                 for x in range(4):
@@ -416,7 +186,7 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
         # For now, create a placeholder surface
         # Big tiles are 16×16 pixels per tile
         tiles_per_row = 16  # Assume tiles are arranged in a grid
-        rows = (types.TILE_COUNT + tiles_per_row - 1) // tiles_per_row
+        rows = (TILE_COUNT + tiles_per_row - 1) // tiles_per_row
 
         surface_width = tiles_per_row * 16
         surface_height = rows * 16
@@ -427,7 +197,7 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
         for tile_y in range(rows):
             for tile_x in range(tiles_per_row):
                 tile_index = tile_y * tiles_per_row + tile_x
-                if tile_index >= types.TILE_COUNT:
+                if tile_index >= TILE_COUNT:
                     break
 
                 # Create a simple colored rectangle for each tile
@@ -451,7 +221,7 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
 
 
 def create_stipple_surface(
-    bits: bytes, width: int = STIPPLE_WIDTH, height: int = STIPPLE_HEIGHT
+        bits: bytes, width: int = STIPPLE_WIDTH, height: int = STIPPLE_HEIGHT
 ) -> Any | None:
     """
     Create a pygame surface from stipple pattern bits.
@@ -505,14 +275,14 @@ def get_object_surfaces(object_id: int, frames: int) -> list[Any] | None:
 
     # Map object IDs to filename patterns
     object_names = {
-        types.TRA: "obj1",  # Train
-        types.COP: "obj2",  # Police helicopter
-        types.AIR: "obj3",  # Airplanes
-        types.SHI: "obj4",  # Ships
-        types.GOD: "obj5",  # God
-        types.TOR: "obj6",  # Tornado
-        types.EXP: "obj7",  # Explosion
-        types.BUS: "obj8",  # Bus
+        TRA: "obj1",  # Train
+        COP: "obj2",  # Police helicopter
+        AIR: "obj3",  # Airplanes
+        SHI: "obj4",  # Ships
+        GOD: "obj5",  # God
+        TOR: "obj6",  # Tornado
+        EXP: "obj7",  # Explosion
+        BUS: "obj8",  # Bus
     }
 
     if object_id not in object_names:
@@ -532,7 +302,7 @@ def get_object_surfaces(object_id: int, frames: int) -> list[Any] | None:
     return surfaces
 
 
-def get_pixmaps(display: view_types.XDisplay) -> None:
+def get_pixmaps(display: XDisplay) -> None:
     """
     Initialize pixmaps and stipple patterns for the display.
 
@@ -554,19 +324,19 @@ def get_pixmaps(display: view_types.XDisplay) -> None:
     # Load object sprites if not already loaded
     if display.objects is None:
         display.objects = []  # Initialize as empty list
-        for _ in range(types.OBJN):
+        for _ in range(OBJN):
             display.objects.append(None)  # Add None for each object slot
 
         # Load sprites for each object type with their frame counts
         object_frames = {
-            types.TRA: 5,  # Train: 5 frames
-            types.COP: 8,  # Police helicopter: 8 frames
-            types.AIR: 11,  # Airplanes: 11 frames
-            types.SHI: 8,  # Ships: 8 frames
-            types.GOD: 16,  # God: 16 frames
-            types.TOR: 3,  # Tornado: 3 frames
-            types.EXP: 6,  # Explosion: 6 frames
-            types.BUS: 4,  # Bus: 4 frames
+            TRA: 5,  # Train: 5 frames
+            COP: 8,  # Police helicopter: 8 frames
+            AIR: 11,  # Airplanes: 11 frames
+            SHI: 8,  # Ships: 8 frames
+            GOD: 16,  # God: 16 frames
+            TOR: 3,  # Tornado: 3 frames
+            EXP: 6,  # Explosion: 6 frames
+            BUS: 4,  # Bus: 4 frames
         }
 
         for obj_id, frames in object_frames.items():
@@ -588,12 +358,12 @@ def get_view_tiles(view: Any) -> None:
     """
 
     # Determine if this is an editor or map view
-    is_editor = view_types.IsEditorView(view)
-    is_map = view_types.IsMapView(view)
+    is_editor = IsEditorView(view)
+    is_map = IsMapView(view)
 
     if is_editor:
         # Load tiles for editor view (16x16 pixels per tile)
-        if view.type == view_types.X_Mem_View:
+        if view.type == X_Mem_View:
             if view.x.big_tile_image is None:
                 # Try to load from XPM first, then fall back to generated surface
                 tiles_filename = "tiles.xpm" if view.x.color else "tilesbw.xpm"
@@ -610,7 +380,7 @@ def get_view_tiles(view: Any) -> None:
             # Extract tile data from the surface
             view.bigtiles = view.x.big_tile_image
 
-        elif view.type == view_types.X_Wire_View:
+        elif view.type == X_Wire_View:
             if view.x.big_tile_pixmap is None:
                 tiles_filename = "tiles.xpm" if view.x.color else "tilesbw.xpm"
                 view.x.big_tile_pixmap = load_xpm_surface(tiles_filename)
@@ -637,7 +407,7 @@ def get_view_tiles(view: Any) -> None:
                     )
                     # For now, create a placeholder - we don't have the actual small tile graphics
                     view.x.small_tile_image = pygame.Surface(
-                        (4, 3 * types.TILE_COUNT), pygame.SRCALPHA
+                        (4, 3 * TILE_COUNT), pygame.SRCALPHA
                     )
 
             else:
@@ -647,14 +417,14 @@ def get_view_tiles(view: Any) -> None:
                     # Create XImage-like structure from hexa data
                     # This mimics the XCreateImage call in the C code
                     view.x.small_tile_image = pygame.Surface(
-                        (4, 3 * types.TILE_COUNT), pygame.SRCALPHA
+                        (4, 3 * TILE_COUNT), pygame.SRCALPHA
                     )
 
                     # Fill surface with hexa data (grayscale)
                     for i, pixel_value in enumerate(hexa_data):
                         x = i % 4
                         y = i // 4
-                        if y < 3 * types.TILE_COUNT:
+                        if y < 3 * TILE_COUNT:
                             color = (pixel_value, pixel_value, pixel_value, 255)
                             view.x.small_tile_image.set_at((x, y), color)
                 else:
@@ -668,10 +438,10 @@ def get_view_tiles(view: Any) -> None:
             source_surface = view.x.small_tile_image
 
             # Allocate space for 4x4 tiles
-            view.smalltiles = bytearray(4 * 4 * types.TILE_COUNT * pixel_bytes)
+            view.smalltiles = bytearray(4 * 4 * TILE_COUNT * pixel_bytes)
 
             to_index = 0
-            for tile in range(types.TILE_COUNT):
+            for tile in range(TILE_COUNT):
                 # Copy 3 rows of 4 pixels each
                 for y in range(3):
                     for x in range(4):
@@ -698,12 +468,13 @@ def get_view_tiles(view: Any) -> None:
 # ============================================================================
 
 
-def init_graphics() -> bool:
+def init_graphics(context: AppContext) -> bool:
     """
     Initialize the graphics system.
 
     Returns:
         True if initialization successful, False otherwise
+        :param context:
     """
 
     try:
@@ -712,11 +483,11 @@ def init_graphics() -> bool:
             pygame.init()
 
         # Get the main display
-        if not hasattr(types, "MainDisplay") or types.main_display is None:
-            types.main_display = view_types.MakeNewXDisplay()
+        if not hasattr(context, "MainDisplay") or context.main_display is None:
+            context.main_display = MakeNewXDisplay()
 
         # Initialize pixmaps for the main display
-        get_pixmaps(types.main_display)
+        get_pixmaps(context.main_display)
 
         return True
 
@@ -779,7 +550,7 @@ def get_tile_surface(tile_id: int, view: Any) -> Any | None:
     """
 
     try:
-        if view_types.IsEditorView(view) and hasattr(view, "bigtiles"):
+        if IsEditorView(view) and hasattr(view, "bigtiles"):
             # Extract 16x16 tile from the big tiles image
             tiles_per_row = view.bigtiles.get_width() // 16
             tile_x = (tile_id % tiles_per_row) * 16
@@ -789,7 +560,7 @@ def get_tile_surface(tile_id: int, view: Any) -> Any | None:
             tile_surface.blit(view.bigtiles, (0, 0), (tile_x, tile_y, 16, 16))
             return tile_surface
 
-        elif view_types.IsMapView(view) and hasattr(view, "smalltiles"):
+        elif IsMapView(view) and hasattr(view, "smalltiles"):
             # Extract 4x4 tile from the small tiles image (3x3 pixels + 1 padding)
             tiles_per_row = view.smalltiles.get_width() // 4
             tile_x = (tile_id % tiles_per_row) * 4
@@ -805,9 +576,9 @@ def get_tile_surface(tile_id: int, view: Any) -> Any | None:
     return None
 
 
-def get_object_surface(
-    object_id: int, frame: int = 0, display: view_types.XDisplay | None = None
-) -> Any | None:
+def get_object_surface(context: AppContext,
+                       object_id: int, frame: int = 0, display: XDisplay | None = None
+                       ) -> Any | None:
     """
     Get the surface for a specific object sprite.
 
@@ -818,17 +589,18 @@ def get_object_surface(
 
     Returns:
         pygame Surface for the object sprite, or None if not found
+        :param context:
     """
     if display is None:
-        display = types.main_display
+        display = context.main_display
 
     if display is None or display.objects is None:
         return None
 
     try:
         if (
-            0 < object_id < len(display.objects)
-            and display.objects[object_id] is not None
+                0 < object_id < len(display.objects)
+                and display.objects[object_id] is not None
         ):
             frames = display.objects[object_id]
             if frames is not None and 0 <= frame < len(frames):
@@ -844,20 +616,21 @@ def get_object_surface(
 # ============================================================================
 
 
-def validate_graphics_setup() -> bool:
+def validate_graphics_setup(context: AppContext) -> bool:
     """
     Validate that graphics have been properly initialized.
 
     Returns:
         True if graphics are properly set up, False otherwise
+        :param context:
     """
 
     try:
         # Check main display
-        if not hasattr(types, "MainDisplay") or types.main_display is None:
+        if not hasattr(context, "MainDisplay") or context.main_display is None:
             return False
 
-        display = types.main_display
+        display = context.main_display
 
         # Check stipple patterns
         stipples = [

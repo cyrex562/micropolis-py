@@ -190,49 +190,49 @@ class TestNetworkCommand:
 
     def test_listen_command(self):
         """Test listen TCL command."""
-        cmd = network.NetworkCommand()
+        cmd = network
 
-        result = cmd.handle_command("listen", "54333")
+        result = cmd.handle_command(context, context, "listen", "54333")
         assert result in ["0", "1"]
 
         network.stop_network_listening()
 
     def test_stop_command(self):
         """Test stop TCL command."""
-        cmd = network.NetworkCommand()
+        cmd = network
 
-        result = cmd.handle_command("stop")
+        result = cmd.handle_command(context, context, "stop")
         assert result == ""
 
     def test_send_command(self):
         """Test send TCL command."""
-        cmd = network.NetworkCommand()
+        cmd = network
 
         # Should work even without listening socket
-        result = cmd.handle_command("send", "127.0.0.1", "54334", "1", "2", "3")
+        result = cmd.handle_command(context, context, "send", "127.0.0.1", "54334", "1", "2", "3")
         assert result in ["0", "1"]
 
     def test_send_command_invalid_data(self):
         """Test send command with invalid data."""
-        cmd = network.NetworkCommand()
+        cmd = network
 
         with pytest.raises(ValueError, match="Data must be space-separated integers"):
-            cmd.handle_command("send", "127.0.0.1", "54335", "not", "numbers")
+            cmd.handle_command(context, context, "send", "127.0.0.1", "54335", "not", "numbers")
 
     def test_status_command(self):
         """Test status TCL command."""
-        cmd = network.NetworkCommand()
+        cmd = network
 
-        result = cmd.handle_command("status")
+        result = cmd.handle_command(context, context, "status")
         assert "active=" in result
         assert "port=" in result
 
     def test_invalid_command(self):
         """Test invalid TCL command."""
-        cmd = network.NetworkCommand()
+        cmd = network
 
         with pytest.raises(ValueError, match="Unknown network command"):
-            cmd.handle_command("invalid")
+            cmd.handle_command(context, context, "invalid")
 
 
 class TestDefaultPacketHandler:

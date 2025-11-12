@@ -11,22 +11,12 @@ from enum import Enum
 
 import pygame
 
+from src.micropolis.constants import TWO_PI, PIE_INACTIVE_RADIUS, PIE_MIN_RADIUS, PIE_EXTRA_RADIUS, PIE_BG_COLOR, \
+    PIE_FG, PIE_ACTIVE_BG_COLOR, PIE_ACTIVE_FG_COLOR, PIE_BORDER_WIDTH, PIE_ACTIVE_BORDER_WIDTH, PIE_POPUP_DELAY, \
+    PIE_SPOKE_INSET
 from src.micropolis.pie_menu_entry import PieMenuEntry
 
-# Constants (ported from w_piem.c)
-PI = 3.1415926535897932
-TWO_PI = 6.2831853071795865
-PIE_SPOKE_INSET = 6
-PIE_BG_COLOR = "#bfbfbf"
-PIE_ACTIVE_FG_COLOR = "black"
-PIE_ACTIVE_BG_COLOR = "#bfbfbf"
-PIE_FG = "black"
-PIE_ACTIVE_BORDER_WIDTH = 2
-PIE_INACTIVE_RADIUS = 8
-PIE_MIN_RADIUS = 16
-PIE_EXTRA_RADIUS = 2
-PIE_BORDER_WIDTH = 2
-PIE_POPUP_DELAY = 250
+
 
 
 def deg_to_rad(deg: float) -> float:

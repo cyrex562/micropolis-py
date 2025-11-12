@@ -195,7 +195,7 @@ class TestEditor(Assertions):
         mock_types.sim_skips = 0
         mock_types.do_animation = 0
         mock_types.tiles_animated = 0
-        mock_types.PendingTool = -1  # No pending tool
+        mock_types.pending_tool = -1  # No pending tool
 
         editor.do_update_editor(context, self.mock_view)
 

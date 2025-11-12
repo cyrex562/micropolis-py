@@ -93,7 +93,7 @@ def test_position_stack():
     types.s_map_y = 20
 
     # Test PushPos
-    traffic.PushPos()
+    traffic.PushPos(context)
     assert types.pos_stack_num == 1, "PosStackN should be 1 after push"
     assert len(types.s_map_x_stack) >= 1, "SMapXStack should have at least 1 element"
     assert len(types.s_map_y_stack) >= 1, "SMapYStack should have at least 1 element"
@@ -105,7 +105,7 @@ def test_position_stack():
     types.s_map_y = 40
 
     # Test PullPos
-    traffic.PullPos()
+    traffic.PullPos(context)
     assert types.pos_stack_num == 0, "PosStackN should be 0 after pull"
     assert types.s_map_x == 10, "SMapX should be restored to 10"
     assert types.s_map_y == 20, "SMapY should be restored to 20"
@@ -130,7 +130,7 @@ def test_find_proad():
 
     # Test finding road
     original_x, original_y = types.s_map_x, types.s_map_y
-    found = traffic.FindPRoad()
+    found = traffic.FindPRoad(context)
 
     assert found, "Should find road on perimeter"
     # Position should be updated to road location
@@ -143,7 +143,7 @@ def test_find_proad():
 
     # Test with no roads
     types.map_data = [[0 for _ in range(macros.WORLD_Y)] for _ in range(macros.WORLD_X)]
-    found = traffic.FindPRoad()
+    found = traffic.FindPRoad(context)
     assert not found, "Should not find road when none exist"
 
     print("✓ FindPRoad function OK")

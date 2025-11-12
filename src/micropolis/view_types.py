@@ -9,25 +9,16 @@ adapted for pygame graphics instead of X11/TCL-Tk.
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from src.micropolis.context import AppContext
+
+
 # ============================================================================
 # View Constants
 # ============================================================================
 
-# View types
-X_Mem_View = 1
-X_Wire_View = 2
 
-# View classes
-Editor_Class = 0
-Map_Class = 1
 
-# Button event types
-Button_Press = 0
-Button_Move = 1
-Button_Release = 2
 
-# View flags
-VIEW_REDRAW_PENDING = 1
 
 # ============================================================================
 # Data Structure Classes
@@ -219,32 +210,32 @@ def MakeNewSimExtended() -> SimExtended:
 # View Management Functions (placeholders for pygame integration)
 # ============================================================================
 
-def ViewRedrawPending(view: Any) -> bool:
+def ViewRedrawPending(context: AppContext, view: Any) -> bool:
     """Check if view needs redrawing"""
-    return bool(view.flags & VIEW_REDRAW_PENDING)
+    return bool(view.flags & context.VIEW_REDRAW_PENDING)
 
 
-def SetViewRedrawPending(view: Any, pending: bool = True) -> None:
+def SetViewRedrawPending(context: AppContext, view: Any, pending: bool = True) -> None:
     """Set view redraw pending flag"""
     if pending:
-        view.flags |= VIEW_REDRAW_PENDING
+        view.flags |= context.VIEW_REDRAW_PENDING
     else:
-        view.flags &= ~VIEW_REDRAW_PENDING
+        view.flags &= ~context.VIEW_REDRAW_PENDING
 
 
-def GetViewClass(view: Any) -> int:
+def GetViewClass(context: AppContext, view: Any) -> int:
     """Get view class (Editor or Map)"""
     return getattr(view, 'class_id', 0)
 
 
-def IsEditorView(view: Any) -> bool:
+def IsEditorView(context: AppContext, view: Any) -> bool:
     """Check if view is an editor view"""
-    return GetViewClass(view) == Editor_Class
+    return GetViewClass(context, view) == context.Editor_Class
 
 
-def IsMapView(view: Any) -> bool:
+def IsMapView(context: AppContext, view: Any) -> bool:
     """Check if view is a map view"""
-    return GetViewClass(view) == Map_Class
+    return GetViewClass(context, view) == context.Map_Class
 
 
 # ============================================================================

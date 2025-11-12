@@ -106,7 +106,7 @@ class TestBasicFunctionality(unittest.TestCase):
 
         original_level = ui_utilities.types.game_level        """Test formatting with 4 digits."""        result = ui_utilities.make_dollar_decimal_str("42")
 
-        ui_utilities.set_game_level(1)
+    ui_utilities.set_game_level(context, 1)
 
         self.assertEqual(ui_utilities.types.game_level, 1)        result = ui_utilities.make_dollar_decimal_str("1234")        self.assertEqual(result, "$42")
 
@@ -122,7 +122,8 @@ class TestBasicFunctionality(unittest.TestCase):
 
         original_name = ui_utilities.types.city_name    def test_make_dollar_decimal_str_large_number(self):        """Test formatting three digit numbers."""
 
-        ui_utilities.set_city_name("TestCity123")
+
+ui_utilities.set_city_name(context, "TestCity123")
 
         self.assertEqual(ui_utilities.types.city_name, "TestCity123")        """Test formatting with large number."""        result = ui_utilities.make_dollar_decimal_str("123")
 
@@ -138,7 +139,8 @@ class TestBasicFunctionality(unittest.TestCase):
 
         original_name = ui_utilities.types.city_name    def test_make_dollar_decimal_str_four_digits(self):
 
-        ui_utilities.set_city_name("Test City!")
+
+ui_utilities.set_city_name(context, "Test City!")
 
         # Should sanitize non-alphanumeric characters    def test_make_dollar_decimal_str_single_digit(self):        """Test formatting four digit numbers with comma."""
 
@@ -156,7 +158,9 @@ class TestBasicFunctionality(unittest.TestCase):
 
         original_name = ui_utilities.types.city_name
 
-        ui_utilities.set_any_city_name("Test City!")    def test_make_dollar_decimal_str_large_number(self):
+        ui_utilities.set_any_city_name(context, "Test City!")
+
+        def test_make_dollar_decimal_str_large_number(self):
 
         self.assertEqual(ui_utilities.types.city_name, "Test City!")
 
@@ -184,7 +188,8 @@ class TestBasicFunctionality(unittest.TestCase):
 
 
 
-        result = ui_utilities.current_year()        """Test formatting with 2 digits."""        result = ui_utilities.make_dollar_decimal_str("123456")
+        result = ui_utilities.current_year(context)
+        """Test formatting with 2 digits."""        result = ui_utilities.make_dollar_decimal_str("123456")
 
 
 
@@ -220,7 +225,8 @@ class TestSimulationControl(unittest.TestCase):
 
 
 
-        ui_utilities.set_year(1910)    @patch('src.micropolis.ui_utilities.sim_control.pause_simulation')        self.mock_types = Mock()
+        ui_utilities.set_current_year(context,
+                                      1910) @ patch('src.micropolis.ui_utilities.sim_control.pause_simulation')        self.mock_types = Mock()
 
 
 
@@ -260,7 +266,9 @@ class TestSimulationControl(unittest.TestCase):
 
 
 
-    def test_do_pop_up_message(self):        ui_utilities.pause()    def test_pause_when_not_paused(self, mock_types, mock_sim_control):
+    def test_do_pop_up_message(self):        ui_utilities.pause(context)
+
+    def test_pause_when_not_paused(self, mock_types, mock_sim_control):
 
         """Test popup message stub."""
 
@@ -280,7 +288,7 @@ class TestSimulationControl(unittest.TestCase):
 
         ui_utilities.do_start_elmd()
 
-        ui_utilities.pause()
+    ui_utilities.pause(context)
 
 
 
@@ -304,17 +312,19 @@ class TestUIUtilitiesCommand(unittest.TestCase):    @patch('src.micropolis.ui_ut
 
         with self.assertRaises(ValueError):
 
-            self.cmd.handle_command("setspeed")    def test_pause_when_not_paused(self, mock_set_sim_speed, mock_resume_simulation,
+            self.cmd.handle_command(context, context, "setspeed")
+
+            def test_pause_when_not_paused(self, mock_set_sim_speed, mock_resume_simulation,
 
 
 
-    def test_handle_command_setspeed_wrong_arg_count(self):                                   mock_get_sim_speed, mock_pause_simulation,    @patch('src.micropolis.ui_utilities.sim_control')
+                                           def test_handle_command_setspeed_wrong_arg_count(self):                                   mock_get_sim_speed, mock_pause_simulation,    @patch('src.micropolis.ui_utilities.sim_control')
 
         """Test setspeed command with wrong argument count."""
 
         with self.assertRaises(ValueError):                                   mock_is_sim_paused):    @patch('src.micropolis.ui_utilities.types')
 
-            self.cmd.handle_command("setspeed", "1", "2")
+        self.cmd.handle_command(context, context, "setspeed", "1", "2")
 
         """Test pausing when simulation is not already paused."""    def test_pause_when_already_paused(self, mock_types, mock_sim_control):
 
@@ -324,7 +334,8 @@ class TestUIUtilitiesCommand(unittest.TestCase):    @patch('src.micropolis.ui_ut
 
         with self.assertRaises(ValueError):
 
-            self.cmd.handle_command("unknown_command")        mock_get_sim_speed.return_value = 3        mock_sim_control.is_sim_paused.return_value = True
+            self.cmd.handle_command(context, context, "unknown_command")
+            mock_get_sim_speed.return_value = 3        mock_sim_control.is_sim_paused.return_value = True
 
 
 
@@ -332,7 +343,9 @@ class TestUIUtilitiesCommand(unittest.TestCase):    @patch('src.micropolis.ui_ut
 
 if __name__ == '__main__':
 
-    unittest.main()        ui_utilities.pause()        ui_utilities.pause()
+    unittest.main()
+    ui_utilities.pause(context)
+    ui_utilities.pause(context)
 
 
 
@@ -366,7 +379,7 @@ if __name__ == '__main__':
 
         mock_sim_control.set_sim_speed.assert_called_once_with(2)
 
-        ui_utilities.resume()
+ui_utilities.resume(context)
 
     @patch('src.micropolis.ui_utilities.sim_control')
 
@@ -380,7 +393,10 @@ if __name__ == '__main__':
 
     @patch('src.micropolis.ui_utilities.sim_control.is_sim_paused')
 
-    @patch('src.micropolis.ui_utilities.sim_control.pause_simulation')        ui_utilities.resume()
+    @patch('src.micropolis.ui_utilities.sim_control.pause_simulation')
+
+
+ui_utilities.resume(context)
 
     @patch('src.micropolis.ui_utilities.sim_control.get_sim_speed')
 
@@ -402,9 +418,9 @@ if __name__ == '__main__':
 
         ui_utilities.types.sim_paused_speed = 2
 
-        ui_utilities.set_speed(2)
+ui_utilities.set_speed(context, 2)
 
-        ui_utilities.resume()
+ui_utilities.resume(context)
 
         self.assertEqual(mock_types.SimMetaSpeed, 2)
 
@@ -426,7 +442,8 @@ if __name__ == '__main__':
 
 
 
-        mock_set_sim_skips.assert_called_once_with(5)        ui_utilities.set_speed(-1)
+        mock_set_sim_skips.assert_called_once_with(5)
+ui_utilities.set_speed(context, -1)
 
 
 
@@ -442,13 +459,15 @@ if __name__ == '__main__':
 
     def test_set_speed_clamp_high(self, mock_types, mock_sim_control):
 
-        ui_utilities.set_speed(5)        """Test clamping speed to maximum value."""
+        ui_utilities.set_speed(context, 5)
+        """Test clamping speed to maximum value."""
 
         mock_sim_control.is_sim_paused.return_value = False
 
         # Should be clamped to 3
 
-        self.assertEqual(ui_utilities.types.SimMetaSpeed, 3)        ui_utilities.set_speed(5)
+        self.assertEqual(ui_utilities.types.SimMetaSpeed, 3)
+        ui_utilities.set_speed(context, 5)
 
         self.assertEqual(ui_utilities.types.SimSpeed, 3)
 
@@ -468,9 +487,9 @@ if __name__ == '__main__':
 
         mock_sim_control.is_sim_paused.return_value = True
 
-        ui_utilities.set_speed(-1)
+ui_utilities.set_speed(context, -1)
 
-        ui_utilities.set_speed(2)
+ui_utilities.set_speed(context, 2)
 
         # Should be clamped to 0
 
@@ -492,9 +511,8 @@ if __name__ == '__main__':
 
         mock_is_sim_paused.return_value = False        ui_utilities.set_skips(5)
 
-
-
-        ui_utilities.set_speed(2)        mock_sim_control.set_sim_skips.assert_called_once_with(5)
+ui_utilities.set_speed(context, 2)
+mock_sim_control.set_sim_skips.assert_called_once_with(5)
 
 
 
@@ -512,13 +530,14 @@ if __name__ == '__main__':
 
     def test_set_speed_when_paused(self, mock_set_sim_speed, mock_is_sim_paused):        """Test setting funds for easy difficulty."""
 
-        """Test setting speed when simulation is paused."""        ui_utilities.set_game_level_funds(0)
+        """Test setting speed when simulation is paused."""
+ui_utilities.set_game_level_funds(context, 0)
 
         mock_is_sim_paused.return_value = True
 
         mock_types.SetFunds.assert_called_once_with(20000)
 
-        ui_utilities.set_speed(2)        # Should also call set_game_level(0) but that's mocked
+        ui_utilities.set_speed(context, 2)  # Should also call set_game_level(0) but that's mocked
 
 
 
@@ -528,7 +547,8 @@ if __name__ == '__main__':
 
         self.assertEqual(ui_utilities.types.sim_paused_speed, 2)        """Test setting funds for medium difficulty."""
 
-        self.assertEqual(ui_utilities.types.SimSpeed, 0)        ui_utilities.set_game_level_funds(1)
+        self.assertEqual(ui_utilities.types.SimSpeed, 0)
+ui_utilities.set_game_level_funds(context, 1)
 
         mock_set_sim_speed.assert_called_once_with(0)
 
@@ -542,13 +562,16 @@ class TestGameLevelManagement(unittest.TestCase):    @patch('src.micropolis.ui_u
 
         """Test setting funds for hard difficulty."""
 
-    @patch('src.micropolis.ui_utilities.types.SetFunds')        ui_utilities.set_game_level_funds(2)
+    @patch('src.micropolis.ui_utilities.types.SetFunds')
+
+
+ui_utilities.set_game_level_funds(context, 2)
 
     def test_set_game_level_funds_default(self, mock_SetFunds):
 
         """Test setting funds for invalid difficulty (defaults to easy)."""        mock_types.SetFunds.assert_called_once_with(5000)
 
-        ui_utilities.set_game_level_funds(99)
+        ui_utilities.set_game_level_funds(context, 99)
 
     @patch('src.micropolis.ui_utilities.types')
 
@@ -556,7 +579,7 @@ class TestGameLevelManagement(unittest.TestCase):    @patch('src.micropolis.ui_u
 
         self.assertEqual(ui_utilities.types.GameLevel, 0)        """Test setting funds for invalid difficulty (defaults to easy)."""
 
-        ui_utilities.set_game_level_funds(99)
+ui_utilities.set_game_level_funds(context, 99)
 
     @patch('src.micropolis.ui_utilities.types.SetFunds')
 
@@ -564,13 +587,14 @@ class TestGameLevelManagement(unittest.TestCase):    @patch('src.micropolis.ui_u
 
         """Test setting funds for easy difficulty."""
 
-        ui_utilities.set_game_level_funds(0)    @patch('src.micropolis.ui_utilities.types')
+ui_utilities.set_game_level_funds(context, 0) @ patch('src.micropolis.ui_utilities.types')
 
     def test_set_game_level(self, mock_types):
 
         mock_SetFunds.assert_called_once_with(20000)        """Test setting game level."""
 
-        self.assertEqual(ui_utilities.types.GameLevel, 0)        ui_utilities.set_game_level(1)
+        self.assertEqual(ui_utilities.types.GameLevel, 0)
+        ui_utilities.set_game_level(context, 1)
 
 
 
@@ -580,7 +604,8 @@ class TestGameLevelManagement(unittest.TestCase):    @patch('src.micropolis.ui_u
 
         """Test setting funds for medium difficulty."""    def test_update_game_level(self):
 
-        ui_utilities.set_game_level_funds(1)        """Test updating game level display (no-op in pygame version)."""
+        ui_utilities.set_game_level_funds(context, 1)
+        """Test updating game level display (no-op in pygame version)."""
 
         # This function is currently a no-op
 
@@ -596,13 +621,14 @@ class TestGameLevelManagement(unittest.TestCase):    @patch('src.micropolis.ui_u
 
         """Test setting funds for hard difficulty."""
 
-        ui_utilities.set_game_level_funds(2)    @patch('src.micropolis.ui_utilities.types')
+ui_utilities.set_game_level_funds(context, 2) @ patch('src.micropolis.ui_utilities.types')
 
     def test_set_city_name_sanitized(self, mock_types):
 
         mock_SetFunds.assert_called_once_with(5000)        """Test setting city name with sanitization."""
 
-        self.assertEqual(ui_utilities.types.GameLevel, 2)        ui_utilities.set_city_name("Test City!")
+        self.assertEqual(ui_utilities.types.GameLevel, 2)
+        ui_utilities.set_city_name(context, "Test City!")
 
 
 
@@ -610,7 +636,7 @@ class TestGameLevelManagement(unittest.TestCase):    @patch('src.micropolis.ui_u
 
         """Test setting game level."""        mock_types.__setattr__.assert_called_once_with('CityName', 'Test_City_')
 
-        ui_utilities.set_game_level(1)
+        ui_utilities.set_game_level(context, 1)
 
     @patch('src.micropolis.ui_utilities.types')
 
@@ -618,7 +644,7 @@ class TestGameLevelManagement(unittest.TestCase):    @patch('src.micropolis.ui_u
 
         """Test setting city name with only alphanumeric characters."""
 
-    def test_update_game_level(self):        ui_utilities.set_city_name("TestCity123")
+    def test_update_game_level(self):        ui_utilities.set_city_name(context, "TestCity123")
 
         """Test updating game level display."""
 
@@ -632,7 +658,8 @@ class TestGameLevelManagement(unittest.TestCase):    @patch('src.micropolis.ui_u
 
 class TestCityNameManagement(unittest.TestCase):        """Test setting city name without sanitization."""
 
-    """Test city name management functions."""        ui_utilities.set_any_city_name("Test City!")
+    """Test city name management functions."""
+ui_utilities.set_any_city_name(context, "Test City!")
 
 
 
@@ -640,7 +667,7 @@ class TestCityNameManagement(unittest.TestCase):        """Test setting city nam
 
         """Test setting city name with only alphanumeric characters."""
 
-        ui_utilities.set_city_name("TestCity123")
+ui_utilities.set_city_name(context, "TestCity123")
 
 class TestTimeManagement(unittest.TestCase):
 
@@ -652,7 +679,9 @@ class TestTimeManagement(unittest.TestCase):
 
         """Test setting city name with sanitization."""    def test_set_year_valid(self, mock_types):
 
-        ui_utilities.set_city_name("Test City!")        """Test setting year to valid value."""
+
+ui_utilities.set_city_name(context, "Test City!")
+"""Test setting year to valid value."""
 
         mock_types.StartingYear = 1900
 
@@ -660,13 +689,13 @@ class TestTimeManagement(unittest.TestCase):
 
         self.assertEqual(ui_utilities.types.CityName, "Test_City_")
 
-        ui_utilities.set_year(1910)
+ui_utilities.set_current_year(context, 1910)
 
     def test_set_any_city_name(self):
 
         """Test setting city name without sanitization."""        # Year offset = 1910 - 1900 - (480 // 48) = 10 - 10 = 0
 
-        ui_utilities.set_any_city_name("Test City!")        # CityTime should increase by 0 * 48 = 0
+        ui_utilities.set_any_city_name(context, "Test City!")  # CityTime should increase by 0 * 48 = 0
 
         self.assertEqual(mock_types.CityTime, 480)
 
@@ -684,7 +713,8 @@ class TestTimeManagement(unittest.TestCase):        """Test setting year below S
 
     def test_current_year(self):
 
-        """Test getting current year."""        ui_utilities.set_year(1800)
+        """Test getting current year."""
+        ui_utilities.set_current_year(context, 1800)
 
         # Set up test values
 
@@ -700,7 +730,10 @@ class TestTimeManagement(unittest.TestCase):        """Test setting year below S
 
     @patch('src.micropolis.ui_utilities.types')
 
-        result = ui_utilities.current_year()    def test_current_year(self, mock_types):
+        result = ui_utilities.current_year(context)
+
+
+def test_current_year(self, mock_types):
 
         """Test getting current year."""
 
@@ -736,7 +769,7 @@ class TestTimeManagement(unittest.TestCase):        """Test setting year below S
 
         ui_utilities.do_set_map_state(mock_view, 5)
 
-        ui_utilities.set_year(1800)
+        ui_utilities.set_current_year(context, 1800)
 
         self.assertEqual(mock_view.map_state, 5)
 
@@ -776,7 +809,8 @@ class TestStubFunctions(unittest.TestCase):
 
     def test_do_generated_city_image(self):
 
-        ui_utilities.set_year(1910)        """Test city image generation stub."""
+        ui_utilities.set_current_year(context, 1910)
+        """Test city image generation stub."""
 
         # Should not raise any exceptions
 
@@ -830,7 +864,7 @@ class TestMapViewManagement(unittest.TestCase):        """Test popup message dis
 
         """Test pause command."""
 
-class TestGameManagement(unittest.TestCase):        result = self.cmd.handle_command("pause")
+class TestGameManagement(unittest.TestCase):        result = self.cmd.handle_command(context, context, "pause")
 
     """Test game management functions."""
 
@@ -846,7 +880,8 @@ class TestGameManagement(unittest.TestCase):        result = self.cmd.handle_com
 
         """Test resume command."""
 
-        mock_InitializeSimulation.assert_called_once()        result = self.cmd.handle_command("resume")
+        mock_InitializeSimulation.assert_called_once()        result = self.cmd.handle_command(context, context,
+                                                                                               "resume")
 
 
 
@@ -877,8 +912,7 @@ class TestStubFunctions(unittest.TestCase):        self.assertEqual(result, "")
         # Just ensure it doesn't crash        """Test setspeed command with invalid arguments."""
 
         ui_utilities.do_pop_up_message("Test message")        with self.assertRaises(ValueError) as cm:
-
-            self.cmd.handle_command("setspeed")
+self.cmd.handle_command(context, context, "setspeed")
 
     def test_do_start_elmd(self):
 
@@ -892,7 +926,8 @@ class TestStubFunctions(unittest.TestCase):        self.assertEqual(result, "")
 
         """Test setskips command."""
 
-class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle_command("setskips", "5")
+class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle_command(context, context, "setskips",
+                                                                                         "5")
 
     """Test TCL command interface."""
 
@@ -908,11 +943,13 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
     @patch('src.micropolis.ui_utilities.pause')        """Test setgamelevelfunds command."""
 
-    def test_handle_command_pause(self, mock_pause):        result = self.cmd.handle_command("setgamelevelfunds", "1")
+    def test_handle_command_pause(self, mock_pause):        result = self.cmd.handle_command(context, context,
+                                                                                             "setgamelevelfunds", "1")
 
         """Test pause command."""
 
-        result = self.cmd.handle_command("pause")        mock_set_game_level_funds.assert_called_once_with(1)
+        result = self.cmd.handle_command(context, context, "pause")
+mock_set_game_level_funds.assert_called_once_with(1)
 
         self.assertEqual(result, "")
 
@@ -924,11 +961,13 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
     @patch('src.micropolis.ui_utilities.resume')        """Test setgamelevel command."""
 
-    def test_handle_command_resume(self, mock_resume):        result = self.cmd.handle_command("setgamelevel", "2")
+    def test_handle_command_resume(self, mock_resume):        result = self.cmd.handle_command(context, context,
+                                                                                               "setgamelevel", "2")
 
         """Test resume command."""
 
-        result = self.cmd.handle_command("resume")        mock_set_game_level.assert_called_once_with(2)
+        result = self.cmd.handle_command(context, context, "resume")
+mock_set_game_level.assert_called_once_with(2)
 
         self.assertEqual(result, "")
 
@@ -940,11 +979,14 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
     @patch('src.micropolis.ui_utilities.set_speed')        """Test setcityname command."""
 
-    def test_handle_command_setspeed(self, mock_set_speed):        result = self.cmd.handle_command("setcityname", "TestCity")
+    def test_handle_command_setspeed(self, mock_set_speed):        result = self.cmd.handle_command(context, context,
+                                                                                                    "setcityname",
+                                                                                                    "TestCity")
 
         """Test setspeed command."""
 
-        result = self.cmd.handle_command("setspeed", "2")        mock_set_city_name.assert_called_once_with("TestCity")
+        result = self.cmd.handle_command(context, context, "setspeed", "2")
+mock_set_city_name.assert_called_once_with("TestCity")
 
         self.assertEqual(result, "")
 
@@ -956,11 +998,14 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
     def test_handle_command_setspeed_invalid_args(self):        """Test setanycityname command."""
 
-        """Test setspeed command with invalid arguments."""        result = self.cmd.handle_command("setanycityname", "Test City!")
+        """Test setspeed command with invalid arguments."""        result = self.cmd.handle_command(context, context,
+                                                                                                    "setanycityname",
+                                                                                                    "Test City!")
 
         with self.assertRaises(ValueError):
 
-            self.cmd.handle_command("setspeed")        mock_set_any_city_name.assert_called_once_with("Test City!")
+            self.cmd.handle_command(context, context, "setspeed")
+            mock_set_any_city_name.assert_called_once_with("Test City!")
 
         self.assertEqual(result, "")
 
@@ -970,9 +1015,10 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
         with self.assertRaises(ValueError):    def test_handle_command_setyear(self, mock_set_year):
 
-            self.cmd.handle_command("setspeed", "1", "2")        """Test setyear command."""
+            self.cmd.handle_command(context, context, "setspeed", "1", "2")
+        """Test setyear command."""
 
-        result = self.cmd.handle_command("setyear", "1950")
+        result = self.cmd.handle_command(context, context, "setyear", "1950")
 
     @patch('src.micropolis.ui_utilities.set_skips')
 
@@ -980,7 +1026,7 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
         """Test setskips command."""        self.assertEqual(result, "")
 
-        result = self.cmd.handle_command("setskips", "5")
+        result = self.cmd.handle_command(context, context, "setskips", "5")
 
     @patch('src.micropolis.ui_utilities.current_year')
 
@@ -992,11 +1038,13 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
     @patch('src.micropolis.ui_utilities.set_game_level_funds')
 
-    def test_handle_command_setgamelevelfunds(self, mock_set_game_level_funds):        result = self.cmd.handle_command("currentyear")
+    def test_handle_command_setgamelevelfunds(self, mock_set_game_level_funds):        result = self.cmd.handle_command(
+        context, context, "currentyear")
 
         """Test setgamelevelfunds command."""
 
-        result = self.cmd.handle_command("setgamelevelfunds", "1")        mock_current_year.assert_called_once()
+        result = self.cmd.handle_command(context, context, "setgamelevelfunds", "1")
+mock_current_year.assert_called_once()
 
         self.assertEqual(result, "1960")
 
@@ -1008,11 +1056,15 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
     @patch('src.micropolis.ui_utilities.set_game_level')        """Test popupmessage command."""
 
-    def test_handle_command_setgamelevel(self, mock_set_game_level):        result = self.cmd.handle_command("popupmessage", "Test message")
+    def test_handle_command_setgamelevel(self, mock_set_game_level):        result = self.cmd.handle_command(context,
+                                                                                                             context,
+                                                                                                             "popupmessage",
+                                                                                                             "Test message")
 
         """Test setgamelevel command."""
 
-        result = self.cmd.handle_command("setgamelevel", "2")        mock_do_pop_up_message.assert_called_once_with("Test message")
+        result = self.cmd.handle_command(context, context, "setgamelevel", "2")
+mock_do_pop_up_message.assert_called_once_with("Test message")
 
         self.assertEqual(result, "")
 
@@ -1024,11 +1076,13 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
     @patch('src.micropolis.ui_utilities.set_city_name')        with self.assertRaises(ValueError) as cm:
 
-    def test_handle_command_setcityname(self, mock_set_city_name):            self.cmd.handle_command("unknown")
+    def test_handle_command_setcityname(self, mock_set_city_name):            self.cmd.handle_command(context, context,
+                                                                                                      "unknown")
 
         """Test setcityname command."""
 
-        result = self.cmd.handle_command("setcityname", "TestCity")        self.assertIn("Unknown UI utility command: unknown", str(cm.exception))
+        result = self.cmd.handle_command(context, context, "setcityname", "TestCity")
+self.assertIn("Unknown UI utility command: unknown", str(cm.exception))
 
 
 
@@ -1038,13 +1092,16 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
 
         with self.assertRaises(ValueError) as cm:
 
-    @patch('src.micropolis.ui_utilities.set_any_city_name')            self.cmd.handle_command("setspeed", "1", "2")
+    @patch('src.micropolis.ui_utilities.set_any_city_name')
+
+
+self.cmd.handle_command(context, context, "setspeed", "1", "2")
 
     def test_handle_command_setanycityname(self, mock_set_any_city_name):
 
         """Test setanycityname command."""        self.assertIn("Usage: setspeed <speed>", str(cm.exception))
 
-        result = self.cmd.handle_command("setanycityname", "Test City!")
+        result = self.cmd.handle_command(context, context, "setanycityname", "Test City!")
 
 
 
@@ -1055,7 +1112,7 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
     @patch('src.micropolis.ui_utilities.set_year')
     def test_handle_command_setyear(self, mock_set_year):
         """Test setyear command."""
-        result = self.cmd.handle_command("setyear", "1950")
+        result = self.cmd.handle_command(context, context, "setyear", "1950")
 
         self.assertEqual(result, "")
         mock_set_year.assert_called_once_with(1950)
@@ -1065,7 +1122,7 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
         """Test currentyear command."""
         mock_current_year.return_value = 1960
 
-        result = self.cmd.handle_command("currentyear")
+        result = self.cmd.handle_command(context, context, "currentyear")
 
         self.assertEqual(result, "1960")
         mock_current_year.assert_called_once()
@@ -1073,7 +1130,7 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
     @patch('src.micropolis.ui_utilities.do_pop_up_message')
     def test_handle_command_popupmessage(self, mock_do_pop_up_message):
         """Test popupmessage command."""
-        result = self.cmd.handle_command("popupmessage", "Test message")
+        result = self.cmd.handle_command(context, context, "popupmessage", "Test message")
 
         self.assertEqual(result, "")
         mock_do_pop_up_message.assert_called_once_with("Test message")
@@ -1081,7 +1138,7 @@ class TestUIUtilitiesCommand(unittest.TestCase):        result = self.cmd.handle
     def test_handle_command_unknown(self):
         """Test unknown command."""
         with self.assertRaises(ValueError):
-            self.cmd.handle_command("unknown_command")
+            self.cmd.handle_command(context, context, "unknown_command")
 
 
 if __name__ == '__main__':

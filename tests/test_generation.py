@@ -19,13 +19,13 @@ class TestGeneration(Assertions):
     def setUp(self):
         """Set up test fixtures before each test method."""
         # Reset generation parameters
-        generation.TreeLevel = -1
-        generation.LakeLevel = -1
-        generation.CurveLevel = -1
-        generation.CreateIsland = -1
+        generation.tree_level = -1
+        generation.lake_level = -1
+        generation.curve_level = -1
+        generation.create_island = -1
 
         # Initialize map to dirt
-        generation.ClearMap()
+        generation.ClearMap(context)
 
     def test_clear_map(self):
         """Test map clearing functionality."""
@@ -33,7 +33,7 @@ class TestGeneration(Assertions):
         types.map_data[10][10] = types.RIVER
         types.map_data[20][20] = types.WOODS
 
-        generation.ClearMap()
+        generation.ClearMap(context)
 
         # Check that all tiles are dirt
         for x in range(micropolis.constants.WORLD_X):
@@ -48,7 +48,7 @@ class TestGeneration(Assertions):
         types.map_data[30][30] = types.ROADBASE  # Unnatural (road)
         types.map_data[40][40] = types.RESBASE  # Unnatural (residential)
 
-        generation.ClearUnnatural()
+        generation.ClearUnnatural(context)
 
         # Natural tiles should remain
         self.assertEqual(types.map_data[10][10], types.DIRT)
@@ -59,7 +59,7 @@ class TestGeneration(Assertions):
 
     def test_make_naked_island(self):
         """Test basic island creation."""
-        generation.MakeNakedIsland()
+        generation.MakeNakedIsland(context)
 
         # Check that edges are river
         self.assertEqual(types.map_data[0][0], types.RIVER)
@@ -77,7 +77,7 @@ class TestGeneration(Assertions):
 
     def test_make_island(self):
         """Test complete island creation with smoothing and trees."""
-        generation.MakeIsland()
+        generation.MakeIsland(context)
 
         # Should create island, smooth rivers, and add trees
         # Check that some areas have trees
@@ -93,59 +93,59 @@ class TestGeneration(Assertions):
 
     def test_get_rand_start(self):
         """Test random starting position generation."""
-        generation.GetRandStart()
+        generation.GetRandStart(context)
 
         # Check that starting position is within valid bounds
-        self.assertGreaterEqual(generation.XStart, 40)
+        self.assertGreaterEqual(generation.x_start, 40)
         self.assertLess(
-            generation.XStart, micropolis.constants.WORLD_X - 40
+            generation.x_start, micropolis.constants.WORLD_X - 40
         )  # Allow some margin
-        self.assertGreaterEqual(generation.YStart, 33)
+        self.assertGreaterEqual(generation.y_start, 33)
         self.assertLess(
-            generation.YStart, micropolis.constants.WORLD_Y - 33
+            generation.y_start, micropolis.constants.WORLD_Y - 33
         )  # Allow some margin
 
         # Check that MapX and MapY are set
-        self.assertEqual(generation.MapX, generation.XStart)
-        self.assertEqual(generation.MapY, generation.YStart)
+        self.assertEqual(generation.map_x, generation.x_start)
+        self.assertEqual(generation.map_y, generation.y_start)
 
     def test_move_map(self):
         """Test map position movement."""
-        generation.MapX = 50
-        generation.MapY = 50
+        generation.map_x = 50
+        generation.map_y = 50
 
         # Test movement in different directions
-        generation.MoveMap(0)  # North
-        self.assertEqual(generation.MapX, 50)
-        self.assertEqual(generation.MapY, 49)
+        generation.MoveMap(context, 0)  # North
+        self.assertEqual(generation.map_x, 50)
+        self.assertEqual(generation.map_y, 49)
 
-        generation.MoveMap(2)  # East
-        self.assertEqual(generation.MapX, 51)
-        self.assertEqual(generation.MapY, 49)
+        generation.MoveMap(context, 2)  # East
+        self.assertEqual(generation.map_x, 51)
+        self.assertEqual(generation.map_y, 49)
 
     def test_put_on_map(self):
         """Test tile placement on map."""
-        generation.MapX = 10
-        generation.MapY = 10
+        generation.map_x = 10
+        generation.map_y = 10
 
         # Place a river tile
-        generation.PutOnMap(types.RIVER, 0, 0)
+        generation.PutOnMap(context, types.RIVER, 0, 0)
         self.assertEqual(types.map_data[10][10], types.RIVER)
 
         # Try to place channel on river (should work)
-        generation.PutOnMap(types.CHANNEL, 0, 0)
+        generation.PutOnMap(context, types.CHANNEL, 0, 0)
         self.assertEqual(types.map_data[10][10], types.CHANNEL)
 
         # Try to place non-channel on channel (should fail)
-        generation.PutOnMap(types.RIVER, 0, 0)
+        generation.PutOnMap(context, types.RIVER, 0, 0)
         self.assertEqual(types.map_data[10][10], types.CHANNEL)
 
     def test_briv_plop(self):
         """Test big river segment placement."""
-        generation.MapX = 10
-        generation.MapY = 10
+        generation.map_x = 10
+        generation.map_y = 10
 
-        generation.BRivPlop()
+        generation.BRivPlop(context)
 
         # Check that a 9x9 area around the center has been modified
         # The exact pattern depends on the BRMatrix, but some tiles should be non-zero
@@ -153,7 +153,7 @@ class TestGeneration(Assertions):
         for x in range(9):
             for y in range(9):
                 if (
-                    types.map_data[generation.MapX + x][generation.MapY + y]
+                    types.map_data[generation.map_x + x][generation.map_y + y]
                     != types.DIRT
                 ):
                     modified = True
@@ -164,17 +164,17 @@ class TestGeneration(Assertions):
 
     def test_sriv_plop(self):
         """Test small river segment placement."""
-        generation.MapX = 10
-        generation.MapY = 10
+        generation.map_x = 10
+        generation.map_y = 10
 
-        generation.SRivPlop()
+        generation.SRivPlop(context)
 
         # Check that a 6x6 area around the center has been modified
         modified = False
         for x in range(6):
             for y in range(6):
                 if (
-                    types.map_data[generation.MapX + x][generation.MapY + y]
+                    types.map_data[generation.map_x + x][generation.map_y + y]
                     != types.DIRT
                 ):
                     modified = True
@@ -186,9 +186,9 @@ class TestGeneration(Assertions):
     def test_tree_splash(self):
         """Test tree cluster generation."""
         # Clear map first
-        generation.ClearMap()
+        generation.ClearMap(context)
 
-        generation.TreeSplash(50, 50)
+        generation.TreeSplash(context, 50, 50)
 
         # Check that some trees were placed
         has_trees = False
@@ -203,10 +203,10 @@ class TestGeneration(Assertions):
 
     def test_do_trees(self):
         """Test forest generation across the map."""
-        generation.ClearMap()
-        generation.TreeLevel = 5  # Fixed amount
+        generation.ClearMap(context)
+        generation.tree_level = 5  # Fixed amount
 
-        generation.DoTrees()
+        generation.DoTrees(context)
 
         # Should create multiple tree clusters
         tree_count = 0
@@ -223,7 +223,7 @@ class TestGeneration(Assertions):
         types.map_data[10][10] = types.REDGE
         types.map_data[20][20] = types.REDGE
 
-        generation.SmoothRiver()
+        generation.SmoothRiver(context)
 
         # REDGE tiles should be converted to appropriate river edge tiles
         # The exact result depends on neighboring tiles, but they should change
@@ -253,7 +253,7 @@ class TestGeneration(Assertions):
         types.map_data[10][11] = types.WOODS + types.BLBNBIT
         types.map_data[11][10] = types.WOODS + types.BLBNBIT
 
-        generation.SmoothTrees()
+        generation.SmoothTrees(context)
 
         # Tree tiles should be converted to appropriate forest edge tiles
         # The exact result depends on neighboring trees
@@ -269,7 +269,7 @@ class TestGeneration(Assertions):
             for y in range(6, 14):
                 types.map_data[x][y] = types.DIRT
 
-        generation.SmoothWater()
+        generation.SmoothWater(context)
 
         # Should create REDGE tiles at water/land boundaries
         has_redge = False
@@ -284,7 +284,7 @@ class TestGeneration(Assertions):
 
     def test_generate_map_basic(self):
         """Test basic map generation."""
-        generation.GenerateMap(12345)
+        generation.GenerateMap(context, 12345)
 
         # Map should be modified from initial dirt state
         modified = False

@@ -18,22 +18,21 @@ Ported from s_msg.c.
 import os
 import time
 
-from . import random, types
+from src.micropolis.context import AppContext
+from src.micropolis.simulation import rand
+from src.micropolis.ui_utilities import eval_cmd_str
 
-# Message strings loaded from stri.301 file
-MESSAGE_STRINGS: list[str] = []
 
-
-def load_message_strings() -> None:
+def load_message_strings(context: AppContext) -> None:
     """
     Load message strings from the stri.301 resource file.
 
     This reads the message strings that correspond to message numbers 1-60
     used throughout the game for notifications and alerts.
     """
-    global MESSAGE_STRINGS
+    # global MESSAGE_STRINGS
 
-    if MESSAGE_STRINGS:  # Already loaded
+    if context.MESSAGE_STRINGS:  # Already loaded
         return
 
     # Path to the message strings file
@@ -43,14 +42,14 @@ def load_message_strings() -> None:
 
     try:
         with open(stri_file, "r", encoding="utf-8") as f:
-            MESSAGE_STRINGS = [line.rstrip("\n") for line in f.readlines()]
+            context.MESSAGE_STRINGS = [line.rstrip("\n") for line in f.readlines()]
     except FileNotFoundError:
         # Fallback: create empty strings if file not found
-        MESSAGE_STRINGS = [""] * 61
+        context.MESSAGE_STRINGS = [""] * 61
         print(f"Warning: Could not load message strings from {stri_file}")
 
 
-def get_message_string(message_num: int) -> str:
+def get_message_string(context: AppContext, message_num: int) -> str:
     """
     Get a message string by message number.
 
@@ -59,12 +58,13 @@ def get_message_string(message_num: int) -> str:
 
     Returns:
         The message string, or empty string if not found
+        :param context: 
     """
-    if not MESSAGE_STRINGS:
-        load_message_strings()
+    if not context.MESSAGE_STRINGS:
+        load_message_strings(context)
 
-    if 1 <= message_num <= len(MESSAGE_STRINGS):
-        return MESSAGE_STRINGS[message_num - 1]  # 1-indexed to 0-indexed
+    if 1 <= message_num <= len(context.MESSAGE_STRINGS):
+        return context.MESSAGE_STRINGS[message_num - 1]  # 1-indexed to 0-indexed
     return ""
 
 
@@ -81,7 +81,7 @@ def tick_count() -> int:
     return int(time.time() * 1000)
 
 
-def make_sound(channel: str, sound_name: str) -> None:
+def make_sound(context: AppContext, channel: str, sound_name: str) -> None:
     """
     Play a sound effect.
 
@@ -90,15 +90,13 @@ def make_sound(channel: str, sound_name: str) -> None:
     Args:
         channel: Sound channel (e.g., "city")
         sound_name: Name of the sound to play
+        :param context:
     """
-    # Import audio module here to avoid circular imports
-    from . import audio
-
-    if types.sound and types.user_sound_on:
-        audio.make_sound(channel, sound_name)
+    if context.sound and context.user_sound_on:
+        make_sound(context, channel, sound_name)
 
 
-def send_messages() -> None:
+def send_messages(context: AppContext) -> None:
     """
     Send messages based on current city conditions.
 
@@ -106,92 +104,93 @@ def send_messages() -> None:
     that warrant displaying messages to the player.
 
     Ported from SendMessages() in s_msg.c.
+    :param context: 
     """
-    if types.scenario_id and types.score_type and types.score_wait:
-        types.score_wait -= 1
-        if not types.score_wait:
-            do_scenario_score(types.score_type)
+    if context.scenario_id and context.score_type and context.score_wait:
+        context.score_wait -= 1
+        if not context.score_wait:
+            do_scenario_score(context, context.score_type)
 
-    check_growth()
+    check_growth(context)
 
-    total_z_pop = types.res_z_pop + types.ComZPop + types.IndZPop
-    power_pop = types.nuclear_pop + types.coal_pop
+    total_z_pop = context.res_z_pop + context.com_z_pop + context.ind_z_pop
+    power_pop = context.nuclear_pop + context.coal_pop
 
-    z = types.city_time & 63
+    z = context.city_time & 63
 
     # Check various conditions based on city time
     if z == 1:
-        if (total_z_pop >> 2) >= types.res_z_pop:
-            send_mes(1)  # need Res
+        if (total_z_pop >> 2) >= context.res_z_pop:
+            send_mes(context, 1)  # need Res
     elif z == 5:
-        if (total_z_pop >> 3) >= types.ComZPop:
-            send_mes(2)  # need Com
+        if (total_z_pop >> 3) >= context.com_z_pop:
+            send_mes(context, 2)  # need Com
     elif z == 10:
-        if (total_z_pop >> 3) >= types.IndZPop:
-            send_mes(3)  # need Ind
+        if (total_z_pop >> 3) >= context.ind_z_pop:
+            send_mes(context, 3)  # need Ind
     elif z == 14:
-        if (total_z_pop > 10) and ((total_z_pop << 1) > types.road_total):
-            send_mes(4)  # need roads
+        if (total_z_pop > 10) and ((total_z_pop << 1) > context.road_total):
+            send_mes(context, 4)  # need roads
     elif z == 18:
-        if (total_z_pop > 50) and (total_z_pop > types.rail_total):
-            send_mes(5)  # need rail
+        if (total_z_pop > 50) and (total_z_pop > context.rail_total):
+            send_mes(context, 5)  # need rail
     elif z == 22:
         if (total_z_pop > 10) and (power_pop == 0):
-            send_mes(6)  # need Power
+            send_mes(context, 6)  # need Power
     elif z == 26:
-        if (types.res_pop > 500) and (types.stadium_pop == 0):
-            send_mes(7)  # need Stad
-            types.res_cap = 1
+        if (context.res_pop > 500) and (context.stadium_pop == 0):
+            send_mes(context, 7)  # need Stad
+            context.res_cap = 1
         else:
-            types.res_cap = 0
+            context.res_cap = 0
     elif z == 28:
-        if (types.ind_pop > 70) and (types.port_pop == 0):
-            send_mes(8)  # need Seaport
-            types.ind_cap = 1
+        if (context.ind_pop > 70) and (context.port_pop == 0):
+            send_mes(context, 8)  # need Seaport
+            context.ind_cap = 1
         else:
-            types.ind_cap = 0
+            context.ind_cap = 0
     elif z == 30:
-        if (types.com_pop > 100) and (types.airport_pop == 0):
-            send_mes(9)  # need Airport
-            types.com_cap = 1
+        if (context.com_pop > 100) and (context.airport_pop == 0):
+            send_mes(context, 9)  # need Airport
+            context.com_cap = 1
         else:
-            types.com_cap = 0
+            context.com_cap = 0
     elif z == 32:
         # dec score for unpowered zones
-        tm = types.un_pwrd_z_cnt + types.pwrd_z_cnt
+        tm = context.un_pwrd_z_cnt + context.pwrd_z_cnt
         if tm:
-            if (types.pwrd_z_cnt / tm) < 0.7:
-                send_mes(15)  # brownouts
+            if (context.pwrd_z_cnt / tm) < 0.7:
+                send_mes(context, 15)  # brownouts
     elif z == 35:
-        if types.pollute_average > 60:  # Note: was 80, but adjusted for gameplay
-            send_mes(-10)  # pollution alert
+        if context.pollute_average > 60:  # Note: was 80, but adjusted for gameplay
+            send_mes(context, -10)  # pollution alert
     elif z == 42:
-        if types.crime_average > 100:
-            send_mes(-11)  # crime alert
+        if context.crime_average > 100:
+            send_mes(context, -11)  # crime alert
     elif z == 45:
-        if (types.total_pop > 60) and (types.fire_st_pop == 0):
-            send_mes(13)  # need fire station
+        if (context.total_pop > 60) and (context.fire_st_pop == 0):
+            send_mes(context, 13)  # need fire station
     elif z == 48:
-        if (types.total_pop > 60) and (types.police_pop == 0):
-            send_mes(14)  # need police station
+        if (context.total_pop > 60) and (context.police_pop == 0):
+            send_mes(context, 14)  # need police station
     elif z == 51:
-        if types.city_tax > 12:
-            send_mes(16)  # high taxes
+        if context.city_tax > 12:
+            send_mes(context, 16)  # high taxes
     elif z == 54:
-        if (types.road_effect < 20) and (types.road_total > 30):
-            send_mes(17)  # road deterioration
+        if (context.road_effect < 20) and (context.road_total > 30):
+            send_mes(context, 17)  # road deterioration
     elif z == 57:
-        if (types.fire_effect < 700) and (types.total_pop > 20):
-            send_mes(18)  # fire funding needed
+        if (context.fire_effect < 700) and (context.total_pop > 20):
+            send_mes(context, 18)  # fire funding needed
     elif z == 60:
-        if (types.police_effect < 700) and (types.total_pop > 20):
-            send_mes(19)  # police funding needed
+        if (context.police_effect < 700) and (context.total_pop > 20):
+            send_mes(context, 19)  # police funding needed
     elif z == 63:
-        if types.traffic_average > 60:
-            send_mes(-12)  # traffic jam
+        if context.traffic_average > 60:
+            send_mes(context, -12)  # traffic jam
 
 
-def check_growth() -> None:
+def check_growth(context: AppContext) -> None:
     """
     Check for population growth milestones and send appropriate messages.
 
@@ -199,33 +198,34 @@ def check_growth() -> None:
     and sends congratulatory messages.
 
     Ported from CheckGrowth() in s_msg.c.
+    :param context:
     """
-    if not (types.city_time & 3):
+    if not (context.city_time & 3):
         z = 0
         this_city_pop = (
-            (types.res_pop) + (types.com_pop * 8) + (types.ind_pop * 8)
-        ) * 20
+                                context.res_pop + (context.com_pop * 8) + (context.ind_pop * 8)
+                        ) * 20
 
-        if types.last_city_pop:
-            if (types.last_city_pop < 2000) and (this_city_pop >= 2000):
+        if context.last_city_pop:
+            if (context.last_city_pop < 2000) and (this_city_pop >= 2000):
                 z = 35  # Town
-            elif (types.last_city_pop < 10000) and (this_city_pop >= 10000):
+            elif (context.last_city_pop < 10000) and (this_city_pop >= 10000):
                 z = 36  # City
-            elif (types.last_city_pop < 50000) and (this_city_pop >= 50000):
+            elif (context.last_city_pop < 50000) and (this_city_pop >= 50000):
                 z = 37  # Capital
-            elif (types.last_city_pop < 100000) and (this_city_pop >= 100000):
+            elif (context.last_city_pop < 100000) and (this_city_pop >= 100000):
                 z = 38  # Metropolis
-            elif (types.last_city_pop < 500000) and (this_city_pop >= 500000):
+            elif (context.last_city_pop < 500000) and (this_city_pop >= 500000):
                 z = 39  # Megalopolis
 
-        if z and (z != types.last_category):
-            send_mes(-z)  # Negative for picture messages
-            types.last_category = z
+        if z and (z != context.last_category):
+            send_mes(context, -z)  # Negative for picture messages
+            context.last_category = z
 
-        types.last_city_pop = this_city_pop
+        context.last_city_pop = this_city_pop
 
 
-def do_scenario_score(type_val: int) -> None:
+def do_scenario_score(context: AppContext, type_val: int) -> None:
     """
     Handle scenario scoring and win/lose conditions.
 
@@ -233,56 +233,58 @@ def do_scenario_score(type_val: int) -> None:
         type_val: Scenario type identifier
 
     Ported from DoScenarioScore() in s_msg.c.
+    :param context:
     """
     z = -200  # you lose
 
     if type_val == 1:  # Dullsville
-        if types.city_class >= 4:
+        if context.city_class >= 4:
             z = -100  # you win
     elif type_val == 2:  # San Francisco
-        if types.city_class >= 4:
+        if context.city_class >= 4:
             z = -100
     elif type_val == 3:  # Hamburg
-        if types.city_class >= 4:
+        if context.city_class >= 4:
             z = -100
     elif type_val == 4:  # Bern
-        if types.traffic_average < 80:
+        if context.traffic_average < 80:
             z = -100
     elif type_val == 5:  # Tokyo
-        if types.city_score > 500:
+        if context.city_score > 500:
             z = -100
     elif type_val == 6:  # Detroit
-        if types.crime_average < 60:
+        if context.crime_average < 60:
             z = -100
     elif type_val == 7:  # Boston
-        if types.city_score > 500:
+        if context.city_score > 500:
             z = -100
     elif type_val == 8:  # Rio de Janeiro
-        if types.city_score > 500:
+        if context.city_score > 500:
             z = -100
 
-    clear_mes()
-    send_mes(z)
+    clear_mes(context)
+    send_mes(context, z)
 
     if z == -200:
-        do_lose_game()
+        do_lose_game(context)
 
 
-def clear_mes() -> None:
+def clear_mes(context: AppContext) -> None:
     """
     Clear message state.
 
     Resets message port and coordinates.
 
     Ported from ClearMes() in s_msg.c.
+    :param context:
     """
-    types.message_port = 0
-    types.mes_x = 0
-    types.mes_y = 0
-    types.last_pic_num = 0
+    context.message_port = 0
+    context.mes_x = 0
+    context.mes_y = 0
+    context.last_pic_num = 0
 
 
-def send_mes(mnum: int) -> int:
+def send_mes(context: AppContext, mnum: int) -> int:
     """
     Send a message.
 
@@ -293,24 +295,25 @@ def send_mes(mnum: int) -> int:
         1 if message was sent, 0 if not
 
     Ported from SendMes() in s_msg.c.
+    :param context:
     """
     if mnum < 0:
-        if mnum != types.last_pic_num:
-            types.message_port = mnum
-            types.mes_x = 0
-            types.mes_y = 0
-            types.last_pic_num = mnum
+        if mnum != context.last_pic_num:
+            context.message_port = mnum
+            context.mes_x = 0
+            context.mes_y = 0
+            context.last_pic_num = mnum
             return 1
     else:
-        if not types.message_port:
-            types.message_port = mnum
-            types.mes_x = 0
-            types.mes_y = 0
+        if not context.message_port:
+            context.message_port = mnum
+            context.mes_x = 0
+            context.mes_y = 0
             return 1
     return 0
 
 
-def send_mes_at(mnum: int, x: int, y: int) -> None:
+def send_mes_at(context: AppContext, mnum: int, x: int, y: int) -> None:
     """
     Send a message at a specific location.
 
@@ -320,13 +323,14 @@ def send_mes_at(mnum: int, x: int, y: int) -> None:
         y: Y coordinate
 
     Ported from SendMesAt() in s_msg.c.
+    :param context:
     """
-    if send_mes(mnum):
-        types.mes_x = x
-        types.mes_y = y
+    if send_mes(context, mnum):
+        context.mes_x = x
+        context.mes_y = y
 
 
-def do_message() -> None:
+def do_message(context: AppContext) -> None:
     """
     Main message processing function.
 
@@ -334,93 +338,94 @@ def do_message() -> None:
     This is called regularly to update the message display.
 
     Ported from doMessage() in s_msg.c.
+    :param context: 
     """
     message_str = ""
     pict_id = 0
     first_time = False
 
-    if types.message_port:
-        types.mes_num = types.message_port
-        types.message_port = 0
-        types.last_mes_time = tick_count()
+    if context.message_port:
+        context.mes_num = context.message_port
+        context.message_port = 0
+        context.last_mes_time = tick_count()
         first_time = True
     else:
         first_time = False
-        if types.mes_num == 0:
+        if context.mes_num == 0:
             return
-        if types.mes_num < 0:
-            types.mes_num = -types.mes_num
-            types.last_mes_time = tick_count()
-        elif (tick_count() - types.last_mes_time) > (
-            60 * 30 * 1000
+        if context.mes_num < 0:
+            context.mes_num = -context.mes_num
+            context.last_mes_time = tick_count()
+        elif (tick_count() - context.last_mes_time) > (
+                60 * 30 * 1000
         ):  # 30 minutes in ms
-            types.mes_num = 0
+            context.mes_num = 0
             return
 
     if first_time:
         # Play sound effects based on message type
-        abs_mes_num = abs(types.mes_num)
+        abs_mes_num = abs(context.mes_num)
         if abs_mes_num == 12:
-            if random.Rand(5) == 1:
-                make_sound("city", "HonkHonk-Med")
-            elif random.Rand(5) == 1:
-                make_sound("city", "HonkHonk-Low")
-            elif random.Rand(5) == 1:
-                make_sound("city", "HonkHonk-High")
+            if rand(context, 5) == 1:
+                make_sound(context, "city", "HonkHonk-Med")
+            elif rand(context, 5) == 1:
+                make_sound(context, "city", "HonkHonk-Low")
+            elif rand(context, 5) == 1:
+                make_sound(context, "city", "HonkHonk-High")
         elif abs_mes_num in (11, 20, 22, 23, 24, 25, 26, 27):
-            make_sound("city", "Siren")
+            make_sound(context, "city", "Siren")
         elif abs_mes_num == 21:
-            make_sound("city", f"Monster -speed {monster_speed()}")
+            make_sound(context, "city", f"Monster -speed {monster_speed()}")
         elif abs_mes_num == 30:
-            make_sound("city", "Explosion-Low")
-            make_sound("city", "Siren")
+            make_sound(context, "city", "Explosion-Low")
+            make_sound(context, "city", "Siren")
         elif abs_mes_num == 43:
-            make_sound("city", "Explosion-High")
-            make_sound("city", "Explosion-Low")
-            make_sound("city", "Siren")
+            make_sound(context, "city", "Explosion-High")
+            make_sound(context, "city", "Explosion-Low")
+            make_sound(context, "city", "Siren")
         elif abs_mes_num == 44:
-            make_sound("city", "Siren")
+            make_sound(context, "city", "Siren")
 
-    if types.mes_num >= 0:
-        if types.mes_num == 0:
+    if context.mes_num >= 0:
+        if context.mes_num == 0:
             return
 
-        if types.mes_num > 60:
-            types.mes_num = 0
+        if context.mes_num > 60:
+            context.mes_num = 0
             return
 
-        message_str = get_message_string(types.mes_num)
+        message_str = get_message_string(context, context.mes_num)
 
-        if types.mes_x or types.mes_y:
+        if context.mes_x or context.mes_y:
             # TODO: draw goto button
             pass
 
-        if types.auto_go and (types.mes_x or types.mes_y):
-            do_auto_goto(types.mes_x, types.mes_y, message_str)
-            types.mes_x = 0
-            types.mes_y = 0
+        if context.auto_go and (context.mes_x or context.mes_y):
+            do_auto_goto(context, context.mes_x, context.mes_y, message_str)
+            context.mes_x = 0
+            context.mes_y = 0
         else:
-            set_message_field(message_str)
+            set_message_field(context, message_str)
 
     else:  # picture message
-        pict_id = -types.mes_num
+        pict_id = -context.mes_num
 
         if pict_id < 43:
-            message_str = get_message_string(pict_id)
+            message_str = get_message_string(context, pict_id)
         else:
             message_str = ""
 
-        do_show_picture(pict_id)
+        do_show_picture(context, pict_id)
 
-        types.message_port = pict_id  # resend text message
+        context.message_port = pict_id  # resend text message
 
-        if types.auto_go and (types.mes_x or types.mes_y):
-            do_auto_goto(types.mes_x, types.mes_y, message_str)
-            types.mes_x = 0
-            types.mes_y = 0
+        if context.auto_go and (context.mes_x or context.mes_y):
+            do_auto_goto(context, context.mes_x, context.mes_y, message_str)
+            context.mes_x = 0
+            context.mes_y = 0
 
 
-def do_auto_goto(x: int, y: int, msg: str) -> None:
+def do_auto_goto(context: AppContext, x: int, y: int, msg: str) -> None:
     """
     Automatically go to a location when a message is displayed.
 
@@ -430,13 +435,14 @@ def do_auto_goto(x: int, y: int, msg: str) -> None:
         msg: Message text
 
     Ported from DoAutoGoto() in s_msg.c.
+    :param context:
     """
-    set_message_field(msg)
+    set_message_field(context, msg)
     cmd = f"UIAutoGoto {x} {y}"
-    types.Eval(cmd)
+    eval_cmd_str(context, cmd)
 
 
-def set_message_field(msg: str) -> None:
+def set_message_field(context: AppContext, msg: str) -> None:
     """
     Set the message field in the UI.
 
@@ -444,21 +450,22 @@ def set_message_field(msg: str) -> None:
         msg: Message text to display
 
     Ported from SetMessageField() in s_msg.c.
+    :param context:
     """
-    global HaveLastMessage, LastMessage
+    # global HaveLastMessage, LastMessage
 
-    if not hasattr(types, "HaveLastMessage"):
-        types.have_last_message = 0
-        types.last_message = ""
+    # if not hasattr(types, "HaveLastMessage"):
+    #     context.have_last_message = 0
+    #     context.last_message = ""
 
-    if not types.have_last_message or types.last_message != msg:
-        types.last_message = msg
-        types.have_last_message = 1
+    if not context.have_last_message or context.last_message != msg:
+        context.last_message = msg
+        context.have_last_message = True
         cmd = f"UISetMessage {{{msg}}}"
-        types.Eval(cmd)
+        eval_cmd_str(context, cmd)
 
 
-def do_show_picture(pict_id: int) -> None:
+def do_show_picture(context: AppContext, pict_id: int) -> None:
     """
     Show a picture/message dialog.
 
@@ -466,27 +473,30 @@ def do_show_picture(pict_id: int) -> None:
         pict_id: Picture/message identifier
 
     Ported from DoShowPicture() in s_msg.c.
+    :param context:
     """
     cmd = f"UIShowPicture {pict_id}"
-    types.Eval(cmd)
+    eval_cmd_str(context, cmd)
 
 
-def do_lose_game() -> None:
+def do_lose_game(context: AppContext) -> None:
     """
     Handle game loss scenario.
 
     Ported from DoLoseGame() in s_msg.c.
+    :param context:
     """
-    types.Eval("UILoseGame")
+    eval_cmd_str(context, "UILoseGame")
 
 
-def do_win_game() -> None:
+def do_win_game(context: AppContext) -> None:
     """
     Handle game win scenario.
 
     Ported from DoWinGame() in s_msg.c.
+    :param context:
     """
-    types.Eval("UIWinGame")
+    eval_cmd_str(context, "UIWinGame")
 
 
 def monster_speed() -> int:
@@ -498,4 +508,4 @@ def monster_speed() -> int:
 
     Ported from MonsterSpeed() in s_msg.c.
     """
-    return random.Rand(40) + 70
+    return rand(context, 40) + 70

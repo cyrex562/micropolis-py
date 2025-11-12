@@ -1,4 +1,7 @@
+import threading
 import time
+from collections.abc import Callable
+from queue import Queue
 
 from .constants import (
     HWLDX,
@@ -9,8 +12,10 @@ from .constants import (
     SM_X,
     SM_Y,
     WORLD_X,
-    WORLD_Y, OBJN, PWRMAPSIZE, HISTORIES, PROBNUM, RESBASE,
+    WORLD_Y, OBJN, PWRMAPSIZE, HISTORIES, PROBNUM, RESBASE, PWRSTKSIZE, SEP_3, randtbl, TYPE_3, DEG_3,
 )
+from .sim_sprite import SimSprite
+from .terrain import TerrainGenerator
 
 from .view_types import XDisplay
 from pydantic import BaseModel, Field
@@ -205,9 +210,9 @@ class AppContext(BaseModel):
     police_effect: int = Field(default=0)
     fire_effect: int = Field(default=0)
     tax_flag: int = Field(default=0)
-    city_tax: int = Field(default=7)
+    # city_tax: int = Field(default=7)
 
-    flag_blink
+    # flag_blink
     tile_sync: int = Field(default=0)
     tiles_animated: int = Field(default=0)
     do_animation: int = Field(default=0)
@@ -217,22 +222,22 @@ class AppContext(BaseModel):
 
     mes_x: int = Field(default=0)
     mes_y: int = Field(default=0)
-    mes_num: int = Field(default=0)
+    # mes_num: int = Field(default=0)
     message_port: int = Field(default=0)
-    last_mes_time: int = Field(default=0)
+    # last_mes_time: int = Field(default=0)
     last_city_pop: int = Field(default=0)
     last_category: int = Field(default=0)
     last_pic_num: int = Field(default=0)
     last_message: str = Field(default="")
-    have_last_message: bool = Field(default=False)
+    # have_last_message: bool = Field(default=False)
 
-    sim_speed: int = Field(default=0)
+    # sim_speed: int = Field(default=0)
     sim_meta_speed: int = Field(default=0)
-    no_disasters: bool = Field(default=False)
-    auto_bulldoze: bool = Field(default=True)
-    auto_budget: bool = Field(default=True)
-    auto_go: bool = Field(default=True)
-    user_sound_on: bool = Field(default=True)
+    # no_disasters: bool = Field(default=False)
+    # auto_bulldoze: bool = Field(default=True)
+    # auto_budget: bool = Field(default=True)
+    # auto_go: bool = Field(default=True)
+    # user_sound_on: bool = Field(default=True)
     sound: int = Field(default=1)
 
     disaster_event: int = Field(default=0)
@@ -282,7 +287,7 @@ class AppContext(BaseModel):
     l_dir: int = Field(default=5)
 
     z_source: int = Field(default=0)
-    have_last_message: int = Field(default=0)
+    # have_last_message: int = Field(default=0)
     p_dest_x: int = Field(default=0)
     p_dest_y: int = Field(default=0)
     c_dest_x: int = Field(default=0)
@@ -324,8 +329,8 @@ class AppContext(BaseModel):
     wire_mode: int = Field(default=0)
     multi_player_mode: int = Field(default=0)
     sim_delay: int = Field(default=0)
-    sim_skips: int = Field(default=0)
-    sim_skip: int = Field(default=0)
+    # sim_skips: int = Field(default=0)
+    # sim_skip: int = Field(default=0)
     sim_paused: int = Field(default=0)
     sim_paused_speed: int = Field(default=0)
     sim_tty: int = Field(default=0)
@@ -375,7 +380,7 @@ class AppContext(BaseModel):
     firstState = residentialState
     lastState = networkState
 
-    sim: Sim = Field(default_factory=Sim)
+    # sim: Sim = Field(default_factory=Sim)
 
     sim_loops:int = Field(default=0)
     # sim_delay:int = Field(default=50)
@@ -454,7 +459,7 @@ class AppContext(BaseModel):
     # city_yes: int = 0
     # city_no: int = 0
     # problem_table: list[int] = [0] * types.PROBNUM
-    problem_taken: list[int] = [0] * types.PROBNUM
+    problem_taken: list[int] = [0] * PROBNUM
     # problem_votes: list[int] = [0] * types.PROBNUM  # votes for each problem
     problem_order: list[int] = [0] * 4  # sorted index to above
     # city_pop: int = 0
@@ -465,4 +470,187 @@ class AppContext(BaseModel):
     # delta_city_score: int = 0
     average_city_score: int = 0
     # traffic_average: int = 0
+
+    x_start: int = 0
+    y_start: int = 0
+    map_x: int = 0
+    map_y: int = 0
+    dir: int = 0
+    last_dir: int = 0
+
+    # Generation parameters (can be set externally)
+    # tree_level: int = -1  # Level for tree creation (-1 = random, 0 = none, >0 = amount)
+    # lake_level: int = -1  # Level for lake creation (-1 = random, 0 = none, >0 = amount)
+    # curve_level: int = -1  # Level for river curviness (-1 = random, 0 = none, >0 = amount)
+    # create_island: int = -1  # Island creation (-1 = 10% chance, 0 = never, 1 = always)
+
+    # History data arrays (120 months of data)
+    # history_10: list[list[int]] = []  # 10-year view (120 months)
+    # history_120: list[list[int]] = []  # 120-year view (120 months)
+    history_initialized: bool = False
+
+    # Graph scaling variables
+    all_max: int = 0
+    # graph_10_max: int = 0
+    # graph_120_max: int = 0
+
+    # Graph update flags
+    # new_graph: bool = False
+
+    # Forward declarations for map drawing functions
+    mapProcs: list[Callable | None] = [None] * NMAPS
+
+    # Message strings loaded from stri.301 file
+    MESSAGE_STRINGS: list[str] = []
+
+    # Global power grid state
+    power_stack_num: int = 0
+    power_stack_x: list[int] = [0] * PWRSTKSIZE
+    power_stack_y: list[int] = [0] * PWRSTKSIZE
+    max_power: int = 0
+    num_power: int = 0
+    # Print output destination (could be file, stdout, etc.)
+    print_output: str | None = None
+    print_file: str | None = None
+    # Static variable from rand.c
+    next = 1
+    # Global state variables
+    fptr_idx = SEP_3 + 1  # Front pointer index
+    rptr_idx = 1  # Rear pointer index
+    state = randtbl[1:]  # State array (skip type byte)
+    rand_type = TYPE_3
+    rand_deg = DEG_3
+    rand_sep = SEP_3
+    end_ptr_idx = DEG_3  # Index of last element
+    # Simulation speed and timing
+    # sim_speed: int = 3  # Default simulation speed (0-7)
+    # sim_paused: bool = False
+    # sim_delay: int = 10  # Delay between simulation steps in milliseconds
+    # sim_skips: int = 0  # Number of simulation steps to skip
+    # sim_skip: int = 0  # Current skip counter
+
+    # Game state
+    game_started: bool = False
+    # need_rest: bool = False
+
+    # Performance timing
+    # performance_timing: bool = False
+    # flush_time: float = 0.0
+
+    # Configuration options
+    # auto_budget: bool = True
+    # auto_goto: bool = True
+    # auto_bulldoze: bool = True
+    # no_disasters: bool = False
+    # user_sound_on: bool = True
+    # do_animation: bool = True
+    # do_messages: bool = True
+    # do_notices: bool = True
+
+    # Multiplayer and platform settings
+    # multi_player_mode: bool = False
+    sugar_mode: bool = False
+
+    # Animation cycle counter
+    # cycle = 0
+
+    # Crash locations (for message reporting)
+    # crash_x = 0
+    # crash_y = 0
+
+    # Global sprite instances (one per type)
+    global_sprites: list[SimSprite | None] = [None] * OBJN
+
+    # Free sprite pool
+    free_sprites: SimSprite | None = None
+
+    # Financial variables
+    # total_funds: int = 0
+
+    # Game state variables
+    # punish_cnt: int = 0
+    # auto_bulldoze: int = 0
+    # auto_budget: int = 0
+    # last_mes_time: int = 0
+    # GameLevel: int = 0
+    # init_sim_load: int = 0
+    # scenario_id: int = 0
+    # SimSpeed: int = 0
+    # SimMetaSpeed: int = 0
+    # user_sound_on: int = 0
+    # CityName: str = ""
+    # no_disasters: int = 0
+    # mes_num: int = 0
+    # eval_changed: int = 0
+    # flag_blink: int = 0
+
+    # Game startup state
+    # startup: int = 0
+    # startup_name: str | None = None
+
+    # Timing variables
+    # start_time: float | None = None
+    _tick_base: float = time.perf_counter()
+
+    # Simulation control variables
+    # sim_skips: int = 0
+    # sim_skip: int = 0
+    # sim_paused: int = 0
+    # sim_paused_speed: int = 0
+    # heat_steps: int = 0
+    global_generator: TerrainGenerator | None = None
+
+    # sim = None  # Optional override for tests
+
+    # Global state (equivalent to w_tk.c globals)
+    tk_main_interp = None  # Simplified - no TCL interpreter
+    main_window = None  # Pygame screen surface
+    # update_delayed = False
+    auto_scroll_edge = 16
+    auto_scroll_step = 16
+    auto_scroll_delay = 10
+
+    # Timer management
+    sim_timer_token: int | None = None  # pygame timer event ID
+    sim_timer_idle = False
+    sim_timer_set = False
+    earthquake_timer_token: int | None = None  # pygame timer event ID
+    earthquake_timer_set = False
+    earthquake_delay = 3000
+
+    # Performance timing
+    # performance_timing = False
+    # flush_time = 0.0
+
+    # Command system
+    command_callbacks: dict[str, Callable] = {}
+    stdin_thread: threading.Thread | None = None
+    stdin_queue = Queue()
+    running = False
+
+    # special_base: int = CHURCH
+    # over_ride: int = 0
+    # expensive: int = 1000
+    # players: int = 1
+    # votes: int = 0
+    # pending_tool: int = -1
+    # pending_x: int = 0
+    # pending_y: int = 0
+
+    # View flags
+    VIEW_REDRAW_PENDING = 1
+
+    # View types
+    X_Mem_View = 1
+    X_Wire_View = 2
+
+    # View classes
+    Editor_Class = 0
+    Map_Class = 1
+
+    # Button event types
+    Button_Press = 0
+    Button_Move = 1
+    Button_Release = 2
+
 # END OF FILE

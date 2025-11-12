@@ -222,9 +222,7 @@ class TestBuildingPlacement(Assertions):
 
     def test_check4x4_with_animation(self):
         """Test 4x4 building placement with animation flag."""
-        result = tools.check4x4(
-            self.mock_view, 5, 5, types.COALBASE, 1, tools.powerState
-        )
+        result = tools.check4x4(context, self.mock_view, 5, 5, types.COALBASE, 1, tools.powerState)
         self.assertEqual(result, 1)
 
         # Check center tile has animation bit
@@ -232,9 +230,7 @@ class TestBuildingPlacement(Assertions):
 
     def test_check6x6_airport(self):
         """Test 6x6 airport placement."""
-        result = tools.check6x6(
-            self.mock_view, 8, 8, types.AIRPORTBASE, tools.airportState
-        )
+        result = tools.check6x6(context, self.mock_view, 8, 8, types.AIRPORTBASE, tools.airportState)
         self.assertEqual(result, 1)
 
         # Check center tile
@@ -311,7 +307,7 @@ class TestIndividualTools(Assertions):
         tools.residential_tool(self.mock_view, 5, 5)
 
         with patch("micropolis.tools.doZoneStatus") as mock_zone_status:
-            result = tools.query_tool(self.mock_view, 5, 5)
+            result = tools.query_tool(context, self.mock_view, 5, 5)
             self.assertEqual(result, 1)
             mock_zone_status.assert_called_once_with(5, 5)
 
@@ -358,47 +354,47 @@ class TestQueryTool(Assertions):
     def test_getDensityStr_population(self):
         """Test population density string calculation."""
         types.pop_density[2][2] = 0  # Low density
-        result = tools.getDensityStr(0, 5, 5)  # 5>>1 = 2
+        result = tools.getDensityStr(context, 0, 5, 5)  # 5>>1 = 2
         self.assertEqual(result, 0)  # Low density
 
         types.pop_density[2][2] = 128  # High density
-        result = tools.getDensityStr(0, 5, 5)
+        result = tools.getDensityStr(context, 0, 5, 5)
         self.assertEqual(result, 2)  # High density
 
     def test_getDensityStr_land_value(self):
         """Test land value density string calculation."""
         types.land_value_mem[2][2] = 20  # Low value
-        result = tools.getDensityStr(1, 5, 5)
+        result = tools.getDensityStr(context, 1, 5, 5)
         self.assertEqual(result, 4)  # Low value
 
         types.land_value_mem[2][2] = 100  # High value
-        result = tools.getDensityStr(1, 5, 5)
+        result = tools.getDensityStr(context, 1, 5, 5)
         self.assertEqual(result, 6)  # High value
 
     def test_getDensityStr_crime(self):
         """Test crime density string calculation."""
         types.crime_mem[2][2] = 0  # Low crime
-        result = tools.getDensityStr(2, 5, 5)
+        result = tools.getDensityStr(context, 2, 5, 5)
         self.assertEqual(result, 8)  # Low crime
 
         types.crime_mem[2][2] = 128  # High crime
-        result = tools.getDensityStr(2, 5, 5)
+        result = tools.getDensityStr(context, 2, 5, 5)
         self.assertEqual(result, 10)  # High crime
 
     def test_getDensityStr_pollution(self):
         """Test pollution density string calculation."""
         types.pollution_mem[2][2] = 32  # Some pollution
-        result = tools.getDensityStr(3, 5, 5)
+        result = tools.getDensityStr(context, 3, 5, 5)
         self.assertEqual(result, 13)  # Some pollution
 
         types.pollution_mem[2][2] = 200  # High pollution
-        result = tools.getDensityStr(3, 5, 5)
+        result = tools.getDensityStr(context, 3, 5, 5)
         self.assertEqual(result, 15)  # High pollution
 
     def test_getDensityStr_growth(self):
         """Test growth rate density string calculation."""
         types.rate_og_mem[1][1] = -50  # Negative growth
-        result = tools.getDensityStr(4, 4, 4)  # 4>>3 = 0.5 -> 0, 4>>3 = 0.5 -> 0
+        result = tools.getDensityStr(context, 4, 4, 4)  # 4>>3 = 0.5 -> 0, 4>>3 = 0.5 -> 0
         # This might need adjustment based on actual coordinates
         # For now, just test that it returns a valid result
         self.assertIsInstance(result, int)
@@ -457,7 +453,7 @@ class TestDrawingTools(Assertions):
     @patch("micropolis.tools.DidTool")
     def test_eraser_tool(self, mock_did_tool):
         """Test eraser tool application."""
-        result = tools.EraserTool(self.mock_view, 10, 20, True)
+        result = tools.EraserTool(context, self.mock_view, 10, 20, True)
         self.assertEqual(result, 1)
         mock_did_tool.assert_called_with(self.mock_view, "Eraser", 10, 20)
 

@@ -10,81 +10,65 @@ Based on s_power.c from the original C codebase.
 
 import array
 
-import micropolis.constants
-from . import types
-
-# Power grid constants
-POWERMAPROW = (micropolis.constants.WORLD_X + 15) // 16  # ((WORLD_X + 15) / 16)
-PWRMAPSIZE = POWERMAPROW * micropolis.constants.WORLD_Y
-PWRSTKSIZE = (
-    micropolis.constants.WORLD_X * micropolis.constants.WORLD_Y
-) // 4  # ((WORLD_X * WORLD_Y) / 4)
-
-# Power-related bit constants
-PWRBIT = 32768  # 0x8000 - bit 15
-CONDBIT = 16384  # 0x4000 - bit 14
-
-# Global power grid state
-PowerStackNum: int = 0
-PowerStackX: list[int] = [0] * PWRSTKSIZE
-PowerStackY: list[int] = [0] * PWRSTKSIZE
-MaxPower: int = 0
-NumPower: int = 0
+from src.micropolis.constants import PWRSTKSIZE, PWRMAPSIZE, WORLD_X, WORLD_Y, PWRBIT, CONDBIT
+from src.micropolis.context import AppContext
 
 
-def DoPowerScan() -> None:
+def DoPowerScan(context: AppContext) -> None:
     """
     Perform power grid connectivity scan.
 
     This function implements a flood-fill algorithm to determine which areas
     of the city receive power from power plants. It starts from all power
     plants and spreads power to connected conductive tiles.
+    :param context: 
     """
-    global PowerStackNum, MaxPower, NumPower
+    # global power_stack_num, max_power, num_power
 
     # Clear the power map
-    types.power_map = array.array("H", [0] * PWRMAPSIZE)
+    # context.power_map = array.array("H", [0] * PWRMAPSIZE)
+    context.power_map = [0] * PWRMAPSIZE
 
     # Reset power statistics
-    MaxPower = types.coal_pop * 700 + types.nuclear_pop * 2000
-    NumPower = 0
+    context.max_power = context.coal_pop * 700 + context.nuclear_pop * 2000
+    context.num_power = 0
 
     # Find all power plants and add them to the stack
-    PowerStackNum = 0
-    for x in range(micropolis.constants.WORLD_X):
-        for y in range(micropolis.constants.WORLD_Y):
-            tile = types.map_data[x][y]
+    context.power_stack_num = 0
+    for x in range(WORLD_X):
+        for y in range(WORLD_Y):
+            tile = context.map_data[x][y]
             # Check if this is a power plant tile
             if tile & PWRBIT != 0:
-                if PowerStackNum < PWRSTKSIZE:
-                    PowerStackX[PowerStackNum] = x
-                    PowerStackY[PowerStackNum] = y
-                    PowerStackNum += 1
+                if context.power_stack_num < PWRSTKSIZE:
+                    context.power_stack_x[context.power_stack_num] = x
+                    context.power_stack_y[context.power_stack_num] = y
+                    context.power_stack_num += 1
                 # Mark this tile as powered
-                SetPowerBit(x, y)
+                SetPowerBit(context, x, y)
 
     # Process the power stack using flood-fill
-    while PowerStackNum > 0:
-        PowerStackNum -= 1
-        x = PowerStackX[PowerStackNum]
-        y = PowerStackY[PowerStackNum]
+    while context.power_stack_num > 0:
+        context.power_stack_num -= 1
+        x = context.power_stack_x[context.power_stack_num]
+        y = context.power_stack_y[context.power_stack_num]
 
         # Spread power to adjacent conductive tiles
         for dir in range(4):  # 4 directions: north, east, south, west
             nx, ny = MoveMapSim(x, y, dir)
             if (
-                nx >= 0
-                and nx < micropolis.constants.WORLD_X
-                and ny >= 0
-                and ny < micropolis.constants.WORLD_Y
+                    nx >= 0
+                    and nx < WORLD_X
+                    and ny >= 0
+                    and ny < WORLD_Y
             ):
-                if TestForCond(nx, ny):
-                    if not TestPowerBit(nx, ny):
-                        SetPowerBit(nx, ny)
-                        if PowerStackNum < PWRSTKSIZE:
-                            PowerStackX[PowerStackNum] = nx
-                            PowerStackY[PowerStackNum] = ny
-                            PowerStackNum += 1
+                if TestForCond(context, nx, ny):
+                    if not TestPowerBit(context, nx, ny):
+                        SetPowerBit(context, nx, ny)
+                        if context.power_stack_num < PWRSTKSIZE:
+                            context.power_stack_x[context.power_stack_num] = nx
+                            context.power_stack_y[context.power_stack_num] = ny
+                            context.power_stack_num += 1
 
 
 def MoveMapSim(x: int, y: int, dir: int) -> tuple[int, int]:
@@ -111,7 +95,7 @@ def MoveMapSim(x: int, y: int, dir: int) -> tuple[int, int]:
         return x, y  # Invalid direction
 
 
-def TestForCond(x: int, y: int) -> bool:
+def TestForCond(context: AppContext, x: int, y: int) -> bool:
     """
     Test if a tile conducts power.
 
@@ -124,8 +108,9 @@ def TestForCond(x: int, y: int) -> bool:
 
     Returns:
         True if the tile conducts power, False otherwise
+        :param context:
     """
-    tile = types.map_data[x][y]
+    tile = context.map_data[x][y]
     return (tile & CONDBIT) != 0
 
 
@@ -140,23 +125,24 @@ def powerword(x: int, y: int) -> int:
     return ((x) >> 4) + ((y) << 3)
 
 
-def SetPowerBit(x: int, y: int) -> None:
+def SetPowerBit(context: AppContext, x: int, y: int) -> None:
     """
     Set the power bit for a tile in the power map.
 
     Args:
         x: X coordinate
         y: Y coordinate
+        :param context:
     """
     # Calculate the word index in the power map
     word = powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Set the bit
-    types.power_map[word] |= 1 << bit
+    context.power_map[word] |= 1 << bit
 
 
-def TestPowerBit(x: int, y: int) -> bool:
+def TestPowerBit(context: AppContext, x: int, y: int) -> bool:
     """
     Test if a tile has power in the power map.
 
@@ -166,43 +152,46 @@ def TestPowerBit(x: int, y: int) -> bool:
 
     Returns:
         True if the tile has power, False otherwise
+        :param context:
     """
     # Calculate the word index in the power map
     word = powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Test the bit
-    return (types.power_map[word] & (1 << bit)) != 0
+    return (context.power_map[word] & (1 << bit)) != 0
 
 
-def PushPowerStack() -> None:
+def PushPowerStack(context: AppContext) -> None:
     """
     Push current map position onto the power stack.
 
     Used by power plants to add themselves to the flood-fill stack.
+    :param context:
     """
-    global PowerStackNum
+    # global power_stack_num
 
-    if PowerStackNum < (PWRSTKSIZE - 2):
-        PowerStackNum += 1
-        PowerStackX[PowerStackNum] = types.s_map_x
-        PowerStackY[PowerStackNum] = types.s_map_y
+    if context.power_stack_num < (PWRSTKSIZE - 2):
+        context.power_stack_num += 1
+        context.power_stack_x[context.power_stack_num] = context.s_map_x
+        context.power_stack_y[context.power_stack_num] = context.s_map_y
 
 
-def ClearPowerBit(x: int, y: int) -> None:
+def ClearPowerBit(context: AppContext, x: int, y: int) -> None:
     """
     Clear the power bit for a tile in the power map.
 
     Args:
         x: X coordinate
         y: Y coordinate
+        :param context:
     """
     # Calculate the word index in the power map
     word = powerword(x, y)
     # Calculate the bit position within the word
     bit = x & 15
     # Clear the bit
-    types.power_map[word] &= ~(1 << bit)
+    context.power_map[word] &= ~(1 << bit)
 
 
 def setpowerbit(x: int, y: int, power_map: array.array) -> None:

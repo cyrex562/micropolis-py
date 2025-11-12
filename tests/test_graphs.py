@@ -92,19 +92,19 @@ class TestHistoryData:
 
     def setup_method(self):
         """Setup for each test"""
-        graphs.init_history_data()
+        graphs.init_history_data(context)
 
     def test_init_history_data(self):
         """Test history data initialization"""
-        assert graphs.HistoryInitialized
-        assert len(graphs.History10) == types.HISTORIES
-        assert len(graphs.History120) == types.HISTORIES
+        assert graphs.history_initialized
+        assert len(graphs.history_10) == types.HISTORIES
+        assert len(graphs.history_120) == types.HISTORIES
 
-        for hist in graphs.History10:
+        for hist in graphs.history_10:
             assert len(hist) == 120
             assert all(x == 0 for x in hist)
 
-        for hist in graphs.History120:
+        for hist in graphs.history_120:
             assert len(hist) == 120
             assert all(x == 0 for x in hist)
 
@@ -115,12 +115,12 @@ class TestHistoryData:
         types.com_his = [50, 100, 75, 250] + [0] * 236
         types.ind_his = [25, 50, 40, 150] + [0] * 236
 
-        graphs.init_graph_maxima()
+        graphs.init_graph_maxima(context)
 
         assert types.res_his_max == 300
         assert types.com_his__max == 250
         assert types.ind_his_max == 150
-        assert graphs.Graph10Max == 300
+        assert graphs.graph_10_max == 300
 
     def test_draw_month(self):
         """Test draw_month scaling function"""
@@ -146,13 +146,13 @@ class TestHistoryData:
         types.crime_his = [10, 20, 30] + [0] * 237
         types.pollution_his = [5, 10, 15] + [0] * 237
 
-        graphs.init_graph_maxima()
-        graphs.do_all_graphs()
+        graphs.init_graph_maxima(context)
+        graphs.do_all_graphs(context)
 
         # Check that data was processed
-        assert len(graphs.History10[types.RES_HIST]) == 120
-        assert len(graphs.History10[types.COM_HIST]) == 120
-        assert len(graphs.History10[types.MONEY_HIST]) == 120
+        assert len(graphs.history_10[types.RES_HIST]) == 120
+        assert len(graphs.history_10[types.COM_HIST]) == 120
+        assert len(graphs.history_10[types.MONEY_HIST]) == 120
 
 
 class TestGraphRendering:
@@ -172,14 +172,14 @@ class TestGraphRendering:
     def test_update_graph_not_visible(self):
         """Test update_graph with invisible graph"""
         self.graph.visible = False
-        graphs.update_graph(self.graph)
+        graphs.update_graph(context, self.graph)
         # Should not crash, surface should remain unchanged
 
     def test_update_graph_no_surface(self):
         """Test update_graph with no surface"""
         self.graph.visible = True
         self.graph.surface = None
-        graphs.update_graph(self.graph)
+        graphs.update_graph(context, self.graph)
         # Should not crash
 
     def test_update_graph_visible(self):
@@ -188,10 +188,10 @@ class TestGraphRendering:
         self.graph.set_size(400, 300)
 
         # Setup some test data
-        graphs.History10[types.RES_HIST] = [i * 2 for i in range(120)]
-        graphs.History10[types.COM_HIST] = [i for i in range(120)]
+        graphs.history_10[types.RES_HIST] = [i * 2 for i in range(120)]
+        graphs.history_10[types.COM_HIST] = [i for i in range(120)]
 
-        graphs.update_graph(self.graph)
+        graphs.update_graph(context, self.graph)
 
         # Graph should be marked as not needing redraw
         assert not self.graph.needs_redraw
@@ -205,7 +205,7 @@ class TestGraphRendering:
         # Setup census changed flag
         types.census_changed = 1
 
-        graphs.update_all_graphs()
+        graphs.update_all_graphs(context)
 
         # CensusChanged should be reset
         assert types.census_changed == 0
@@ -220,16 +220,16 @@ class TestGraphPanel:
     """Tests for the pygame graph overlay panel."""
 
     def setup_method(self):
-        graphs.set_graph_panel_visible(False)
+        graphs.set_graph_panel_visible(context, False)
         graphs.graph_panel_surface = None
         graphs.graph_panel_dirty = False
 
     def test_panel_hidden_without_pygame(self):
         """Panel rendering returns None when pygame is unavailable."""
         with patch.object(graphs, "PYGAME_AVAILABLE", False):
-            graphs.set_graph_panel_visible(True)
+            graphs.set_graph_panel_visible(context, True)
             assert graphs.is_graph_panel_visible()
-            assert graphs.render_graph_panel() is None
+            assert graphs.render_graph_panel(context) is None
 
     def test_panel_render_with_pygame(self):
         """Panel rendering requests a pygame surface."""
@@ -244,8 +244,8 @@ class TestGraphPanel:
             mock_surface.fill = MagicMock()
             mock_pygame.draw.rect = MagicMock()
 
-            graphs.set_graph_panel_visible(True)
-            surface = graphs.render_graph_panel()
+            graphs.set_graph_panel_visible(context, True)
+            surface = graphs.render_graph_panel(context)
 
             assert surface is mock_surface
             mock_pygame.Surface.assert_called()
@@ -266,9 +266,9 @@ class TestGraphPanel:
             mock_pygame.Surface.side_effect = [initial_surface, resized_surface]
             mock_pygame.draw.rect = MagicMock()
 
-            graphs.set_graph_panel_visible(True)
-            graphs.set_graph_panel_size(512, 256)
-            surface = graphs.render_graph_panel()
+            graphs.set_graph_panel_visible(context, True)
+            graphs.set_graph_panel_size(context, 512, 256)
+            surface = graphs.render_graph_panel(context)
 
             assert surface is resized_surface
             mock_pygame.Surface.assert_called_with((512, 256), mock_pygame.SRCALPHA)
@@ -280,21 +280,21 @@ class TestDataAccess:
     def test_get_history_data(self):
         """Test get_history_data function"""
         # Reset initialization to ensure clean state
-        graphs.HistoryInitialized = False
-        graphs.init_history_data()
+        graphs.history_initialized = False
+        graphs.init_history_data(context)
 
         # Test 10-year data
-        data = graphs.get_history_data(10, types.RES_HIST)
+        data = graphs.get_history_data(context, 10, types.RES_HIST)
         assert len(data) == 120
         assert all(x == 0 for x in data)
 
         # Test 120-year data
-        data = graphs.get_history_data(120, types.COM_HIST)
+        data = graphs.get_history_data(context, 120, types.COM_HIST)
         assert len(data) == 120
         assert all(x == 0 for x in data)
 
         # Test invalid range
-        data = graphs.get_history_data(50, types.IND_HIST)
+        data = graphs.get_history_data(context, 50, types.IND_HIST)
         assert data == []
 
     def test_get_history_names(self):
@@ -326,7 +326,7 @@ class TestInitialization:
         graph.range = 120
         graph.mask = types.RES_HIST
 
-        graphs.initialize_graphs()
+        graphs.initialize_graphs(context)
 
         # Should reset to defaults
         assert graph.range == 10
@@ -335,9 +335,9 @@ class TestInitialization:
         graphs.remove_graph(graph)
 
         # Check history initialization
-        assert graphs.HistoryInitialized
-        assert len(graphs.History10) == types.HISTORIES
-        assert len(graphs.History120) == types.HISTORIES
+        assert graphs.history_initialized
+        assert len(graphs.history_10) == types.HISTORIES
+        assert len(graphs.history_120) == types.HISTORIES
 
 
 class TestIntegration:
@@ -346,7 +346,7 @@ class TestIntegration:
     def setup_method(self):
         """Setup for integration tests"""
         pygame.init()
-        graphs.initialize_graphs()
+        graphs.initialize_graphs(context)
 
     def teardown_method(self):
         """Cleanup after integration tests"""
@@ -370,15 +370,15 @@ class TestIntegration:
         types.pollution_his = [i // 2 for i in range(240)]
 
         # Process data
-        graphs.init_graph_maxima()
-        graphs.do_all_graphs()
+        graphs.init_graph_maxima(context)
+        graphs.do_all_graphs(context)
 
         # Update graphs
         types.census_changed = 1
-        graphs.update_all_graphs()
+        graphs.update_all_graphs(context)
 
         # Render graph
-        graphs.update_graph(graph)
+        graphs.update_graph(context, graph)
 
         # Verify graph was rendered
         assert not graph.needs_redraw

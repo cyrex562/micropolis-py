@@ -150,7 +150,7 @@
 
 import random
 
-from micropolis.sim_sprite import SimSprite
+from src.micropolis.sim_sprite import SimSprite
 
 
 def Rand(range_val: int) -> int:

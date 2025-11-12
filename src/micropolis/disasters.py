@@ -52,29 +52,29 @@ def do_disasters(context: AppContext) -> None:
         return
 
     # Random disaster check
-    if not rand(DISASTER_CHANCES[x]):
+    if not rand(context, DISASTER_CHANCES[x]):
         # Select random disaster type
-        disaster_type = rand(8)
+        disaster_type = rand(context, 8)
 
         if disaster_type <= 1:
             # Fire disaster
             set_fire(context)
         elif disaster_type <= 3:
             # Flood disaster
-            make_flood(context)
+            start_flood_disaster(context)
         elif disaster_type == 4:
             # No disaster (skip)
             pass
         elif disaster_type == 5:
             # Tornado disaster
-            make_tornado()
+            spawn_tornado_disaster()
         elif disaster_type == 6:
             # Earthquake disaster
-            make_earthquake(context)
+            trigger_earthquake_disaster(context)
         elif disaster_type >= 7:
             # Monster disaster (only if pollution is high)
             if context.pollute_average > 60:  # Original uses /* 80 */ 60
-                make_monster(context)
+                spawn_monster_disaster(context)
 
 
 def scenario_disaster(context: AppContext) -> None:
@@ -92,7 +92,7 @@ def scenario_disaster(context: AppContext) -> None:
     elif context.disaster_event == 2:
         # San Francisco - earthquake
         if context.disaster_wait == 1:
-            make_earthquake(context)
+            trigger_earthquake_disaster(context)
     elif context.disaster_event == 3:
         # Hamburg - fire bombing
         drop_fire_bombs(context)
@@ -102,18 +102,18 @@ def scenario_disaster(context: AppContext) -> None:
     elif context.disaster_event == 5:
         # Tokyo - monster
         if context.disaster_wait == 1:
-            make_monster(context)
+            spawn_monster_disaster(context)
     elif context.disaster_event == 6:
         # Detroit - no disaster
         pass
     elif context.disaster_event == 7:
         # Boston - nuclear meltdown
         if context.disaster_wait == 1:
-            make_meltdown(context)
+            trigger_nuclear_meltdown(context)
     elif context.disaster_event == 8:
         # Rio - periodic floods
         if (context.disaster_wait % 24) == 0:
-            make_flood(context)
+            start_flood_disaster(context)
 
     # Decrement disaster wait counter
     if context.disaster_wait:
@@ -136,8 +136,8 @@ def set_fire(context: AppContext) -> None:
     :param context:
     """
     for _ in range(40):  # Try up to 40 times to find a suitable location
-        x = rand(WORLD_X - 1)
-        y = rand(WORLD_Y - 1)
+        x = rand(context, WORLD_X - 1)
+        y = rand(context, WORLD_Y - 1)
         tile = context.map_data[x][y]
 
         # Check if tile is arsonable (can be set on fire)
@@ -155,7 +155,7 @@ def set_fire(context: AppContext) -> None:
                 return
 
 
-def make_fire(context: AppContext) -> None:
+def create_fire_disaster(context: AppContext) -> None:
     """
     ported from MakeFire
     Create a fire at a random flammable location.
@@ -165,8 +165,8 @@ def make_fire(context: AppContext) -> None:
     :param context:
     """
     for _ in range(40):  # Try up to 40 times
-        x = rand(WORLD_X - 1)
-        y = rand(WORLD_Y - 1)
+        x = rand(context, WORLD_X - 1)
+        y = rand(context, WORLD_Y - 1)
         tile = context.map_data[x][y]
 
         # Check for flammable tiles (not zoned, has burn bit set)
@@ -182,7 +182,7 @@ def make_fire(context: AppContext) -> None:
                 return
 
 
-def fire_bomb(context: AppContext) -> None:
+def create_fire_bomb_explosion(context: AppContext) -> None:
     """
     ported from FireBomb
     Create a fire bomb explosion (used in Hamburg scenario).
@@ -190,9 +190,9 @@ def fire_bomb(context: AppContext) -> None:
     Drops a bomb at a random location causing an explosion.
     :param context:
     """
-    context.crash_x = rand(WORLD_X - 1)
-    context.crash_y = rand(WORLD_Y - 1)
-    make_explosion(context.crash_x, context.crash_y)
+    context.crash_x = rand(context, WORLD_X - 1)
+    context.crash_y = rand(context, WORLD_Y - 1)
+    create_explosion(context.crash_x, context.crash_y)
     # Clear messages and send disaster message (placeholder)
     # ClearMes()
     # SendMesAt(-30, CrashX, CrashY)
@@ -208,7 +208,7 @@ def drop_fire_bombs(context: AppContext) -> None:
     """
     # Implementation would create multiple fire bombs
     # For now, just drop one as a placeholder
-    fire_bomb(context)
+    create_fire_bomb_explosion(context)
 
 
 # ============================================================================
@@ -216,7 +216,7 @@ def drop_fire_bombs(context: AppContext) -> None:
 # ============================================================================
 
 
-def make_flood(context: AppContext) -> None:
+def start_flood_disaster(context: AppContext) -> None:
     """
     ported from MakeFlood
     Start a flood disaster near a river edge.
@@ -229,8 +229,8 @@ def make_flood(context: AppContext) -> None:
     dy = [-1, 0, 1, 0]
 
     for _ in range(300):  # Try up to 300 times to find river edge
-        x = rand(WORLD_X - 1)
-        y = rand(WORLD_Y - 1)
+        x = rand(context, WORLD_X - 1)
+        y = rand(context, WORLD_Y - 1)
 
         tile = context.map_data[x][y] & LOMASK
 
@@ -298,7 +298,7 @@ def do_flood(context: AppContext) -> None:
                         # Fire zone if it's a zoned building
                         fire_zone(context, xx, yy, tile)
                     # Set flood tile with random variation
-                    context.map_data[xx][yy] = FLOOD + rand(2)
+                    context.map_data[xx][yy] = FLOOD + rand(context, 2)
     else:
         # Random chance to clear flood (1/16 chance)
         if not (context.sim_rand() & 15):
@@ -310,7 +310,7 @@ def do_flood(context: AppContext) -> None:
 # ============================================================================
 
 
-def make_earthquake(context: AppContext) -> None:
+def trigger_earthquake_disaster(context: AppContext) -> None:
     """
     ported from MakeEarthquake
     Trigger an earthquake disaster.
@@ -325,12 +325,12 @@ def make_earthquake(context: AppContext) -> None:
     # SendMesAt(-23, CCx, CCy)
 
     # Calculate damage duration based on random time
-    time = rand(700) + 300
+    time = rand(context, 700) + 300
 
     # Damage random tiles
     for z in range(time):
-        x = rand(WORLD_X - 1)
-        y = rand(WORLD_Y - 1)
+        x = rand(context, WORLD_X - 1)
+        y = rand(context, WORLD_Y - 1)
 
         # Skip out of bounds (shouldn't happen with Rand range, but safety check)
         if (x < 0) or (x >= WORLD_X) or (y < 0) or (y >= WORLD_Y):
@@ -396,7 +396,7 @@ def do_earth_quake(context: AppContext) -> None:
 # ============================================================================
 
 
-def make_monster(context: AppContext) -> None:
+def spawn_monster_disaster(context: AppContext) -> None:
     """
     ported from MakeMonster
     Spawn a monster (Godzilla) disaster.
@@ -415,8 +415,8 @@ def make_monster(context: AppContext) -> None:
 
     # Find suitable spawning location near river
     for _ in range(300):
-        x = rand(WORLD_X - 20) + 10
-        y = rand(WORLD_Y - 10) + 5
+        x = rand(context, WORLD_X - 20) + 10
+        y = rand(context, WORLD_Y - 10) + 5
 
         # Check for river tile
         tile = context.map_data[x][y]
@@ -453,7 +453,7 @@ def monster_here(x: int, y: int) -> None:
 # ============================================================================
 
 
-def make_tornado() -> None:
+def spawn_tornado_disaster() -> None:
     """
     ported from MakeTornado
     Spawn a tornado disaster.
@@ -467,8 +467,8 @@ def make_tornado() -> None:
         return
 
     # Generate random position for tornado
-    x = rand((WORLD_X << 4) - 800) + 400
-    y = rand((WORLD_Y << 4) - 200) + 100
+    x = rand(context, (WORLD_X << 4) - 800) + 400
+    y = rand(context, (WORLD_Y << 4) - 200) + 100
 
     # Create tornado sprite
     sprite = MakeNewSprite()
@@ -486,7 +486,7 @@ def make_tornado() -> None:
 # ============================================================================
 
 
-def make_meltdown(context: AppContext) -> None:
+def trigger_nuclear_meltdown(context: AppContext) -> None:
     """
     ported from MakeMeltdown
     Trigger a nuclear meltdown disaster.
@@ -518,10 +518,10 @@ def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
     context.melt_y = sy
 
     # Create explosions around the plant
-    make_explosion(sx - 1, sy - 1)
-    make_explosion(sx - 1, sy + 2)
-    make_explosion(sx + 2, sy - 1)
-    make_explosion(sx + 2, sy + 2)
+    create_explosion(sx - 1, sy - 1)
+    create_explosion(sx - 1, sy + 2)
+    create_explosion(sx + 2, sy - 1)
+    create_explosion(sx + 2, sy + 2)
 
     # Set central area on fire
     for x in range(sx - 1, sx + 3):
@@ -533,8 +533,8 @@ def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
 
     # Spread radiation to surrounding area
     for _ in range(200):
-        x = sx - 20 + rand(40)
-        y = sy - 15 + rand(30)
+        x = sx - 20 + rand(context, 40)
+        y = sy - 15 + rand(context, 30)
 
         if not TestBounds(x, y):
             continue
@@ -559,7 +559,7 @@ def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
 # ============================================================================
 
 
-def make_explosion(x: int, y: int) -> None:
+def create_explosion(x: int, y: int) -> None:
     """
     ported from MakeExplosion
     Create an explosion at the specified location.

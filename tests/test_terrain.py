@@ -80,15 +80,15 @@ class TestTerrainGenerator(Assertions):
         gen = TerrainGenerator()
 
         # Valid coordinates
-        assert gen.test_bounds(0, 0)
-        assert gen.test_bounds(60, 50)
-        assert gen.test_bounds(WORLD_X-1, WORLD_Y-1)
+        assert test_bounds(0, 0)
+        assert test_bounds(60, 50)
+        assert test_bounds(WORLD_X-1, WORLD_Y-1)
 
         # Invalid coordinates
-        assert not gen.test_bounds(-1, 0)
-        assert not gen.test_bounds(0, -1)
-        assert not gen.test_bounds(WORLD_X, 0)
-        assert not gen.test_bounds(0, WORLD_Y)
+        assert not test_bounds(-1, 0)
+        assert not test_bounds(0, -1)
+        assert not test_bounds(WORLD_X, 0)
+        assert not test_bounds(0, WORLD_Y)
 
     def test_move_map(self):
         """Test map position movement."""
@@ -121,7 +121,7 @@ class TestTerrainGenerator(Assertions):
         # Verify map has non-zero values
         assert any(any(cell != 0 for cell in row) for row in map_data)
 
-        gen.clear_map(map_data)
+        clear_map(map_data)
 
         # Verify all cells are zero
         assert all(all(cell == 0 for cell in row) for row in map_data)
@@ -214,7 +214,7 @@ class TestTerrainGenerator(Assertions):
         for x in range(5, 15):
             map_data[x][10] = WOODS + BLN
 
-        gen.smooth_trees(map_data)
+        smooth_trees(map_data)
 
         # Verify tree tiles were smoothed (converted to specific tile types)
         bln_tiles = sum(1 for row in map_data for cell in row if (cell & BLN) == BLN)

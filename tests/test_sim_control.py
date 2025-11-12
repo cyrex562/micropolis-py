@@ -91,83 +91,83 @@ class TestSimControl(Assertions):
     def test_sim_speed_control(self):
         """Test simulation speed control"""
         # Test default speed
-        self.assertEqual(sim_control.get_sim_speed(), 3)
+        self.assertEqual(sim_control.get_sim_speed(context), 3)
 
         # Test setting speed
-        sim_control.set_sim_speed(5)
-        self.assertEqual(sim_control.get_sim_speed(), 5)
+        sim_control.set_sim_speed(context, 5)
+        self.assertEqual(sim_control.get_sim_speed(context), 5)
         self.mock_types.Kick.assert_called()
 
         # Test invalid speed (should not change)
-        sim_control.set_sim_speed(10)
-        self.assertEqual(sim_control.get_sim_speed(), 5)
+        sim_control.set_sim_speed(context, 10)
+        self.assertEqual(sim_control.get_sim_speed(context), 5)
 
     def test_sim_pause_resume(self):
         """Test simulation pause/resume"""
         # Test default state
-        self.assertFalse(sim_control.is_sim_paused())
+        self.assertFalse(sim_control.is_sim_paused(context))
 
         # Test pause
-        sim_control.pause_simulation()
-        self.assertTrue(sim_control.is_sim_paused())
+        sim_control.pause_simulation(context)
+        self.assertTrue(sim_control.is_sim_paused(context))
         self.mock_types.Kick.assert_called()
 
         # Test resume
-        sim_control.resume_simulation()
-        self.assertFalse(sim_control.is_sim_paused())
+        sim_control.resume_simulation(context)
+        self.assertFalse(sim_control.is_sim_paused(context))
 
     def test_sim_delay_control(self):
         """Test simulation delay control"""
         # Test default delay
-        self.assertEqual(sim_control.get_sim_delay(), 10)
+        self.assertEqual(sim_control.get_sim_delay(context), 10)
 
         # Test setting delay
-        sim_control.set_sim_delay(20)
-        self.assertEqual(sim_control.get_sim_delay(), 20)
+        sim_control.set_sim_delay(context, 20)
+        self.assertEqual(sim_control.get_sim_delay(context), 20)
         self.mock_types.Kick.assert_called()
 
     def test_sim_skips_control(self):
         """Test simulation skips control"""
         # Test default skips
-        self.assertEqual(sim_control.get_sim_skips(), 0)
+        self.assertEqual(sim_control.get_sim_skips(context), 0)
 
         # Test setting skips
         sim_control.set_sim_skips(5)
-        self.assertEqual(sim_control.get_sim_skips(), 5)
+        self.assertEqual(sim_control.get_sim_skips(context), 5)
         self.mock_types.Kick.assert_called()
 
     def test_heat_simulation_control(self):
         """Test heat simulation parameters"""
         # Test heat steps
-        sim_control.set_heat_steps(10)
-        self.assertEqual(sim_control.get_heat_steps(), 10)
+        sim_control.set_heat_steps(context, 10)
+        self.assertEqual(sim_control.get_heat_steps(context), 10)
         self.mock_types.Kick.assert_called()
 
         # Test heat flow
-        sim_control.set_heat_flow(5)
+        sim_control.set_heat_flow(context, 5)
         self.assertEqual(sim_control.get_heat_flow(), 5)
 
         # Test heat rule
-        sim_control.set_heat_rule(2)
-        self.assertEqual(sim_control.get_heat_rule(), 2)
+        sim_control.set_heat_rule(context, 2)
+        self.assertEqual(sim_control.get_heat_rule(context), 2)
 
     def test_game_state_management(self):
         """Test game state management"""
         # Test initial state
-        self.assertFalse(sim_control.is_game_started())
+        self.assertFalse(sim_control.is_game_started(context))
 
         # Test setting game started
-        sim_control.set_game_started(True)
-        self.assertTrue(sim_control.is_game_started())
+        sim_control.set_game_started(context, True)
+        self.assertTrue(sim_control.is_game_started(context))
         self.mock_types.Kick.assert_called()
 
     @patch('micropolis.sim_control.initialization.InitGame')
     def test_init_game(self, mock_init):
         """Test game initialization"""
-        sim_control.init_game()
+        sim_control.init_game(context)
 
         mock_init.assert_called_once()
-        self.assertTrue(sim_control.is_game_started())
+        self.assertTrue(sim_control.is_game_started(context))
         self.mock_types.Kick.assert_called()
 
     @patch('micropolis.sim_control.file_io.save_city')
@@ -175,7 +175,7 @@ class TestSimControl(Assertions):
         """Test city saving"""
         mock_save.return_value = True
 
-        result = sim_control.save_city()
+        result = sim_control.save_current_city_state(context)
         self.assertTrue(result)
         mock_save.assert_called_with("autosave.cty")
 
@@ -185,32 +185,32 @@ class TestSimControl(Assertions):
         sim_control.generate_new_city()
 
         mock_generate.assert_called_once()
-        self.assertTrue(sim_control.is_game_started())
+        self.assertTrue(sim_control.is_game_started(context))
         self.mock_types.Kick.assert_called()
 
     @patch('micropolis.sim_control.generation.GenerateSomeCity')
     def test_generate_some_city(self, mock_generate):
         """Test city generation with level"""
-        sim_control.generate_some_city(1)
+        sim_control.generate_some_city(context, 1)
 
         mock_generate.assert_called_once_with(1)
-        self.assertTrue(sim_control.is_game_started())
+        self.assertTrue(sim_control.is_game_started(context))
         self.mock_types.Kick.assert_called()
 
     def test_city_name_management(self):
         """Test city name management"""
         # Test default name
-        self.assertEqual(sim_control.get_city_name(), "Micropolis")
+        self.assertEqual(sim_control.get_city_name(context), "Micropolis")
 
         # Test setting name
-        sim_control.set_city_name("Test City")
+        sim_control.set_city_name(context, context)
         self.mock_types.setCityName.assert_called_with("Test City")
 
     def test_city_file_name_management(self):
         """Test city file name management"""
         # Test setting filename
-        sim_control.set_city_file_name("test.cty")
-        self.assertEqual(sim_control.get_city_file_name(), "test.cty")
+        sim_control.set_city_file_name(context, "test.cty")
+        self.assertEqual(sim_control.get_city_file_name(context), "test.cty")
 
     def test_disaster_functions(self):
         """Test disaster control functions"""
@@ -223,39 +223,39 @@ class TestSimControl(Assertions):
              patch('micropolis.sim_control.disasters.FireBomb') as mock_bomb, \
              patch('micropolis.sim_control.disasters.MakeExplosion') as mock_explosion:
 
-            sim_control.make_fire()
+            sim_control.create_fire_disaster(context)
             mock_fire.assert_called_once()
             self.mock_types.Kick.assert_called()
 
-            sim_control.make_flood()
+            sim_control.start_flood_disaster()
             mock_flood.assert_called_once()
 
-            sim_control.make_tornado()
+            sim_control.spawn_tornado_disaster()
             mock_tornado.assert_called_once()
 
-            sim_control.make_earthquake()
+            sim_control.trigger_earthquake_disaster()
             mock_quake.assert_called_once()
 
-            sim_control.make_monster()
+            sim_control.spawn_monster_disaster()
             mock_monster.assert_called_once()
 
-            sim_control.make_meltdown()
+            sim_control.trigger_nuclear_meltdown()
             mock_meltdown.assert_called_once()
 
-            sim_control.fire_bomb()
+            sim_control.create_fire_bomb_explosion()
             mock_bomb.assert_called_once()
 
-            sim_control.make_explosion(10, 20)
+            sim_control.create_explosion(10, 20)
             mock_explosion.assert_called_once_with(10, 20)
 
     def test_funds_management(self):
         """Test funds management"""
         # Test getting funds
-        self.assertEqual(sim_control.get_total_funds(), 10000)
+        self.assertEqual(sim_control.get_total_funds(context), 10000)
 
         # Test setting funds
-        sim_control.set_total_funds(50000)
-        self.assertEqual(sim_control.get_total_funds(), 50000)
+        sim_control.set_total_funds(context, 50000)
+        self.assertEqual(sim_control.get_total_funds(context), 50000)
         self.assertEqual(self.mock_types.MustUpdateFunds, 1)
         self.mock_types.Kick.assert_called()
 
@@ -272,17 +272,17 @@ class TestSimControl(Assertions):
     def test_budget_management(self):
         """Test budget management"""
         # Test fire funding
-        sim_control.set_fire_fund_percentage(75)
+        sim_control.set_fire_fund_percentage(context, 75)
         self.assertEqual(sim_control.get_fire_fund_percentage(), 75)
         self.mock_types.UpdateFundEffects.assert_called()
 
         # Test police funding
-        sim_control.set_police_fund_percentage(60)
-        self.assertEqual(sim_control.get_police_fund_percentage(), 60)
+        sim_control.set_police_fund_percentage(context, 60)
+        self.assertEqual(sim_control.get_police_fund_percentage(context), 60)
 
         # Test road funding
         sim_control.set_road_fund_percentage(80)
-        self.assertEqual(sim_control.get_road_fund_percentage(), 80)
+        self.assertEqual(sim_control.get_road_fund_percentage(context), 80)
 
     def test_game_level_management(self):
         """Test game level management"""
@@ -290,54 +290,54 @@ class TestSimControl(Assertions):
         self.assertEqual(sim_control.get_game_level(), 1)
 
         # Test setting level
-        sim_control.set_game_level(2)
+        sim_control.set_game_level(context, 2)
         self.mock_types.SetGameLevelFunds.assert_called_with(2)
 
     def test_auto_settings(self):
         """Test auto settings"""
         # Test auto budget
-        sim_control.set_auto_budget(False)
-        self.assertFalse(sim_control.get_auto_budget())
+        sim_control.set_auto_budget(context, False)
+        self.assertFalse(sim_control.get_auto_budget(context))
         self.assertEqual(self.mock_types.MustUpdateOptions, 1)
 
         # Test auto goto
-        sim_control.set_auto_goto(False)
-        self.assertFalse(sim_control.get_auto_goto())
+        sim_control.set_auto_goto(context, False)
+        self.assertFalse(sim_control.get_auto_goto(context))
 
         # Test auto bulldoze
-        sim_control.set_auto_bulldoze(False)
-        self.assertFalse(sim_control.get_auto_bulldoze())
+        sim_control.set_auto_bulldoze(context, False)
+        self.assertFalse(sim_control.get_auto_bulldoze(context))
 
     def test_configuration_options(self):
         """Test configuration options"""
         # Test disasters
-        sim_control.set_disasters_enabled(False)
-        self.assertFalse(sim_control.get_disasters_enabled())
+        sim_control.set_disasters_enabled(context, False)
+        self.assertFalse(sim_control.get_disasters_enabled(context))
         self.assertEqual(self.mock_types.MustUpdateOptions, 1)
 
         # Test sound
-        sim_control.set_sound_enabled(False)
-        self.assertFalse(sim_control.get_sound_enabled())
+        sim_control.set_sound_enabled(context, False)
+        self.assertFalse(sim_control.get_sound_enabled(context))
 
         # Test animation
-        sim_control.set_do_animation(False)
-        self.assertFalse(sim_control.get_do_animation())
+        sim_control.set_do_animation(context, False)
+        self.assertFalse(sim_control.get_do_animation(context))
 
         # Test messages
-        sim_control.set_do_messages(False)
-        self.assertFalse(sim_control.get_do_messages())
+        sim_control.set_do_messages(context, False)
+        self.assertFalse(sim_control.get_do_messages(context))
 
         # Test notices
-        sim_control.set_do_notices(False)
-        self.assertFalse(sim_control.get_do_notices())
+        sim_control.set_do_notices(context, False)
+        self.assertFalse(sim_control.get_do_notices(context))
 
     def test_bulldozer_control(self):
         """Test bulldozer control"""
-        sim_control.start_bulldozer()
+        sim_control.start_bulldozer_sound()
         self.mock_types.StartBulldozer.assert_called_once()
         self.mock_types.Kick.assert_called()
 
-        sim_control.stop_bulldozer()
+        sim_control.stop_bulldozer_sound()
         self.mock_types.StopBulldozer.assert_called_once()
 
     def test_map_operations(self):
@@ -346,15 +346,15 @@ class TestSimControl(Assertions):
         self.mock_types.Map = [[0 for _ in range(100)] for _ in range(120)]
 
         # Test tile operations
-        sim_control.set_tile(10, 20, 5)
-        self.assertEqual(sim_control.get_tile(10, 20), 5)
+        sim_control.set_tile(context, 10, 20, 5)
+        self.assertEqual(sim_control.get_tile(context, 10, 20), 5)
 
         # Test fill operation
-        sim_control.fill_map(99)
-        self.assertEqual(sim_control.get_tile(10, 20), 99)
+        sim_control.fill_map(context, 99)
+        self.assertEqual(sim_control.get_tile(context, 10, 20), 99)
 
         # Test out of bounds
-        self.assertEqual(sim_control.get_tile(200, 200), 0)
+        self.assertEqual(sim_control.get_tile(context, 200, 200), 0)
 
     @patch('micropolis.sim_control.terrain.ClearMap')
     @patch('micropolis.sim_control.terrain.ClearUnnatural')
@@ -367,10 +367,10 @@ class TestSimControl(Assertions):
         mock_clear.assert_called_once()
         self.mock_types.Kick.assert_called()
 
-        sim_control.clear_unnatural()
+        sim_control.clear_unnatural(context)
         mock_unnatural.assert_called_once()
 
-        sim_control.smooth_trees()
+        sim_control.smooth_trees(context)
         mock_trees.assert_called_once()
 
         sim_control.smooth_water()
@@ -388,21 +388,21 @@ class TestSimControl(Assertions):
         self.assertEqual(sim_control.get_crime_average(), 25)
 
         # Test pollution
-        self.assertEqual(sim_control.get_pollution_average(), 30)
+        self.assertEqual(sim_control.get_pollution_average(context), 30)
 
         # Test population center
         center = sim_control.get_population_center()
         self.assertEqual(center, (60 * 16 + 8, 50 * 16 + 8))
 
         # Test pollution center
-        pol_center = sim_control.get_pollution_center()
+        pol_center = sim_control.get_pollution_center(context)
         self.assertEqual(pol_center, (70 * 16 + 8, 45 * 16 + 8))
 
     @patch('micropolis.sim_control.traffic.AverageTrf')
     def test_traffic_statistics(self, mock_avg_trf):
         """Test traffic statistics"""
         mock_avg_trf.return_value = 75
-        self.assertEqual(sim_control.get_traffic_average(), 75)
+        self.assertEqual(sim_control.get_traffic_average(context), 75)
         mock_avg_trf.assert_called_once()
 
     @patch('micropolis.sim_control.evaluation.GetUnemployment')
@@ -413,7 +413,7 @@ class TestSimControl(Assertions):
         mock_fire.return_value = 95
 
         self.assertEqual(sim_control.get_unemployment_rate(), 5)
-        self.assertEqual(sim_control.get_fire_coverage(), 95)
+        self.assertEqual(sim_control.get_fire_coverage(context), 95)
 
         mock_unemployment.assert_called_once()
         mock_fire.assert_called_once()
@@ -426,13 +426,13 @@ class TestSimControl(Assertions):
         self.mock_types.DYMAP = 5
 
         # Test set/get
-        sim_control.set_dynamic_data(5, 100)
-        self.assertEqual(sim_control.get_dynamic_data(5), 100)
+        sim_control.set_dynamic_data(context, 5, 100)
+        self.assertEqual(sim_control.get_dynamic_data(context, 5), 100)
         self.assertEqual(self.mock_types.NewMapFlags[5], 1)
         self.mock_types.Kick.assert_called()
 
         # Test out of bounds
-        self.assertEqual(sim_control.get_dynamic_data(50), 0)
+        self.assertEqual(sim_control.get_dynamic_data(context, 50), 0)
 
     def test_reset_dynamic_data(self):
         """Test dynamic data reset"""
@@ -440,7 +440,7 @@ class TestSimControl(Assertions):
         self.mock_types.NewMapFlags = [0] * 10
         self.mock_types.DYMAP = 5
 
-        sim_control.reset_dynamic_data()
+        sim_control.reset_dynamic_data(context)
 
         # Check alternating pattern
         for i in range(16):
@@ -463,9 +463,9 @@ class TestSimControl(Assertions):
         self.mock_types.sim = Mock()
         self.mock_types.sim.editor = mock_view
 
-        sim_control.start_performance_timing()
+        sim_control.start_performance_timing(context)
 
-        self.assertTrue(sim_control.get_performance_timing())
+        self.assertTrue(sim_control.get_performance_timing(context))
         # Check that view timing was reset
         self.assertEqual(mock_view.updates, 0)
         self.assertEqual(mock_view.update_real, 0.0)
@@ -477,36 +477,36 @@ class TestSimControl(Assertions):
 
     def test_override_and_expensive(self):
         """Test override and expensive settings"""
-        sim_control.set_override(5)
-        self.assertEqual(sim_control.get_override(), 5)
+        sim_control.set_override(context, 5)
+        self.assertEqual(sim_control.get_override(context), 5)
 
         sim_control.set_expensive(3)
-        self.assertEqual(sim_control.get_expensive(), 3)
+        self.assertEqual(sim_control.get_expensive(context), 3)
 
     def test_players_and_votes(self):
         """Test players and votes"""
         sim_control.set_players(4)
-        self.assertEqual(sim_control.get_players(), 4)
+        self.assertEqual(sim_control.get_players(context), 4)
 
-        sim_control.set_votes(100)
-        self.assertEqual(sim_control.get_votes(), 100)
+        sim_control.set_votes(context, 100)
+        self.assertEqual(sim_control.get_votes(context), 100)
 
     def test_bob_height_and_pending_tool(self):
         """Test bob height and pending tool"""
-        sim_control.set_bob_height(12)
+        sim_control.set_bob_height(context, 12)
         self.assertEqual(sim_control.get_bob_height(), 12)
 
-        sim_control.set_pending_tool(5)
+        sim_control.set_pending_tool(context, 5)
         self.assertEqual(sim_control.get_pending_tool(), 5)
 
-        sim_control.set_pending_position(10, 20)
-        pos = sim_control.get_pending_position()
+        sim_control.set_pending_position(context, 10, 20)
+        pos = sim_control.get_pending_position(context)
         self.assertEqual(pos, (10, 20))
 
     def test_displays_and_version(self):
         """Test displays and version"""
-        self.assertEqual(sim_control.get_displays(), "test")
-        self.assertEqual(sim_control.get_version(), "1.0")
+        self.assertEqual(sim_control.get_displays(context), "test")
+        self.assertEqual(sim_control.get_version(context), "1.0")
 
     def test_platform_detection(self):
         """Test platform detection"""
@@ -517,12 +517,12 @@ class TestSimControl(Assertions):
     def test_random_number_generation(self):
         """Test random number generation"""
         # Test with max value
-        result = sim_control.get_random_number(100)
+        result = sim_control.get_random_number(context, 100)
         self.assertGreaterEqual(result, 0)
         self.assertLess(result, 100)
 
         # Test without max value
-        result2 = sim_control.get_random_number()
+        result2 = sim_control.get_random_number(context)
         self.assertIsInstance(result2, int)
 
     def test_dollar_formatting(self):
@@ -533,8 +533,8 @@ class TestSimControl(Assertions):
     def test_terrain_generation_parameters(self):
         """Test terrain generation parameters"""
         # Test lake level
-        sim_control.set_lake_level(4)
-        self.assertEqual(sim_control.get_lake_level(), 4)
+        sim_control.set_lake_level(context, 4)
+        self.assertEqual(sim_control.get_lake_level(context), 4)
 
         # Test tree level
         sim_control.set_tree_level(6)
@@ -560,19 +560,19 @@ class TestSimControl(Assertions):
         self.assertEqual(sim_control.get_flush_style(), 2)
 
         sim_control.set_collapse_motion(1)
-        self.assertEqual(sim_control.get_collapse_motion(), 1)
+        self.assertEqual(sim_control.get_collapse_motion(context), 1)
 
     def test_need_rest(self):
         """Test need rest flag"""
-        sim_control.set_need_rest(True)
-        self.assertTrue(sim_control.get_need_rest())
+        sim_control.set_need_rest(context, True)
+        self.assertTrue(sim_control.get_need_rest(context))
         self.assertEqual(self.mock_types.NeedRest, True)
 
     def test_multi_player_and_sugar_mode(self):
         """Test multiplayer and sugar mode"""
         # These are read-only in the current implementation
         self.assertFalse(sim_control.get_multi_player_mode())
-        self.assertFalse(sim_control.get_sugar_mode())
+        self.assertFalse(sim_control.get_sugar_mode(context))
 
     @patch('webbrowser.open')
     def test_open_web_browser(self, mock_open):
@@ -625,6 +625,6 @@ class TestSimControl(Assertions):
     @patch('micropolis.sim_control.engine.sim_update')
     def test_update_simulation(self, mock_sim_update):
         """Test simulation update"""
-        sim_control.update_simulation()
+        sim_control.update_simulation(context)
         mock_sim_update.assert_called_once()
 

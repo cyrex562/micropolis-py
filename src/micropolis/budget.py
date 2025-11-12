@@ -220,8 +220,8 @@ def do_budget_now(context: AppContext, from_menu: bool) -> None:
             # Not enough money for auto-budget, disable it
             context.auto_budget = False  # XXX: force auto-budget off
             context.must_update_options = True
-            messages.clear_mes()
-            messages.send_mes(29)  # "Not enough funds for auto-budget"
+            messages.clear_mes(context)
+            messages.send_mes(context, 29)  # "Not enough funds for auto-budget"
             # Go back to manual budget
             do_budget_now(context, from_menu=True)
 

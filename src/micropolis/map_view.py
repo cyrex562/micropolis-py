@@ -13,61 +13,23 @@ Key features:
 """
 
 # Import local modules
-from collections.abc import Callable
 from typing import Any
 
-import micropolis.constants
-from . import types
-from . import macros
 import pygame
 
+from src.micropolis.constants import VAL_NONE, VAL_LOW, VAL_MEDIUM, VAL_HIGH, VAL_VERYHIGH, valGrayMap, valMap, WORLD_X, \
+    WORLD_Y, \
+    LOMASK, RESBASE, COMBASE, INDBASE, TILE_COUNT, ZONEBIT, PWRBIT, CONDBIT, HWLDX, HWLDY, SM_X, SM_Y, \
+    VAL_VERYPLUS, VAL_PLUS, VAL_VERYMINUS, VAL_MINUS, ALMAP, REMAP, COMAP, INMAP, PRMAP, RDMAP, PDMAP, RGMAP, TDMAP, \
+    PLMAP, CRMAP, LVMAP, FIMAP, POMAP, DYMAP
+from src.micropolis.context import AppContext
 
-# ============================================================================
-# Value Mapping Constants
-# ============================================================================
-
-VAL_NONE = 0
-VAL_LOW = 1
-VAL_MEDIUM = 2
-VAL_HIGH = 3
-VAL_VERYHIGH = 4
-VAL_PLUS = 5
-VAL_VERYPLUS = 6
-VAL_MINUS = 7
-VAL_VERYMINUS = 8
-
-# Color mapping arrays (pygame color indices)
-valMap: list[int] = [
-    -1,  # VAL_NONE
-    micropolis.constants.COLOR_LIGHTGRAY,  # VAL_LOW
-    micropolis.constants.COLOR_YELLOW,  # VAL_MEDIUM
-    micropolis.constants.COLOR_ORANGE,  # VAL_HIGH
-    micropolis.constants.COLOR_RED,  # VAL_VERYHIGH
-    micropolis.constants.COLOR_DARKGREEN,  # VAL_PLUS
-    micropolis.constants.COLOR_LIGHTGREEN,  # VAL_VERYPLUS
-    micropolis.constants.COLOR_ORANGE,  # VAL_MINUS
-    micropolis.constants.COLOR_YELLOW,  # VAL_VERYMINUS
-]
-
-# Grayscale mapping for monochrome displays
-valGrayMap: list[int] = [
-    -1,  # VAL_NONE
-    31,  # VAL_LOW
-    127,  # VAL_MEDIUM
-    191,  # VAL_HIGH
-    255,  # VAL_VERYHIGH
-    223,  # VAL_PLUS
-    255,  # VAL_VERYPLUS
-    31,  # VAL_MINUS
-    0,  # VAL_VERYMINUS
-]
 
 # ============================================================================
 # Map Procedure Array
 # ============================================================================
 
-# Forward declarations for map drawing functions
-mapProcs: list[Callable | None] = [None] * micropolis.constants.NMAPS
+
 
 
 # ============================================================================
@@ -167,7 +129,7 @@ def drawRect(view: Any, val: int, x: int, y: int, w: int, h: int) -> None:
 # ============================================================================
 
 
-def drawAll(view: Any) -> None:
+def drawAll(context: AppContext, view: Any) -> None:
     """
     Draw the full map view showing all tiles.
 
@@ -182,53 +144,55 @@ def drawAll(view: Any) -> None:
 
         # Draw a simple representation - in full implementation this would
         # render actual tile graphics from view.smalltiles
-        for x in range(min(micropolis.constants.WORLD_X, view.m_width // 3)):
-            for y in range(min(micropolis.constants.WORLD_Y, view.m_height // 3)):
-                tile = types.map_data[x][y] & macros.LOMASK
+        for x in range(min(WORLD_X, view.m_width // 3)):
+            for y in range(min(WORLD_Y, view.m_height // 3)):
+                tile = context.map_data[x][y] & LOMASK
                 if tile > 0:
                     # Simple tile representation - color based on tile type
                     color = (100, 100, 100)  # Default gray
-                    if tile >= macros.RESBASE and tile < types.COMBASE:
+                    if RESBASE <= tile < COMBASE:
                         color = (0, 255, 0)  # Residential - green
-                    elif tile >= types.COMBASE and tile < types.INDBASE:
+                    elif COMBASE <= tile < INDBASE:
                         color = (0, 0, 255)  # Commercial - blue
-                    elif tile >= types.INDBASE:
+                    elif tile >= INDBASE:
                         color = (255, 255, 0)  # Industrial - yellow
 
                     pygame.draw.rect(view.surface, color, (x * 3, y * 3, 3, 3))
 
 
-def drawRes(view: Any) -> None:
+def drawRes(context: AppContext, view: Any) -> None:
     """
     Draw residential zones only.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
     # Filter to show only residential tiles
     if hasattr(view, "surface") and view.surface:
-        for x in range(min(micropolis.constants.WORLD_X, view.m_width // 3)):
-            for y in range(min(micropolis.constants.WORLD_Y, view.m_height // 3)):
-                tile = types.map_data[x][y] & macros.LOMASK
+        for x in range(min(WORLD_X, view.m_width // 3)):
+            for y in range(min(WORLD_Y, view.m_height // 3)):
+                tile = context.map_data[x][y] & LOMASK
                 if tile > 422:  # Non-residential tile
                     # Draw black rectangle to hide non-residential tiles
                     pygame.draw.rect(view.surface, (0, 0, 0), (x * 3, y * 3, 3, 3))
 
 
-def drawCom(view: Any) -> None:
+def drawCom(context: AppContext, view: Any) -> None:
     """
     Draw commercial zones only.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
     # Filter to show only commercial tiles
     if hasattr(view, "surface") and view.surface:
-        for x in range(min(micropolis.constants.WORLD_X, view.m_width // 3)):
-            for y in range(min(micropolis.constants.WORLD_Y, view.m_height // 3)):
-                tile = types.map_data[x][y] & macros.LOMASK
+        for x in range(min(WORLD_X, view.m_width // 3)):
+            for y in range(min(WORLD_Y, view.m_height // 3)):
+                tile = context.map_data[x][y] & LOMASK
                 if (tile > 609) or (
                     (tile >= 232) and (tile < 423)
                 ):  # Non-commercial tile
@@ -236,19 +200,20 @@ def drawCom(view: Any) -> None:
                     pygame.draw.rect(view.surface, (0, 0, 0), (x * 3, y * 3, 3, 3))
 
 
-def drawInd(view: Any) -> None:
+def drawInd(context: AppContext, view: Any) -> None:
     """
     Draw industrial zones only.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
     # Filter to show only industrial tiles
     if hasattr(view, "surface") and view.surface:
-        for x in range(min(micropolis.constants.WORLD_X, view.m_width // 3)):
-            for y in range(min(micropolis.constants.WORLD_Y, view.m_height // 3)):
-                tile = types.map_data[x][y] & macros.LOMASK
+        for x in range(min(WORLD_X, view.m_width // 3)):
+            for y in range(min(WORLD_Y, view.m_height // 3)):
+                tile = context.map_data[x][y] & LOMASK
                 if (
                     ((tile >= 240) and (tile <= 611))
                     or ((tile >= 693) and (tile <= 851))
@@ -259,20 +224,18 @@ def drawInd(view: Any) -> None:
                     pygame.draw.rect(view.surface, (0, 0, 0), (x * 3, y * 3, 3, 3))
 
 
-def drawPower(view: Any) -> None:
+def drawPower(context: AppContext, view: Any) -> None:
     """
     Draw power grid view showing powered/unpowered zones.
 
     Args:
         view: SimView to render into
+        :param context:
     """
     if not (hasattr(view, "surface") and view.surface):
         return
 
-    # Color definitions for power view
-    UNPOWERED = micropolis.constants.COLOR_LIGHTBLUE
-    POWERED = micropolis.constants.COLOR_RED
-    CONDUCTIVE = micropolis.constants.COLOR_LIGHTGRAY
+
 
     # Get color values
     if hasattr(view, "x") and view.x and not view.x.color:
@@ -288,27 +251,27 @@ def drawPower(view: Any) -> None:
 
     view.surface.fill((0, 0, 0))  # Clear background
 
-    for x in range(min(micropolis.constants.WORLD_X, view.m_width // 3)):
-        for y in range(min(micropolis.constants.WORLD_Y, view.m_height // 3)):
-            tile = types.map_data[x][y]
+    for x in range(min(WORLD_X, view.m_width // 3)):
+        for y in range(min(WORLD_Y, view.m_height // 3)):
+            tile = context.map_data[x][y]
 
-            if (tile & macros.LOMASK) >= types.TILE_COUNT:
-                tile -= types.TILE_COUNT
+            if (tile & LOMASK) >= TILE_COUNT:
+                tile -= TILE_COUNT
 
-            tile_val = tile & macros.LOMASK
+            tile_val = tile & LOMASK
 
             if tile_val <= 63:
                 # Terrain tile - show normally
                 color = (100, 100, 100)  # Gray
-            elif tile & macros.ZONEBIT:
+            elif tile & ZONEBIT:
                 # Zone tile - show power status
-                if tile & types.PWRBIT:
+                if tile & PWRBIT:
                     color = powered_color
                 else:
                     color = unpowered_color
             else:
                 # Infrastructure tile
-                if tile & types.CONDBIT:
+                if tile & CONDBIT:
                     color = conductive_color
                 else:
                     color = (0, 0, 0)  # Black for non-conductive
@@ -316,19 +279,20 @@ def drawPower(view: Any) -> None:
             pygame.draw.rect(view.surface, color, (x * 3, y * 3, 3, 3))
 
 
-def drawLilTransMap(view: Any) -> None:
+def drawLilTransMap(context: AppContext, view: Any) -> None:
     """
     Draw transportation map (roads/rails) only.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
     # Filter to show only transportation tiles
     if hasattr(view, "surface") and view.surface:
-        for x in range(min(micropolis.constants.WORLD_X, view.m_width // 3)):
-            for y in range(min(micropolis.constants.WORLD_Y, view.m_height // 3)):
-                tile = types.map_data[x][y] & macros.LOMASK
+        for x in range(min(WORLD_X, view.m_width // 3)):
+            for y in range(min(WORLD_Y, view.m_height // 3)):
+                tile = context.map_data[x][y] & LOMASK
                 if (
                     (tile >= 240) or ((tile >= 207) and tile <= 220) or (tile == 223)
                 ):  # Non-transportation tile
@@ -336,35 +300,37 @@ def drawLilTransMap(view: Any) -> None:
                     pygame.draw.rect(view.surface, (0, 0, 0), (x * 3, y * 3, 3, 3))
 
 
-def drawPopDensity(view: Any) -> None:
+def drawPopDensity(context: AppContext, view: Any) -> None:
     """
     Draw population density overlay.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
 
     # Draw population density overlay
-    for x in range(min(micropolis.constants.HWLDX, view.m_width // 6)):
-        for y in range(min(micropolis.constants.HWLDY, view.m_height // 6)):
-            val = GetCI(types.pop_density[x][y])
+    for x in range(min(HWLDX, view.m_width // 6)):
+        for y in range(min(HWLDY, view.m_height // 6)):
+            val = GetCI(context.pop_density[x][y])
             maybeDrawRect(view, val, x * 6, y * 6, 6, 6)
 
 
-def drawRateOfGrowth(view: Any) -> None:
+def drawRateOfGrowth(context: AppContext, view: Any) -> None:
     """
     Draw rate of growth overlay.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
 
     # Draw rate of growth overlay
-    for x in range(min(micropolis.constants.SM_X, view.m_width // 24)):
-        for y in range(min(micropolis.constants.SM_Y, view.m_height // 24)):
-            z = types.rate_og_mem[x][y]
+    for x in range(min(SM_X, view.m_width // 24)):
+        for y in range(min(SM_Y, view.m_height // 24)):
+            z = context.rate_og_mem[x][y]
             if z > 100:
                 val = VAL_VERYPLUS
             elif z > 20:
@@ -379,123 +345,130 @@ def drawRateOfGrowth(view: Any) -> None:
             maybeDrawRect(view, val, x * 24, y * 24, 24, 24)
 
 
-def drawTrafMap(view: Any) -> None:
+def drawTrafMap(context: AppContext, view: Any) -> None:
     """
     Draw traffic density overlay.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawLilTransMap(view)
+    drawLilTransMap(context, view)
 
     # Draw traffic density overlay
-    for x in range(min(micropolis.constants.HWLDX, view.m_width // 6)):
-        for y in range(min(micropolis.constants.HWLDY, view.m_height // 6)):
-            val = GetCI(types.trf_density[x][y])
+    for x in range(min(HWLDX, view.m_width // 6)):
+        for y in range(min(HWLDY, view.m_height // 6)):
+            val = GetCI(context.trf_density[x][y])
             maybeDrawRect(view, val, x * 6, y * 6, 6, 6)
 
 
-def drawPolMap(view: Any) -> None:
+def drawPolMap(context: AppContext, view: Any) -> None:
     """
     Draw pollution overlay.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
 
     # Draw pollution overlay
-    for x in range(min(micropolis.constants.HWLDX, view.m_width // 6)):
-        for y in range(min(micropolis.constants.HWLDY, view.m_height // 6)):
-            val = GetCI(10 + types.pollution_mem[x][y])
+    for x in range(min(HWLDX, view.m_width // 6)):
+        for y in range(min(HWLDY, view.m_height // 6)):
+            val = GetCI(10 + context.pollution_mem[x][y])
             maybeDrawRect(view, val, x * 6, y * 6, 6, 6)
 
 
-def drawCrimeMap(view: Any) -> None:
+def drawCrimeMap(context: AppContext, view: Any) -> None:
     """
     Draw crime overlay.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
 
     # Draw crime overlay
-    for x in range(min(micropolis.constants.HWLDX, view.m_width // 6)):
-        for y in range(min(micropolis.constants.HWLDY, view.m_height // 6)):
-            val = GetCI(types.crime_mem[x][y])
+    for x in range(min(HWLDX, view.m_width // 6)):
+        for y in range(min(HWLDY, view.m_height // 6)):
+            val = GetCI(context.crime_mem[x][y])
             maybeDrawRect(view, val, x * 6, y * 6, 6, 6)
 
 
-def drawLandMap(view: Any) -> None:
+def drawLandMap(context: AppContext, view: Any) -> None:
     """
     Draw land value overlay.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
 
     # Draw land value overlay
-    for x in range(min(micropolis.constants.HWLDX, view.m_width // 6)):
-        for y in range(min(micropolis.constants.HWLDY, view.m_height // 6)):
-            val = GetCI(types.land_value_mem[x][y])
+    for x in range(min(HWLDX, view.m_width // 6)):
+        for y in range(min(HWLDY, view.m_height // 6)):
+            val = GetCI(context.land_value_mem[x][y])
             maybeDrawRect(view, val, x * 6, y * 6, 6, 6)
 
 
-def drawFireRadius(view: Any) -> None:
+def drawFireRadius(context: AppContext, view: Any) -> None:
     """
     Draw fire station coverage overlay.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
 
     # Draw fire radius overlay
-    for x in range(min(micropolis.constants.SM_X, view.m_width // 24)):
-        for y in range(min(micropolis.constants.SM_Y, view.m_height // 24)):
-            val = GetCI(types.fire_rate[x][y])
+    for x in range(min(SM_X, view.m_width // 24)):
+        for y in range(min(SM_Y, view.m_height // 24)):
+            val = GetCI(context.fire_rate[x][y])
             maybeDrawRect(view, val, x * 24, y * 24, 24, 24)
 
 
-def drawPoliceRadius(view: Any) -> None:
+def drawPoliceRadius(context: AppContext, view: Any) -> None:
     """
     Draw police station coverage overlay.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
 
     # Draw police radius overlay
-    for x in range(min(micropolis.constants.SM_X, view.m_width // 24)):
-        for y in range(min(micropolis.constants.SM_Y, view.m_height // 24)):
-            val = GetCI(types.police_map_effect[x][y])
+    for x in range(min(SM_X, view.m_width // 24)):
+        for y in range(min(SM_Y, view.m_height // 24)):
+            val = GetCI(context.police_map_effect[x][y])
             maybeDrawRect(view, val, x * 24, y * 24, 24, 24)
 
 
-def drawDynamic(view: Any) -> None:
+def drawDynamic(context: AppContext, view: Any) -> None:
     """
     Draw dynamic filter view based on multiple criteria.
 
     Args:
         view: SimView to render into
+        :param context:
     """
-    drawAll(view)
+    drawAll(context, view)
 
     # Apply dynamic filtering
     if hasattr(view, "surface") and view.surface:
-        for x in range(min(micropolis.constants.WORLD_X, view.m_width // 3)):
-            for y in range(min(micropolis.constants.WORLD_Y, view.m_height // 3)):
-                tile = types.map_data[x][y] & macros.LOMASK
+        for x in range(min(WORLD_X, view.m_width // 3)):
+            for y in range(min(WORLD_Y, view.m_height // 3)):
+                tile = context.map_data[x][y] & LOMASK
                 if tile > 63:  # Only filter non-terrain tiles
-                    if not dynamicFilter(x, y):
+                    if not dynamicFilter(context, x, y):
                         # Hide tiles that don't match dynamic criteria
                         pygame.draw.rect(view.surface, (0, 0, 0), (x * 3, y * 3, 3, 3))
 
 
-def dynamicFilter(col: int, row: int) -> bool:
+def dynamicFilter(context: AppContext, col: int, row: int) -> bool:
     """
     Apply dynamic filtering based on multiple city data criteria.
 
@@ -504,56 +477,57 @@ def dynamicFilter(col: int, row: int) -> bool:
 
     Returns:
         True if tile should be visible, False otherwise
+        :param context:
     """
     r = row >> 1  # Convert to overlay coordinates
     c = col >> 1
 
     # Check population density
-    pop_check = (types.dynamic_data[0] > types.dynamic_data[1]) or (
-        (types.pop_density[c][r] >= types.dynamic_data[0])
-        and (types.pop_density[c][r] <= types.dynamic_data[1])
+    pop_check = (context.dynamic_data[0] > context.dynamic_data[1]) or (
+        (context.pop_density[c][r] >= context.dynamic_data[0])
+        and (context.pop_density[c][r] <= context.dynamic_data[1])
     )
 
     # Check rate of growth
-    rate_check = (types.dynamic_data[2] > types.dynamic_data[3]) or (
-        (types.rate_og_mem[c >> 2][r >> 2] >= ((2 * types.dynamic_data[2]) - 256))
-        and (types.rate_og_mem[c >> 2][r >> 2] <= ((2 * types.dynamic_data[3]) - 256))
+    rate_check = (context.dynamic_data[2] > context.dynamic_data[3]) or (
+        (context.rate_og_mem[c >> 2][r >> 2] >= ((2 * context.dynamic_data[2]) - 256))
+        and (context.rate_og_mem[c >> 2][r >> 2] <= ((2 * context.dynamic_data[3]) - 256))
     )
 
     # Check traffic density
-    traffic_check = (types.dynamic_data[4] > types.dynamic_data[5]) or (
-        (types.trf_density[c][r] >= types.dynamic_data[4])
-        and (types.trf_density[c][r] <= types.dynamic_data[5])
+    traffic_check = (context.dynamic_data[4] > context.dynamic_data[5]) or (
+        (context.trf_density[c][r] >= context.dynamic_data[4])
+        and (context.trf_density[c][r] <= context.dynamic_data[5])
     )
 
     # Check pollution
-    pollution_check = (types.dynamic_data[6] > types.dynamic_data[7]) or (
-        (types.pollution_mem[c][r] >= types.dynamic_data[6])
-        and (types.pollution_mem[c][r] <= types.dynamic_data[7])
+    pollution_check = (context.dynamic_data[6] > context.dynamic_data[7]) or (
+        (context.pollution_mem[c][r] >= context.dynamic_data[6])
+        and (context.pollution_mem[c][r] <= context.dynamic_data[7])
     )
 
     # Check crime
-    crime_check = (types.dynamic_data[8] > types.dynamic_data[9]) or (
-        (types.crime_mem[c][r] >= types.dynamic_data[8])
-        and (types.crime_mem[c][r] <= types.dynamic_data[9])
+    crime_check = (context.dynamic_data[8] > context.dynamic_data[9]) or (
+        (context.crime_mem[c][r] >= context.dynamic_data[8])
+        and (context.crime_mem[c][r] <= context.dynamic_data[9])
     )
 
     # Check land value
-    land_check = (types.dynamic_data[10] > types.dynamic_data[11]) or (
-        (types.land_value_mem[c][r] >= types.dynamic_data[10])
-        and (types.land_value_mem[c][r] <= types.dynamic_data[11])
+    land_check = (context.dynamic_data[10] > context.dynamic_data[11]) or (
+        (context.land_value_mem[c][r] >= context.dynamic_data[10])
+        and (context.land_value_mem[c][r] <= context.dynamic_data[11])
     )
 
     # Check police coverage
-    police_check = (types.dynamic_data[12] > types.dynamic_data[13]) or (
-        (types.police_map_effect[c >> 2][r >> 2] >= types.dynamic_data[12])
-        and (types.police_map_effect[c >> 2][r >> 2] <= types.dynamic_data[13])
+    police_check = (context.dynamic_data[12] > context.dynamic_data[13]) or (
+        (context.police_map_effect[c >> 2][r >> 2] >= context.dynamic_data[12])
+        and (context.police_map_effect[c >> 2][r >> 2] <= context.dynamic_data[13])
     )
 
     # Check fire coverage
-    fire_check = (types.dynamic_data[14] > types.dynamic_data[15]) or (
-        (types.fire_rate[c >> 2][r >> 2] >= types.dynamic_data[14])
-        and (types.fire_rate[c >> 2][r >> 2] <= types.dynamic_data[15])
+    fire_check = (context.dynamic_data[14] > context.dynamic_data[15]) or (
+        (context.fire_rate[c >> 2][r >> 2] >= context.dynamic_data[14])
+        and (context.fire_rate[c >> 2][r >> 2] <= context.dynamic_data[15])
     )
 
     return (
@@ -588,44 +562,46 @@ def ditherMap(view: Any) -> None:
     pass
 
 
-def MemDrawMap(view: Any) -> None:
+def MemDrawMap(context: AppContext, view: Any) -> None:
     """
     Main map drawing function that dispatches to the appropriate drawing function
     based on the current map state.
 
     Args:
         view: SimView to render the map into
+        :param context:
     """
     # Call the appropriate drawing function
-    if view.map_state < len(mapProcs) and mapProcs[view.map_state]:
-        mapProcs[view.map_state](view)
+    if view.map_state < len(context.mapProcs) and context.mapProcs[view.map_state]:
+        context.mapProcs[view.map_state](view)
 
     # Apply dithering if needed for monochrome displays
     if hasattr(view, "x") and view.x and not view.x.color:
         ditherMap(view)
 
 
-def setUpMapProcs() -> None:
+def setUpMapProcs(context: AppContext) -> None:
     """
     Initialize the map procedure array with all drawing functions.
+    :param context:
     """
-    global mapProcs
+    # global mapProcs
 
-    mapProcs[micropolis.constants.ALMAP] = drawAll
-    mapProcs[micropolis.constants.REMAP] = drawRes
-    mapProcs[micropolis.constants.COMAP] = drawCom
-    mapProcs[micropolis.constants.INMAP] = drawInd
-    mapProcs[micropolis.constants.PRMAP] = drawPower
-    mapProcs[micropolis.constants.RDMAP] = drawLilTransMap
-    mapProcs[micropolis.constants.PDMAP] = drawPopDensity
-    mapProcs[micropolis.constants.RGMAP] = drawRateOfGrowth
-    mapProcs[micropolis.constants.TDMAP] = drawTrafMap
-    mapProcs[micropolis.constants.PLMAP] = drawPolMap
-    mapProcs[micropolis.constants.CRMAP] = drawCrimeMap
-    mapProcs[micropolis.constants.LVMAP] = drawLandMap
-    mapProcs[micropolis.constants.FIMAP] = drawFireRadius
-    mapProcs[micropolis.constants.POMAP] = drawPoliceRadius
-    mapProcs[micropolis.constants.DYMAP] = drawDynamic
+    context.mapProcs[ALMAP] = drawAll
+    context.mapProcs[REMAP] = drawRes
+    context.mapProcs[COMAP] = drawCom
+    context.mapProcs[INMAP] = drawInd
+    context.mapProcs[PRMAP] = drawPower
+    context.mapProcs[RDMAP] = drawLilTransMap
+    context.mapProcs[PDMAP] = drawPopDensity
+    context.mapProcs[RGMAP] = drawRateOfGrowth
+    context.mapProcs[TDMAP] = drawTrafMap
+    context.mapProcs[PLMAP] = drawPolMap
+    context.mapProcs[CRMAP] = drawCrimeMap
+    context.mapProcs[LVMAP] = drawLandMap
+    context.mapProcs[FIMAP] = drawFireRadius
+    context.mapProcs[POMAP] = drawPoliceRadius
+    context.mapProcs[DYMAP] = drawDynamic
 
 
 # ============================================================================
@@ -633,4 +609,5 @@ def setUpMapProcs() -> None:
 # ============================================================================
 
 # Set up the map procedures when module is imported
-setUpMapProcs()
+# TODO: call setupMapProcs in actual init function of game instead of when imported
+# setUpMapProcs(context)

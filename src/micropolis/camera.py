@@ -22,6 +22,8 @@ Adapted from w_cam.c, g_cam.c, and cam.h for the Python/pygame port.
 from collections.abc import Callable
 import pygame
 
+from src.micropolis.context import AppContext
+
 
 # ============================================================================
 # Data Structures (from cam.h)
@@ -481,14 +483,14 @@ def cam_command(command: str, *args) -> str:
 # Initialization and Cleanup
 # ============================================================================
 
-def initialize_camera_system() -> None:
+def initialize_camera_system(context: AppContext) -> None:
     """
     Initialize the camera system.
     Called during program startup.
     """
-    global _simcam_list, _next_cam_id
-    _simcam_list = []
-    _next_cam_id = 1
+    # global _simcam_list, _next_cam_id
+    context.simcam_list = []
+    context.next_cam_id = 1
 
 
 def cleanup_camera_system() -> None:

@@ -1,12 +1,20 @@
 """
 keyboard.py - Keyboard input handling for Micropolis Python port
 """
+from src.micropolis.audio import make_sound
+from src.micropolis.constants import WORLD_Y, WORLD_X, LOMASK, RUBBLE, CHURCH, HBRIDGE, VBRIDGE, BRWH, LTRFBASE, BRWV, \
+    BRWXXX1, BRWXXX2, BRWXXX3, BRWXXX4, BRWXXX5, BRWXXX6, BRWXXX7, RIVER, TINYEXP, ANIMBIT, BULLBIT
+from src.micropolis.context import AppContext
+from src.micropolis.disasters import trigger_earthquake_disaster, create_fire_disaster, start_flood_disaster, spawn_tornado_disaster, spawn_monster_disaster
+from src.micropolis.sim_control import set_heat_steps, set_heat_flow, set_heat_rule
+from src.micropolis.sim_view import SimView
+from src.micropolis.simulation import rand
+from src.micropolis.tools import Spend, setWandState
+from src.micropolis.ui_utilities import kick, eval_cmd_str
+
 
 # Import simulation modules
-import micropolis.constants
-import micropolis.sim_view
-import micropolis.utilities
-from . import types, tools, disasters, messages, sim_control
+
 
 
 # ============================================================================
@@ -14,7 +22,7 @@ from . import types, tools, disasters, messages, sim_control
 # ============================================================================
 
 # Last 4 keys pressed buffer (plus null terminator)
-LastKeys: str = "    "
+# last_keys: str = "    "
 
 
 # ============================================================================
@@ -22,18 +30,19 @@ LastKeys: str = "    "
 # ============================================================================
 
 
-def reset_last_keys() -> None:
+def reset_last_keys(context: AppContext) -> None:
     """
     Reset the last keys buffer.
 
     Ported from ResetLastKeys() in w_keys.c.
+    :param context: 
     """
-    global LastKeys
-    LastKeys = "    "
-    types.punish_cnt = 0
+    # global last_keys
+    context.last_keys = "    "
+    context.punish_cnt = 0
 
 
-def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
+def do_key_down(context: AppContext, view: SimView, char_code: str) -> None:
     """
     Handle key down events.
 
@@ -43,141 +52,142 @@ def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
     Args:
         view: View that received the key event
         char_code: Character code of the pressed key
+        :param context: 
     """
-    global LastKeys
+    # global LastKeys
 
     # Shift the last keys buffer
-    LastKeys = LastKeys[1:] + char_code.lower()
+    context.last_keys = context.last_keys[1:] + char_code.lower()
 
     # Check for cheat codes
-    if LastKeys == "fund":
-        tools.Spend(-10000)
-        types.punish_cnt += 1  # punish for cheating
-        if types.punish_cnt == 5:
-            types.punish_cnt = 0
-            disasters.make_earthquake(context)
-        LastKeys = ""
+    if context.last_keys == "fund":
+        Spend(-10000)
+        context.punish_cnt += 1  # punish for cheating
+        if context.punish_cnt == 5:
+            context.punish_cnt = 0
+            trigger_earthquake_disaster(context)
+        context.last_keys = ""
         return
 
-    elif LastKeys == "fart":
-        messages.make_sound("city", "Explosion-High")
-        messages.make_sound("city", "Explosion-Low")
-        disasters.make_fire(context)
-        disasters.make_flood(context)
-        disasters.make_tornado()
-        disasters.make_earthquake(context)
-        disasters.make_monster(context)
-        LastKeys = ""
+    elif context.last_keys == "fart":
+        make_sound(context, "city", "Explosion-High")
+        make_sound(context, "city", "Explosion-Low")
+        create_fire_disaster(context)
+        start_flood_disaster(context)
+        spawn_tornado_disaster()
+        trigger_earthquake_disaster(context)
+        spawn_monster_disaster(context)
+        context.last_keys = ""
         return
 
-    elif LastKeys == "nuke":
-        messages.make_sound("city", "Explosion-High")
-        messages.make_sound("city", "Explosion-Low")
-        for i in range(micropolis.constants.WORLD_X):
-            for j in range(micropolis.constants.WORLD_Y):
-                tile = types.map_data[i][j] & types.LOMASK
-                if (tile >= types.RUBBLE) and (
-                    (tile < types.CHURCH - 4) or (tile > types.CHURCH + 4)
+    elif context.last_keys == "nuke":
+        make_sound(context,"city", "Explosion-High")
+        make_sound(context, "city", "Explosion-Low")
+        for i in range(WORLD_X):
+            for j in range(WORLD_Y):
+                tile = context.map_data[i][j] & LOMASK
+                if (tile >= RUBBLE) and (
+                    (tile < CHURCH - 4) or (tile > CHURCH + 4)
                 ):
                     if (
-                        (tile >= types.HBRIDGE and tile <= types.VBRIDGE)
-                        or (tile >= types.BRWH and tile <= types.LTRFBASE + 1)
-                        or (tile >= types.BRWV and tile <= types.BRWV + 2)
-                        or (tile >= types.BRWXXX1 and tile <= types.BRWXXX1 + 2)
-                        or (tile >= types.BRWXXX2 and tile <= types.BRWXXX2 + 2)
-                        or (tile >= types.BRWXXX3 and tile <= types.BRWXXX3 + 2)
-                        or (tile >= types.BRWXXX4 and tile <= types.BRWXXX4 + 2)
-                        or (tile >= types.BRWXXX5 and tile <= types.BRWXXX5 + 2)
-                        or (tile >= types.BRWXXX6 and tile <= types.BRWXXX6 + 2)
-                        or (tile >= types.BRWXXX7 and tile <= types.BRWXXX7 + 2)
+                        (HBRIDGE <= tile <= VBRIDGE)
+                        or (BRWH <= tile <= LTRFBASE + 1)
+                        or (BRWV <= tile <= BRWV + 2)
+                        or (BRWXXX1 <= tile <= BRWXXX1 + 2)
+                        or (BRWXXX2 <= tile <= BRWXXX2 + 2)
+                        or (BRWXXX3 <= tile <= BRWXXX3 + 2)
+                        or (BRWXXX4 <= tile <= BRWXXX4 + 2)
+                        or (BRWXXX5 <= tile <= BRWXXX5 + 2)
+                        or (BRWXXX6 <= tile <= BRWXXX6 + 2)
+                        or (BRWXXX7 <= tile <= BRWXXX7 + 2)
                     ):
-                        types.map_data[i][j] = types.RIVER
+                        context.map_data[i][j] = RIVER
                     else:
-                        types.map_data[i][j] = (
-                            types.TINYEXP
-                            + types.ANIMBIT
-                            + types.BULLBIT
-                            + micropolis.utilities.rand(2)
+                        context.map_data[i][j] = (
+                                TINYEXP
+                                + ANIMBIT
+                                + BULLBIT
+                                + rand(context, 2)
                         )
-        LastKeys = ""
+        context.last_keys = ""
         return
 
-    elif LastKeys == "stop":
-        sim_control.set_heat_steps(0)
-        LastKeys = ""
-        types.Kick()
+    elif context.last_keys == "stop":
+        set_heat_steps(context, 0)
+        context.last_keys = ""
+        kick(context)
         return
 
-    elif LastKeys == "will":
+    elif context.last_keys == "will":
         # Copy the map so external references (e.g., tests) can observe changes.
-        types.map_data = [row[:] for row in types.map_data]
+        context.map_data = [row[:] for row in context.map_data]
         n = 500
         for _ in range(n):
             try:
-                x1 = micropolis.utilities.rand(micropolis.constants.WORLD_X - 1)
-                y1 = micropolis.utilities.rand(micropolis.constants.WORLD_Y - 1)
-                x2 = micropolis.utilities.rand(micropolis.constants.WORLD_X - 1)
-                y2 = micropolis.utilities.rand(micropolis.constants.WORLD_Y - 1)
+                x1 = rand(context, WORLD_X - 1)
+                y1 = rand(context, WORLD_Y - 1)
+                x2 = rand(context, WORLD_X - 1)
+                y2 = rand(context, WORLD_Y - 1)
             except StopIteration:
                 break
 
-            temp = types.map_data[x1][y1]
-            types.map_data[x1][y1] = types.map_data[x2][y2]
-            types.map_data[x2][y2] = temp
-        types.Kick()
-        LastKeys = ""
+            temp = context.map_data[x1][y1]
+            context.map_data[x1][y1] = context.map_data[x2][y2]
+            context.map_data[x2][y2] = temp
+        kick(context)
+        context.last_keys = ""
         return
 
-    elif LastKeys == "bobo":
-        sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(-1)
-        sim_control.set_heat_rule(0)
-        LastKeys = ""
-        types.Kick()
+    elif context.last_keys == "bobo":
+        set_heat_steps(context, 1)
+        set_heat_flow(context, -1)
+        set_heat_rule(context, 0)
+        context.last_keys = ""
+        kick(context)
         return
 
-    elif LastKeys == "boss":
-        sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(1)
-        sim_control.set_heat_rule(0)
-        LastKeys = ""
-        types.Kick()
+    elif context.last_keys == "boss":
+        set_heat_steps(context, 1)
+        set_heat_flow(context, 1)
+        set_heat_rule(context, 0)
+        context.last_keys = ""
+        kick(context)
         return
 
-    elif LastKeys == "mack":
-        sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(0)
-        sim_control.set_heat_rule(0)
-        LastKeys = ""
-        types.Kick()
+    elif context.last_keys == "mack":
+        set_heat_steps(context, 1)
+        set_heat_flow(context, 0)
+        set_heat_rule(context, 0)
+        context.last_keys = ""
+        kick(context)
         return
 
-    elif LastKeys == "donh":
-        sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(-1)
-        sim_control.set_heat_rule(1)
-        LastKeys = ""
-        types.Kick()
+    elif context.last_keys == "donh":
+        set_heat_steps(context, 1)
+        set_heat_flow(context, -1)
+        set_heat_rule(context, 1)
+        context.last_keys = ""
+        kick(context)
         return
 
-    elif LastKeys == "patb":
-        sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(micropolis.utilities.rand(40) - 20)
-        sim_control.set_heat_rule(0)
-        LastKeys = ""
-        types.Kick()
+    elif context.last_keys == "patb":
+        set_heat_steps(context, 1)
+        set_heat_flow(context, rand(context, 40) - 20)
+        set_heat_rule(context, 0)
+        context.last_keys = ""
+        kick(context)
         return
 
-    elif LastKeys == "lucb":
-        sim_control.set_heat_steps(1)
-        sim_control.set_heat_flow(micropolis.utilities.rand(1000) - 500)
-        sim_control.set_heat_rule(0)
-        LastKeys = ""
-        types.Kick()
+    elif context.last_keys == "lucb":
+        set_heat_steps(context, 1)
+        set_heat_flow(context, rand(context, 1000) - 500)
+        set_heat_rule(context, 0)
+        context.last_keys = ""
+        kick(context)
         return
 
-    elif LastKeys == "olpc":
-        tools.Spend(-1000000)
+    elif context.last_keys == "olpc":
+        Spend(-1000000)
         return
 
     # Handle tool switching keys
@@ -185,49 +195,49 @@ def do_key_down(view: "micropolis.sim_view.SimView", char_code: str) -> None:
         # Cycle to next tool
         s = view.tool_state
         s += 1
-        if s > tools.lastState:
-            s = tools.firstState
-        tools.setWandState(view, s)
+        if s > context.lastState:
+            s = context.firstState
+        setWandState(view, s)
 
     elif char_code.upper() == "Z":
         # Cycle to previous tool
         s = view.tool_state
         s -= 1
-        if s < tools.firstState:
-            s = tools.lastState
-        tools.setWandState(view, s)
+        if s < context.firstState:
+            s = context.lastState
+        setWandState(view, s)
 
     elif char_code.upper() == "B" or char_code == chr(ord("B") - ord("@")):
         # Switch to bulldozer
         if view.tool_state_save == -1:
             view.tool_state_save = view.tool_state
-        tools.setWandState(view, tools.dozeState)
+        setWandState(view, context.dozeState)
 
     elif char_code.upper() == "R" or char_code == chr(ord("R") - ord("@")):
         # Switch to roads
         if view.tool_state_save == -1:
             view.tool_state_save = view.tool_state
-        tools.setWandState(view, tools.roadState)
+        setWandState(view, context.roadState)
 
     elif char_code.upper() == "P" or char_code == chr(ord("P") - ord("@")):
         # Switch to power
         if view.tool_state_save == -1:
             view.tool_state_save = view.tool_state
-        tools.setWandState(view, tools.wireState)
+        setWandState(view, context.wireState)
 
     elif char_code.upper() == "T" or char_code == chr(ord("T") - ord("@")):
         # Switch to transit (rail)
         if view.tool_state_save == -1:
             view.tool_state_save = view.tool_state
-        tools.setWandState(view, tools.rrState)
+        setWandState(view, context.rrState)
 
     elif char_code == chr(27):  # ESC key
         # Turn off sound
-        types.Eval("UISoundOff")
-        types.dozing = 0
+        eval_cmd_str(context, "UISoundOff")
+        context.dozing = 0
 
 
-def do_key_up(view: "micropolis.sim_view.SimView", char_code: str) -> None:
+def do_key_up(view: "SimView", char_code: str) -> None:
     """
     Handle key up events.
 
@@ -249,7 +259,7 @@ def do_key_up(view: "micropolis.sim_view.SimView", char_code: str) -> None:
         or char_code == chr(ord("Q") - ord("@"))
     ):
         if view.tool_state_save != -1:
-            tools.setWandState(view, view.tool_state_save)
+            setWandState(view, view.tool_state_save)
             view.tool_state_save = -1
 
 
@@ -266,7 +276,7 @@ class KeyboardCommand:
     """
 
     @staticmethod
-    def handle_command(command: str, *args: str) -> str:
+    def handle_command(context: AppContext, command: str, *args: str) -> str:
         """
         Handle TCL keyboard commands.
 
@@ -276,17 +286,18 @@ class KeyboardCommand:
 
         Returns:
             TCL command result
+            :param context:
         """
         if command == "resetlastkeys":
             if len(args) != 0:
                 raise ValueError("Usage: resetlastkeys")
-            reset_last_keys()
+            reset_last_keys(context)
             return ""
 
         elif command == "getlastkeys":
             if len(args) != 0:
                 raise ValueError("Usage: getlastkeys")
-            return get_last_keys()
+            return get_last_keys(context)
 
         else:
             raise ValueError(f"Unknown keyboard command: {command}")
@@ -297,11 +308,12 @@ class KeyboardCommand:
 # ============================================================================
 
 
-def get_last_keys() -> str:
+def get_last_keys(context: AppContext) -> str:
     """
     Get the current last keys buffer.
 
     Returns:
         Last 4 keys pressed as string
+        :param context:
     """
-    return LastKeys.strip()
+    return context.last_keys.strip()

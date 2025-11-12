@@ -135,7 +135,7 @@ def _draw_color_editor_rect(
             if (
                     tile > 63
                     and view.dynamic_filter != 0
-                    and not dynamicFilter(tile_x, tile_y)
+                    and not dynamicFilter(context, tile_x, tile_y)
             ):
                 tile = 0
 

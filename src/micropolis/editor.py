@@ -231,7 +231,7 @@ def tool_drag(view: SimView, x: int, y: int) -> None:
     view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Continue tool application
-    tools.ToolDrag(view, tile_x[0], tile_y[0])
+    tools.ToolDrag(context, view, tile_x[0], tile_y[0])
 
 
 def tool_up(view: SimView, x: int, y: int) -> None:
@@ -762,8 +762,8 @@ def do_update_editor(context: AppContext, view: SimView) -> None:
 
     # Apply shake effect
     for i in range(context.shake_now):
-        dx += rand(16) - 8
-        dy += rand(16) - 8
+        dx += rand(context, 16) - 8
+        dy += rand(context, 16) - 8
 
     # Copy to display (placeholder - would copy surface to screen)
     # DrawCursor(view) - cursor is drawn separately in event handling
