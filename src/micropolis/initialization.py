@@ -8,10 +8,23 @@ responsible for setting up the initial simulation state and resetting components
 import time
 
 from src.micropolis.allocation import init_map_arrays
-from src.micropolis.constants import HWLDX, HWLDY, QWX, QWY, SM_X, SM_Y, ALMAP, DOZE_STATE
+from src.micropolis.constants import (
+    HWLDX,
+    HWLDY,
+    QWX,
+    QWY,
+    SM_X,
+    SM_Y,
+    ALMAP,
+    DOZE_STATE,
+)
 from src.micropolis.context import AppContext
 from src.micropolis.random import sim_srand, sim_srandom
-from src.micropolis.simulation import do_sim_init
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # type-only import to avoid circular import at module import time
+    from src.micropolis.simulation import do_sim_init
 
 
 # ============================================================================
@@ -37,7 +50,7 @@ def InitGraphMax(context: AppContext) -> None:
     Initialize graph maximum values.
 
     Sets up the maximum values for graphs based on current game level.
-    :param context: 
+    :param context:
     """
     # Initialize history graph maximums
     context.res_his_max = 0
@@ -57,7 +70,7 @@ def DestroyAllSprites(context: AppContext) -> None:
     Destroy all sprites in the simulation.
 
     Removes all moving objects (cars, disasters, etc.) from the sprite list.
-    :param context: 
+    :param context:
     """
     if context.sim and context.sim.sprite:
         # Clear the sprite list
@@ -81,7 +94,7 @@ def DoNewGame(context: AppContext) -> None:
     Initialize a new game state.
 
     Sets up initial game parameters for starting a new city.
-    :param context: 
+    :param context:
     """
     # Set initial game level and scenario
     context.game_level = 0
@@ -110,7 +123,7 @@ def DoUpdateHeads(context: AppContext) -> None:
     Update display headers.
 
     Refreshes the UI headers that show current game state.
-    :param context: 
+    :param context:
     """
     # This would update UI components when they're implemented
     # For now, it's a placeholder
@@ -255,7 +268,7 @@ def InitializeSimulation(context: AppContext) -> bool:
 
     Returns:
         True if initialization successful, False otherwise
-        :param context: 
+        :param context:
     """
     try:
         # Initialize memory arrays
@@ -284,12 +297,15 @@ def InitializeSimulation(context: AppContext) -> bool:
 def InitGame(context: AppContext) -> None:
     """
     Legacy entry point that performs a full new-game initialization sequence.
-    :param context: 
+    :param context:
     """
     if not InitializeSimulation(context):
         return
 
     InitFundingLevel(context)
+    # Import do_sim_init here to avoid circular import issues
+    from src.micropolis.simulation import do_sim_init
+
     do_sim_init(context)
     context.init_sim_load = 2
     context.do_initial_eval = 0

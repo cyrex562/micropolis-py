@@ -12,22 +12,48 @@ from .constants import (
     SM_X,
     SM_Y,
     WORLD_X,
-    WORLD_Y, OBJN, PWRMAPSIZE, HISTORIES, PROBNUM, RESBASE, PWRSTKSIZE, SEP_3, randtbl, TYPE_3, DEG_3,
+    WORLD_Y,
+    OBJN,
+    PWRMAPSIZE,
+    HISTORIES,
+    PROBNUM,
+    RESBASE,
+    PWRSTKSIZE,
+    SEP_3,
+    randtbl,
+    TYPE_3,
+    DEG_3,
 )
 from .sim_sprite import SimSprite
-from .terrain import TerrainGenerator
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from .view_types import XDisplay
-from pydantic import BaseModel, Field
+# Avoid importing TerrainGenerator at module import time to prevent a
+# circular import with terrain.py which imports AppContext. Use TYPE_CHECKING
+# for type hints and keep the runtime annotation as Any.
+if TYPE_CHECKING:
+    from .terrain import TerrainGenerator
+    from .view_types import XDisplay
+
+from pydantic import BaseModel, Field, ConfigDict
 
 from .app_config import AppConfig
-from .sim import Sim
+
+# Avoid importing Sim at module import time (it imports view modules which
+# may import AppContext). Import for typing only.
+if TYPE_CHECKING:
+    from .sim import Sim
 
 from src.micropolis.constants import residentialState, networkState
 
 
 class AppContext(BaseModel):
     """Global application context."""
+
+    # Allow arbitrary runtime types (threads, pygame surfaces, etc.)
+    # This prevents pydantic from trying to generate schemas for types like
+    # threading.Thread or pygame.Surface which are used as runtime-only
+    # attributes on the context.
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     last_now_time: float = Field(default_factory=time.time)
     config: AppConfig
@@ -52,7 +78,10 @@ class AppContext(BaseModel):
     sim_speed: int = Field(default=3)  # SimSpeed
     start_time: float = Field(default_factory=time.time)  # StartTime
     beat_time: float = Field(default_factory=time.time)  # BeatTime
-    sim: Sim = Field(default=Sim())  # Global simulation object
+    # Use a runtime-agnostic type and avoid creating a Sim instance here to
+    # prevent import cycles during package import. The sim can be created by
+    # the application startup code and assigned to this field.
+    sim: Any | None = Field(default=None)  # Global simulation object
     sound_initialized: bool = Field(default=False)  # SoundInitialized
     map_data: list[list[int]] = Field(
         default_factory=lambda: [[0 for _ in range(WORLD_Y)] for _ in range(WORLD_X)]
@@ -374,18 +403,17 @@ class AppContext(BaseModel):
     exit_return: int = Field(default=0)
     tk_must_exit: bool = Field(default=False)
 
+    main_display: Any | None = Field(default=None)
 
-    main_display: XDisplay | None = Field(default=None)
-
-    firstState = residentialState
-    lastState = networkState
+    firstState: ClassVar[int] = residentialState
+    lastState: ClassVar[int] = networkState
 
     # sim: Sim = Field(default_factory=Sim)
 
-    sim_loops:int = Field(default=0)
+    sim_loops: int = Field(default=0)
     # sim_delay:int = Field(default=50)
     # sim_skips:int = Field(default=0)
-    sim_pause:bool = Field(default=False)
+    sim_pause: bool = Field(default=False)
     # sim_paused_speed:int = Field(default=3)
     # sim_tty:int = 0
 
@@ -513,15 +541,15 @@ class AppContext(BaseModel):
     print_output: str | None = None
     print_file: str | None = None
     # Static variable from rand.c
-    next = 1
+    next: int = 1
     # Global state variables
-    fptr_idx = SEP_3 + 1  # Front pointer index
-    rptr_idx = 1  # Rear pointer index
-    state = randtbl[1:]  # State array (skip type byte)
-    rand_type = TYPE_3
-    rand_deg = DEG_3
-    rand_sep = SEP_3
-    end_ptr_idx = DEG_3  # Index of last element
+    fptr_idx: int = SEP_3 + 1  # Front pointer index
+    rptr_idx: int = 1  # Rear pointer index
+    state: list[int] = randtbl[1:]  # State array (skip type byte)
+    rand_type: int = TYPE_3
+    rand_deg: int = DEG_3
+    rand_sep: int = SEP_3
+    end_ptr_idx: int = DEG_3  # Index of last element
     # Simulation speed and timing
     # sim_speed: int = 3  # Default simulation speed (0-7)
     # sim_paused: bool = False
@@ -598,25 +626,26 @@ class AppContext(BaseModel):
     # sim_paused: int = 0
     # sim_paused_speed: int = 0
     # heat_steps: int = 0
-    global_generator: TerrainGenerator | None = None
+    # Use a runtime-agnostic type to avoid importing TerrainGenerator here.
+    global_generator: Any | None = None
 
     # sim = None  # Optional override for tests
 
     # Global state (equivalent to w_tk.c globals)
-    tk_main_interp = None  # Simplified - no TCL interpreter
-    main_window = None  # Pygame screen surface
+    tk_main_interp: Any | None = None  # Simplified - no TCL interpreter
+    main_window: Any | None = None  # Pygame screen surface
     # update_delayed = False
-    auto_scroll_edge = 16
-    auto_scroll_step = 16
-    auto_scroll_delay = 10
+    auto_scroll_edge: int = 16
+    auto_scroll_step: int = 16
+    auto_scroll_delay: int = 10
 
     # Timer management
     sim_timer_token: int | None = None  # pygame timer event ID
-    sim_timer_idle = False
-    sim_timer_set = False
+    sim_timer_idle: bool = False
+    sim_timer_set: bool = False
     earthquake_timer_token: int | None = None  # pygame timer event ID
-    earthquake_timer_set = False
-    earthquake_delay = 3000
+    earthquake_timer_set: bool = False
+    earthquake_delay: int = 3000
 
     # Performance timing
     # performance_timing = False
@@ -625,8 +654,8 @@ class AppContext(BaseModel):
     # Command system
     command_callbacks: dict[str, Callable] = {}
     stdin_thread: threading.Thread | None = None
-    stdin_queue = Queue()
-    running = False
+    stdin_queue: Queue = Queue()
+    running: bool = False
 
     # special_base: int = CHURCH
     # over_ride: int = 0
@@ -638,19 +667,20 @@ class AppContext(BaseModel):
     # pending_y: int = 0
 
     # View flags
-    VIEW_REDRAW_PENDING = 1
+    VIEW_REDRAW_PENDING: ClassVar[int] = 1
 
     # View types
-    X_Mem_View = 1
-    X_Wire_View = 2
+    X_Mem_View: ClassVar[int] = 1
+    X_Wire_View: ClassVar[int] = 2
 
     # View classes
-    Editor_Class = 0
-    Map_Class = 1
+    Editor_Class: ClassVar[int] = 0
+    Map_Class: ClassVar[int] = 1
 
     # Button event types
-    Button_Press = 0
-    Button_Move = 1
-    Button_Release = 2
+    Button_Press: ClassVar[int] = 0
+    Button_Move: ClassVar[int] = 1
+    Button_Release: ClassVar[int] = 2
+
 
 # END OF FILE

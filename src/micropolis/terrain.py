@@ -14,9 +14,30 @@ Based on the original C code from mapgener.c, terragen.c, and terra.c
 
 import random
 
-from src.micropolis.constants import WORLD_X, WORLD_Y, DIR_TAB_X, DIR_TAB_Y, RIVER, CHANNEL, BR_MATRIX, SR_MATRIX, \
-    WOODS, BLN, REDGE, RED_TAB, BN, TED_TAB, BURNBIT
-from src.micropolis.context import AppContext
+from src.micropolis.constants import (
+    WORLD_X,
+    WORLD_Y,
+    DIR_TAB_X,
+    DIR_TAB_Y,
+    RIVER,
+    CHANNEL,
+    BR_MATRIX,
+    SR_MATRIX,
+    WOODS,
+    BLN,
+    REDGE,
+    RED_TAB,
+    BN,
+    TED_TAB,
+    BURNBIT,
+)
+from typing import TYPE_CHECKING, Any
+
+# Avoid importing AppContext at module import time to prevent circular
+# imports with context.py. Use TYPE_CHECKING for type hints and Any at
+# runtime for function signatures.
+if TYPE_CHECKING:
+    from src.micropolis.context import AppContext
 
 
 def _init_random_state(seed: int) -> list[int]:
@@ -435,7 +456,7 @@ def generate_terrain(map_data: list[list[int]], seed: int | None = None) -> None
     generator.generate_map(map_data)
 
 
-def clear_terrain(context: AppContext, map_data: list[list[int]]) -> None:
+def clear_terrain(context: Any, map_data: list[list[int]]) -> None:
     """
     Clear all terrain from a map.
 
@@ -446,10 +467,7 @@ def clear_terrain(context: AppContext, map_data: list[list[int]]) -> None:
     clear_map(map_data)
 
 
-
-
-
-def _get_generator(context: AppContext) -> TerrainGenerator:
+def _get_generator(context: Any) -> TerrainGenerator:
     """Return a cached generator for quick utility calls."""
     # global _GLOBAL_GENERATOR
     if context.global_generator is None:
@@ -457,7 +475,7 @@ def _get_generator(context: AppContext) -> TerrainGenerator:
     return context.global_generator
 
 
-def ClearMap(context: AppContext) -> None:
+def ClearMap(context: Any) -> None:
     """Legacy interface: clear the simulation map to bare terrain.
     :param context:
     """
@@ -466,7 +484,7 @@ def ClearMap(context: AppContext) -> None:
     context.new_map = 1
 
 
-def ClearUnnatural(context: AppContext) -> None:
+def ClearUnnatural(context: Any) -> None:
     """Remove burned/unnatural tiles (placeholder implementation)."""
     for x in range(WORLD_X):
         for y in range(WORLD_Y):
@@ -476,16 +494,16 @@ def ClearUnnatural(context: AppContext) -> None:
     context.new_map = 1
 
 
-def SmoothTrees(context: AppContext) -> None:
+def SmoothTrees(context: Any) -> None:
     """Placeholder for tree smoothing to keep legacy APIs available."""
     context.new_map = 1
 
 
-def SmoothWater(context: AppContext) -> None:
+def SmoothWater(context: Any) -> None:
     """Placeholder for water smoothing."""
     context.new_map = 1
 
 
-def SmoothRiver(context: AppContext) -> None:
+def SmoothRiver(context: Any) -> None:
     """Placeholder for river smoothing."""
     context.new_map = 1

@@ -19,7 +19,12 @@ import os
 import time
 
 from src.micropolis.context import AppContext
-from src.micropolis.simulation import rand
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # For type checkers only; avoid importing simulation at runtime to
+    # prevent circular imports (simulation imports messages).
+    from src.micropolis.simulation import rand
 from src.micropolis.ui_utilities import eval_cmd_str
 
 
@@ -58,7 +63,7 @@ def get_message_string(context: AppContext, message_num: int) -> str:
 
     Returns:
         The message string, or empty string if not found
-        :param context: 
+        :param context:
     """
     if not context.MESSAGE_STRINGS:
         load_message_strings(context)
@@ -92,8 +97,16 @@ def make_sound(context: AppContext, channel: str, sound_name: str) -> None:
         sound_name: Name of the sound to play
         :param context:
     """
-    if context.sound and context.user_sound_on:
-        make_sound(context, channel, sound_name)
+    # Minimal implementation: delegate to UI/audio subsystem lazily
+    if not (context.sound and context.user_sound_on):
+        return
+    try:
+        from src.micropolis.audio import play_sound
+
+        play_sound(context, channel, sound_name)
+    except Exception:
+        # If audio backend isn't ready or circular imports occur, skip sound.
+        return
 
 
 def send_messages(context: AppContext) -> None:
@@ -104,7 +117,7 @@ def send_messages(context: AppContext) -> None:
     that warrant displaying messages to the player.
 
     Ported from SendMessages() in s_msg.c.
-    :param context: 
+    :param context:
     """
     if context.scenario_id and context.score_type and context.score_wait:
         context.score_wait -= 1
@@ -203,8 +216,8 @@ def check_growth(context: AppContext) -> None:
     if not (context.city_time & 3):
         z = 0
         this_city_pop = (
-                                context.res_pop + (context.com_pop * 8) + (context.ind_pop * 8)
-                        ) * 20
+            context.res_pop + (context.com_pop * 8) + (context.ind_pop * 8)
+        ) * 20
 
         if context.last_city_pop:
             if (context.last_city_pop < 2000) and (this_city_pop >= 2000):
@@ -338,7 +351,7 @@ def do_message(context: AppContext) -> None:
     This is called regularly to update the message display.
 
     Ported from doMessage() in s_msg.c.
-    :param context: 
+    :param context:
     """
     message_str = ""
     pict_id = 0
@@ -357,7 +370,7 @@ def do_message(context: AppContext) -> None:
             context.mes_num = -context.mes_num
             context.last_mes_time = tick_count()
         elif (tick_count() - context.last_mes_time) > (
-                60 * 30 * 1000
+            60 * 30 * 1000
         ):  # 30 minutes in ms
             context.mes_num = 0
             return
@@ -366,6 +379,9 @@ def do_message(context: AppContext) -> None:
         # Play sound effects based on message type
         abs_mes_num = abs(context.mes_num)
         if abs_mes_num == 12:
+            # avoid importing simulation at module import time
+            from src.micropolis.simulation import rand
+
             if rand(context, 5) == 1:
                 make_sound(context, "city", "HonkHonk-Med")
             elif rand(context, 5) == 1:
@@ -375,7 +391,7 @@ def do_message(context: AppContext) -> None:
         elif abs_mes_num in (11, 20, 22, 23, 24, 25, 26, 27):
             make_sound(context, "city", "Siren")
         elif abs_mes_num == 21:
-            make_sound(context, "city", f"Monster -speed {monster_speed()}")
+            make_sound(context, "city", f"Monster -speed {monster_speed(context)}")
         elif abs_mes_num == 30:
             make_sound(context, "city", "Explosion-Low")
             make_sound(context, "city", "Siren")
@@ -499,7 +515,7 @@ def do_win_game(context: AppContext) -> None:
     eval_cmd_str(context, "UIWinGame")
 
 
-def monster_speed() -> int:
+def monster_speed(context: AppContext) -> int:
     """
     Calculate monster movement speed.
 
@@ -508,4 +524,6 @@ def monster_speed() -> int:
 
     Ported from MonsterSpeed() in s_msg.c.
     """
+    from src.micropolis.simulation import rand
+
     return rand(context, 40) + 70
