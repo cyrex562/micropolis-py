@@ -4,14 +4,103 @@ zones.py - Zone processing and growth mechanics for Micropolis Python port
 This module contains the zone growth and management functions ported from s_zone.c,
 implementing residential, commercial, and industrial zone development logic.
 """
-from src.micropolis.constants import PORTBASE, HOSPITAL, COMBASE, INDBASE, CHURCH, RESBASE, IND1, IND2, IND4, IND6, \
-    IND8, IND3, IND5, IND7, IND9, IZB, LOMASK, ASCBIT, SMOKEBASE, REGBIT, FREEZ, BLBNCNBIT, ZONEBIT, LHTHR, HHTHR, \
-    INDCLR, RZB, COMCLR, CZB, HOUSE, LASTROAD, FLOOD, ROADBASE, BNCNBIT, BULLBIT, NUCLEAR, POWERPLANT, PWRMAPSIZE, \
-    PWRBIT
+
+from src.micropolis.constants import (
+    PORTBASE,
+    HOSPITAL,
+    COMBASE,
+    INDBASE,
+    CHURCH,
+    RESBASE,
+    IND1,
+    IND2,
+    IND4,
+    IND6,
+    IND8,
+    IND3,
+    IND5,
+    IND7,
+    IND9,
+    IZB,
+    LOMASK,
+    ASCBIT,
+    SMOKEBASE,
+    REGBIT,
+    FREEZ,
+    BLBNCNBIT,
+    ZONEBIT,
+    LHTHR,
+    HHTHR,
+    INDCLR,
+    RZB,
+    COMCLR,
+    CZB,
+    HOUSE,
+    LASTROAD,
+    FLOOD,
+    ROADBASE,
+    BNCNBIT,
+    BULLBIT,
+    NUCLEAR,
+    POWERPLANT,
+    PWRMAPSIZE,
+    PWRBIT,
+)
+from collections.abc import Callable
+
 from src.micropolis.context import AppContext
 from src.micropolis.macros import TestBounds
 from src.micropolis.power import powerword
-from src.micropolis.simulation import do_sp_zone, repair_zone, rand, rand16, rand16_signed
+
+_do_sp_zone_fn: Callable[[AppContext, int], None] | None = None
+_repair_zone_fn: Callable[[AppContext, int, int], None] | None = None
+_rand_fn: Callable[[AppContext, int], int] | None = None
+_rand16_fn: Callable[[AppContext], int] | None = None
+_rand16_signed_fn: Callable[[AppContext], int] | None = None
+
+
+def _ensure_simulation_functions() -> None:
+    global _do_sp_zone_fn, _repair_zone_fn, _rand_fn, _rand16_fn, _rand16_signed_fn
+
+    if _do_sp_zone_fn is None:
+        from src.micropolis.simulation import (
+            do_sp_zone as _do_sp_zone,
+            repair_zone as _repair_zone,
+            rand as _rand,
+            rand16 as _rand16,
+            rand16_signed as _rand16_signed,
+        )
+
+        _do_sp_zone_fn = _do_sp_zone
+        _repair_zone_fn = _repair_zone
+        _rand_fn = _rand
+        _rand16_fn = _rand16
+        _rand16_signed_fn = _rand16_signed
+
+
+def _do_sp_zone(context: AppContext, pwr_on: int) -> None:
+    _ensure_simulation_functions()
+    _do_sp_zone_fn(context, pwr_on)
+
+
+def _repair_zone(context: AppContext, tile: int, amount: int) -> None:
+    _ensure_simulation_functions()
+    _repair_zone_fn(context, tile, amount)
+
+
+def _rand(context: AppContext, bound: int) -> int:
+    _ensure_simulation_functions()
+    return _rand_fn(context, bound)
+
+
+def _rand16(context: AppContext) -> int:
+    _ensure_simulation_functions()
+    return _rand16_fn(context)
+
+
+def _rand16_signed(context: AppContext) -> int:
+    _ensure_simulation_functions()
+    return _rand16_signed_fn(context)
 
 
 # ============================================================================
@@ -34,11 +123,11 @@ def DoZone(context: AppContext) -> None:
         context.un_pwrd_z_cnt += 1
 
     if context.cchr9 > PORTBASE:  # do Special Zones
-        do_sp_zone(context, ZonePwrFlg)
+        _do_sp_zone(context, ZonePwrFlg)
         return
 
     if context.cchr9 < HOSPITAL:
-        DoResidential(context,ZonePwrFlg)
+        DoResidential(context, ZonePwrFlg)
         return
 
     if context.cchr9 < COMBASE:
@@ -46,10 +135,10 @@ def DoZone(context: AppContext) -> None:
         return
 
     if context.cchr9 < INDBASE:
-        DoCommercial(context,ZonePwrFlg)
+        DoCommercial(context, ZonePwrFlg)
         return
 
-    DoIndustrial(context,ZonePwrFlg)
+    DoIndustrial(context, ZonePwrFlg)
 
 
 def DoHospChur(context: AppContext) -> None:
@@ -62,21 +151,21 @@ def DoHospChur(context: AppContext) -> None:
     if context.cchr9 == HOSPITAL:
         context.hosp_pop += 1
         if (context.city_time & 15) == 0:
-            repair_zone(context, HOSPITAL, 3)  # post
+            _repair_zone(context, HOSPITAL, 3)  # post
         if context.need_hosp == -1:
-            if rand(context, 20) == 0:
+            if _rand(context, 20) == 0:
                 ZonePlop(context, RESBASE)
 
     if context.cchr9 == CHURCH:
         context.church_pop += 1
         if (context.city_time & 15) == 0:
-            repair_zone(context, CHURCH, 3)  # post
+            _repair_zone(context, CHURCH, 3)  # post
         if context.need_church == -1:
-            if rand(context, 20) == 0:
+            if _rand(context, 20) == 0:
                 ZonePlop(context, RESBASE)
 
 
-def SetSmoke(context: AppContext,ZonePower: int) -> None:
+def SetSmoke(context: AppContext, ZonePower: int) -> None:
     """
     Set smoke animation for industrial zones.
 
@@ -108,13 +197,9 @@ def SetSmoke(context: AppContext,ZonePower: int) -> None:
         if TestBounds(xx, yy):
             if ZonePower:
                 if (context.map_data[xx][yy] & LOMASK) == AniTabC[z]:
-                    context.map_data[xx][yy] = ASCBIT | (
-                        SMOKEBASE + AniTabA[z]
-                    )
+                    context.map_data[xx][yy] = ASCBIT | (SMOKEBASE + AniTabA[z])
                     # Note: Original has duplicate line, keeping for compatibility
-                    context.map_data[xx][yy] = ASCBIT | (
-                        SMOKEBASE + AniTabB[z]
-                    )
+                    context.map_data[xx][yy] = ASCBIT | (SMOKEBASE + AniTabB[z])
             else:
                 if (context.map_data[xx][yy] & LOMASK) > AniTabC[z]:
                     context.map_data[xx][yy] = REGBIT | AniTabC[z]
@@ -135,26 +220,26 @@ def DoIndustrial(context: AppContext, ZonePwrFlg: int) -> None:
     tpop = IZPop(context.cchr9)
     context.ind_pop += tpop
 
-    if tpop > rand(context, 5):
+    if tpop > _rand(context, 5):
         TrfGood = MakeTraf(2)
     else:
         TrfGood = True
 
     if TrfGood == -1:
-        DoIndOut(context,tpop, rand16(context) & 1)
+        DoIndOut(context, tpop, _rand16(context) & 1)
         return
 
-    if (rand16(context) & 7) == 0:
+    if (_rand16(context) & 7) == 0:
         zscore = context.i_value + EvalInd(TrfGood)
         if not ZonePwrFlg:
             zscore = -500
 
-        if (zscore > -350) and ((zscore - 26380) > rand16_signed(context)):
-            DoIndIn(context,tpop, rand16(context,) & 1)
+        if (zscore > -350) and ((zscore - 26380) > _rand16_signed(context)):
+            DoIndIn(context, tpop, _rand16(context) & 1)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < rand16_signed(context)):
-            DoIndOut(context,tpop, rand16(context,) & 1)
+        if (zscore < 350) and ((zscore + 26380) < _rand16_signed(context)):
+            DoIndOut(context, tpop, _rand16(context) & 1)
 
 
 def DoCommercial(context: AppContext, ZonePwrFlg: int) -> None:
@@ -169,34 +254,36 @@ def DoCommercial(context: AppContext, ZonePwrFlg: int) -> None:
     tpop = CZPop(context.cchr9)
     context.com_pop += tpop
 
-    if tpop > rand(context, 5):
+    if tpop > _rand(context, 5):
         TrfGood = MakeTraf(1)
     else:
         TrfGood = True
 
     if TrfGood == -1:
-        value = GetCRVal(context,)
-        DoComOut(context,tpop, value)
+        value = GetCRVal(
+            context,
+        )
+        DoComOut(context, tpop, value)
         return
 
-    if (rand16(context) & 7) == 0:
+    if (_rand16(context) & 7) == 0:
         locvalve = EvalCom(context, TrfGood)
         zscore = context.c_value + locvalve
         if not ZonePwrFlg:
             zscore = -500
 
-        if (
-            TrfGood
-            and (zscore > -350)
-            and ((zscore - 26380) > rand16_signed(context))
-        ):
-            value = GetCRVal(context,)
-            DoComIn(context,tpop, value)
+        if TrfGood and (zscore > -350) and ((zscore - 26380) > _rand16_signed(context)):
+            value = GetCRVal(
+                context,
+            )
+            DoComIn(context, tpop, value)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < rand16_signed(context)):
-            value = GetCRVal(context,)
-            DoComOut(context,tpop, value)
+        if (zscore < 350) and ((zscore + 26380) < _rand16_signed(context)):
+            value = GetCRVal(
+                context,
+            )
+            DoComOut(context, tpop, value)
 
 
 def DoResidential(context: AppContext, ZonePwrFlg: int) -> None:
@@ -215,33 +302,39 @@ def DoResidential(context: AppContext, ZonePwrFlg: int) -> None:
 
     context.res_pop += tpop
 
-    if tpop > rand(context, 35):
+    if tpop > _rand(context, 35):
         TrfGood = MakeTraf(0)
     else:
         TrfGood = True
 
     if TrfGood == -1:
-        value = GetCRVal(context,)
-        DoResOut(context,tpop, value)
+        value = GetCRVal(
+            context,
+        )
+        DoResOut(context, tpop, value)
         return
 
-    if (context.cchr9 == FREEZ) or ((rand16(context) & 7) == 0):
-        locvalve = EvalRes(context,TrfGood)
+    if (context.cchr9 == FREEZ) or ((_rand16(context) & 7) == 0):
+        locvalve = EvalRes(context, TrfGood)
         zscore = context.r_value + locvalve
         if not ZonePwrFlg:
             zscore = -500
 
-        if (zscore > -350) and ((zscore - 26380) > rand16_signed(context)):
-            if (not tpop) and ((rand16(context) & 3) == 0):
+        if (zscore > -350) and ((zscore - 26380) > _rand16_signed(context)):
+            if (not tpop) and ((_rand16(context) & 3) == 0):
                 MakeHosp(context)
                 return
-            value = GetCRVal(context,)
-            DoResIn(context,tpop, value)
+            value = GetCRVal(
+                context,
+            )
+            DoResIn(context, tpop, value)
             return
 
-        if (zscore < 350) and ((zscore + 26380) < rand16_signed(context)):
-            value = GetCRVal(context,)
-            DoResOut(context,tpop, value)
+        if (zscore < 350) and ((zscore + 26380) < _rand16_signed(context)):
+            value = GetCRVal(
+                context,
+            )
+            DoResOut(context, tpop, value)
 
 
 def MakeHosp(context: AppContext) -> None:
@@ -303,21 +396,21 @@ def DoResIn(context: AppContext, pop: int, value: int) -> None:
 
     if context.cchr9 == FREEZ:
         if pop < 8:
-            BuildHouse(context,value)
+            BuildHouse(context, value)
             IncROG(context, 1)
             return
         if context.pop_density[context.s_map_x >> 1][context.s_map_y >> 1] > 64:
-            ResPlop(context,0, value)
+            ResPlop(context, 0, value)
             IncROG(context, 8)
             return
         return
 
     if pop < 40:
-        ResPlop(context,(pop // 8) - 1, value)
+        ResPlop(context, (pop // 8) - 1, value)
         IncROG(context, 8)
 
 
-def DoComIn(context: AppContext,pop: int, value: int) -> None:
+def DoComIn(context: AppContext, pop: int, value: int) -> None:
     """
     Handle commercial zone growth inward.
 
@@ -350,7 +443,7 @@ def DoIndIn(context: AppContext, pop: int, value: int) -> None:
         value: Land value rating
     """
     if pop < 4:
-        IndPlop(context,pop, value)
+        IndPlop(context, pop, value)
         IncROG(context, 8)
 
 
@@ -389,21 +482,19 @@ def DoResOut(context: AppContext, pop: int, value: int) -> None:
         return
 
     if pop > 16:
-        ResPlop(context,((pop - 24) // 8), value)
+        ResPlop(context, ((pop - 24) // 8), value)
         IncROG(context, -8)
         return
 
     if pop == 16:
         IncROG(context, -8)
-        context.map_data[context.s_map_x][context.s_map_y] = (
-            FREEZ | BLBNCNBIT | ZONEBIT
-        )
+        context.map_data[context.s_map_x][context.s_map_y] = FREEZ | BLBNCNBIT | ZONEBIT
         for x in range(context.s_map_x - 1, context.s_map_x + 2):
             for y in range(context.s_map_y - 1, context.s_map_y + 2):
                 if TestBounds(x, y):
                     if (context.map_data[x][y] & LOMASK) != FREEZ:
                         context.map_data[x][y] = (
-                                LHTHR + value + rand(context, 2) + BLBNCNBIT
+                            LHTHR + value + _rand(context, 2) + BLBNCNBIT
                         )
 
     if pop < 16:
@@ -414,9 +505,7 @@ def DoResOut(context: AppContext, pop: int, value: int) -> None:
                 if TestBounds(x, y):
                     loc = context.map_data[x][y] & LOMASK
                     if (loc >= LHTHR) and (loc <= HHTHR):
-                        context.map_data[x][y] = (
-                            Brdr[z] + BLBNCNBIT + FREEZ - 4
-                        )
+                        context.map_data[x][y] = Brdr[z] + BLBNCNBIT + FREEZ - 4
                         return
                 z += 1
 
@@ -452,7 +541,7 @@ def DoIndOut(context: AppContext, pop: int, value: int) -> None:
         value: Land value rating
     """
     if pop > 1:
-        IndPlop(context,pop - 2, value)
+        IndPlop(context, pop - 2, value)
         IncROG(context, -8)
         return
 
@@ -548,7 +637,7 @@ def BuildHouse(context: AppContext, value: int) -> None:
                 if score > hscore:
                     hscore = score
                     BestLoc = z
-                if (score == hscore) and ((rand16(context,) & 7) == 0):
+                if (score == hscore) and ((_rand16(context) & 7) == 0):
                     BestLoc = z
 
     if BestLoc:
@@ -556,7 +645,7 @@ def BuildHouse(context: AppContext, value: int) -> None:
         yy = context.s_map_y + ZeY[BestLoc]
         if TestBounds(xx, yy):
             context.map_data[xx][yy] = (
-                    HOUSE + BLBNCNBIT + rand(context, 2) + (value * 3)
+                HOUSE + BLBNCNBIT + _rand(context, 2) + (value * 3)
             )
 
 
@@ -675,7 +764,9 @@ def ZonePlop(context: AppContext, base: int) -> bool:
         base += 1
 
     context.cchr = context.map_data[context.s_map_x][context.s_map_y]
-    SetZPower(context,)
+    SetZPower(
+        context,
+    )
     context.map_data[context.s_map_x][context.s_map_y] |= ZONEBIT | BULLBIT
     return True
 
@@ -797,14 +888,9 @@ def SetZPower(context: AppContext) -> int:
         (context.cchr9 == NUCLEAR)
         or (context.cchr9 == POWERPLANT)
         or (
-            (
-                powerword(context.s_map_x, context.s_map_y)
-                < PWRMAPSIZE
-            )
+            (powerword(context.s_map_x, context.s_map_y) < PWRMAPSIZE)
             and (
-                context.power_map[
-                    powerword(context.s_map_x, context.s_map_y)
-                ]
+                context.power_map[powerword(context.s_map_x, context.s_map_y)]
                 & (1 << (context.s_map_x & 15))
             )
         )

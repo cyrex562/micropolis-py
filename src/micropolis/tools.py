@@ -18,20 +18,81 @@ The tool system includes:
 Ported from w_tool.c with pygame integration.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
-from src.micropolis.constants import LOMASK, ROADBASE, BNCNBIT, RAILBASE, POWERBASE, CONDBIT, FIRSTRIVEDGE, LASTRIVEDGE, \
-    TREEBASE, LASTTREE, RUBBLE, LASTRUBBLE, FLOOD, LASTFLOOD, RADTILE, FIRE, LASTFIRE, LASTROAD, TINYEXP, LASTTINYEXP, \
-    RESBASE, PORTBASE, LASTPOWERPLANT, POLICESTATION, LASTPORT, COALBASE, STADIUMBASE, LASTZONE, POWERPLANT, PORT, \
-    NUCLEAR, STADIUM, COALSMOKE3, AIRPORT, FOUNTAIN, BURNBIT, BULLBIT, ANIMBIT, WOODS2, TELEBASE, ZONEBIT, DIRT, RIVER, \
-    COMBASE, INDBASE, AIRPORTBASE, FIRESTBASE, POLICESTBASE, NUCLEARBASE, INDBASE2, FOOTBALLGAME1, VBRDG0, COALSMOKE1, \
-    REDGE, CHANNEL, SOMETINYEXP, CostOf, WORLD_X, WORLD_Y, COLOR_WHITE
+from src.micropolis.constants import (
+    LOMASK,
+    ROADBASE,
+    BNCNBIT,
+    RAILBASE,
+    POWERBASE,
+    CONDBIT,
+    FIRSTRIVEDGE,
+    LASTRIVEDGE,
+    TREEBASE,
+    LASTTREE,
+    RUBBLE,
+    LASTRUBBLE,
+    FLOOD,
+    LASTFLOOD,
+    RADTILE,
+    FIRE,
+    LASTFIRE,
+    LASTROAD,
+    TINYEXP,
+    LASTTINYEXP,
+    RESBASE,
+    PORTBASE,
+    LASTPOWERPLANT,
+    POLICESTATION,
+    LASTPORT,
+    COALBASE,
+    STADIUMBASE,
+    LASTZONE,
+    POWERPLANT,
+    PORT,
+    NUCLEAR,
+    STADIUM,
+    COALSMOKE3,
+    AIRPORT,
+    FOUNTAIN,
+    BURNBIT,
+    BULLBIT,
+    ANIMBIT,
+    WOODS2,
+    TELEBASE,
+    ZONEBIT,
+    DIRT,
+    RIVER,
+    COMBASE,
+    INDBASE,
+    AIRPORTBASE,
+    FIRESTBASE,
+    POLICESTBASE,
+    NUCLEARBASE,
+    INDBASE2,
+    FOOTBALLGAME1,
+    VBRDG0,
+    COALSMOKE1,
+    REDGE,
+    CHANNEL,
+    SOMETINYEXP,
+    CostOf,
+    WORLD_X,
+    WORLD_Y,
+    COLOR_WHITE,
+)
 from src.micropolis.context import AppContext
 from src.micropolis.macros import TestBounds
-from src.micropolis.messages import make_sound, clear_mes, send_mes
 from src.micropolis.random import Rand
-from src.micropolis.sim_view import SimView
-from src.micropolis.ui_utilities import update_funds
+
+
+def _update_funds(context: AppContext) -> None:
+    from src.micropolis.ui_utilities import update_funds as _update
+
+    _update(context)
 
 
 # ============================================================================
@@ -39,23 +100,14 @@ from src.micropolis.ui_utilities import update_funds
 # ============================================================================
 
 
-
 # ============================================================================
 # Tool Configuration Arrays (from w_tool.c)
 # ============================================================================
 
 
-
-
-
-
-
-
-
 # ============================================================================
 # Global Variables (from w_tool.c)
 # ============================================================================
-
 
 
 # ============================================================================
@@ -80,13 +132,15 @@ def MakeSound(context: AppContext, channel: str, sound_name: str) -> None:
     Args:
         channel: Sound channel ("city", "edit", etc.)
         sound_name: Name of sound to play
-        :param context: 
+        :param context:
     """
+    from src.micropolis.messages import make_sound
+
     make_sound(context, channel, sound_name)
 
 
-def MakeSoundOn(context: AppContext,
-    view: SimView, channel: str, sound_name: str
+def MakeSoundOn(
+    context: AppContext, view: SimView, channel: str, sound_name: str
 ) -> None:
     """
     Play a sound effect if view has sound enabled.
@@ -100,7 +154,9 @@ def MakeSoundOn(context: AppContext,
         MakeSound(context, channel, sound_name)
 
 
-def ConnecTile(context: AppContext, x: int, y: int, tile_ptr: list[int], command: int) -> int:
+def ConnecTile(
+    context: AppContext, x: int, y: int, tile_ptr: list[int], command: int
+) -> int:
     """
     Connect infrastructure tiles (roads, rails, power lines).
 
@@ -115,7 +171,7 @@ def ConnecTile(context: AppContext, x: int, y: int, tile_ptr: list[int], command
 
     Returns:
         1 if successful, 0 if failed
-        :param context: 
+        :param context:
     """
     # Placeholder - need to implement actual connection logic
     # For now, just place the tile without connection logic
@@ -172,7 +228,7 @@ def tally(tileValue: int) -> int:
 
     # Check power lines (specific ranges)
     if ((POWERBASE + 2) <= tile_base <= (POWERBASE + 12)) or (
-            TINYEXP <= tile_base <= (LASTTINYEXP + 2)
+        TINYEXP <= tile_base <= (LASTTINYEXP + 2)
     ):
         return 1
 
@@ -198,7 +254,7 @@ def checkSize(temp: int) -> int:
     """
     # 3x3 zones: residential, commercial, industrial, fire dept, police dept
     if ((RESBASE - 1) <= temp <= (PORTBASE - 1)) or (
-            (LASTPOWERPLANT + 1) <= temp <= (POLICESTATION + 4)
+        (LASTPOWERPLANT + 1) <= temp <= (POLICESTATION + 4)
     ):
         return 3
 
@@ -325,7 +381,7 @@ def putDownPark(context: AppContext, view: SimView, mapH: int, mapV: int) -> int
 
     if context.map_data[mapH][mapV] == 0:
         Spend(context, CostOf[context.park_state])
-        update_funds(context)
+        _update_funds(context)
         context.map_data[mapH][mapV] = tile
         return 1
 
@@ -357,11 +413,7 @@ def putDownNetwork(context: AppContext, view: SimView, mapH: int, mapV: int) -> 
     if tile == 0:
         if (context.total_funds - CostOf[context.tool_state]) >= 0:
             context.map_data[mapH][mapV] = (
-                TELEBASE
-                | CONDBIT
-                | BURNBIT
-                | BULLBIT
-                | ANIMBIT
+                TELEBASE | CONDBIT | BURNBIT | BULLBIT | ANIMBIT
             )
             Spend(context, CostOf[context.tool_state])
             return 1
@@ -422,8 +474,8 @@ def check3x3border(context: AppContext, xMap: int, yMap: int) -> None:
         yPos += 1
 
 
-def check3x3(context: AppContext,
-    view: SimView, mapH: int, mapV: int, base: int, tool: int
+def check3x3(
+    context: AppContext, view: SimView, mapH: int, mapV: int, base: int, tool: int
 ) -> int:
     """
     Check and place a 3x3 building.
@@ -441,12 +493,7 @@ def check3x3(context: AppContext,
     mapH -= 1
     mapV -= 1
 
-    if (
-        (mapH < 0)
-        or (mapH > (WORLD_X - 3))
-        or (mapV < 0)
-        or (mapV > (WORLD_Y - 3))
-    ):
+    if (mapH < 0) or (mapH > (WORLD_X - 3)) or (mapV < 0) or (mapV > (WORLD_Y - 3)):
         return -1
 
     xPos = holdMapH = mapH
@@ -492,7 +539,7 @@ def check3x3(context: AppContext,
 
     # Spend the money
     Spend(context, cost)
-    update_funds(context)
+    _update_funds(context)
 
     mapV = holdMapV
 
@@ -558,7 +605,8 @@ def check4x4border(context: AppContext, xMap: int, yMap: int) -> None:
         yPos += 1
 
 
-def check4x4(context: AppContext,
+def check4x4(
+    context: AppContext,
     view: SimView,
     mapH: int,
     mapV: int,
@@ -584,12 +632,7 @@ def check4x4(context: AppContext,
     mapH -= 1
     mapV -= 1
 
-    if (
-        (mapH < 0)
-        or (mapH > (WORLD_X - 4))
-        or (mapV < 0)
-        or (mapV > (WORLD_Y - 4))
-    ):
+    if (mapH < 0) or (mapH > (WORLD_X - 4)) or (mapV < 0) or (mapV > (WORLD_Y - 4)):
         return -1
 
     h = xMap = holdMapH = mapH
@@ -635,7 +678,7 @@ def check4x4(context: AppContext,
 
     # Spend the money
     Spend(context, cost)
-    update_funds(context)
+    _update_funds(context)
 
     mapV = v
     holdMapH = h
@@ -704,8 +747,8 @@ def check6x6border(context: AppContext, xMap: int, yMap: int) -> None:
         yPos += 1
 
 
-def check6x6(context: AppContext,
-    view: SimView, mapH: int, mapV: int, base: int, tool: int
+def check6x6(
+    context: AppContext, view: SimView, mapH: int, mapV: int, base: int, tool: int
 ) -> int:
     """
     Check and place a 6x6 building.
@@ -724,12 +767,7 @@ def check6x6(context: AppContext,
     mapH -= 1
     mapV -= 1
 
-    if (
-        (mapH < 0)
-        or (mapH > (WORLD_X - 6))
-        or (mapV < 0)
-        or (mapV > (WORLD_Y - 6))
-    ):
+    if (mapH < 0) or (mapH > (WORLD_X - 6)) or (mapV < 0) or (mapV > (WORLD_Y - 6)):
         return -1
 
     h = xMap = holdMapH = mapH
@@ -775,7 +813,7 @@ def check6x6(context: AppContext,
 
     # Spend the money
     Spend(context, cost)
-    update_funds(context)
+    _update_funds(context)
 
     mapV = v
     holdMapH = h
@@ -833,7 +871,7 @@ idArray: list[int] = [
 ]
 
 
-def getDensityStr(context: AppContext,catNo: int, mapH: int, mapV: int) -> int:
+def getDensityStr(context: AppContext, catNo: int, mapH: int, mapV: int) -> int:
     """
     Get density string index for zone status display.
 
@@ -982,12 +1020,7 @@ def query_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
         1 if successful, -1 if out of bounds
         :param context:
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     doZoneStatus(context, x, y)
@@ -1058,7 +1091,7 @@ def bulldozer_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
             else:
                 result = ConnecTile(context, x, y, [context.map_data[x][y]], 1)
 
-    update_funds(context)
+    _update_funds(context)
     if result == 1:
         DidTool(context, view, "Dozr", x, y)
     return result
@@ -1077,16 +1110,11 @@ def road_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = ConnecTile(context, x, y, [context.map_data[x][y]], 2)
-    update_funds(context)
+    _update_funds(context)
     if result == 1:
         DidTool(context, view, "Road", x, y)
     return result
@@ -1104,18 +1132,13 @@ def rail_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = ConnecTile(context, x, y, [context.map_data[x][y]], 3)
-    update_funds(context)
+    _update_funds(context)
     if result == 1:
-        DidTool(context,view, "Rail", x, y)
+        DidTool(context, view, "Rail", x, y)
     return result
 
 
@@ -1131,18 +1154,13 @@ def wire_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = ConnecTile(context, x, y, [context.map_data[x][y]], 4)
-    update_funds(context)
+    _update_funds(context)
     if result == 1:
-        DidTool(context,view, "Wire", x, y)
+        DidTool(context, view, "Wire", x, y)
     return result
 
 
@@ -1158,17 +1176,12 @@ def park_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = putDownPark(context, view, x, y)
     if result == 1:
-        DidTool(context,view, "Park", x, y)
+        DidTool(context, view, "Park", x, y)
     return result
 
 
@@ -1185,17 +1198,12 @@ def residential_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check3x3(context, view, x, y, RESBASE, context.residental_state)
     if result == 1:
-        DidTool(context,view, "Res", x, y)
+        DidTool(context, view, "Res", x, y)
     return result
 
 
@@ -1211,17 +1219,12 @@ def commercial_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check3x3(context, view, x, y, COMBASE, context.commercial_state)
     if result == 1:
-        DidTool(context,view, "Com", x, y)
+        DidTool(context, view, "Com", x, y)
     return result
 
 
@@ -1237,17 +1240,12 @@ def industrial_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check3x3(context, view, x, y, INDBASE, context.industrial_state)
     if result == 1:
-        DidTool(context,view, "Ind", x, y)
+        DidTool(context, view, "Ind", x, y)
     return result
 
 
@@ -1263,17 +1261,12 @@ def police_dept_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check3x3(context, view, x, y, POLICESTBASE, context.police_state)
     if result == 1:
-        DidTool(context,view, "Pol", x, y)
+        DidTool(context, view, "Pol", x, y)
     return result
 
 
@@ -1289,17 +1282,12 @@ def fire_dept_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check3x3(context, view, x, y, FIRESTBASE, context.fire_state)
     if result == 1:
-        DidTool(context,view, "Fire", x, y)
+        DidTool(context, view, "Fire", x, y)
     return result
 
 
@@ -1315,17 +1303,12 @@ def stadium_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check4x4(context, view, x, y, STADIUMBASE, 0, context.stadium_state)
     if result == 1:
-        DidTool(context,view, "Stad", x, y)
+        DidTool(context, view, "Stad", x, y)
     return result
 
 
@@ -1341,17 +1324,12 @@ def coal_power_plant_tool(context: AppContext, view: SimView, x: int, y: int) ->
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check4x4(context, view, x, y, COALBASE, 1, context.power_state)
     if result == 1:
-        DidTool(context,view, "Coal", x, y)
+        DidTool(context, view, "Coal", x, y)
     return result
 
 
@@ -1367,17 +1345,12 @@ def nuclear_power_plant_tool(context: AppContext, view: SimView, x: int, y: int)
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check4x4(context, view, x, y, NUCLEARBASE, 1, context.nuclear_state)
     if result == 1:
-        DidTool(context,view, "Nuc", x, y)
+        DidTool(context, view, "Nuc", x, y)
     return result
 
 
@@ -1393,17 +1366,12 @@ def seaport_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check4x4(context, view, x, y, PORTBASE, 0, context.seaport_state)
     if result == 1:
-        DidTool(context,view, "Seap", x, y)
+        DidTool(context, view, "Seap", x, y)
     return result
 
 
@@ -1419,21 +1387,16 @@ def airport_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = check6x6(context, view, x, y, AIRPORTBASE, context.airport_state)
     if result == 1:
-        DidTool(context,view, "Airp", x, y)
+        DidTool(context, view, "Airp", x, y)
     return result
 
 
-def network_tool(context: AppContext, view:SimView, x: int, y: int) -> int:
+def network_tool(context: AppContext, view: SimView, x: int, y: int) -> int:
     """
     Network tool - place telecommunications networks.
 
@@ -1445,17 +1408,12 @@ def network_tool(context: AppContext, view:SimView, x: int, y: int) -> int:
     Returns:
         1 if successful, -1 if out of bounds
     """
-    if (
-        (x < 0)
-        or (x > (WORLD_X - 1))
-        or (y < 0)
-        or (y > (WORLD_Y - 1))
-    ):
+    if (x < 0) or (x > (WORLD_X - 1)) or (y < 0) or (y > (WORLD_Y - 1)):
         return -1
 
     result = putDownNetwork(context, view, x, y)
     if result == 1:
-        DidTool(context,view, "Net", x, y)
+        DidTool(context, view, "Net", x, y)
     return result
 
 
@@ -1617,8 +1575,8 @@ def do_tool(
         context.bulldozer_state: bulldozer_tool,
         context.rail_state: rail_tool,
         context.road_state: road_tool,
-        context.chalk_state: lambda v, px, py: ChalkTool(context,
-            v, px - 5, py + 11, COLOR_WHITE, first
+        context.chalk_state: lambda v, px, py: ChalkTool(
+            context, v, px - 5, py + 11, COLOR_WHITE, first
         ),
         context.eraser_state: lambda v, px, py: EraserTool(context, v, px, py, 1),
         context.stadium_state: stadium_tool,
@@ -1642,9 +1600,7 @@ def do_tool(
     return result
 
 
-def current_tool(context: AppContext,
-    view: SimView, x: int, y: int, first: int
-) -> int:
+def current_tool(context: AppContext, view: SimView, x: int, y: int, first: int) -> int:
     """
     Apply the current tool of the view.
 
@@ -1658,7 +1614,7 @@ def current_tool(context: AppContext,
         1 if successful, negative values for errors
         :param context:
     """
-    return do_tool(context,view, view.tool_state, x, y, first)
+    return do_tool(context, view, view.tool_state, x, y, first)
 
 
 def ToolDown(context: AppContext, view: SimView, x: int, y: int) -> None:
@@ -1678,18 +1634,18 @@ def ToolDown(context: AppContext, view: SimView, x: int, y: int) -> None:
     view.last_x = pixel_x
     view.last_y = pixel_y
 
-    result = current_tool(context,view, pixel_x, pixel_y, 1)
+    result = current_tool(context, view, pixel_x, pixel_y, 1)
 
     if result == -1:
         clear_mes(context)
         send_mes(context, 34)  # "That area is not in your jurisdiction"
-        MakeSoundOn(context,view, "edit", "UhUh")
+        MakeSoundOn(context, view, "edit", "UhUh")
     elif result == -2:
         clear_mes(context)
         send_mes(context, 33)  # "You are out of funds"
-        MakeSoundOn(context,view, "edit", "Sorry")
+        MakeSoundOn(context, view, "edit", "Sorry")
     elif result == -3:
-        DoPendTool(context,view, view.tool_state, pixel_x >> 4, pixel_y >> 4)
+        DoPendTool(context, view, view.tool_state, pixel_x >> 4, pixel_y >> 4)
 
     context.sim_skip = 0
     view.skip = 0
@@ -1735,8 +1691,10 @@ def ToolDrag(context: AppContext, view: SimView, px: int, py: int) -> int:
     view.tool_y = y
 
     # Handle freeform tools (chalk, eraser) differently
-    if (view.tool_state == context.chalk_state) or (view.tool_state == context.eraser_state):
-        current_tool(context,view, x, y, 0)
+    if (view.tool_state == context.chalk_state) or (
+        view.tool_state == context.eraser_state
+    ):
+        current_tool(context, view, x, y, 0)
         view.last_x = x
         view.last_y = y
     else:
@@ -1777,12 +1735,16 @@ def ToolDrag(context: AppContext, view: SimView, px: int, py: int) -> int:
                     # Fill in corners
                     if dtx >= 1 and dty >= 1:
                         if dtx > dty:
-                            current_tool(context,view, ((int(tx) + rx) << 4), ly << 4, 0)
+                            current_tool(
+                                context, view, ((int(tx) + rx) << 4), ly << 4, 0
+                            )
                         else:
-                            current_tool(context,view, lx << 4, ((int(ty) + ry) << 4), 0)
+                            current_tool(
+                                context, view, lx << 4, ((int(ty) + ry) << 4), 0
+                            )
                     lx = int(tx) + rx
                     ly = int(ty) + ry
-                    current_tool(context,view, lx << 4, ly << 4, 0)
+                    current_tool(context, view, lx << 4, ly << 4, 0)
         else:
             # Multi-tile tool - place at intervals
             for i in range(0, int(1 + step), int(step)):
@@ -1792,7 +1754,7 @@ def ToolDrag(context: AppContext, view: SimView, px: int, py: int) -> int:
                 dty = abs(ty - ly)
                 lx = int(tx) + rx
                 ly = int(ty) + ry
-                current_tool(context,view, lx << 4, ly << 4, 0)
+                current_tool(context, view, lx << 4, ly << 4, 0)
 
         view.last_x = (lx << 4) + 8
         view.last_y = (ly << 4) + 8
@@ -1814,16 +1776,16 @@ def DoTool(context: AppContext, view: SimView, tool: int, x: int, y: int) -> Non
         x: X coordinate (in tiles)
         y: Y coordinate (in tiles)
     """
-    result = do_tool(context,view, tool, x << 4, y << 4, 1)
+    result = do_tool(context, view, tool, x << 4, y << 4, 1)
 
     if result == -1:
         clear_mes(context)
         send_mes(context, 34)
-        MakeSoundOn(context,view, "edit", "UhUh")
+        MakeSoundOn(context, view, "edit", "UhUh")
     elif result == -2:
         clear_mes(context)
         send_mes(context, 33)
-        MakeSoundOn(context,view, "edit", "Sorry")
+        MakeSoundOn(context, view, "edit", "Sorry")
 
     context.sim_skip = 0
     view.skip = 0
@@ -1934,8 +1896,8 @@ def AddInk(ink: Ink, x: int, y: int) -> None:
         ink.bottom = y
 
 
-def ChalkTool(context: AppContext,
-    view: SimView, x: int, y: int, color: int, first: int
+def ChalkTool(
+    context: AppContext, view: SimView, x: int, y: int, color: int, first: int
 ) -> int:
     """
     Chalk drawing tool.
@@ -1952,10 +1914,10 @@ def ChalkTool(context: AppContext,
         1 if successful
     """
     if first:
-        ChalkStart(context,view, x, y, color)
+        ChalkStart(context, view, x, y, color)
     else:
         ChalkTo(view, x, y)
-    DidTool(context,view, "Chlk", x, y)
+    DidTool(context, view, "Chlk", x, y)
     return 1
 
 
@@ -2012,7 +1974,7 @@ def EraserTool(context: AppContext, view: SimView, x: int, y: int, first: int) -
         EraserStart(view, x, y)
     else:
         EraserTo(view, x, y)
-    DidTool(context,view, "Eraser", x, y)
+    DidTool(context, view, "Eraser", x, y)
     return 1
 
 

@@ -8,7 +8,12 @@ calculations for fire, police, and road services.
 
 from . import messages
 from .context import AppContext
-from .sim_control import kick
+
+
+def _kick() -> None:
+    from src.micropolis.sim_control import kick as _kick_fn
+
+    _kick_fn()
 
 
 # ============================================================================
@@ -47,7 +52,7 @@ from .sim_control import kick
 
 def update_heads() -> None:
     """Compatibility shim; historically refreshed header widgets."""
-    kick()
+    _kick()
 
 
 # ============================================================================
@@ -254,7 +259,12 @@ def really_draw_budget_window(context: AppContext) -> None:
     # global must_draw_budget_window
 
     # Calculate cash flow
-    cash_flow = context.tax_fund - context.fire_value - context.police_value - context.road_value
+    cash_flow = (
+        context.tax_fund
+        - context.fire_value
+        - context.police_value
+        - context.road_value
+    )
     cash_flow2 = cash_flow
 
     # Format cash flow string
@@ -358,7 +368,7 @@ def show_budget_window_and_start_waiting(context: AppContext) -> None:
 
 
 def set_budget(
-        flow_str: str, previous_str: str, current_str: str, collected_str: str, tax: int
+    flow_str: str, previous_str: str, current_str: str, collected_str: str, tax: int
 ) -> None:
     """
     Set budget display data.
@@ -372,15 +382,15 @@ def set_budget(
 
 
 def set_budget_values(
-        road_got: str,
-        road_want: str,
-        road_percent_int: int,
-        police_got: str,
-        police_want: str,
-        police_percent_int: int,
-        fire_got: str,
-        fire_want: str,
-        fire_percent_int: int,
+    road_got: str,
+    road_want: str,
+    road_percent_int: int,
+    police_got: str,
+    police_want: str,
+    police_percent_int: int,
+    fire_got: str,
+    fire_want: str,
+    fire_percent_int: int,
 ) -> None:
     """
     Set budget values display data.
@@ -406,7 +416,7 @@ def spend(context: AppContext, amount: int) -> None:
     """
     context.total_funds -= amount
     context.must_update_funds = 1
-    kick()
+    _kick()
 
 
 # ============================================================================
@@ -515,7 +525,7 @@ def auto_budget(context: AppContext, enabled: bool | None = None) -> int:
     if enabled is not None:
         context.auto_budget = enabled
         context.must_update_options = True
-        kick()
+        _kick()
         update_budget(context)
 
     return context.auto_budget
@@ -529,7 +539,7 @@ def do_budget_command(context: AppContext) -> None:
     :param context:
     """
     do_budget(context)
-    kick()
+    _kick()
 
 
 def do_budget_from_menu_command(context: AppContext) -> None:
@@ -540,7 +550,7 @@ def do_budget_from_menu_command(context: AppContext) -> None:
     :param context:
     """
     do_budget_from_menu(context)
-    kick()
+    _kick()
 
 
 def update_budget_command(context: AppContext) -> None:
@@ -551,7 +561,7 @@ def update_budget_command(context: AppContext) -> None:
     :param context:
     """
     update_budget(context)
-    kick()
+    _kick()
 
 
 def update_budget_window_command(context: AppContext) -> None:
@@ -562,4 +572,4 @@ def update_budget_window_command(context: AppContext) -> None:
     :param context:
     """
     update_budget_window(context)
-    kick()
+    _kick()

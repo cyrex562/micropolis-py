@@ -5,12 +5,30 @@ ui_utilities.py - UI utility functions for Micropolis Python port
 import re
 from typing import Any
 
-from .constants import ALMAP, REMAP, COMAP, INMAP, PDMAP, RGMAP, TDMAP, PLMAP, CRMAP, LVMAP, FIMAP, POMAP, DYMAP
+from .constants import (
+    ALMAP,
+    REMAP,
+    COMAP,
+    INMAP,
+    PDMAP,
+    RGMAP,
+    TDMAP,
+    PLMAP,
+    CRMAP,
+    LVMAP,
+    FIMAP,
+    POMAP,
+    DYMAP,
+)
 from .context import AppContext
-from .evaluation_ui import set_evaluation_panel_visible, do_score_card, draw_evaluation, update_evaluation
+from .evaluation_ui import (
+    set_evaluation_panel_visible,
+    do_score_card,
+    draw_evaluation,
+    update_evaluation,
+)
 from .graphs import set_graph_panel_visible, request_graph_panel_redraw
 from .initialization import InitializeSimulation
-from .sim_control import is_sim_paused, get_sim_speed, pause_simulation, resume_simulation, set_sim_speed, set_sim_skips
 from .sim_view import SimView
 
 
@@ -82,6 +100,8 @@ def pause(context: AppContext) -> None:
     Saves current speed and sets speed to 0.
     :param context:
     """
+    from .sim_control import get_sim_speed, is_sim_paused, pause_simulation
+
     if not is_sim_paused(context):
         # Save current speed before pausing
         context.sim_paused_speed = get_sim_speed(context)
@@ -96,6 +116,8 @@ def resume(context: AppContext) -> None:
     Restores previously saved speed.
     :param context:
     """
+    from .sim_control import is_sim_paused, resume_simulation, set_sim_speed
+
     if is_sim_paused(context):
         resume_simulation(context)
         # Restore saved speed
@@ -113,6 +135,8 @@ def set_speed(context: AppContext, speed: int) -> None:
         speed: New simulation speed (0-3)
         :param context:
     """
+    from .sim_control import is_sim_paused, set_sim_speed
+
     # Clamp speed to valid range
     if speed < 0:
         speed = 0
@@ -141,7 +165,10 @@ def set_skips(context: AppContext, skips: int) -> None:
     Args:
         skips: Number of frames to skip
     """
+    from .sim_control import set_sim_skips
+
     set_sim_skips(context, skips)
+
 
 # def set_game_level(context: AppContext, level: int) -> None:
 #     """
@@ -153,6 +180,7 @@ def set_skips(context: AppContext, skips: int) -> None:
 #     """
 #     context.game_level = level
 
+
 def set_funds(context: AppContext, funds: int) -> None:
     """
     Set city funds.
@@ -162,6 +190,7 @@ def set_funds(context: AppContext, funds: int) -> None:
         funds: City funds
     """
     context.city_funds = funds
+
 
 # def set_city_name(context: AppContext, name: str) -> None:
 #     """
@@ -173,6 +202,7 @@ def set_funds(context: AppContext, funds: int) -> None:
 #     """
 #     context.city_name = name
 
+
 def update_funds(context: AppContext) -> None:
     """
     Update city funds display.
@@ -182,11 +212,13 @@ def update_funds(context: AppContext) -> None:
     """
     pass
 
+
 def did_load_scenario(context: AppContext) -> None:
     """
     Callback when scenario is loaded.
     """
     pass
+
 
 def kick(context: AppContext) -> None:
     """
@@ -194,11 +226,13 @@ def kick(context: AppContext) -> None:
     """
     pass
 
+
 def did_load_city(context: AppContext) -> None:
     """
     Callback when city is loaded.
     """
     pass
+
 
 def didnt_load_city(context: AppContext) -> None:
     """
@@ -206,11 +240,13 @@ def didnt_load_city(context: AppContext) -> None:
     """
     pass
 
+
 def did_save_city(context: AppContext) -> None:
     """
     Callback when city is saved.
     """
     pass
+
 
 def didnt_save_city(context: AppContext) -> None:
     """
@@ -218,11 +254,13 @@ def didnt_save_city(context: AppContext) -> None:
     """
     pass
 
+
 def do_save_city_as(context: AppContext) -> None:
     """
     Prompt user to choose a save filename.
     """
     pass
+
 
 def eval_cmd_str(context: AppContext, cmd: str) -> None:
     """
@@ -233,6 +271,7 @@ def eval_cmd_str(context: AppContext, cmd: str) -> None:
         cmd: Command string
     """
     pass
+
 
 # ============================================================================
 # Keyboard Shortcut Handling
@@ -284,6 +323,8 @@ def toggle_pause(context: AppContext) -> None:
     """Toggle between paused and running simulation states.
     :param context:
     """
+    from .sim_control import is_sim_paused
+
     if is_sim_paused(context):
         resume(context)
     else:

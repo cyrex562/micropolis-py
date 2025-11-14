@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 engine.py - Main simulation engine and state management for Micropolis Python port
 
@@ -19,8 +21,19 @@ import pygame
 from result import Err, Ok, Result
 
 from .app_config import AppConfig
-from .constants import DEFAULT_STARTING_FUNDS, RESBASE, WORLD_X, WORLD_Y, DIRT, MAP_W, MAP_H, EDITOR_W, EDITOR_H, NMAPS, \
-    MICROPOLIS_VERSION
+from .constants import (
+    DEFAULT_STARTING_FUNDS,
+    RESBASE,
+    WORLD_X,
+    WORLD_Y,
+    DIRT,
+    MAP_W,
+    MAP_H,
+    EDITOR_W,
+    EDITOR_H,
+    NMAPS,
+    MICROPOLIS_VERSION,
+)
 from .context import AppContext
 from .editor import do_update_editor
 from .evaluation_ui import get_evaluation_surface, score_doer, update_evaluation
@@ -33,7 +46,13 @@ from .map_view import MemDrawMap
 from .sim_view import create_map_view, create_editor_view, SimView
 from .simulation import sim_frame
 from .ui_utilities import handle_keyboard_shortcut
-from .view_types import MakeNewSimGraph, MakeNewSimDate, MakeNewXDisplay, XDisplay, Map_Class
+from .view_types import (
+    MakeNewSimGraph,
+    MakeNewSimDate,
+    MakeNewXDisplay,
+    XDisplay,
+    Map_Class,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -163,14 +182,11 @@ def set_current_tool(context: AppContext, tile_id: int) -> None:
     context.current_tool_tile = tile_id & LOMASK
 
 
-def apply_tool_to_tile(context: AppContext,
-    sim: Sim, tile_x: int, tile_y: int, bulldoze: bool = False
+def apply_tool_to_tile(
+    context: AppContext, sim: Sim, tile_x: int, tile_y: int, bulldoze: bool = False
 ) -> Result[None, Exception]:
     """Modify the map at the requested tile coordinates."""
-    if not (
-        0 <= tile_x < WORLD_X
-        and 0 <= tile_y < WORLD_Y
-    ):
+    if not (0 <= tile_x < WORLD_X and 0 <= tile_y < WORLD_Y):
         return Err(ValueError(f"Invalid tile coordinates: {tile_x}, {tile_y}"))
 
     if bulldoze:
@@ -197,8 +213,12 @@ def area_contains_point(area: tuple[int, int, int, int], pos: tuple[int, int]) -
     return ax <= pos[0] < ax + aw and ay <= pos[1] < ay + ah
 
 
-def handle_map_click(context: AppContext,
-    sim: Sim, pos: tuple[int, int], area: tuple[int, int, int, int], button: int
+def handle_map_click(
+    context: AppContext,
+    sim: Sim,
+    pos: tuple[int, int],
+    area: tuple[int, int, int, int],
+    button: int,
 ) -> bool:
     """Handle mouse clicks within the map viewport."""
     if not area_contains_point(area, pos):
@@ -211,7 +231,9 @@ def handle_map_click(context: AppContext,
     return True
 
 
-def handle_tool_hotkey(context: AppContext, key: int, tool_hotkeys: dict[int, int]) -> bool:
+def handle_tool_hotkey(
+    context: AppContext, key: int, tool_hotkeys: dict[int, int]
+) -> bool:
     """Switch tool selection if the key matches a hotkey entry."""
     tile = tool_hotkeys.get(key)
     if tile is None:
@@ -322,7 +344,9 @@ def _iter_all_views(sim_obj: Sim):
     yield from _iter_views(sim_obj.map)
 
 
-def pan_editor_view(context: AppContext, dx: int, dy: int, viewport: tuple[int, int]) -> None:
+def pan_editor_view(
+    context: AppContext, dx: int, dy: int, viewport: tuple[int, int]
+) -> None:
     """Pan the editor preview by the requested pixel delta."""
     if not context.sim or not context.sim.editor:
         return
@@ -339,7 +363,9 @@ def pan_editor_view(context: AppContext, dx: int, dy: int, viewport: tuple[int, 
     view.pan_y = max(0, min(max_y, view.pan_y + dy))
 
 
-def initialize_view_surfaces(context: AppContext, graphics_module) -> Result[None, Exception]:
+def initialize_view_surfaces(
+    context: AppContext, graphics_module
+) -> Result[None, Exception]:
     """Attach pygame surfaces and tile caches to all views.
     :param context:
     :param graphics_module:
@@ -353,9 +379,7 @@ def initialize_view_surfaces(context: AppContext, graphics_module) -> Result[Non
             view.x = display
         if view.surface is None:
             width, height = (
-                (MAP_W, MAP_H)
-                if view.class_id == Map_Class
-                else (EDITOR_W, EDITOR_H)
+                (MAP_W, MAP_H) if view.class_id == Map_Class else (EDITOR_W, EDITOR_H)
             )
             view.surface = pygame.Surface((width, height), pygame.SRCALPHA)
 
@@ -364,16 +388,17 @@ def initialize_view_surfaces(context: AppContext, graphics_module) -> Result[Non
         except Exception as exc:  # pragma: no cover - defensive
             logger.exception(f"Warning: Failed to initialize view graphics: {exc}")
             return Err(exc)
-    return Ok(None)
+        return Ok(None)
 
 
-def blit_views_to_screen(context: AppContext,
-                         screen,
-                         map_area: tuple[int, int, int, int],
-                         editor_area: tuple[int, int, int, int]
-                         ) -> None:
+def blit_views_to_screen(
+    context: AppContext,
+    screen,
+    map_area: tuple[int, int, int, int],
+    editor_area: tuple[int, int, int, int],
+) -> None:
     """Composite map/editor surfaces onto the main pygame screen.
-    :param screen: 
+    :param screen:
     """
 
     context.fill((64, 128, 64))
@@ -593,7 +618,7 @@ def sim_update(context: AppContext) -> Result[None, Exception]:
     sim_update_evaluations(context)
 
     UpdateFlush()
-    
+
     return Ok(None)
 
 
@@ -628,7 +653,9 @@ def sim_update_maps(context: AppContext) -> None:
     view = context.sim.map
     while view:
         must_update_map = (
-            context.new_map_flags[view.map_state] or context.new_map or context.shake_now
+            context.new_map_flags[view.map_state]
+            or context.new_map
+            or context.shake_now
         )
         if must_update_map:
             view.invalid = True
@@ -1150,23 +1177,33 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
                             DoStopMicropolis(context)
                             break
                         if event.key in (pygame.K_LEFT, pygame.K_a):
-                            pan_editor_view(context, -32, 0, context.editor_viewport_size)
+                            pan_editor_view(
+                                context, -32, 0, context.editor_viewport_size
+                            )
                             continue
                         if event.key in (pygame.K_RIGHT, pygame.K_d):
-                            pan_editor_view(context, 32, 0, context.editor_viewport_size)
+                            pan_editor_view(
+                                context, 32, 0, context.editor_viewport_size
+                            )
                             continue
                         if event.key in (pygame.K_UP, pygame.K_w):
-                            pan_editor_view(context, 0, -32, context.editor_viewport_size)
+                            pan_editor_view(
+                                context, 0, -32, context.editor_viewport_size
+                            )
                             continue
                         if event.key in (pygame.K_DOWN, pygame.K_s):
-                            pan_editor_view(context, 0, 32, context.editor_viewport_size)
+                            pan_editor_view(
+                                context, 0, 32, context.editor_viewport_size
+                            )
                             continue
                         if handle_tool_hotkey(context, event.key, tool_hotkeys):
                             continue
                         if handle_keyboard_shortcut(context, event.key):
                             continue
                     elif event.type == pygame.MOUSEBUTTONDOWN:
-                        if handle_map_click(context, context.sim, event.pos, map_area, event.button):
+                        if handle_map_click(
+                            context, context.sim, event.pos, map_area, event.button
+                        ):
                             continue
 
                 if context.tk_must_exit:

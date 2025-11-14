@@ -5,11 +5,16 @@ This module contains view-related data structures and constants ported from view
 adapted for pygame graphics instead of X11/TCL-Tk.
 """
 
-
 from dataclasses import dataclass
 from typing import Any, Callable
 
 from src.micropolis.context import AppContext
+
+# Re-export context-defined view constants so other modules can import them here.
+Editor_Class = AppContext.Editor_Class
+Map_Class = AppContext.Map_Class
+X_Mem_View = AppContext.X_Mem_View
+X_Wire_View = AppContext.X_Wire_View
 
 
 # ============================================================================
@@ -17,23 +22,22 @@ from src.micropolis.context import AppContext
 # ============================================================================
 
 
-
-
-
 # ============================================================================
 # Data Structure Classes
 # ============================================================================
 
+
 @dataclass
 class Ink:
     """Ink structure for drawing operations"""
-    next: 'Ink|None' = None
+
+    next: "Ink|None" = None
     x: int = 0
     y: int = 0
     color: int = 0
     length: int = 0
     maxlength: int = 0
-    points: list[Any]|None = None  # XPoint equivalent for pygame
+    points: list[Any] | None = None  # XPoint equivalent for pygame
     left: int = 0
     top: int = 0
     right: int = 0
@@ -45,79 +49,86 @@ class Ink:
 @dataclass
 class XDisplay:
     """Display structure adapted for pygame (originally X11)"""
-    next: 'XDisplay|None' = None
+
+    next: "XDisplay|None" = None
     references: int = 0
     display: str = ""
-    tkDisplay: Any|None = None  # TK display (not used in pygame)
-    dpy: Any|None = None        # X11 display (not used in pygame)
-    screen: Any|None = None     # X11 screen (not used in pygame)
-    root: Any|None = None       # X11 root window (not used in pygame)
-    visual: Any|None = None     # X11 visual (not used in pygame)
+    tkDisplay: Any | None = None  # TK display (not used in pygame)
+    dpy: Any | None = None  # X11 display (not used in pygame)
+    screen: Any | None = None  # X11 screen (not used in pygame)
+    root: Any | None = None  # X11 root window (not used in pygame)
+    visual: Any | None = None  # X11 visual (not used in pygame)
     depth: int = 0
     color: int = 0
-    colormap: Any|None = None   # X11 colormap (not used in pygame)
-    pixels: list[int]|None = None
-    gc: Any|None = None         # X11 graphics context (not used in pygame)
+    colormap: Any | None = None  # X11 colormap (not used in pygame)
+    pixels: list[int] | None = None
+    gc: Any | None = None  # X11 graphics context (not used in pygame)
     shared: int = 0
     last_request_read: int = 0
     request: int = 0
-    big_tile_image: Any|None = None    # X11 image (replaced with pygame surface)
-    small_tile_image: Any|None = None  # X11 image (replaced with pygame surface)
-    big_tile_pixmap: Any|None = None   # X11 pixmap (replaced with pygame surface)
-    objects: list[list[Any]|None]|None = None  # X11 pixmaps (replaced with pygame surfaces)
-    overlay_gc: Any|None = None         # X11 graphics context (not used in pygame)
-    gray25_stipple: Any|None = None     # X11 stipple (replaced with pygame surface)
-    gray50_stipple: Any|None = None     # X11 stipple (replaced with pygame surface)
-    gray75_stipple: Any|None = None     # X11 stipple (replaced with pygame surface)
-    vert_stipple: Any|None = None       # X11 stipple (replaced with pygame surface)
-    horiz_stipple: Any|None = None      # X11 stipple (replaced with pygame surface)
-    diag_stipple: Any|None = None       # X11 stipple (replaced with pygame surface)
+    big_tile_image: Any | None = None  # X11 image (replaced with pygame surface)
+    small_tile_image: Any | None = None  # X11 image (replaced with pygame surface)
+    big_tile_pixmap: Any | None = None  # X11 pixmap (replaced with pygame surface)
+    objects: list[list[Any] | None] | None = (
+        None  # X11 pixmaps (replaced with pygame surfaces)
+    )
+    overlay_gc: Any | None = None  # X11 graphics context (not used in pygame)
+    gray25_stipple: Any | None = None  # X11 stipple (replaced with pygame surface)
+    gray50_stipple: Any | None = None  # X11 stipple (replaced with pygame surface)
+    gray75_stipple: Any | None = None  # X11 stipple (replaced with pygame surface)
+    vert_stipple: Any | None = None  # X11 stipple (replaced with pygame surface)
+    horiz_stipple: Any | None = None  # X11 stipple (replaced with pygame surface)
+    diag_stipple: Any | None = None  # X11 stipple (replaced with pygame surface)
 
 
 @dataclass
 class SimGraph:
     """Graph display structure"""
-    next: 'SimGraph|None' = None
+
+    next: "SimGraph|None" = None
     range: int = 0
     mask: int = 0
-    tkwin: Any|None = None      # TK window (replaced with pygame surface)
-    interp: Any|None = None     # TCL interpreter (not used in pygame)
+    tkwin: Any | None = None  # TK window (replaced with pygame surface)
+    interp: Any | None = None  # TCL interpreter (not used in pygame)
     flags: int = 0
-    x: XDisplay|None = None
+    x: XDisplay | None = None
     visible: bool = False
     w_x: int = 0
     w_y: int = 0
     w_width: int = 0
     w_height: int = 0
-    pixmap: Any|None = None     # X11 pixmap (replaced with pygame surface)
-    pixels: list[int]|None = None
-    fontPtr: Any|None = None    # X11 font (replaced with pygame font)
-    border: Any|None = None     # TK border (not used in pygame)
+    pixmap: Any | None = None  # X11 pixmap (replaced with pygame surface)
+    pixels: list[int] | None = None
+    fontPtr: Any | None = None  # X11 font (replaced with pygame font)
+    border: Any | None = None  # TK border (not used in pygame)
     borderWidth: int = 0
     relief: int = 0
-    draw_graph_token: Any|None = None  # TK timer token (replaced with pygame timer)
+    draw_graph_token: Any | None = None  # TK timer token (replaced with pygame timer)
+
+
 @dataclass
 class SimDate:
     """Date display structure"""
-    next: 'SimDate|None' = None
+
+    next: "SimDate|None" = None
     reset: int = 0
     month: int = 0
     year: int = 0
     lastmonth: int = 0
     lastyear: int = 0
-    tkwin: Any|None = None      # TK window (replaced with pygame surface)
-    interp: Any|None = None     # TCL interpreter (not used in pygame)
+    tkwin: Any | None = None  # TK window (replaced with pygame surface)
+    interp: Any | None = None  # TCL interpreter (not used in pygame)
     flags: int = 0
-    x: XDisplay|None = None
+    x: XDisplay | None = None
     visible: bool = False
     w_x: int = 0
     w_y: int = 0
     w_width: int = 0
     w_height: int = 0
-    pixmap: Any|None = None     # X11 pixmap (replaced with pygame surface)
-    pixels: list[int]|None = None
-    fontPtr: Any|None = None    # X11 font (replaced with pygame font)
-    border: Any|None = None     # TK border (not used in pygame)
+    pixmap: Any | None = None  # X11 pixmap (replaced with pygame surface)
+    pixels: list[int] | None = None
+    fontPtr: Any | None = None  # X11 font (replaced with pygame font)
+    border: Any | None = None  # TK border (not used in pygame)
     borderWidth: int = 0
     padX: int = 0
     padY: int = 0
@@ -126,12 +137,13 @@ class SimDate:
     monthTabX: int = 0
     yearTab: int = 0
     yearTabX: int = 0
-    draw_date_token: Any|None = None  # TK timer token (replaced with pygame timer)
+    draw_date_token: Any | None = None  # TK timer token (replaced with pygame timer)
 
 
 @dataclass
 class Person:
     """Person structure"""
+
     id: int = 0
     name: str = ""
 
@@ -139,37 +151,43 @@ class Person:
 @dataclass
 class Cmd:
     """Command structure"""
+
     name: str = ""
-    cmd: Callable[[], int]|None = None
+    cmd: Callable[[], int] | None = None
 
 
 # ============================================================================
 # Extended Sim Structure (from view.h)
 # ============================================================================
 
+
 @dataclass
 class SimExtended:
     """Extended Sim structure with additional view components from view.h"""
+
     # Basic counts and pointers (from original Sim in types.py)
     editors: int = 0
-    editor: list[Any]|None = None  # SimView
+    editor: list[Any] | None = None  # SimView
     maps: int = 0
-    map: list[Any]|None = None     # SimView
+    map: list[Any] | None = None  # SimView
     graphs: int = 0
-    graph: list[SimGraph]|None = None
+    graph: list[SimGraph] | None = None
     dates: int = 0
-    date: list[SimDate]|None = None
+    date: list[SimDate] | None = None
     sprites: int = 0
-    sprite: list[Any]|None = None  # SimSprite
+    sprite: list[Any] | None = None  # SimSprite
     # Camera support (conditional in original)
     scams: int = 0
-    scam: Any|None = None    # SimCam (placeholder)
+    scam: Any | None = None  # SimCam (placeholder)
 
     # Overlay/ink system
-    overlay: Ink|None = None
+    overlay: Ink | None = None
+
+
 # ============================================================================
 # Utility Functions
 # ============================================================================
+
 
 def MakeNewInk() -> Ink:
     """Create a new ink instance"""
@@ -210,6 +228,7 @@ def MakeNewSimExtended() -> SimExtended:
 # View Management Functions (placeholders for pygame integration)
 # ============================================================================
 
+
 def ViewRedrawPending(context: AppContext, view: Any) -> bool:
     """Check if view needs redrawing"""
     return bool(view.flags & context.VIEW_REDRAW_PENDING)
@@ -225,7 +244,7 @@ def SetViewRedrawPending(context: AppContext, view: Any, pending: bool = True) -
 
 def GetViewClass(context: AppContext, view: Any) -> int:
     """Get view class (Editor or Map)"""
-    return getattr(view, 'class_id', 0)
+    return getattr(view, "class_id", 0)
 
 
 def IsEditorView(context: AppContext, view: Any) -> bool:
@@ -241,6 +260,7 @@ def IsMapView(context: AppContext, view: Any) -> bool:
 # ============================================================================
 # Pygame Integration Helpers
 # ============================================================================
+
 
 def UpdateViewDisplay(view: Any) -> None:
     """Update pygame display for a view (placeholder)"""

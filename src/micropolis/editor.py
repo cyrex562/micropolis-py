@@ -5,34 +5,47 @@ This module implements the map editor interface ported from w_editor.c,
 adapted for pygame graphics instead of X11/TCL-Tk.
 """
 
+from __future__ import annotations
+
 import math
 import time
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import pygame
 
 from . import tools, view_types
 from .context import AppContext
-from .sim_view import SimView
-from .simulation import rand
-from .tools import (
-    airportState,
-    chalkState,
-    commercialState,
-    eraserState,
-    fireState,
-    industrialState,
-    lastState,
-    nuclearState,
-    policeState,
-    powerState,
-    residentialState,
-    seaportState,
-    stadiumState,
-    toolColors,
-    toolOffset,
-    toolSize,
-)
+
+
+if TYPE_CHECKING:
+    from .sim_view import SimView
+
+
+def _rand(context: AppContext, modulo: int) -> int:
+    from .simulation import rand as _rand_fn
+
+    return _rand_fn(context, modulo)
+
+
+# Tool state placeholders (values chosen sequentially for compatibility)
+residentialState = 0
+commercialState = 1
+industrialState = 2
+fireState = 3
+policeState = 4
+stadiumState = 5
+seaportState = 6
+powerState = 7
+nuclearState = 8
+airportState = 9
+chalkState = 10
+eraserState = 11
+
+lastState = eraserState
+
+toolColors = [(0 << 16) + (0 << 8) + 0 for _ in range(lastState + 1)]
+toolOffset = [0 for _ in range(lastState + 1)]
+toolSize = [1 for _ in range(lastState + 1)]
 
 # ============================================================================
 # Constants (from w_editor.c)
@@ -65,11 +78,11 @@ DoOverlay = 2
 
 
 def view_to_tile_coords(
-        view: SimView,
-        screen_x: int,
-        screen_y: int,
-        tile_x: list[int],
-        tile_y: list[int],
+    view: SimView,
+    screen_x: int,
+    screen_y: int,
+    tile_x: list[int],
+    tile_y: list[int],
 ) -> None:
     """
     ported from ViewToTileCoords
@@ -97,9 +110,7 @@ def view_to_tile_coords(
     tile_y[0] = pixel_y // 16
 
 
-def tile_to_view_coords(
-        view: SimView, tile_x: int, tile_y: int
-) -> tuple[int, int]:
+def tile_to_view_coords(view: SimView, tile_x: int, tile_y: int) -> tuple[int, int]:
     """
     ported from TileToViewCoords
     Convert tile coordinates to view coordinates.
@@ -570,10 +581,10 @@ def draw_overlay(context: AppContext, view: SimView) -> None:
     # Check if any overlay data is visible
     for ink in context.sim.overlay or []:
         if (
-                (ink.bottom >= top)
-                and (ink.top <= bottom)
-                and (ink.right >= left)
-                and (ink.left <= right)
+            (ink.bottom >= top)
+            and (ink.top <= bottom)
+            and (ink.right >= left)
+            and (ink.left <= right)
         ):
             showing = True
             break
@@ -602,13 +613,13 @@ def draw_overlay(context: AppContext, view: SimView) -> None:
 
 
 def draw_the_overlay(
-        context: AppContext,
-        view: SimView,
-        top: int,
-        bottom: int,
-        left: int,
-        right: int,
-        on_overlay: bool,
+    context: AppContext,
+    view: SimView,
+    top: int,
+    bottom: int,
+    left: int,
+    right: int,
+    on_overlay: bool,
 ) -> None:
     """
     ported from DrawTheOverlay
@@ -633,10 +644,10 @@ def draw_the_overlay(
     # Draw overlay lines
     for ink in context.sim.overlay or []:
         if (
-                (ink.bottom >= top)
-                and (ink.top <= bottom)
-                and (ink.right >= left)
-                and (ink.left <= right)
+            (ink.bottom >= top)
+            and (ink.top <= bottom)
+            and (ink.right >= left)
+            and (ink.left <= right)
         ):
             if ink.length <= 1:
                 # Draw single point
@@ -707,10 +718,10 @@ def do_update_editor(context: AppContext, view: SimView) -> None:
 
     # Check if we should skip this update
     if (
-            not context.shake_now
-            and not view.invalid
-            and not view.update
-            and (context.sim_skips or view.skips)
+        not context.shake_now
+        and not view.invalid
+        and not view.update
+        and (context.sim_skips or view.skips)
     ):
         if context.sim_skips:
             if context.sim_skip > 0:
@@ -730,10 +741,10 @@ def do_update_editor(context: AppContext, view: SimView) -> None:
 
     # Handle tile animation
     if (
-            context.do_animation
-            and context.sim_speed
-            and not context.heat_steps
-            and not context.tiles_animated
+        context.do_animation
+        and context.sim_speed
+        and not context.heat_steps
+        and not context.tiles_animated
     ):
         context.tiles_animated = True
         # animateTiles() - placeholder
@@ -762,8 +773,8 @@ def do_update_editor(context: AppContext, view: SimView) -> None:
 
     # Apply shake effect
     for i in range(context.shake_now):
-        dx += rand(context, 16) - 8
-        dy += rand(context, 16) - 8
+        dx += _rand(context, 16) - 8
+        dy += _rand(context, 16) - 8
 
     # Copy to display (placeholder - would copy surface to screen)
     # DrawCursor(view) - cursor is drawn separately in event handling
@@ -893,246 +904,198 @@ def set_wand_state(view: SimView, state: int) -> None:
 # ============================================================================
 
 
-def editor_cmdconfigure(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmdconfigure(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdconfigure Configure command (placeholder)"""
     return 0
 
 
-def editor_cmdposition(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmdposition(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdposition Position command (placeholder)"""
     return 0
 
 
-def editor_cmdsize(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmdsize(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdsize Size command (placeholder)"""
     return 0
 
 
-def editor_cmd_auto_goto(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_auto_goto(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdAutoGoto Auto goto command (placeholder)"""
     return 0
 
 
-def editor_cmd_sound(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_sound(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdSound Sound command (placeholder)"""
     return 0
 
 
-def editor_cmd_skip(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_skip(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdSkip Skip command (placeholder)"""
     return 0
 
 
-def editor_cmd_update(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_update(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdUpdate Update command (placeholder)"""
     return 0
 
 
-def editor_cmd_pan(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_pan(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EdutorCmdPan Pan command (placeholder)"""
     return 0
 
 
 def editor_cmd_tool_constrain(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdToolConstrain Tool constrain command (placeholder)"""
     return 0
 
 
 def editor_cmd_tool_state(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdToolState Tool state command (placeholder)"""
     return 0
 
 
-def editor_cmd_tool_mode(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_tool_mode(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdToolMode Tool mode command (placeholder)"""
     return 0
 
 
-def editor_cmd_do_tool(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_do_tool(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdDoTool Do tool command (placeholder)"""
     return 0
 
 
-def editor_cmd_tool_down(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_tool_down(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdToolDown Tool down command (placeholder)"""
     return 0
 
 
-def editor_cmd_tool_drag(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_tool_drag(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdToolDrag Tool drag command (placeholder)"""
     return 0
 
 
-def editor_cmd_tool_up(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_tool_up(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdToolUp Tool up command (placeholder)"""
     return 0
 
 
-def editor_cmd_pan_start(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_pan_start(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdPanStart Pan start command (placeholder)"""
     return 0
 
 
-def editor_cmd_pan_to(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_pan_to(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdPanTo Pan to command (placeholder)"""
     return 0
 
 
-def editor_cmd_pan_by(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_pan_by(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdPanBy Pan by command (placeholder)"""
     return 0
 
 
 def editor_cmd_tweak_cursor(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdTweakCursor Tweak cursor command (placeholder)"""
     return 0
 
 
-def editor_cmd_visible(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_visible(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdVisible Visible command (placeholder)"""
     return 0
 
 
-def editor_cmd_key_down(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_key_down(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdKeyDown Key down command (placeholder)"""
     return 0
 
 
-def editor_cmd_key_up(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_key_up(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdKeyUp Key up command (placeholder)"""
     return 0
 
 
 def editor_cmd_tile_coord(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdTileCoord Tile coord command (placeholder)"""
     return 0
 
 
 def editor_cmd_chalk_start(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdChaklStart Chalk start command (placeholder)"""
     return 0
 
 
-def editor_cmd_chalk_to(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_chalk_to(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdChalkTo Chalk to command (placeholder)"""
     return 0
 
 
 def editor_cmd_auto_going(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdAutoGoing Auto going command (placeholder)"""
     return 0
 
 
 def editor_cmd_auto_speed(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdAutoSpeed Auto speed command (placeholder)"""
     return 0
 
 
-def editor_cmd_auto_goal(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_auto_goal(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdAutoGoal Auto goal command (placeholder)"""
     return 0
 
 
-def editor_cmd_su(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_su(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCMDSU SU command (placeholder)"""
     return 0
 
 
-def editor_cmd_show_me(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_show_me(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdShowMe Show me command (placeholder)"""
     return 0
 
 
-def editor_cmd_follow(
-        view: SimView, interp: Any, argc: int, argv: list[str]
-) -> int:
+def editor_cmd_follow(view: SimView, interp: Any, argc: int, argv: list[str]) -> int:
     """ported from EditorCmdFollow Follow command (placeholder)"""
     return 0
 
 
 def editor_cmd_show_overlay(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdShowOverlay Show overlay command (placeholder)"""
     return 0
 
 
 def editor_cmd_overlay_mode(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdOverlayMode Overlay mode command (placeholder)"""
     return 0
 
 
 def editor_cmd_dynamic_filter(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdDynamicFilter Dynamic filter command (placeholder)"""
     return 0
 
 
 def editor_cmd_write_jpeg(
-        view: SimView, interp: Any, argc: int, argv: list[str]
+    view: SimView, interp: Any, argc: int, argv: list[str]
 ) -> int:
     """ported from EditorCmdWriteJpeg Write JPEG command (placeholder)"""
     return 0

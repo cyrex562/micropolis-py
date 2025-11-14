@@ -75,7 +75,7 @@ class TestEvaluation(Assertions):
         evaluation.city_yes = 50
         evaluation.problem_votes[0] = 10
 
-        evaluation.EvalInit(context)
+        evaluation.eval_init(context)
 
         self.assertEqual(evaluation.city_yes, 0)
         self.assertEqual(evaluation.city_no, 0)
@@ -99,7 +99,7 @@ class TestEvaluation(Assertions):
         types.coal_pop = 3
         types.nuclear_pop = 2
 
-        evaluation.GetAssValue(context)
+        evaluation.get_ass_value(context)
 
         # Calculate expected value
         expected = (
@@ -122,7 +122,7 @@ class TestEvaluation(Assertions):
         types.com_pop = 5
         types.ind_pop = 3
 
-        evaluation.DoPopNum(context)
+        evaluation.do_pop_num(context)
 
         expected_pop = (10 + 5 * 8 + 3 * 8) * 20
         self.assertEqual(evaluation.city_pop, expected_pop)
@@ -134,7 +134,7 @@ class TestEvaluation(Assertions):
         types.com_pop = 10000
         types.ind_pop = 8000
 
-        evaluation.DoPopNum(context)
+        evaluation.do_pop_num(context)
 
         expected_pop = (50000 + 10000 * 8 + 8000 * 8) * 20
         self.assertEqual(evaluation.city_pop, expected_pop)
@@ -167,8 +167,8 @@ class TestEvaluation(Assertions):
             for _ in range(micropolis.constants.HWLDX)
         ]
 
-        evaluation.DoPopNum(context)  # Initialize population
-        evaluation.DoProblems(context)
+        evaluation.do_pop_num(context)  # Initialize population
+        evaluation.do_problems(context)
 
         # Check that problems were calculated
         self.assertGreater(evaluation.problem_table[0], 0)  # Crime
@@ -212,9 +212,9 @@ class TestEvaluation(Assertions):
         types.un_pwrd_z_cnt = 10
 
         # Initialize and calculate
-        evaluation.DoPopNum(context)
-        evaluation.DoProblems(context)
-        evaluation.GetScore(context)
+        evaluation.do_pop_num(context)
+        evaluation.do_problems(context)
+        evaluation.get_score(context)
 
         # Score should be positive and reasonable
         self.assertGreater(evaluation.city_score, 0)
@@ -250,9 +250,9 @@ class TestEvaluation(Assertions):
         types.un_pwrd_z_cnt = 100
 
         # Initialize and calculate
-        evaluation.DoPopNum(context)
-        evaluation.DoProblems(context)
-        evaluation.GetScore(context)
+        evaluation.do_pop_num(context)
+        evaluation.do_problems(context)
+        evaluation.get_score(context)
 
         # Score should be low
         self.assertLess(evaluation.city_score, 300)
@@ -262,7 +262,7 @@ class TestEvaluation(Assertions):
         """Test voting with high city score."""
         evaluation.city_score = 900
 
-        evaluation.DoVotes(context)
+        evaluation.do_votes(context)
 
         total_votes = evaluation.city_yes + evaluation.city_no
         self.assertEqual(total_votes, 100)
@@ -273,7 +273,7 @@ class TestEvaluation(Assertions):
         """Test voting with low city score."""
         evaluation.city_score = 100
 
-        evaluation.DoVotes(context)
+        evaluation.do_votes(context)
 
         total_votes = evaluation.city_yes + evaluation.city_no
         self.assertEqual(total_votes, 100)
@@ -284,17 +284,17 @@ class TestEvaluation(Assertions):
         """Test city evaluation with no population."""
         types.total_pop = 0
 
-        evaluation.CityEvaluation(context)
+        evaluation.city_evaluation(context)
 
         self.assertEqual(evaluation.eval_valid, 1)
         self.assertEqual(evaluation.city_score, 500)  # Default score
 
-    @patch("src.micropolis.evaluation.GetAssValue")
-    @patch("src.micropolis.evaluation.DoPopNum")
-    @patch("src.micropolis.evaluation.DoProblems")
-    @patch("src.micropolis.evaluation.GetScore")
-    @patch("src.micropolis.evaluation.DoVotes")
-    @patch("src.micropolis.evaluation.ChangeEval")
+    @patch("src.micropolis.evaluation.get_ass_value")
+    @patch("src.micropolis.evaluation.do_pop_num")
+    @patch("src.micropolis.evaluation.do_problems")
+    @patch("src.micropolis.evaluation.get_score")
+    @patch("src.micropolis.evaluation.do_votes")
+    @patch("src.micropolis.evaluation.change_eval")
     def test_city_evaluation_with_population(
         self,
         mock_change_eval,
@@ -307,7 +307,7 @@ class TestEvaluation(Assertions):
         """Test full city evaluation flow with population."""
         types.total_pop = 1000
 
-        evaluation.CityEvaluation(context)
+        evaluation.city_evaluation(context)
 
         # Verify all functions were called
         mock_get_ass_value.assert_called_once()
@@ -330,7 +330,7 @@ class TestEvaluation(Assertions):
             for _ in range(micropolis.constants.HWLDX)
         ]
 
-        result = evaluation.AverageTrf(context)
+    result = evaluation.average_trf(context)
 
         # Should calculate average traffic density
         self.assertGreater(result, 0)
@@ -342,7 +342,7 @@ class TestEvaluation(Assertions):
         types.com_pop = 100
         types.ind_pop = 100
 
-        result = evaluation.GetUnemployment(context)
+    result = evaluation.get_unemployment(context)
 
         # Should calculate unemployment rate
         self.assertGreaterEqual(result, 0)
@@ -352,7 +352,7 @@ class TestEvaluation(Assertions):
         """Test fire danger calculation."""
         types.fire_pop = 10
 
-        result = evaluation.GetFire(context)
+    result = evaluation.get_fire(context)
 
         self.assertEqual(result, 50)  # 10 * 5
 
@@ -360,6 +360,6 @@ class TestEvaluation(Assertions):
         """Test fire danger calculation with clamping."""
         types.fire_pop = 100  # Would be 500, but clamped to 255
 
-        result = evaluation.GetFire(context)
+    result = evaluation.get_fire(context)
 
         self.assertEqual(result, 255)

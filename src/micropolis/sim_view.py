@@ -1,18 +1,19 @@
 from typing import Any
 
+import pygame
+from pydantic import BaseModel, ConfigDict
+
 from . import view_types
 from .constants import ALMAP, EDITOR_H, EDITOR_W, MAP_H, MAP_W, DOZE_STATE
 from .context import AppContext
 from .sim_sprite import SimSprite
-from .editor_view import initialize_editor_tiles
-from .engine import get_or_create_display
 from .terrain import WORLD_X, WORLD_Y
-import pygame
-from pydantic import BaseModel
 
 
 class SimView(BaseModel):
     """View for displaying map/editor"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Basic properties
     title: str = ""
@@ -128,6 +129,8 @@ class SimView(BaseModel):
 def populate_common_view_fields(
     context: AppContext, view: SimView, width: int, height: int, class_id: int
 ) -> None:
+    from .engine import get_or_create_display
+
     display = get_or_create_display(context)
     view.class_id = class_id
     view.type = view_types.X_Mem_View
@@ -164,7 +167,11 @@ def create_editor_view(context: AppContext) -> SimView:
     # _populate_common_view_fields(
     #     view, types.EDITOR_W, types.EDITOR_H, view_types.Editor_Class
     # )
-    populate_common_view_fields(context, view, EDITOR_W, EDITOR_H, view_types.Editor_Class)
+    populate_common_view_fields(
+        context, view, EDITOR_W, EDITOR_H, view_types.Editor_Class
+    )
+    from .editor_view import initialize_editor_tiles
+
     initialize_editor_tiles(view)
     return view
 

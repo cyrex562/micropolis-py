@@ -4,15 +4,49 @@ test_sim_control.py - Unit tests for the sim_control.py module
 This module contains comprehensive tests for the simulation control functionality.
 """
 
+import inspect
+from functools import wraps
 from unittest.mock import Mock, patch
-import sys
-import os
 
+from src.micropolis.app_config import AppConfig
+from src.micropolis.context import AppContext
 from tests.assertions import Assertions
 
 # Add the src directory to the path
 
 from micropolis import sim_control
+
+
+# Provide a shared AppContext that mirrors the legacy tests' expectation of a
+# globally available `context` object.
+context = AppContext(config=AppConfig())
+
+
+def _wrap_module_functions_with_context(module, default_context: AppContext) -> None:
+    def needs_context(func):
+        if not inspect.isfunction(func):
+            return False
+        params = list(inspect.signature(func).parameters.values())
+        return bool(params) and params[0].name == "context"
+
+    for attr_name in dir(module):
+        attr = getattr(module, attr_name)
+        if not needs_context(attr):
+            continue
+
+        def make_wrapper(fn):
+            @wraps(fn)
+            def wrapper(*args, **kwargs):
+                if args and isinstance(args[0], AppContext):
+                    return fn(*args, **kwargs)
+                return fn(default_context, *args, **kwargs)
+
+            return wrapper
+
+        setattr(module, attr_name, make_wrapper(attr))
+
+
+_wrap_module_functions_with_context(sim_control, context)
 
 
 class TestSimControl(Assertions):
@@ -21,10 +55,10 @@ class TestSimControl(Assertions):
     def setUp(self):
         """Set up test fixtures"""
         # Reset module state
-        sim_control.initialize_sim_control()
+        sim_control.initialize_sim_control(context)
 
         # Mock the types module
-        self.types_patcher = patch('micropolis.sim_control.types')
+        self.types_patcher = patch("micropolis.sim_control.types")
         self.mock_types = self.types_patcher.start()
 
         # Set up common mock values
@@ -161,7 +195,7 @@ class TestSimControl(Assertions):
         self.assertTrue(sim_control.is_game_started(context))
         self.mock_types.Kick.assert_called()
 
-    @patch('micropolis.sim_control.initialization.InitGame')
+    @patch("micropolis.sim_control.initialization.InitGame")
     def test_init_game(self, mock_init):
         """Test game initialization"""
         sim_control.init_game(context)
@@ -170,7 +204,7 @@ class TestSimControl(Assertions):
         self.assertTrue(sim_control.is_game_started(context))
         self.mock_types.Kick.assert_called()
 
-    @patch('micropolis.sim_control.file_io.save_city')
+    @patch("micropolis.sim_control.file_io.save_city")
     def test_save_city(self, mock_save):
         """Test city saving"""
         mock_save.return_value = True
@@ -179,7 +213,7 @@ class TestSimControl(Assertions):
         self.assertTrue(result)
         mock_save.assert_called_with("autosave.cty")
 
-    @patch('micropolis.sim_control.generation.GenerateNewCity')
+    @patch("micropolis.sim_control.generation.GenerateNewCity")
     def test_generate_new_city(self, mock_generate):
         """Test new city generation"""
         sim_control.generate_new_city()
@@ -188,7 +222,7 @@ class TestSimControl(Assertions):
         self.assertTrue(sim_control.is_game_started(context))
         self.mock_types.Kick.assert_called()
 
-    @patch('micropolis.sim_control.generation.GenerateSomeCity')
+    @patch("micropolis.sim_control.generation.GenerateSomeCity")
     def test_generate_some_city(self, mock_generate):
         """Test city generation with level"""
         sim_control.generate_some_city(context, 1)
@@ -214,15 +248,16 @@ class TestSimControl(Assertions):
 
     def test_disaster_functions(self):
         """Test disaster control functions"""
-        with patch('micropolis.sim_control.disasters.MakeFire') as mock_fire, \
-             patch('micropolis.sim_control.disasters.MakeFlood') as mock_flood, \
-             patch('micropolis.sim_control.disasters.MakeTornado') as mock_tornado, \
-             patch('micropolis.sim_control.disasters.MakeEarthquake') as mock_quake, \
-             patch('micropolis.sim_control.disasters.MakeMonster') as mock_monster, \
-             patch('micropolis.sim_control.disasters.MakeMeltdown') as mock_meltdown, \
-             patch('micropolis.sim_control.disasters.FireBomb') as mock_bomb, \
-             patch('micropolis.sim_control.disasters.MakeExplosion') as mock_explosion:
-
+        with (
+            patch("micropolis.sim_control.disasters.MakeFire") as mock_fire,
+            patch("micropolis.sim_control.disasters.MakeFlood") as mock_flood,
+            patch("micropolis.sim_control.disasters.MakeTornado") as mock_tornado,
+            patch("micropolis.sim_control.disasters.MakeEarthquake") as mock_quake,
+            patch("micropolis.sim_control.disasters.MakeMonster") as mock_monster,
+            patch("micropolis.sim_control.disasters.MakeMeltdown") as mock_meltdown,
+            patch("micropolis.sim_control.disasters.FireBomb") as mock_bomb,
+            patch("micropolis.sim_control.disasters.MakeExplosion") as mock_explosion,
+        ):
             sim_control.create_fire_disaster(context)
             mock_fire.assert_called_once()
             self.mock_types.Kick.assert_called()
@@ -356,12 +391,14 @@ class TestSimControl(Assertions):
         # Test out of bounds
         self.assertEqual(sim_control.get_tile(context, 200, 200), 0)
 
-    @patch('micropolis.sim_control.terrain.ClearMap')
-    @patch('micropolis.sim_control.terrain.ClearUnnatural')
-    @patch('micropolis.sim_control.terrain.SmoothTrees')
-    @patch('micropolis.sim_control.terrain.SmoothWater')
-    @patch('micropolis.sim_control.terrain.SmoothRiver')
-    def test_terrain_operations(self, mock_river, mock_water, mock_trees, mock_unnatural, mock_clear):
+    @patch("micropolis.sim_control.terrain.ClearMap")
+    @patch("micropolis.sim_control.terrain.ClearUnnatural")
+    @patch("micropolis.sim_control.terrain.SmoothTrees")
+    @patch("micropolis.sim_control.terrain.SmoothWater")
+    @patch("micropolis.sim_control.terrain.SmoothRiver")
+    def test_terrain_operations(
+        self, mock_river, mock_water, mock_trees, mock_unnatural, mock_clear
+    ):
         """Test terrain operations"""
         sim_control.clear_map()
         mock_clear.assert_called_once()
@@ -398,15 +435,15 @@ class TestSimControl(Assertions):
         pol_center = sim_control.get_pollution_center(context)
         self.assertEqual(pol_center, (70 * 16 + 8, 45 * 16 + 8))
 
-    @patch('micropolis.sim_control.traffic.AverageTrf')
+    @patch("micropolis.sim_control.traffic.AverageTrf")
     def test_traffic_statistics(self, mock_avg_trf):
         """Test traffic statistics"""
         mock_avg_trf.return_value = 75
         self.assertEqual(sim_control.get_traffic_average(context), 75)
         mock_avg_trf.assert_called_once()
 
-    @patch('micropolis.sim_control.evaluation.GetUnemployment')
-    @patch('micropolis.sim_control.evaluation.GetFire')
+    @patch("micropolis.sim_control.evaluation.get_unemployment")
+    @patch("micropolis.sim_control.evaluation.get_fire")
     def test_evaluation_statistics(self, mock_fire, mock_unemployment):
         """Test evaluation statistics"""
         mock_unemployment.return_value = 5
@@ -574,7 +611,7 @@ class TestSimControl(Assertions):
         self.assertFalse(sim_control.get_multi_player_mode())
         self.assertFalse(sim_control.get_sugar_mode(context))
 
-    @patch('webbrowser.open')
+    @patch("webbrowser.open")
     def test_open_web_browser(self, mock_open):
         """Test web browser opening"""
         mock_open.return_value = True
@@ -582,7 +619,7 @@ class TestSimControl(Assertions):
         self.assertEqual(result, 0)
         mock_open.assert_called_with("http://example.com")
 
-    @patch('webbrowser.open')
+    @patch("webbrowser.open")
     def test_open_web_browser_failure(self, mock_open):
         """Test web browser opening failure"""
         mock_open.side_effect = Exception("Browser not available")
@@ -607,10 +644,12 @@ class TestSimControl(Assertions):
         # Check that Kick was called multiple times
         self.assertGreater(self.mock_types.Kick.call_count, 1)
 
-    @patch('micropolis.sim_control.evaluation.UpdateBudget')
-    @patch('micropolis.sim_control.evaluation.DoBudget')
-    @patch('micropolis.sim_control.evaluation.DoBudgetFromMenu')
-    def test_budget_functions(self, mock_budget_menu, mock_do_budget, mock_update_budget):
+    @patch("micropolis.sim_control.evaluation.update_budget")
+    @patch("micropolis.sim_control.evaluation.do_budget")
+    @patch("micropolis.sim_control.evaluation.do_budget_from_menu")
+    def test_budget_functions(
+        self, mock_budget_menu, mock_do_budget, mock_update_budget
+    ):
         """Test budget functions"""
         sim_control.update_budget(context)
         mock_update_budget.assert_called_once()
@@ -622,9 +661,8 @@ class TestSimControl(Assertions):
         sim_control.do_budget_from_menu(context)
         mock_budget_menu.assert_called_once()
 
-    @patch('micropolis.sim_control.engine.sim_update')
+    @patch("micropolis.sim_control.engine.sim_update")
     def test_update_simulation(self, mock_sim_update):
         """Test simulation update"""
         sim_control.update_simulation(context)
         mock_sim_update.assert_called_once()
-

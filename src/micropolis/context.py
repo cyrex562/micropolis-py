@@ -66,6 +66,7 @@ class AppContext(BaseModel):
     sim_skips: int = Field(default=0)  # SimSkips
     sim_skip: int = Field(default=0)  # SimSkip
     auto_go: bool = Field(default=True)  # AutoGo
+    auto_goto: bool = Field(default=True)  # AutoGoto
     city_tax: int = Field(default=7)  # CityTax
     city_time: int = Field(default=50)  # CityTime
     no_disasters: bool = Field(default=False)  # NoDisasters
@@ -357,6 +358,7 @@ class AppContext(BaseModel):
 
     wire_mode: int = Field(default=0)
     multi_player_mode: int = Field(default=0)
+    sugar_mode: bool = Field(default=False)
     sim_delay: int = Field(default=0)
     # sim_skips: int = Field(default=0)
     # sim_skip: int = Field(default=0)
@@ -576,8 +578,6 @@ class AppContext(BaseModel):
     # do_notices: bool = True
 
     # Multiplayer and platform settings
-    # multi_player_mode: bool = False
-    sugar_mode: bool = False
 
     # Animation cycle counter
     # cycle = 0
