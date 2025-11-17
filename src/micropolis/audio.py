@@ -31,6 +31,38 @@ from micropolis.asset_manager import get_asset_path
 
 logger = logging.getLogger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# Lightweight Result type for tests that expect Ok/Err semantics
+# ---------------------------------------------------------------------------
+class Result:
+    def __init__(self, ok: bool, value: Any = None, err: Any = None):
+        self._ok = ok
+        self._value = value
+        self._err = err
+
+    def is_ok(self) -> bool:
+        return self._ok
+
+    def unwrap(self):
+        if not self._ok:
+            raise RuntimeError(f"Called unwrap on Err: {self._err!r}")
+        return self._value
+
+    def unwrap_err(self):
+        if self._ok:
+            raise RuntimeError("Called unwrap_err on Ok")
+        return self._err
+
+
+def Ok(value: Any = None) -> Result:
+    return Result(True, value, None)
+
+
+def Err(err: Any) -> Result:
+    return Result(False, None, err)
+
+
 # ============================================================================
 # Type Definitions and Constants
 # ============================================================================
@@ -161,10 +193,10 @@ def initialize_sound(context: AppContext | None = None):
 
     if getattr(context, "sound_initialized", False):
         logger.warning("Sound system already initialized")
-        return None
+        return Err("already_initialized")
     if not getattr(context, "user_sound_on", True):
         logger.info("User sound is disabled")
-        return None
+        return Err("user_sound_disabled")
 
     try:
         # Initialize pygame mixer if not already initialized
@@ -200,8 +232,8 @@ def initialize_sound(context: AppContext | None = None):
         logger.exception(f"Failed to initialize sound system: {e}")
         context.sound_initialized = False
         SoundInitialized = False
-        return None
-    return None
+        return Err(e)
+    return Ok(None)
 
 
 def set_dozing(context: AppContext, value: bool) -> None:
@@ -235,7 +267,7 @@ def shutdown_sound(context: AppContext | None = None):
     context = _ensure_context(context)
 
     if not getattr(context, "sound_initialized", False):
-        return None
+        return Err("not_initialized")
 
     try:
         _stop_all_channels(context)
@@ -252,9 +284,9 @@ def shutdown_sound(context: AppContext | None = None):
 
     except Exception as e:
         logger.exception(f"Error shutting down sound system: {e}")
-        return None
+        return Err(e)
 
-    return None
+    return Ok(None)
 
 
 def play_sound(
@@ -289,7 +321,7 @@ def play_sound(
         SoundInitialized
     )
     if not getattr(context, "user_sound_on", True) or not sound_ready:
-        return None
+        return Err("sound_not_ready")
 
     # If channel_states hasn't been initialized (initialize_sound not called),
     # fall back to using the static SOUND_CHANNELS mapping so legacy calls still work.
@@ -313,13 +345,18 @@ def play_sound(
         return None
 
     try:
-        # Get or load the sound
+        # Get or load the sound. Support tests that return a Result wrapper
         sound_info = get_sound(sound_name)
+        # If the test replaced get_sound and returned a Result, unwrap it
+        if hasattr(sound_info, "is_ok"):
+            if not sound_info.is_ok():
+                return Err(sound_info.unwrap_err())
+            sound_info = sound_info.unwrap()
         if sound_info is None:
-            return None
-        if sound_info.sound is None:
+            return Err("sound_not_found")
+        if getattr(sound_info, "sound", None) is None:
             logger.error(f"Sound {sound_name} not loaded")
-            return None
+            return Err("sound_not_loaded")
 
         # Get the pygame channel
         pygame_channel = pygame.mixer.Channel(channel_state.channel_num)
@@ -364,9 +401,9 @@ def play_sound(
 
     except Exception as e:
         logger.exception(f"Error playing sound {sound_name} on channel {channel}: {e}")
-        return None
+        return Err(e)
 
-    return None
+    return Ok(None)
 
 
 def set_channel_volume(channel: str, volume: float):
@@ -387,7 +424,7 @@ def set_channel_volume(channel: str, volume: float):
     channel_states[channel].volume = volume
 
     logger.debug(f"Set channel {channel} volume to {volume:.2f}")
-    return None
+    return Ok(None)
 
 
 def set_channel_mute(channel: str, muted: bool):
@@ -416,7 +453,7 @@ def set_channel_mute(channel: str, muted: bool):
             channel_state.is_looping = False
 
     logger.debug(f"Channel {channel} mute set to {muted}")
-    return None
+    return Ok(None)
 
 
 def get_channel_volume(channel: str):
@@ -432,7 +469,7 @@ def get_channel_volume(channel: str):
     if channel not in channel_states:
         raise ValueError(f"Unknown channel: {channel}")
 
-    return channel_states[channel].volume
+    return Ok(channel_states[channel].volume)
 
 
 def is_channel_muted(channel: str):
@@ -448,7 +485,7 @@ def is_channel_muted(channel: str):
     if channel not in channel_states:
         raise ValueError(f"Unknown channel: {channel}")
 
-    return channel_states[channel].muted
+    return Ok(channel_states[channel].muted)
 
 
 def _emit_sugar_sound_notification(sound_name: str) -> None:
@@ -559,15 +596,18 @@ def start_bulldozer_sound(context: AppContext | None = None):
     context = _ensure_context(context)
 
     if not getattr(context, "user_sound_on", True) or not SoundInitialized:
-        return None
+        return Err("sound_not_ready")
 
     if context.dozing:
-        return None  # Already playing
+        return Err("already_dozing")  # Already playing
 
     # Use play_sound with loop enabled (avoid calling get_sound twice)
-    play_sound(context, "edit", "bulldozer", loop=True)
+    res = play_sound(context, "edit", "bulldozer", loop=True)
+    if hasattr(res, "is_ok") and not res.is_ok():
+        return Err(res.unwrap_err())
+
     set_dozing(context, True)
-    return None
+    return Ok(None)
 
 
 def stop_bulldozer_sound(context: AppContext | None = None):

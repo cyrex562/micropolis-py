@@ -18,7 +18,6 @@ implementations that maintain API compatibility.
 Adapted from w_print.c for the Python/pygame port.
 """
 
-
 import pygame
 
 from micropolis.constants import TILE_COUNT
@@ -28,6 +27,7 @@ from micropolis.context import AppContext
 # ============================================================================
 # Print Functions (Stub Implementations)
 # ============================================================================
+
 
 def PrintRect(context: AppContext, x: int, y: int, w: int, h: int) -> None:
     """
@@ -88,7 +88,10 @@ def PrintHeader(context: AppContext, x: int, y: int, w: int, h: int) -> None:
         w, h: Width and height
         :param context:
     """
-    _print(context, f"Map Rectangle: ({x}, {y}) to ({x + w - 1}, {y + h - 1}) - Size: {w}x{h}")
+    _print(
+        context,
+        f"Map Rectangle: ({x}, {y}) to ({x + w - 1}, {y + h - 1}) - Size: {w}x{h}",
+    )
 
 
 def PrintDefTile(context: AppContext, tile: int) -> None:
@@ -174,8 +177,15 @@ def PrintTrailer(context: AppContext, x: int, y: int, w: int, h: int) -> None:
 # Modern Print Alternatives
 # ============================================================================
 
-def print_map_to_file(context: AppContext, filename: str, x: int = 0, y: int = 0,
-                     w: int = 120, h: int = 100) -> bool:
+
+def print_map_to_file(
+    context: AppContext,
+    filename: str,
+    x: int = 0,
+    y: int = 0,
+    w: int = 120,
+    h: int = 100,
+) -> bool:
     """
     Print map to a file (modern alternative).
 
@@ -191,7 +201,7 @@ def print_map_to_file(context: AppContext, filename: str, x: int = 0, y: int = 0
     # global _print_file
     try:
         context.print_file = filename
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             # Redirect print output to file
             # global _print_output
             context.print_output = ""
@@ -209,8 +219,9 @@ def print_map_to_file(context: AppContext, filename: str, x: int = 0, y: int = 0
         return False
 
 
-def print_map_to_console(context: AppContext, x: int = 0, y: int = 0,
-                        w: int = 120, h: int = 100) -> None:
+def print_map_to_console(
+    context: AppContext, x: int = 0, y: int = 0, w: int = 120, h: int = 100
+) -> None:
     """
     Print map to console (modern alternative).
 
@@ -224,8 +235,9 @@ def print_map_to_console(context: AppContext, x: int = 0, y: int = 0,
     PrintRect(context, x, y, w, h)
 
 
-def print_map_to_surface(surface: pygame.Surface, x: int = 0, y: int = 0,
-                        w: int = 120, h: int = 100) -> None:
+def print_map_to_surface(
+    surface: pygame.Surface, x: int = 0, y: int = 0, w: int = 120, h: int = 100
+) -> None:
     """
     Render map to pygame surface (modern alternative).
 
@@ -244,7 +256,8 @@ def print_map_to_surface(surface: pygame.Surface, x: int = 0, y: int = 0,
 # Internal Helper Functions
 # ============================================================================
 
-def _print(context: AppContext, text: str = "", end: str = "") -> None:
+
+def _print(context: AppContext, text: str = "", end: str = "\n") -> None:
     """
     Internal print function that can redirect output.
 
@@ -263,7 +276,7 @@ def _print(context: AppContext, text: str = "", end: str = "") -> None:
 
         # Immediately write to file if it's a direct print call
         try:
-            with open(context.print_file, 'a') as f:
+            with open(context.print_file, "a") as f:
                 f.write(text + end)
         except Exception:
             pass  # Ignore file write errors in stub implementation
@@ -275,6 +288,7 @@ def _print(context: AppContext, text: str = "", end: str = "") -> None:
 # ============================================================================
 # Configuration Functions
 # ============================================================================
+
 
 def set_print_destination(context: AppContext, filename: str | None) -> None:
     """
@@ -302,6 +316,7 @@ def get_print_destination(context: AppContext) -> str | None:
 # ============================================================================
 # Initialization and Cleanup
 # ============================================================================
+
 
 def initialize_printing(context: AppContext) -> None:
     """

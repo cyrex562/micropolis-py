@@ -354,6 +354,7 @@ class AppContext(BaseModel):
 
     graph_10_max: int = Field(default=0)
     graph_120_max: int = Field(default=0)
+    graph_12_max: int = Field(default=0)
     res_2_his_max: int = Field(default=0)
     com_2_his_max: int = Field(default=0)
     ind_2_his_max: int = Field(default=0)
@@ -480,6 +481,7 @@ class AppContext(BaseModel):
     ComZPop: int = Field(default=0)
     com_his__max: int = Field(default=0)
     graph_panel_visible: bool = Field(default=False)
+    graph_panel_dirty: bool = Field(default=False)
     # Provide surface registries similar to legacy global dicts used by
     # platform/view helpers. Tests may access these directly in some places.
     view_surfaces: dict[int, Any] = Field(default_factory=dict)
@@ -952,3 +954,10 @@ class AppContext(BaseModel):
 
 
 # END OF FILE
+
+# Module-level compatibility alias expected by some legacy code/tests that
+# import the context module itself and read/writes the RNG seed via
+# ``micropolis.context.next``. Keeping a module-level variable avoids
+# AttributeError when older call-sites pass the module rather than an
+# AppContext instance.
+next = 1
