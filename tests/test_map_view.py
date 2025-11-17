@@ -13,7 +13,7 @@ import micropolis.constants
 import pygame
 from unittest.mock import Mock, MagicMock
 
-from micropolis import map_view, types, macros
+from micropolis import map_view, macros
 
 
 from tests.assertions import Assertions
@@ -43,43 +43,43 @@ class TestMapView(Assertions):
         self.mock_view.pixels = [0] * 16  # Mock color palette
 
         # Initialize some basic map data
-        types.map_data = [
+        context.map_data = [
             [0 for _ in range(micropolis.constants.WORLD_Y)]
             for _ in range(micropolis.constants.WORLD_X)
         ]
-        types.pop_density = [
+        context.pop_density = [
             [0 for _ in range(micropolis.constants.HWLDY)]
             for _ in range(micropolis.constants.HWLDX)
         ]
-        types.trf_density = [
+        context.trf_density = [
             [0 for _ in range(micropolis.constants.HWLDY)]
             for _ in range(micropolis.constants.HWLDX)
         ]
-        types.pollution_mem = [
+        context.pollution_mem = [
             [0 for _ in range(micropolis.constants.HWLDY)]
             for _ in range(micropolis.constants.HWLDX)
         ]
-        types.crime_mem = [
+        context.crime_mem = [
             [0 for _ in range(micropolis.constants.HWLDY)]
             for _ in range(micropolis.constants.HWLDX)
         ]
-        types.land_value_mem = [
+        context.land_value_mem = [
             [0 for _ in range(micropolis.constants.HWLDY)]
             for _ in range(micropolis.constants.HWLDX)
         ]
-        types.rate_og_mem = [
+        context.rate_og_mem = [
             [0 for _ in range(micropolis.constants.SM_Y)]
             for _ in range(micropolis.constants.SM_X)
         ]
-        types.fire_rate = [
+        context.fire_rate = [
             [0 for _ in range(micropolis.constants.SM_Y)]
             for _ in range(micropolis.constants.SM_X)
         ]
-        types.police_map_effect = [
+        context.police_map_effect = [
             [0 for _ in range(micropolis.constants.SM_Y)]
             for _ in range(micropolis.constants.SM_X)
         ]
-        types.dynamic_data = [0] * 32
+        context.dynamic_data = [0] * 32
 
     def tearDown(self):
         """Clean up test fixtures"""
@@ -159,9 +159,9 @@ class TestMapView(Assertions):
     def test_drawAll(self):
         """Test drawing the full map view"""
         # Set up some test map data
-        types.map_data[0][0] = macros.RESBASE  # Residential tile
-        types.map_data[1][0] = macros.COMBASE  # Commercial tile
-        types.map_data[2][0] = macros.INDBASE  # Industrial tile
+        context.map_data[0][0] = macros.RESBASE  # Residential tile
+        context.map_data[1][0] = macros.COMBASE  # Commercial tile
+        context.map_data[2][0] = macros.INDBASE  # Industrial tile
 
         # This should work without errors
         map_view.drawAll(context, self.mock_view)
@@ -172,10 +172,10 @@ class TestMapView(Assertions):
     def test_drawRes(self):
         """Test drawing residential zones only"""
         # Set up mixed zone types
-        types.map_data[0][0] = macros.RESBASE  # Residential
-        types.map_data[1][0] = macros.COMBASE  # Commercial (should be filtered)
+        context.map_data[0][0] = macros.RESBASE  # Residential
+        context.map_data[1][0] = macros.COMBASE  # Commercial (should be filtered)
 
-        map_view.drawRes(context, context)
+        map_view.drawRes(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -183,10 +183,10 @@ class TestMapView(Assertions):
     def test_drawCom(self):
         """Test drawing commercial zones only"""
         # Set up mixed zone types
-        types.map_data[0][0] = macros.RESBASE  # Residential (should be filtered)
-        types.map_data[1][0] = macros.COMBASE  # Commercial
+        context.map_data[0][0] = macros.RESBASE  # Residential (should be filtered)
+        context.map_data[1][0] = macros.COMBASE  # Commercial
 
-        map_view.drawCom(context, context)
+        map_view.drawCom(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -194,10 +194,10 @@ class TestMapView(Assertions):
     def test_drawInd(self):
         """Test drawing industrial zones only"""
         # Set up mixed zone types
-        types.map_data[0][0] = macros.RESBASE  # Residential (should be filtered)
-        types.map_data[1][0] = macros.INDBASE  # Industrial
+        context.map_data[0][0] = macros.RESBASE  # Residential (should be filtered)
+        context.map_data[1][0] = macros.INDBASE  # Industrial
 
-        map_view.drawInd(context, context)
+        map_view.drawInd(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)
@@ -205,10 +205,12 @@ class TestMapView(Assertions):
     def test_drawPower(self):
         """Test drawing power grid view"""
         # Set up powered and unpowered zones
-        types.map_data[0][0] = (
+        context.map_data[0][0] = (
             macros.RESBASE | macros.ZONEBIT | macros.PWRBIT
         )  # Powered residential
-        types.map_data[1][0] = macros.RESBASE | macros.ZONEBIT  # Unpowered residential
+        context.map_data[1][0] = (
+            macros.RESBASE | macros.ZONEBIT
+        )  # Unpowered residential
 
         map_view.drawPower(context, self.mock_view)
 
@@ -218,7 +220,7 @@ class TestMapView(Assertions):
     def test_drawPopDensity(self):
         """Test drawing population density overlay"""
         # Set up population density data
-        types.pop_density[0][0] = 100  # Medium density
+        context.pop_density[0][0] = 100  # Medium density
 
         map_view.drawPopDensity(context, self.mock_view)
 
@@ -228,7 +230,7 @@ class TestMapView(Assertions):
     def test_drawRateOfGrowth(self):
         """Test drawing rate of growth overlay"""
         # Set up growth rate data
-        types.rate_og_mem[0][0] = 50  # Positive growth
+        context.rate_og_mem[0][0] = 50  # Positive growth
 
         map_view.drawRateOfGrowth(context, self.mock_view)
 
@@ -238,7 +240,7 @@ class TestMapView(Assertions):
     def test_drawTrafMap(self):
         """Test drawing traffic density overlay"""
         # Set up traffic density data
-        types.trf_density[0][0] = 75  # Medium traffic
+        context.trf_density[0][0] = 75  # Medium traffic
 
         map_view.drawTrafMap(context, self.mock_view)
 
@@ -248,7 +250,7 @@ class TestMapView(Assertions):
     def test_drawPolMap(self):
         """Test drawing pollution overlay"""
         # Set up pollution data
-        types.pollution_mem[0][0] = 50  # Some pollution
+        context.pollution_mem[0][0] = 50  # Some pollution
 
         map_view.drawPolMap(context, self.mock_view)
 
@@ -258,7 +260,7 @@ class TestMapView(Assertions):
     def test_drawCrimeMap(self):
         """Test drawing crime overlay"""
         # Set up crime data
-        types.crime_mem[0][0] = 25  # Low crime
+        context.crime_mem[0][0] = 25  # Low crime
 
         map_view.drawCrimeMap(context, self.mock_view)
 
@@ -268,7 +270,7 @@ class TestMapView(Assertions):
     def test_drawLandMap(self):
         """Test drawing land value overlay"""
         # Set up land value data
-        types.land_value_mem[0][0] = 150  # High value
+        context.land_value_mem[0][0] = 150  # High value
 
         map_view.drawLandMap(context, self.mock_view)
 
@@ -278,7 +280,7 @@ class TestMapView(Assertions):
     def test_drawFireRadius(self):
         """Test drawing fire station coverage"""
         # Set up fire coverage data
-        types.fire_rate[0][0] = 30  # Some coverage
+        context.fire_rate[0][0] = 30  # Some coverage
 
         map_view.drawFireRadius(context, self.mock_view)
 
@@ -288,7 +290,7 @@ class TestMapView(Assertions):
     def test_drawPoliceRadius(self):
         """Test drawing police station coverage"""
         # Set up police coverage data
-        types.police_map_effect[0][0] = 40  # Some coverage
+        context.police_map_effect[0][0] = 40  # Some coverage
 
         map_view.drawPoliceRadius(context, self.mock_view)
 
@@ -298,48 +300,48 @@ class TestMapView(Assertions):
     def test_dynamicFilter(self):
         """Test dynamic filtering logic"""
         # Set up test data that should pass all filters
-        types.pop_density[0][0] = 50
-        types.rate_og_mem[0][0] = 128  # 2 * 50 + 128 = 228, but adjusted for scaling
-        types.trf_density[0][0] = 50
-        types.pollution_mem[0][0] = 50
-        types.crime_mem[0][0] = 50
-        types.land_value_mem[0][0] = 50
-        types.police_map_effect[0][0] = 50
-        types.fire_rate[0][0] = 50
+        context.pop_density[0][0] = 50
+        context.rate_og_mem[0][0] = 128  # 2 * 50 + 128 = 228, but adjusted for scaling
+        context.trf_density[0][0] = 50
+        context.pollution_mem[0][0] = 50
+        context.crime_mem[0][0] = 50
+        context.land_value_mem[0][0] = 50
+        context.police_map_effect[0][0] = 50
+        context.fire_rate[0][0] = 50
 
         # Set dynamic data to accept these values
-        types.dynamic_data[0] = 0  # Pop min
-        types.dynamic_data[1] = 100  # Pop max
-        types.dynamic_data[2] = 50  # Rate min (adjusted)
-        types.dynamic_data[3] = 200  # Rate max (adjusted)
-        types.dynamic_data[4] = 0  # Traffic min
-        types.dynamic_data[5] = 100  # Traffic max
-        types.dynamic_data[6] = 0  # Pollution min
-        types.dynamic_data[7] = 100  # Pollution max
-        types.dynamic_data[8] = 0  # Crime min
-        types.dynamic_data[9] = 100  # Crime max
-        types.dynamic_data[10] = 0  # Land value min
-        types.dynamic_data[11] = 100  # Land value max
-        types.dynamic_data[12] = 0  # Police min
-        types.dynamic_data[13] = 100  # Police max
-        types.dynamic_data[14] = 0  # Fire min
-        types.dynamic_data[15] = 100  # Fire max
+        context.dynamic_data[0] = 0  # Pop min
+        context.dynamic_data[1] = 100  # Pop max
+        context.dynamic_data[2] = 50  # Rate min (adjusted)
+        context.dynamic_data[3] = 200  # Rate max (adjusted)
+        context.dynamic_data[4] = 0  # Traffic min
+        context.dynamic_data[5] = 100  # Traffic max
+        context.dynamic_data[6] = 0  # Pollution min
+        context.dynamic_data[7] = 100  # Pollution max
+        context.dynamic_data[8] = 0  # Crime min
+        context.dynamic_data[9] = 100  # Crime max
+        context.dynamic_data[10] = 0  # Land value min
+        context.dynamic_data[11] = 100  # Land value max
+        context.dynamic_data[12] = 0  # Police min
+        context.dynamic_data[13] = 100  # Police max
+        context.dynamic_data[14] = 0  # Fire min
+        context.dynamic_data[15] = 100  # Fire max
 
         # Test filtering
-        result = map_view.dynamicFilter(context, context, 0)
+        result = map_view.dynamicFilter(context, 0, 0)
         self.assertTrue(result)  # Should pass all filters
 
     def test_drawDynamic(self):
         """Test drawing dynamic filter view"""
         # Set up test data
-        types.map_data[0][0] = 100  # Non-terrain tile
-        types.pop_density[0][0] = 50
+        context.map_data[0][0] = 100  # Non-terrain tile
+        context.pop_density[0][0] = 50
 
         # Configure dynamic data to show this tile
-        types.dynamic_data[0] = 0
-        types.dynamic_data[1] = 100
+        context.dynamic_data[0] = 0
+        context.dynamic_data[1] = 100
 
-        map_view.drawDynamic(context, context)
+        map_view.drawDynamic(context, self.mock_view)
 
         # Check that surface exists
         self.assertIsInstance(self.mock_view.surface, pygame.Surface)

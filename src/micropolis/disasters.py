@@ -5,12 +5,35 @@
 #
 # Original C files: s_disast.c, parts of w_sprite.c, s_sim.c
 # Ported to maintain algorithmic fidelity with the original Micropolis simulation
-from src.micropolis.constants import WORLD_X, WORLD_Y, ZONEBIT, LOMASK, LHTHR, LASTZONE, FIRE, ANIMBIT, BURNBIT, \
-    BULLBIT, FLOOD, WOODS5, RUBBLE, RESBASE, GOD, RIVER, NUCLEAR, TOR, RADTILE, EXP, PORTBASE, AIRPORT, ROADBASE
-from src.micropolis.context import AppContext
-from src.micropolis.macros import TestBounds
-from src.micropolis.simulation import rand
-from src.micropolis.utilities import GetSprite, MakeNewSprite
+from micropolis.constants import (
+    WORLD_X,
+    WORLD_Y,
+    ZONEBIT,
+    LOMASK,
+    LHTHR,
+    LASTZONE,
+    FIRE,
+    ANIMBIT,
+    BURNBIT,
+    BULLBIT,
+    FLOOD,
+    WOODS5,
+    RUBBLE,
+    RESBASE,
+    GOD,
+    RIVER,
+    NUCLEAR,
+    TOR,
+    RADTILE,
+    EXP,
+    PORTBASE,
+    AIRPORT,
+    ROADBASE,
+)
+from micropolis.context import AppContext
+from micropolis.macros import TestBounds
+from micropolis.simulation import rand
+from micropolis.utilities import GetSprite, MakeNewSprite
 
 # ============================================================================
 # Disaster System Constants
@@ -32,7 +55,7 @@ def do_disasters(context: AppContext) -> None:
 
     Randomly triggers various disasters based on difficulty level and pollution.
     Handles scenario-specific disasters and flood countdown.
-    :param context: 
+    :param context:
     """
     # Decrement flood counter
     if context.flood_cnt:
@@ -84,7 +107,7 @@ def scenario_disaster(context: AppContext) -> None:
 
     Different cities have different disaster scenarios that trigger
     at specific times during gameplay.
-    :param context: 
+    :param context:
     """
     if context.disaster_event == 1:
         # Dullsville - no disaster
@@ -145,9 +168,7 @@ def set_fire(context: AppContext) -> None:
             tile_base = tile & LOMASK
             if (tile_base > LHTHR) and (tile_base < LASTZONE):
                 # Set tile on fire with animation
-                context.map_data[x][y] = (
-                    FIRE + ANIMBIT + (context.sim_rand() & 7)
-                )
+                context.map_data[x][y] = FIRE + ANIMBIT + (context.sim_rand() & 7)
                 context.crash_x = x
                 context.crash_y = y
                 # Send disaster message (placeholder - would send to UI)
@@ -174,9 +195,7 @@ def create_fire_disaster(context: AppContext) -> None:
             tile_base = tile & LOMASK
             if (tile_base > 21) and (tile_base < LASTZONE):
                 # Set tile on fire
-                context.map_data[x][y] = (
-                    FIRE + ANIMBIT + (context.sim_rand() & 7)
-                )
+                context.map_data[x][y] = FIRE + ANIMBIT + (context.sim_rand() & 7)
                 # Send disaster message (placeholder)
                 # SendMesAt(20, x, y)
                 return
@@ -247,8 +266,7 @@ def start_flood_disaster(context: AppContext) -> None:
                     # Check if adjacent tile is floodable
                     # TILE_IS_FLOODABLE: (c == 0) || ((c & BULLBIT) && (c & BURNBIT))
                     if (adjacent_tile == 0) or (
-                        (adjacent_tile & BULLBIT)
-                        and (adjacent_tile & BURNBIT)
+                        (adjacent_tile & BULLBIT) and (adjacent_tile & BURNBIT)
                     ):
                         # Start flood
                         context.map_data[xx][yy] = FLOOD
@@ -340,14 +358,10 @@ def trigger_earthquake_disaster(context: AppContext) -> None:
         if vulnerable(context.map_data[x][y]):
             if z & 0x3:  # 75% chance
                 # Turn into rubble
-                context.map_data[x][y] = (RUBBLE + BULLBIT) + (
-                    context.sim_rand() & 3
-                )
+                context.map_data[x][y] = (RUBBLE + BULLBIT) + (context.sim_rand() & 3)
             else:  # 25% chance
                 # Set on fire
-                context.map_data[x][y] = (
-                    FIRE + ANIMBIT + (context.sim_rand() & 7)
-                )
+                context.map_data[x][y] = FIRE + ANIMBIT + (context.sim_rand() & 7)
 
 
 def vulnerable(tile: int) -> bool:
@@ -527,9 +541,7 @@ def do_meltdown(context: AppContext, sx: int, sy: int) -> None:
     for x in range(sx - 1, sx + 3):
         for y in range(sy - 1, sy + 3):
             if TestBounds(x, y):
-                context.map_data[x][y] = (
-                    FIRE + (context.sim_rand() & 3) + ANIMBIT
-                )
+                context.map_data[x][y] = FIRE + (context.sim_rand() & 3) + ANIMBIT
 
     # Spread radiation to surrounding area
     for _ in range(200):
@@ -633,3 +645,14 @@ def fire_zone(context: AppContext, x_loc: int, y_loc: int, ch: int) -> None:
                 # Bulldoze roads (ROADBASE and above)
                 if tile >= ROADBASE:
                     context.map_data[xx][yy] |= BULLBIT
+
+
+# Backwards-compatible aliases for C-style names expected by tests
+# These map the original exported function names (DoDisasters, MakeEarthquake, etc.)
+# to the Python implementations in this module.
+DoDisasters = do_disasters
+MakeEarthquake = trigger_earthquake_disaster
+MakeFlood = start_flood_disaster
+MakeMonster = spawn_monster_disaster
+MakeTornado = spawn_tornado_disaster
+MakeMeltdown = trigger_nuclear_meltdown

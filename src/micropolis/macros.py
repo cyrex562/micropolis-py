@@ -7,9 +7,99 @@
 # Original C header: headers/macros.h
 # Ported to maintain compatibility with Micropolis simulation logic
 
-from typing import Tuple, Generator
-from .constants import WORLD_X, WORLD_Y, LOMASK, NUCLEAR, ZONEBIT, LASTZONE, FIRSTRIVEDGE, LASTRIVEDGE, DIRT, BULLBIT, \
-    BURNBIT, RUBBLE, LASTRUBBLE
+from collections.abc import Iterator
+
+# Re-export selected constants from the canonical constants module so
+# legacy code/tests that import values from `micropolis.macros` (e.g.
+# `macros.ANIMBIT`) continue to work during the incremental AppContext
+# migration. We intentionally list exported names explicitly to satisfy
+# linters and make the compatibility surface obvious.
+from . import constants as _const
+
+# Explicit names exported by this compatibility shim. Keep in sync with
+# values actually referenced across the codebase/tests.
+ANIMBIT = _const.ANIMBIT
+ALLBITS = _const.ALLBITS
+LOMASK = _const.LOMASK
+WORLD_X = _const.WORLD_X
+WORLD_Y = _const.WORLD_Y
+HWLDX = _const.HWLDX
+HWLDY = _const.HWLDY
+
+# Tile/base constants used throughout code and tests
+RESBASE = _const.RESBASE
+COMBASE = _const.COMBASE
+INDBASE = _const.INDBASE
+ROADBASE = _const.ROADBASE
+RAILBASE = _const.RAILBASE
+LASTROAD = _const.LASTROAD
+POWERBASE = _const.POWERBASE
+LASTRAIL = _const.LASTRAIL
+RAILHPOWERV = _const.RAILHPOWERV
+LHTHR = _const.LHTHR
+PORT = _const.PORT
+PORTBASE = _const.PORTBASE
+AIRPORT = _const.AIRPORT
+
+# Zone/status/range constants
+ZONEBIT = _const.ZONEBIT
+PWRBIT = _const.PWRBIT
+BULLBIT = _const.BULLBIT
+BURNBIT = _const.BURNBIT
+RUBBLE = _const.RUBBLE
+LASTRUBBLE = _const.LASTRUBBLE
+DIRT = _const.DIRT
+NUCLEAR = _const.NUCLEAR
+FIRSTRIVEDGE = _const.FIRSTRIVEDGE
+LASTRIVEDGE = _const.LASTRIVEDGE
+LASTZONE = _const.LASTZONE
+
+# Downsampled overlay dimensions
+HWLDX = _const.HWLDX
+HWLDY = _const.HWLDY
+
+# Expose the animation table for any callers that need it
+ani_tile = _const.ani_tile
+
+__all__ = [
+    # basic masks
+    "ANIMBIT",
+    "ALLBITS",
+    "LOMASK",
+    # world dims
+    "WORLD_X",
+    "WORLD_Y",
+    "HWLDX",
+    "HWLDY",
+    # tiles
+    "RESBASE",
+    "COMBASE",
+    "INDBASE",
+    "ROADBASE",
+    "RAILBASE",
+    "LASTROAD",
+    "POWERBASE",
+    "LASTRAIL",
+    "RAILHPOWERV",
+    "LHTHR",
+    "PORT",
+    "PORTBASE",
+    "AIRPORT",
+    # status bits
+    "ZONEBIT",
+    "PWRBIT",
+    "BULLBIT",
+    "BURNBIT",
+    "RUBBLE",
+    "LASTRUBBLE",
+    "DIRT",
+    "NUCLEAR",
+    "FIRSTRIVEDGE",
+    "LASTRIVEDGE",
+    "LASTZONE",
+    # animation table
+    "ani_tile",
+]
 
 
 # ============================================================================
@@ -57,7 +147,7 @@ def TestBounds(x: int, y: int) -> bool:
     return (x >= 0) and (x < WORLD_X) and (y >= 0) and (y < WORLD_Y)
 
 
-def clamp_to_bounds(x: int, y: int) -> Tuple[int, int]:
+def clamp_to_bounds(x: int, y: int) -> tuple[int, int]:
     """
     Clamp coordinates to world bounds.
 
@@ -137,10 +227,7 @@ def TILE_IS_VULNERABLE(tile: int) -> bool:
     Returns:
         True if tile is vulnerable, False otherwise
     """
-    return (
-            not (tile & ZONEBIT)
-            and RBRDR <= (tile & LOMASK) <= LASTZONE
-    )
+    return not (tile & ZONEBIT) and RBRDR <= (tile & LOMASK) <= LASTZONE
 
 
 def TILE_IS_ARSONABLE(tile: int) -> bool:
@@ -153,10 +240,7 @@ def TILE_IS_ARSONABLE(tile: int) -> bool:
     Returns:
         True if tile can burn, False otherwise
     """
-    return (
-            not (tile & ZONEBIT)
-            and RBRDR <= (tile & LOMASK) <= LASTZONE
-    )
+    return not (tile & ZONEBIT) and RBRDR <= (tile & LOMASK) <= LASTZONE
 
 
 def TILE_IS_RIVER_EDGE(tile: int) -> bool:
@@ -277,8 +361,8 @@ def clear_tile_status(tile: int, status_bit: int) -> int:
 
 
 def world_to_screen_coords(
-        world_x: int, world_y: int, tile_size: int = 16
-) -> Tuple[int, int]:
+    world_x: int, world_y: int, tile_size: int = 16
+) -> tuple[int, int]:
     """
     Convert world coordinates to screen coordinates.
 
@@ -294,8 +378,8 @@ def world_to_screen_coords(
 
 
 def screen_to_world_coords(
-        screen_x: int, screen_y: int, tile_size: int = 16
-) -> Tuple[int, int]:
+    screen_x: int, screen_y: int, tile_size: int = 16
+) -> tuple[int, int]:
     """
     Convert screen coordinates to world coordinates.
 
@@ -315,7 +399,7 @@ def screen_to_world_coords(
 # ============================================================================
 
 
-def iterate_world_coords() -> Generator[Tuple[int, int], None, None]:
+def iterate_world_coords() -> Iterator[tuple[int, int]]:
     """
     Generator that yields all valid world coordinates.
 

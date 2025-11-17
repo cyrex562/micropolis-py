@@ -6,12 +6,12 @@ This module implements the city generation system ported from s_gen.c,
 responsible for creating new city maps with rivers, lakes, trees, and terrain
 features using procedural generation algorithms.
 """
-from src.micropolis.constants import RIVER, WORLD_X, WORLD_Y, DIRT, WOODS, LOMASK, CHANNEL, \
+from micropolis.constants import RIVER, WORLD_X, WORLD_Y, DIRT, WOODS, LOMASK, CHANNEL, \
     BLBNBIT, BULLBIT, REDGE, WOODS_LOW, WOODS_HIGH, WATER_LOW, WATER_HIGH
-from src.micropolis.context import AppContext
-from src.micropolis.macros import TestBounds
-from src.micropolis.simulation import rand16, rand
-from src.micropolis.ui_utilities import update_funds, kick
+from micropolis.context import AppContext
+from micropolis.macros import TestBounds
+from micropolis.simulation import rand16, rand
+from micropolis.ui_utilities import update_funds, kick
 
 
 # ============================================================================

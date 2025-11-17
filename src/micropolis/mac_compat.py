@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.micropolis.constants import QUAD
+from micropolis.constants import QUAD
 
 
 class Resource:

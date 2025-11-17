@@ -12,6 +12,12 @@ from tests.assertions import Assertions
 import sys
 import os
 from micropolis import audio, types
+from micropolis.context import AppContext
+from micropolis.app_config import AppConfig
+
+# Provide a simple test context so legacy-style calls that reference a
+# module-level `context` name resolve during the tests.
+context = AppContext(config=AppConfig())
 
 
 class TestAudio(Assertions):
@@ -329,7 +335,9 @@ class TestAudio(Assertions):
     def test_tcl_commands_initialize_sound(self):
         """Test TCL initialize_sound command."""
         with patch.object(audio, "initialize_sound") as mock_init:
-            result = audio.AudioCommand.handle_command(context, context, "initialize_sound")
+            result = audio.AudioCommand.handle_command(
+                context, context, "initialize_sound"
+            )
 
             self.assertEqual(result, "")
             mock_init.assert_called_once()
@@ -337,7 +345,9 @@ class TestAudio(Assertions):
     def test_tcl_commands_make_sound(self):
         """Test TCL make_sound command."""
         with patch.object(audio, "make_sound") as mock_make:
-            result = audio.AudioCommand.handle_command(context, context, "make_sound", "city", "test")
+            result = audio.AudioCommand.handle_command(
+                context, context, "make_sound", "city", "test"
+            )
 
             self.assertEqual(result, "")
             mock_make.assert_called_once_with("city", "test")
@@ -345,7 +355,9 @@ class TestAudio(Assertions):
     def test_tcl_commands_start_bulldozer(self):
         """Test TCL start_bulldozer command."""
         with patch.object(audio, "start_bulldozer") as mock_start:
-            result = audio.AudioCommand.handle_command(context, context, "start_bulldozer")
+            result = audio.AudioCommand.handle_command(
+                context, context, "start_bulldozer"
+            )
 
             self.assertEqual(result, "")
             mock_start.assert_called_once()
@@ -353,7 +365,9 @@ class TestAudio(Assertions):
     def test_tcl_commands_stop_bulldozer(self):
         """Test TCL stop_bulldozer command."""
         with patch.object(audio, "stop_bulldozer") as mock_stop:
-            result = audio.AudioCommand.handle_command(context, context, "stop_bulldozer")
+            result = audio.AudioCommand.handle_command(
+                context, context, "stop_bulldozer"
+            )
 
             self.assertEqual(result, "")
             mock_stop.assert_called_once()
@@ -374,4 +388,6 @@ class TestAudio(Assertions):
     def test_tcl_commands_make_sound_wrong_args(self):
         """Test TCL make_sound command with wrong number of args."""
         with self.assertRaises(ValueError):
-            audio.AudioCommand.handle_command(context, context, "make_sound", "onlyonearg")
+            audio.AudioCommand.handle_command(
+                context, context, "make_sound", "onlyonearg"
+            )

@@ -11,7 +11,7 @@ Tests the terrain generation algorithms to ensure they match the original C impl
 - Map clearing and bounds checking
 """
 
-from src.micropolis.terrain import (
+from micropolis.terrain import (
     TerrainGenerator, generate_terrain, clear_terrain,
     WORLD_X, WORLD_Y, RIVER, REDGE, CHANNEL, WOODS, BLN
 )

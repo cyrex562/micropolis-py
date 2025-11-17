@@ -22,7 +22,7 @@ Adapted from w_cam.c, g_cam.c, and cam.h for the Python/pygame port.
 from collections.abc import Callable
 import pygame
 
-from src.micropolis.context import AppContext
+from micropolis.context import AppContext
 
 
 # ============================================================================

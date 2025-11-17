@@ -10,8 +10,8 @@ Based on s_power.c from the original C codebase.
 
 import array
 
-from src.micropolis.constants import PWRSTKSIZE, PWRMAPSIZE, WORLD_X, WORLD_Y, PWRBIT, CONDBIT
-from src.micropolis.context import AppContext
+from micropolis.constants import PWRSTKSIZE, PWRMAPSIZE, WORLD_X, WORLD_Y, PWRBIT, CONDBIT
+from micropolis.context import AppContext
 
 
 def DoPowerScan(context: AppContext) -> None:

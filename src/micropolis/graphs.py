@@ -8,9 +8,9 @@ pollution, crime, and other city statistics.
 
 import pygame
 
-from src.micropolis.constants import ALL_HISTORIES, HIST_NAMES, HIST_COLORS, HISTORIES, RES_HIST, COM_HIST, IND_HIST, \
+from micropolis.constants import ALL_HISTORIES, HIST_NAMES, HIST_COLORS, HISTORIES, RES_HIST, COM_HIST, IND_HIST, \
     MONEY_HIST, CRIME_HIST, POLLUTION_HIST
-from src.micropolis.context import AppContext
+from micropolis.context import AppContext
 
 
 # ============================================================================

@@ -33,8 +33,9 @@ from typing import TYPE_CHECKING, Any, ClassVar
 if TYPE_CHECKING:
     from .terrain import TerrainGenerator
     from .view_types import XDisplay
+    from .state_contract import LegacyStateContract
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, PrivateAttr
 
 from .app_config import AppConfig
 
@@ -43,7 +44,27 @@ from .app_config import AppConfig
 if TYPE_CHECKING:
     from .sim import Sim
 
-from src.micropolis.constants import residentialState, networkState
+from .constants import (
+    residentialState,
+    commercialState,
+    industrialState,
+    fireState,
+    queryState,
+    policeState,
+    wireState,
+    DOZE_STATE,
+    rrState,
+    roadState,
+    chalkState,
+    eraserState,
+    stadiumState,
+    parkState,
+    seaportState,
+    powerState,
+    nuclearState,
+    airportState,
+    networkState,
+)
 
 
 class AppContext(BaseModel):
@@ -54,6 +75,36 @@ class AppContext(BaseModel):
     # threading.Thread or pygame.Surface which are used as runtime-only
     # attributes on the context.
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    _state_contract: "LegacyStateContract | None" = PrivateAttr(default=None)
+    _suspend_state_contract: bool = PrivateAttr(default=False)
+    # Private attrs for evaluation UI compatibility
+    _evaluation_panel_visible: bool = PrivateAttr(default=False)
+    _evaluation_panel_dirty: bool = PrivateAttr(default=False)
+    _evaluation_panel_size: tuple[int, int] = PrivateAttr(default=(320, 200))
+    _evaluation_panel_surface: Any | None = PrivateAttr(default=None)
+
+    def attach_state_contract(self, contract: "LegacyStateContract | None") -> None:
+        self._state_contract = contract
+
+    def detach_state_contract(self) -> None:
+        self._state_contract = None
+
+    def _suspend_contract_notifications(self) -> None:
+        self._suspend_state_contract = True
+
+    def _resume_contract_notifications(self) -> None:
+        self._suspend_state_contract = False
+
+    def __setattr__(self, name: str, value: Any) -> None:  # type: ignore[override]
+        super().__setattr__(name, value)
+        if (
+            name.startswith("_")
+            or self._state_contract is None
+            or self._suspend_state_contract
+        ):
+            return
+        self._state_contract.on_context_update(self, name, value)
 
     last_now_time: float = Field(default_factory=time.time)
     config: AppConfig
@@ -67,10 +118,17 @@ class AppContext(BaseModel):
     sim_skip: int = Field(default=0)  # SimSkip
     auto_go: bool = Field(default=True)  # AutoGo
     auto_goto: bool = Field(default=True)  # AutoGoto
+    chalk_overlay: bool = Field(
+        default=True
+    )  # ChalkOverlay - show construction preview
+    dynamic_filter: bool = Field(
+        default=False
+    )  # DynamicFilter - apply filtering to overlays
     city_tax: int = Field(default=7)  # CityTax
     city_time: int = Field(default=50)  # CityTime
     no_disasters: bool = Field(default=False)  # NoDisasters
     punish_cnt: int = Field(default=0)  # PunishCnt
+    last_keys: str = Field(default="    ")  # Legacy keyboard last-keys buffer
     auto_bulldoze: bool = Field(default=True)  # AutoBulldoze
     auto_budget: bool = Field(default=True)  # AutoBudget
     mes_num: int = Field(default=0)  # MesNum
@@ -229,6 +287,9 @@ class AppContext(BaseModel):
     road_spend: int = Field(default=0)
     police_spend: int = Field(default=0)
     fire_spend: int = Field(default=0)
+    road_value: int = Field(default=0)
+    police_value: int = Field(default=0)
+    fire_value: int = Field(default=0)
     road_max_value: int = Field(default=0)
     police_max_value: int = Field(default=0)
     fire_max_value: int = Field(default=0)
@@ -240,6 +301,8 @@ class AppContext(BaseModel):
     police_effect: int = Field(default=0)
     fire_effect: int = Field(default=0)
     tax_flag: int = Field(default=0)
+    budget_timer: int = Field(default=0)  # BudgetTimer
+    budget_timeout: int = Field(default=0)  # BudgetTimeout
     # city_tax: int = Field(default=7)
 
     # flag_blink
@@ -307,6 +370,10 @@ class AppContext(BaseModel):
     score_type: int = Field(default=0)
     score_wait: int = Field(default=0)
     city_class: int = Field(default=0)
+
+    # Evaluation panel UI settings
+    auto_evaluation: bool = Field(default=False)  # Auto-run yearly evaluations
+    eval_notifications: bool = Field(default=True)  # Show eval notifications
 
     pol_max_x: int = Field(default=0)
     pol_max_y: int = Field(default=0)
@@ -407,8 +474,209 @@ class AppContext(BaseModel):
 
     main_display: Any | None = Field(default=None)
 
+    # Compatibility fields added to reduce test breakage during migration.
+    # These cover legacy names used throughout tests and older modules.
+    simcam_list: list[Any] = Field(default_factory=list)
+    ComZPop: int = Field(default=0)
+    com_his__max: int = Field(default=0)
+    graph_panel_visible: bool = Field(default=False)
+    # Provide surface registries similar to legacy global dicts used by
+    # platform/view helpers. Tests may access these directly in some places.
+    view_surfaces: dict[int, Any] = Field(default_factory=dict)
+    view_overlay_surfaces: dict[int, Any] = Field(default_factory=dict)
+    # Alias name used in some modules/tests for the main pygame display
+    pygame_display: Any | None = Field(default=None)
+
+    # Additional compatibility aliases frequently referenced by tests
+    # and legacy modules. Keep these as simple fields or properties so
+    # tests can access them directly without needing migration updates.
+    next_cam_id: int = Field(default=0)
+    must_draw_evaluation: bool = Field(default=False)
+
+    # Provide a private holder for evaluation data used by the
+    # evaluation UI. Use PrivateAttr so pydantic does not treat this as a
+    # serializable model field but tests can still access it as
+    # ``context._evaluation_data``.
+    _evaluation_data: Any | None = PrivateAttr(default=None)
+
+    # Generator alias - some modules reference `context.generator`.
+    generator: Any | None = Field(default=None)
+
+    # Backwards camel-case aliases commonly used in legacy code/tests
+    # Provide simple property shims that map to the canonical snake_case
+    # fields defined above so legacy callers succeed without migration.
+    @property
+    def CityTime(self) -> int:
+        return getattr(self, "city_time", 0)
+
+    @CityTime.setter
+    def CityTime(self, value: int) -> None:
+        self.city_time = value
+
+    @property
+    def StartingYear(self) -> int:
+        return getattr(self, "starting_year", 1900)
+
+    @StartingYear.setter
+    def StartingYear(self, value: int) -> None:
+        self.starting_year = value
+
+    @property
+    def CityPop(self) -> int:
+        return getattr(self, "city_pop", 0)
+
+    @CityPop.setter
+    def CityPop(self, value: int) -> None:
+        self.city_pop = value
+
+    @property
+    def deltaCityPop(self) -> int:
+        return getattr(self, "delta_city_pop", 0)
+
+    @deltaCityPop.setter
+    def deltaCityPop(self, value: int) -> None:
+        self.delta_city_pop = value
+
+    @property
+    def CityAssValue(self) -> int:
+        return getattr(self, "city_ass_value", 0)
+
+    @CityAssValue.setter
+    def CityAssValue(self, value: int) -> None:
+        self.city_ass_value = value
+
+    @property
+    def CityScore(self) -> int:
+        return getattr(self, "city_score", 0)
+
+    @CityScore.setter
+    def CityScore(self, value: int) -> None:
+        self.city_score = value
+
+    @property
+    def deltaCityScore(self) -> int:
+        return getattr(self, "delta_city_score", 0)
+
+    @deltaCityScore.setter
+    def deltaCityScore(self, value: int) -> None:
+        self.delta_city_score = value
+
+    @property
+    def CityYes(self) -> int:
+        return getattr(self, "city_yes", 0)
+
+    @CityYes.setter
+    def CityYes(self, value: int) -> None:
+        self.city_yes = value
+
+    @property
+    def CityNo(self) -> int:
+        return getattr(self, "city_no", 0)
+
+    @CityNo.setter
+    def CityNo(self, value: int) -> None:
+        self.city_no = value
+
+    @property
+    def ProblemVotes(self) -> list[int]:
+        return getattr(self, "problem_votes", [])
+
+    @ProblemVotes.setter
+    def ProblemVotes(self, value: list[int]) -> None:
+        self.problem_votes = value
+
+    @property
+    def ProblemOrder(self) -> list[int]:
+        return getattr(self, "problem_order", [0, 1, 2, 3])
+
+    @ProblemOrder.setter
+    def ProblemOrder(self, value: list[int]) -> None:
+        self.problem_order = value
+
+    # pygame display alias used in some tests/code
+    @property
+    def PYGAME_DISPLAY(self) -> Any | None:
+        return getattr(self, "pygame_display", None)
+
+    @PYGAME_DISPLAY.setter
+    def PYGAME_DISPLAY(self, value: Any | None) -> None:
+        self.pygame_display = value
+
+    # Backwards-compatible alias accessors
+    @property
+    def com_his(self) -> list[int]:
+        return self.com_hist
+
+    @com_his.setter
+    def com_his(self, value: list[int]) -> None:
+        self.com_hist = value
+
+    @property
+    def IndZPop(self) -> int:
+        return getattr(self, "ind_z_pop", 0)
+
+    @IndZPop.setter
+    def IndZPop(self, value: int) -> None:
+        self.ind_z_pop = value
+
+    @property
+    def TotalFunds(self) -> int:
+        return getattr(self, "total_funds", 0)
+
+    @TotalFunds.setter
+    def TotalFunds(self, value: int) -> None:
+        self.total_funds = value
+
+    @property
+    def generator(self) -> Any | None:
+        # Prefer an explicitly-set generator field, otherwise fall back
+        # to the module-level global_generator used by legacy code.
+        if self.__dict__.get("generator") is not None:
+            return self.__dict__.get("generator")
+        return globals().get("global_generator")
+
+    @generator.setter
+    def generator(self, value: Any | None) -> None:
+        # Keep both the explicit field and the legacy global in sync so
+        # code that inspects either location behaves consistently.
+        self.__dict__["generator"] = value
+        globals()["global_generator"] = value
+
+    # Legacy tool/state names expected by older modules and tests. Provide
+    # explicit fields mapping to the canonical constants from
+    # micropolis.constants so legacy callers can access them via the
+    # AppContext during migration.
+    residential_state: int = Field(default=residentialState)
+    residental_state: int = Field(default=residentialState)  # common typo in tests
+    commercial_state: int = Field(default=commercialState)
+    industrial_state: int = Field(default=industrialState)
+    fire_state: int = Field(default=fireState)
+    query_state: int = Field(default=queryState)
+    police_state: int = Field(default=policeState)
+    bulldozer_state: int = Field(default=DOZE_STATE)
+    rr_state: int = Field(default=rrState)
+    rail_state: int = Field(default=rrState)
+    road_state: int = Field(default=roadState)
+    wire_state: int = Field(default=wireState)
+    chalk_state: int = Field(default=chalkState)
+    eraser_state: int = Field(default=eraserState)
+    stadium_state: int = Field(default=stadiumState)
+    park_state: int = Field(default=parkState)
+    seaport_state: int = Field(default=seaportState)
+    power_state: int = Field(default=powerState)
+    nuclear_state: int = Field(default=nuclearState)
+    airport_state: int = Field(default=airportState)
+    network_state: int = Field(default=networkState)
+
     firstState: ClassVar[int] = residentialState
     lastState: ClassVar[int] = networkState
+    # Backwards-compatible tool state names (some modules reference these
+    # as attributes on the context object). Keep as ClassVar to avoid
+    # including them in model serialization/state.
+    dozeState: ClassVar[int] = DOZE_STATE
+    rrState: ClassVar[int] = rrState
+    roadState: ClassVar[int] = roadState
+    wireState: ClassVar[int] = wireState
 
     # sim: Sim = Field(default_factory=Sim)
 

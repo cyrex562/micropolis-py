@@ -1,16 +1,11 @@
-"""
-test_keyboard.py - Test suite for keyboard.py
-"""
+"""test_keyboard.py - Test suite for keyboard.py"""
 
 from unittest.mock import Mock, patch
-import sys
-import os
 
 from tests.assertions import Assertions
 
-# Add the src directory to the path
-
-from src.micropolis import keyboard, types, tools
+# Import the modules under test from the source package layout used in tests
+from src.micropolis import keyboard, tools, constants as const
 
 
 class TestKeyboard(Assertions):
@@ -18,40 +13,40 @@ class TestKeyboard(Assertions):
 
     def setUp(self):
         """Set up test fixtures"""
-        # Reset global state
-        keyboard.last_keys = "    "
-        types.punish_cnt = 0
+        # Reset global-ish state
+        context.last_keys = "    "
+        context.punish_cnt = 0
 
         # Create a mock view
         self.mock_view = Mock()
-        self.mock_view.tool_state = tools.roadState
+        self.mock_view.tool_state = const.roadState
         self.mock_view.tool_state_save = -1
 
     def test_reset_last_keys(self):
         """Test reset_last_keys function"""
         # Set some keys
-        keyboard.last_keys = "test"
-        types.punish_cnt = 5
+        context.last_keys = "test"
+        context.punish_cnt = 5
 
         # Reset
         keyboard.reset_last_keys(context)
 
-        self.assertEqual(keyboard.last_keys, "    ")
-        self.assertEqual(types.punish_cnt, 0)
+        self.assertEqual(context.last_keys, "    ")
+        self.assertEqual(context.punish_cnt, 0)
 
     def test_get_last_keys(self):
         """Test get_last_keys function"""
-        keyboard.last_keys = "test"
+        context.last_keys = "test"
         self.assertEqual(keyboard.get_last_keys(context), "test")
 
-        keyboard.last_keys = "  ab"
+        context.last_keys = "  ab"
         self.assertEqual(keyboard.get_last_keys(context), "ab")
 
-    @patch("src.micropolis.tools.Spend")
+    @patch("src.micropolis.keyboard.Spend")
     def test_cheat_code_fund(self, mock_spend):
         """Test 'fund' cheat code"""
         # Set up initial state
-        types.punish_cnt = 0
+        context.punish_cnt = 0
 
         # Simulate typing 'fund'
         keyboard.do_key_down(context, self.mock_view, "f")
@@ -61,13 +56,14 @@ class TestKeyboard(Assertions):
 
         # Check that Spend was called with -10000
         mock_spend.assert_called_with(-10000)
-        self.assertEqual(types.punish_cnt, 1)
+        self.assertEqual(context.punish_cnt, 1)
 
-    @patch("src.micropolis.disasters.MakeEarthquake")
-    @patch("src.micropolis.tools.Spend")
+    @patch("src.micropolis.keyboard.trigger_earthquake_disaster")
+    @patch("src.micropolis.keyboard.Spend")
     def test_cheat_code_fund_fifth_time(self, mock_spend, mock_earthquake):
         """Test 'fund' cheat code triggers earthquake on 5th use"""
-        types.punish_cnt = 4  # One less than trigger
+        # One less than trigger
+        context.punish_cnt = 4
 
         keyboard.do_key_down(context, self.mock_view, "f")
         keyboard.do_key_down(context, self.mock_view, "u")
@@ -75,14 +71,14 @@ class TestKeyboard(Assertions):
         keyboard.do_key_down(context, self.mock_view, "d")
 
         mock_earthquake.assert_called_once()
-        self.assertEqual(types.punish_cnt, 0)  # Reset to 0
+        self.assertEqual(context.punish_cnt, 0)  # Reset to 0
 
-    @patch("src.micropolis.disasters.MakeMonster")
-    @patch("src.micropolis.disasters.MakeEarthquake")
-    @patch("src.micropolis.disasters.MakeTornado")
-    @patch("src.micropolis.disasters.MakeFlood")
-    @patch("src.micropolis.disasters.MakeFire")
-    @patch("src.micropolis.messages.make_sound")
+    @patch("src.micropolis.keyboard.spawn_monster_disaster")
+    @patch("src.micropolis.keyboard.trigger_earthquake_disaster")
+    @patch("src.micropolis.keyboard.spawn_tornado_disaster")
+    @patch("src.micropolis.keyboard.start_flood_disaster")
+    @patch("src.micropolis.keyboard.create_fire_disaster")
+    @patch("src.micropolis.keyboard.make_sound")
     def test_cheat_code_fart(
         self,
         mock_make_sound,
@@ -108,8 +104,8 @@ class TestKeyboard(Assertions):
         # Check sound effects
         self.assertEqual(mock_make_sound.call_count, 2)
 
-    @patch("src.micropolis.types.Kick")
-    @patch("src.micropolis.sim_control.set_heat_steps")
+    @patch("src.micropolis.keyboard.kick")
+    @patch("src.micropolis.keyboard.set_heat_steps")
     def test_cheat_code_stop(self, mock_set_heat_steps, mock_kick):
         """Test 'stop' cheat code"""
         keyboard.do_key_down(context, self.mock_view, "s")
@@ -120,16 +116,16 @@ class TestKeyboard(Assertions):
         mock_set_heat_steps.assert_called_with(0)
         mock_kick.assert_called_once()
 
-    @patch("src.micropolis.types.Kick")
+    @patch("src.micropolis.keyboard.kick")
     def test_cheat_code_will(self, mock_kick):
         """Test 'will' cheat code scrambles map"""
-        # Mock the map and Rand function
+        # Create a small test map and place it on the context
         original_map = [[i * 100 + j for j in range(10)] for i in range(10)]
-        types.map_data = original_map.copy()
+        context.map_data = [row[:] for row in original_map]
 
-        with patch("src.micropolis.types.Rand") as mock_rand:
-            # Set up Rand to return predictable values
-            mock_rand.side_effect = [0, 0, 1, 1, 2, 2]  # First 3 pairs
+        # Patch the keyboard's rand function to produce deterministic swaps
+        with patch("src.micropolis.keyboard.rand") as mock_rand:
+            mock_rand.side_effect = [0, 0, 1, 1, 2, 2]
 
             keyboard.do_key_down(context, self.mock_view, "w")
             keyboard.do_key_down(context, self.mock_view, "i")
@@ -137,74 +133,75 @@ class TestKeyboard(Assertions):
             keyboard.do_key_down(context, self.mock_view, "l")
 
             # Check that map was modified (tiles swapped)
-            self.assertNotEqual(types.map_data, original_map)
+            self.assertNotEqual(context.map_data, original_map)
             mock_kick.assert_called_once()
 
-    @patch("src.micropolis.tools.setWandState")
+    @patch("src.micropolis.keyboard.setWandState")
     def test_tool_switching_x_key(self, mock_set_wand_state):
         """Test X key cycles to next tool"""
-        self.mock_view.tool_state = tools.roadState  # 9
+        self.mock_view.tool_state = const.roadState  # 9
 
         keyboard.do_key_down(context, self.mock_view, "X")
 
         # Should cycle to next tool (roadState + 1)
-        mock_set_wand_state.assert_called_with(self.mock_view, tools.roadState + 1)
+        mock_set_wand_state.assert_called_with(self.mock_view, const.roadState + 1)
 
-    @patch("src.micropolis.tools.setWandState")
+    @patch("src.micropolis.keyboard.setWandState")
     def test_tool_switching_z_key(self, mock_set_wand_state):
         """Test Z key cycles to previous tool"""
-        self.mock_view.tool_state = tools.wireState  # 6
+        self.mock_view.tool_state = const.wireState  # 6
 
         keyboard.do_key_down(context, self.mock_view, "Z")
 
         # Should cycle to previous tool (wireState - 1)
-        mock_set_wand_state.assert_called_with(self.mock_view, tools.wireState - 1)
+        mock_set_wand_state.assert_called_with(self.mock_view, const.wireState - 1)
 
-    @patch("src.micropolis.tools.setWandState")
+    @patch("src.micropolis.keyboard.setWandState")
     def test_tool_switching_b_key(self, mock_set_wand_state):
         """Test B key switches to bulldozer"""
         keyboard.do_key_down(context, self.mock_view, "B")
 
         # Should save current tool and switch to bulldozer
-        self.assertEqual(self.mock_view.tool_state_save, tools.roadState)
-        mock_set_wand_state.assert_called_with(self.mock_view, tools.dozeState)
+        self.assertEqual(self.mock_view.tool_state_save, const.roadState)
+        mock_set_wand_state.assert_called_with(self.mock_view, const.DOZE_STATE)
 
-    @patch("src.micropolis.tools.setWandState")
+    @patch("src.micropolis.keyboard.setWandState")
     def test_key_up_restores_tool(self, mock_set_wand_state):
         """Test key up restores previous tool state"""
         # First press B to save current tool
         keyboard.do_key_down(context, self.mock_view, "B")
-        self.assertEqual(self.mock_view.tool_state_save, tools.roadState)
+        self.assertEqual(self.mock_view.tool_state_save, const.roadState)
 
         # Then release B
         keyboard.do_key_up(self.mock_view, "B")
 
         # Should restore saved tool
-        mock_set_wand_state.assert_called_with(self.mock_view, tools.roadState)
+        mock_set_wand_state.assert_called_with(self.mock_view, const.roadState)
         self.assertEqual(self.mock_view.tool_state_save, -1)
 
-    @patch("src.micropolis.types.Eval")
+    @patch("src.micropolis.keyboard.eval_cmd_str")
     def test_escape_key(self, mock_eval):
         """Test ESC key turns off sound"""
         keyboard.do_key_down(context, self.mock_view, chr(27))
 
-        mock_eval.assert_called_with("UISoundOff")
-        self.assertEqual(types.dozing, 0)
+        # eval_cmd_str is called with (context, "UISoundOff")
+        mock_eval.assert_called_with(context, "UISoundOff")
+        self.assertEqual(context.dozing, 0)
 
     def test_keyboard_command_resetlastkeys(self):
         """Test TCL command resetlastkeys"""
-        keyboard.last_keys = "test"
-        types.punish_cnt = 5
+        context.last_keys = "test"
+        context.punish_cnt = 5
 
         result = keyboard.KeyboardCommand.handle_command(context, "resetlastkeys")
 
         self.assertEqual(result, "")
-        self.assertEqual(keyboard.last_keys, "    ")
-        self.assertEqual(types.punish_cnt, 0)
+        self.assertEqual(context.last_keys, "    ")
+        self.assertEqual(context.punish_cnt, 0)
 
     def test_keyboard_command_getlastkeys(self):
         """Test TCL command getlastkeys"""
-        keyboard.last_keys = "test"
+        context.last_keys = "test"
 
         result = keyboard.KeyboardCommand.handle_command(context, "getlastkeys")
 

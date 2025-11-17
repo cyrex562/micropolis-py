@@ -15,30 +15,37 @@ Key features:
 import pygame
 from result import Ok, Result
 
-from .constants import LOMASK, ZONEBIT, WORLD_X, WORLD_Y
+from .constants import WORLD_X, WORLD_Y
 from .context import AppContext
-from .engine import sim_update_editors
-from .graphics_setup import get_tile_surface
+from .graphics_setup import get_tile_surface, resolve_tile_for_render
 from .map_view import dynamicFilter
 from .sim_view import SimView
-
 
 # ============================================================================
 # Editor View Rendering Functions
 # ============================================================================
 
 
-def draw_beeg_maps() -> None:
+def draw_beeg_maps(context: AppContext) -> None:
     """
     ported from drawBeegMaps
     Update all editor views.
 
     Ported from drawBeegMaps() in g_bigmap.c.
     """
-    sim_update_editors()
+    from .engine import sim_update_editors
+
+    sim_update_editors(context)
 
 
-def mem_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, w: int, h: int) -> None:
+def mem_draw_beeg_map_rect(
+    context: AppContext,
+    view: SimView,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+) -> None:
     """
     ported from MemDrawBeegMapRect
     Draw a rectangle of tiles in the editor view using memory buffer.
@@ -46,10 +53,10 @@ def mem_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, w
     Ported from MemDrawBeegMapRect() in g_bigmap.c.
 
     Args:
+        context: Application context
         view: The editor view to draw into
         x, y: Top-left tile coordinates
         w, h: Width and height in tiles
-        :param context: 
     """
     # Clip to view boundaries
     if x < view.tile_x:
@@ -88,14 +95,14 @@ def mem_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, w
 
 
 def _draw_color_editor_rect(
-        context: AppContext,
-        view: SimView,
-        x: int,
-        y: int,
-        w: int,
-        h: int,
-        line_bytes: int,
-        pixel_bytes: int,
+    context: AppContext,
+    view: SimView,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    line_bytes: int,
+    pixel_bytes: int,
 ) -> None:
     """
     Draw editor rectangle in color mode.
@@ -113,6 +120,7 @@ def _draw_color_editor_rect(
 
     have = view.tiles
     blink = context.flag_blink <= 0
+    overlay_filter = dynamicFilter if view.dynamic_filter != 0 else None
 
     for col in range(w):
         tile_x = x + col
@@ -123,36 +131,28 @@ def _draw_color_editor_rect(
             tile_y = y + row
             local_row = tile_y - view.tile_y
 
-            tile = context.map_data[tile_x][tile_y]
-            if (tile & LOMASK) >= context.TILE_COUNT:
-                tile -= context.TILE_COUNT
+            tile_value = context.map_data[tile_x][tile_y]
+            resolved_tile = resolve_tile_for_render(
+                context,
+                tile_value,
+                coords=(tile_x, tile_y),
+                blink=blink,
+                overlay_filter=overlay_filter,
+            )
 
-            if blink and (tile & ZONEBIT) and not (tile & context.PWRBIT):
-                tile = context.LIGHTNINGBOLT
-            else:
-                tile &= LOMASK
-
-            if (
-                    tile > 63
-                    and view.dynamic_filter != 0
-                    and not dynamicFilter(context, tile_x, tile_y)
-            ):
-                tile = 0
-
-            if ha and ha[local_row] == tile:
+            if ha and ha[local_row] == resolved_tile:
                 continue
 
             if ha:
-                ha[local_row] = tile
+                ha[local_row] = resolved_tile
 
             dest_x = local_col * 16
             dest_y = local_row * 16
-            _blit_tile(view, tile, dest_x, dest_y)
+            _blit_tile(view, resolved_tile, dest_x, dest_y)
 
 
 def _draw_mono_editor_rect(
-        context: AppContext,
-        view: SimView, x: int, y: int, w: int, h: int, line_bytes: int
+    context: AppContext, view: SimView, x: int, y: int, w: int, h: int, line_bytes: int
 ) -> None:
     """
     Draw editor rectangle in monochrome mode.
@@ -170,6 +170,7 @@ def _draw_mono_editor_rect(
 
     have = view.tiles
     blink = context.flag_blink <= 0
+    overlay_filter = dynamicFilter if view.dynamic_filter != 0 else None
 
     for col in range(w):
         tile_x = x + col
@@ -180,24 +181,24 @@ def _draw_mono_editor_rect(
             tile_y = y + row
             local_row = tile_y - view.tile_y
 
-            tile = context.map_data[tile_x][tile_y]
-            if (tile & LOMASK) >= context.TILE_COUNT:
-                tile -= context.TILE_COUNT
+            tile_value = context.map_data[tile_x][tile_y]
+            resolved_tile = resolve_tile_for_render(
+                context,
+                tile_value,
+                coords=(tile_x, tile_y),
+                blink=blink,
+                overlay_filter=overlay_filter,
+            )
 
-            if blink and (tile & ZONEBIT) and not (tile & context.PWRBIT):
-                tile = context.LIGHTNINGBOLT
-            else:
-                tile &= LOMASK
-
-            if ha and ha[local_row] == tile:
+            if ha and ha[local_row] == resolved_tile:
                 continue
 
             if ha:
-                ha[local_row] = tile
+                ha[local_row] = resolved_tile
 
             dest_x = local_col * 16
             dest_y = local_row * 16
-            _blit_tile(view, tile, dest_x, dest_y)
+            _blit_tile(view, resolved_tile, dest_x, dest_y)
 
 
 def _blit_tile(view: SimView, tile: int, dest_x: int, dest_y: int) -> None:
@@ -210,7 +211,14 @@ def _blit_tile(view: SimView, tile: int, dest_x: int, dest_y: int) -> None:
         view.surface.blit(tile_surface, (dest_x, dest_y))
 
 
-def wire_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, w: int, h: int) -> None:
+def wire_draw_beeg_map_rect(
+    context: AppContext,
+    view: SimView,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+) -> None:
     """
     ported from WireDrawBeegMapRect
     Draw a rectangle of tiles using wire protocol (X11).
@@ -223,7 +231,7 @@ def wire_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, 
         view: The editor view to draw into
         x, y: Top-left tile coordinates
         w, h: Width and height in tiles
-        :param context: 
+        context: Application context for gating information
     """
     # Clip to view boundaries (same as MemDrawBeegMapRect)
     if x < view.tile_x:
@@ -257,6 +265,7 @@ def wire_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, 
 
     # Blinking state for lightning bolt
     blink = context.flag_blink <= 0
+    overlay_filter = dynamicFilter if view.dynamic_filter != 0 else None
 
     # Process each column
     for col in range(w):
@@ -271,16 +280,14 @@ def wire_draw_beeg_map_rect(context: AppContext, view: SimView, x: int, y: int, 
             # Calculate local row index within view
             local_row = row + (y - view.tile_y)
 
-            # Get tile from map
-            tile = context.map_data[map_x][map_y + row]
-            if (tile & LOMASK) >= context.TILE_COUNT:
-                tile -= context.TILE_COUNT
-
-            # Handle blinking lightning bolt for unpowered zones
-            if blink and (tile & ZONEBIT) and not (tile & context.PWRBIT):
-                tile = context.LIGHTNINGBOLT
-            else:
-                tile &= LOMASK
+            tile_value = context.map_data[map_x][map_y + row]
+            tile = resolve_tile_for_render(
+                context,
+                tile_value,
+                coords=(map_x, map_y + row),
+                blink=blink,
+                overlay_filter=overlay_filter,
+            )
 
             # Check if tile changed
             if ha and ha[local_row] != tile:

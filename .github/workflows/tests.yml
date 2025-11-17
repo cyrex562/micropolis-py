@@ -22,10 +22,149 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: .uv-cache
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
       - name: Prepare uv cache
         run: mkdir -p .uv-cache
+
+      - name: Build asset manifest
+        env:
+          UV_CACHE_DIR: .uv-cache
+        run: uv run python scripts/build_assets.py
 
       - name: Run pytest chunks
         env:
           UV_CACHE_DIR: .uv-cache
-        run: python3 scripts/run_pytest_chunks.py
+        run: uv run python scripts/run_pytest_chunks.py
+
+  ui-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            xvfb
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          python-version: "3.13"
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: .uv-cache
+          key: ${{ runner.os }}-uv-ui-${{ hashFiles('pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-ui-
+
+      - name: Prepare uv cache
+        run: mkdir -p .uv-cache
+
+      - name: Build asset manifest
+        env:
+          UV_CACHE_DIR: .uv-cache
+        run: uv run python scripts/build_assets.py
+
+      - name: Run UI tests with dummy SDL driver
+        env:
+          UV_CACHE_DIR: .uv-cache
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: uv run pytest tests/ui/ -v --tb=short
+
+      - name: Upload UI test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-artifacts
+          path: |
+            tests/golden/*_diff.png
+            tests/golden/*_current.png
+          retention-days: 7
+          if-no-files-found: ignore
+
+  snapshot-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          python-version: "3.13"
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: .uv-cache
+          key: ${{ runner.os }}-uv-snapshot-${{ hashFiles('pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-snapshot-
+
+      - name: Prepare uv cache
+        run: mkdir -p .uv-cache
+
+      - name: Build asset manifest
+        env:
+          UV_CACHE_DIR: .uv-cache
+        run: uv run python scripts/build_assets.py
+
+      - name: Run snapshot comparison tests
+        env:
+          UV_CACHE_DIR: .uv-cache
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: uv run pytest tests/ui/test_snapshots.py -v --tb=short
+
+      - name: Upload snapshot diffs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-diffs
+          path: |
+            tests/golden/*_diff.png
+            tests/golden/*_current.png
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload snapshot comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-report
+          path: |
+            .pytest_cache/
+            tests/golden/README.md
+          retention-days: 7
+          if-no-files-found: ignore

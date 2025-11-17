@@ -7,48 +7,40 @@ by consumer code as needed (e.g. `from src.micropolis import sim_control`).
 
 import sys
 from importlib import import_module
-from typing import TYPE_CHECKING, Any
-
-__all__ = ["sim_control", "budget", "resources", "audio", "platform", "stubs", "camera"]
-
-if TYPE_CHECKING:  # pragma: no cover - import-time hints only
-    from src.micropolis import audio as audio_module
-    from src.micropolis import budget as budget_module
-    from src.micropolis import camera as camera_module
-    from src.micropolis import platform as platform_module
-    from src.micropolis import resources as resources_module
-    from src.micropolis import sim_control as sim_control_module
-    from src.micropolis import stubs as stubs_module
-
-    sim_control = sim_control_module
-    budget = budget_module
-    resources = resources_module
-    audio = audio_module
-    platform = platform_module
-    stubs = stubs_module
-    camera = camera_module
+from typing import Any
 
 
 def __getattr__(name: str) -> Any:
-    """Lazy-load requested submodules on attribute access.
+    """Lazy-load any submodule on attribute access.
 
-    This avoids importing heavy submodules when the package is imported
-    (which previously caused circular import problems during early
-    initialization/compat checks).
+    Tests and legacy code import modules via the ``src.micropolis`` package
+    path and sometimes expect attributes (submodules) to be present on the
+    package. Rather than eagerly importing everything at package import time
+    (which caused circular-imports and startup cost), we lazily import the
+    requested submodule when it is first accessed.
+
+    We use the current package name (``__name__``) so this works whether the
+    package is imported as ``micropolis`` or ``src.micropolis``.
     """
-    if name in __all__:
-        alias = f"{__name__}.{name}"
-        # If the alias already exists (for example, set by tests that import
-        # via ``micropolis.sim_control``), reuse it to ensure we don't create
-        # duplicate module objects with different names.
-        mod = sys.modules.get(alias)
-        if mod is None:
-            mod = import_module(f"src.micropolis.{name}")
-            sys.modules[alias] = mod
+    alias = f"{__name__}.{name}"
+    # If module already loaded under the fully-qualified name, return it
+    mod = sys.modules.get(alias)
+    if mod is not None:
         globals()[name] = mod
         return mod
-    raise AttributeError(name)
+
+    # Attempt to import the submodule relative to this package
+    try:
+        mod = import_module(alias)
+    except Exception as exc:  # pragma: no cover - fall through to AttributeError
+        raise AttributeError(f"module {__name__} has no attribute {name}") from exc
+
+    # Register and expose
+    sys.modules[alias] = mod
+    globals()[name] = mod
+    return mod
 
 
 def __dir__() -> list[str]:
-    return sorted(list(globals().keys()) + __all__)
+    # Return current attributes; dynamic submodules will appear once accessed
+    return sorted(list(globals().keys()))

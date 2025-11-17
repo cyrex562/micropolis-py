@@ -5,12 +5,12 @@ This module contains the scanning and analysis functions ported from s_scan.c,
 implementing fire analysis, population density scanning, pollution/terrain/land value
 analysis, crime scanning, and various smoothing operations.
 """
-from src.micropolis.constants import NMAPS, SM_X, SM_Y, DYMAP, FIMAP, WORLD_X, WORLD_Y, ZONEBIT, LOMASK, HWLDX, HWLDY, \
+from micropolis.constants import NMAPS, SM_X, SM_Y, DYMAP, FIMAP, WORLD_X, WORLD_Y, ZONEBIT, LOMASK, HWLDX, HWLDY, \
     PDMAP, RGMAP, FREEZ, COMBASE, INDBASE, PORTBASE, QWX, QWY, RUBBLE, ROADBASE, PLMAP, LVMAP, POWERBASE, HTRFBASE, \
     LTRFBASE, FIREBASE, RADTILE, LASTIND, LASTPOWERPLANT, CRMAP, POMAP
-from src.micropolis.context import AppContext
-from src.micropolis.simulation import rand16
-from src.micropolis.zones import DoFreePop, RZPop, CZPop, IZPop
+from micropolis.context import AppContext
+from micropolis.simulation import rand16
+from micropolis.zones import DoFreePop, RZPop, CZPop, IZPop
 
 # ============================================================================
 # Global Scanner State

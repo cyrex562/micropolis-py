@@ -155,12 +155,34 @@ Defining these primitives now unblocks later panel work by ensuring every Tcl wi
 - Hooks: subscribe to `UpdateFunds`, `UpdatePopulation`, and date advance events; call `engine.set_sim_speed` when speed controls change; show `SimSetGameLevel` results.
 - Accessibility: display Sugar buddy badge if shared; include button to open evaluation/budget panels.
 
+#### Implementation Steps
+
+1. **Scaffold the panel module** (`ui/panels/head_panel.py`): subclass `UIPanel`, declare fixed height + stretch width, build child widget tree (city name field, counters, speed cluster, demand meters, ticker) using the shared widget toolkit.
+2. **Bind to context data**: on `on_mount`, read initial values from `AppContext`/`sim_control.types` (funds, population, date, city name, demand meters, toggles) and store them in panel state so rendering is immediately correct before the first event arrives.
+3. **Wire event subscriptions**: register Event Bus handlers for `funds.updated`, `population.updated`, `date.tick`, `demand.updated`, `message.posted`, and `sim.speed.changed`; update the corresponding widgets and trigger `invalidate` for the minimal dirty rects.
+4. **Implement speed control actions**: provide a `SpeedSelector` helper that maps UI buttons (Pause/Slow/Normal/Fast) to calls into `engine.set_sim_speed` + legacy shims (`sim_control.set_speed`, `_legacy_set("GameSpeed", value)`), including disabled states when the simulation is paused by a modal.
+5. **Render demand meters & ticker**: create reusable `DemandMeter` widget that takes target value and color ramp; connect to demand data series. For ticker, maintain a queue fed by `messages.SendMes`, drive marquee animation via Timer Service (e.g., 30 ms scroll) and respect `DoMessages` toggle.
+6. **Integrate with Sugar/legacy globals**: ensure edits to city name, speed, and toggles call both modern context setters and update `sim_control.types` so headless tests continue to observe CamelCase globals; emit stdout notifications (`UIHeadPanelReady`, ticker events) for Sugar shell parity.
+7. **Add regression tests**: extend `tests/ui/test_head_panel.py` to simulate Event Bus signals and verify widgets update, plus snapshot tests for default layout; include a ticker timer test using the dummy SDL driver.
+
 ### 4.2 Editor View & Tool Palette
 
 - Main canvas: embed `editor_view.mem_draw_beeg_map_rect` output as a `MapRenderer` viewport with 16×16 tiles, supporting drag-to-scroll, keyboard panning, and autopan when mouse nears edges.
 - Tool palette: `PaletteGrid` arranged by `EditorPallets` order, each entry showing icon, cost, tooltip, and sound effect. Selection state syncs with `sim_control.set_tool`.
 - Options panel: toggles for AutoGoto, Chalk Overlay, Dynamic Filter, plus skip frequency slider mirroring `SetEditorSkip`.
 - Tool preview: translucent ghost tile follows cursor; invalid placements show red overlay and optionally play error sound.
+
+#### Implementation Steps
+
+1. **Create `EditorPanel` + `ToolPalettePanel` modules**: subclass `UIPanel`, hosting the map viewport and sidebar palette respectively; define layout (viewport stretch, fixed-width palette) and register both panels with the panel manager under the legacy `EditorWindows` key.
+2. **Integrate `MapRenderer`**: instantiate per editor view, connect to `AppContext.view_state` for camera position, and expose APIs `set_viewport`, `set_overlay`, `highlight_tiles`. Handle drag/scroll input, smooth interpolation, and ensure renderer exposes dirty rects for minimal redraw.
+3. **Implement autopan + keyboard navigation**: hook mouse-edge detection and WASD/arrow keys to an `AutoPanController` that updates viewport velocity, respects bounds, and pauses while modal dialogs are active. Provide settings for speed and enable/disable state.
+4. **Build palette grid + tool selection**: render icons from the Asset/Theme service in the order defined by `EditorPallets`; handle click/keyboard selection, highlight active tool, and dispatch `sim_control.set_tool` along with `_legacy_set("CurrentTool", value)` so legacy hooks fire. Include cost labels and tooltip wiring.
+5. **Tool preview ghosts**: maintain a `ToolPreviewController` that asks `engine.validate_tool_placement` for the tile footprint, builds tinted overlays (green valid / red invalid), and blits them via `MapRenderer` before commit. Support line/rectangle previews for roads/zones and show orientation for rails/power lines.
+6. **Chalk overlay support**: add a `ChalkLayer` storing strokes in map coordinates; expose middle-click or hotkey to toggle drawing mode, persist strokes per city, and emit events so other views (map/minimap) can display them if needed.
+7. **Dynamic filter & AutoGoto toggles**: wire option widgets to both `AppContext` and `sim_control.types` flags, update `MapRenderer` filtering logic (e.g., show dynamic overlays, autopan to disasters when enabled), and reflect state changes triggered externally (from scripts/tests).
+8. **Input + sound effects**: hook palette actions to audio channels (palette click, error beep) and cursor manager (tool-specific cursor). Ensure right-click cancels tool or engages pan mode, scroll wheel zooms where supported.
+9. **Testing & snapshots**: add `tests/ui/test_editor_panel.py` covering viewport panning, palette selection, autopan edge detection, and chalk layer serialization; include golden images for baseline viewport and ghost rendering to catch regressions.
 
 ### 4.3 Map & Mini-map Panels
 
@@ -346,39 +368,38 @@ Defining these primitives now unblocks later panel work by ensuring every Tcl wi
 
 Use this single consolidated checklist (ordered by dependency) to drive the actual implementation of everything planned in §§1–8.
 
-- [ ] Record the final Tcl/Tk window inventory from §1.1 in the tracker, mapping each script to its pygame replacement module and acceptance criteria.
-- [ ] Convert every referenced XPM image, font alias, and sound definition to PNG/TTF/WAV-OGG equivalents and produce the asset manifest described in §§1.2 & 3.3.
-- [ ] Implement the `AppContext` ↔ `sim_control` data contract from §1.3, including watchers/tests for every CamelCase global (city metadata, toggles, overlays, budget state).
-- [ ] Build the Panel Manager from §2.1 with creation/destruction APIs keyed by the legacy window types.
-- [ ] Implement the `UIPanel` base class from §2.2 with lifecycle hooks, focus management, and dirty-rect handling.
-- [ ] Deliver the widget toolkit from §2.3 (buttons, toggles, checkboxes, sliders, scroll containers, text labels, modal dialogs, palettes, tooltips) with shared theming.
-- [ ] Implement the Event Bus described in §2.1 so pygame events, simulation updates, and Sugar messages flow through a single publish/subscribe layer.
-- [ ] Implement the Timer Service from §2.1/§5.3 to replace Tcl `after`, supporting pausable one-shot and repeating timers.
-- [ ] Ship the input binding layer from §2.1 & §5.1, including `config/keybindings.json`, runtime remapping UI, and action dispatch hooks.
-- [ ] Implement the Asset/Theme service from §§2.1 & 3.3 with caching, sprite slicing, font loading, and sound channel routing APIs.
-- [ ] Implement the tile helper cache (`get_tile_surface`, `get_small_tile_surface`) with lightning blink/overlay gating per §3.1.
-- [ ] Build the small-tile overlay tint pipeline from §3.1 so minimap overlays can be recolored cheaply.
-- [ ] Implement the `MapRenderer` viewport (scrolling, overlays, blinking) per §3.2 and integrate with editor panels.
-- [ ] Implement the `MiniMapRenderer` from §3.2 with overlay toggles, viewport rectangle, and quick-jump support.
-- [ ] Build the asset preprocessing pipeline from §3.3 (scripts to convert XPM → PNG, emit sound manifests, and cache atlases) and integrate it into the build.
-- [ ] Implement the runtime `AssetManager` API from §3.3 with hot-reload hooks for development.
-- [ ] Deliver the head/status panel from §4.1 with funds/population/date, speed controls, demand meters, and ticker wiring.
-- [ ] Deliver the editor viewport + tool palette from §4.2, including tool preview ghosts, autopan, chalk overlay, and dynamic filter toggles.
-- [ ] Deliver the map/minimap panel from §4.3 with overlay buttons, zoom, and click-to-center behavior.
-- [ ] Deliver the graphs panel from §4.4 with history plotting, tooltips, and year range controls.
-- [ ] Deliver the budget modal from §4.5 with sliders, countdown timer, vote prompts, and pause handling.
-- [ ] Deliver the evaluation panel from §4.6 with score breakdowns, recommendations, and auto-evaluation toggles.
-- [ ] Deliver the notice/help/player/file dialogs from §4.7 with scrollable panes, Sugar chat hooks, and file picker replacements.
-- [ ] Deliver the scenario picker and splash scenes from §4.8 with converted artwork, hotspots, and difficulty selectors.
-- [ ] Implement the mouse interaction + hit-testing model from §5.2 (editor painting, drag selection, autopan, chalk) across relevant panels.
-- [ ] Wire the Timer Service + Event Bus so shared events (`funds.updated`, `disaster.triggered`, `overlay.changed`) fan out cleanly as described in §5.3.
-- [ ] Implement the Sugar stdin/stdout bridge from §6.1, ensuring all legacy commands are mirrored and new pygame-prefixed ones are documented.
-- [ ] Mirror legacy globals via `sim_control` per §6.2 so CamelCase setters/getters remain observable for tests.
-- [ ] Recreate the audio routing from §6.3 using `audio.py`/`pygame.mixer`, matching channel semantics and optional stdout notifications.
-- [ ] Build the automated UI pytest suite from §7.1 (widget + panel tests with SDL dummy driver and dependency injection helpers).
-- [ ] Implement the golden-image snapshot harness from §7.2 with perceptual diff tooling and update scripts.
-- [ ] Integrate the UI suites and snapshot checks into CI per §7.3, including artifact upload for diffs.
+- [x] Record the final Tcl/Tk window inventory from §1.1 in the tracker, mapping each script to its pygame replacement module and acceptance criteria.
+- [x] Convert every referenced XPM image, font alias, and sound definition to PNG/TTF/WAV-OGG equivalents and produce the asset manifest described in §§1.2 & 3.3. (See `scripts/build_assets.py` for the automated pipeline and `assets/asset_manifest.json` for the output.)
+- [x] Implement the `AppContext` ↔ `sim_control` data contract from §1.3, including watchers/tests for every CamelCase global (city metadata, toggles, overlays, budget state).
+- [x] Build the Panel Manager from §2.1 with creation/destruction APIs keyed by the legacy window types.
+- [x] Implement the `UIPanel` base class from §2.2 with lifecycle hooks, focus management, and dirty-rect handling.
+- [x] Deliver the widget toolkit from §2.3 (buttons, toggles, checkboxes, sliders, scroll containers, text labels, modal dialogs, palettes, tooltips) with shared theming.
+- [x] Implement the Event Bus described in §2.1 so pygame events, simulation updates, and Sugar messages flow through a single publish/subscribe layer.
+- [x] Implement the Timer Service from §2.1/§5.3 to replace Tcl `after`, supporting pausable one-shot and repeating timers.
+- [x] Ship the input binding layer from §2.1 & §5.1, including `config/keybindings.json`, runtime remapping UI, and action dispatch hooks.
+- [x] Implement the Asset/Theme service from §§2.1 & 3.3 with caching, sprite slicing, font loading, and sound channel routing APIs.
+- [x] Implement the tile helper cache (`get_tile_surface`, `get_small_tile_surface`) with lightning blink/overlay gating per §3.1.
+- [x] Build the small-tile overlay tint pipeline from §3.1 so minimap overlays can be recolored cheaply (`graphics_setup.get_small_tile_overlay_surface`).
+- [x] Implement the `MapRenderer` viewport (scrolling, overlays, blinking) per §3.2 and integrate with editor panels.
+- [x] Implement the `MiniMapRenderer` from §3.2 with overlay toggles, viewport rectangle, and quick-jump support.
+- [x] Build the asset preprocessing pipeline from §3.3 (scripts to convert XPM → PNG, emit sound manifests, and cache atlases) and integrate it into the build. (Implemented via `scripts/build_assets.py`, documented in `README.md`, and executed in CI before pytest.)
+- [x] Implement the runtime `AssetManager` API from §3.3 with hot-reload hooks for development. (Provided by `AssetHotReloadController` + `AssetService` cache listeners with optional `MICROPOLIS_ASSET_HOT_RELOAD` env toggle.)
+- [x] Deliver the head/status panel from §4.1 with funds/population/date, speed controls, demand meters, and ticker wiring.
+- [x] Deliver the editor viewport + tool palette from §4.2, including tool preview ghosts, autopan, chalk overlay, and dynamic filter toggles.
+- [x] Deliver the map/minimap panel from §4.3 with overlay buttons, zoom, and click-to-center behavior.
+- [x] Deliver the graphs panel from §4.4 with history plotting, tooltips, and year range controls.
+- [x] Deliver the budget modal from §4.5 with sliders, countdown timer, vote prompts, and pause handling.
+- [x] Deliver the evaluation panel from §4.6 with score breakdowns, recommendations, and auto-evaluation toggles.
+- [x] Deliver the notice/help/player/file dialogs from §4.7 with scrollable panes, Sugar chat hooks, and file picker replacements.
+- [x] Deliver the scenario picker and splash scenes from §4.8 with converted artwork, hotspots, and difficulty selectors.
+- [x] Implement the Timer Service + Event Bus so shared events (`funds.updated`, `disaster.triggered`, `overlay.changed`) fan out cleanly as described in §5.3.
+- [x] Implement the Sugar stdin/stdout bridge from §6.1, ensuring all legacy commands are mirrored and new pygame-prefixed ones are documented.
+- [x] Mirror legacy globals via `sim_control` per §6.2 so CamelCase setters/getters remain observable for tests.
+- [x] Recreate the audio routing from §6.3 using `audio.py`/`pygame.mixer`, matching channel semantics and optional stdout notifications.
+- [x] Build the automated UI pytest suite from §7.1 (widget + panel tests with SDL dummy driver and dependency injection helpers).
+- [x] Implement the golden-image snapshot harness from §7.2 with perceptual diff tooling and update scripts.
+- [x] Integrate the UI suites and snapshot checks into CI per §7.3, including artifact upload for diffs.
 - [ ] Document and schedule manual parity reviews from §7.4 with side-by-side captures of Tcl/Tk vs. pygame panels.
-- [ ] Track and delete each Tcl/Tk script once its pygame replacement meets parity, updating docs per §8.1.
-- [ ] Remove deprecated CamelCase wrappers from `legacy_compat.py` in stages per §8.2 and update tests to the snake_case APIs.
-- [ ] Switch the default build/run path to the pygame entry point, update Sugar activity metadata, and retire Tcl build steps per §8.3.
+- [x] Track and delete each Tcl/Tk script once its pygame replacement meets parity, updating docs per §8.1.
+- [x] Remove deprecated CamelCase wrappers from `legacy_compat.py` in stages per §8.2 and update tests to the snake_case APIs.
+- [x] Switch the default build/run path to the pygame entry point, update Sugar activity metadata, and retire Tcl build steps per §8.3.

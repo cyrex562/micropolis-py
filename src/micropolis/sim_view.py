@@ -122,6 +122,7 @@ class SimView(BaseModel):
     overlay_time: float = 0.0  # Simplified from struct timeval
 
     surface: pygame.Surface | None = None  # Pygame surface for rendering
+    overlay_surface: pygame.Surface | None = None  # Overlay (alpha) surface
 
     next: "SimView|None" = None
 
@@ -129,9 +130,16 @@ class SimView(BaseModel):
 def populate_common_view_fields(
     context: AppContext, view: SimView, width: int, height: int, class_id: int
 ) -> None:
-    from .engine import get_or_create_display
+    # Get or create display object (inlined to avoid circular import)
+    if context.main_display is None:
+        from .view_types import MakeNewXDisplay
 
-    display = get_or_create_display(context)
+        context.main_display = MakeNewXDisplay()
+        context.main_display.color = 1
+        context.main_display.depth = 32
+
+    display = context.main_display
+
     view.class_id = class_id
     view.type = view_types.X_Mem_View
     view.visible = True

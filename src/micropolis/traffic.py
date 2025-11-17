@@ -6,13 +6,13 @@
 #
 # Original C file: s_traf.c
 # Ported to maintain algorithmic fidelity with the original Micropolis simulation
-from src.micropolis.constants import MAXDIS, LOMASK, ROADBASE, POWERBASE, TELEBASE, TELELAST, WORLD_X, WORLD_Y, COMBASE, \
+from micropolis.constants import MAXDIS, LOMASK, ROADBASE, POWERBASE, TELEBASE, TELELAST, WORLD_X, WORLD_Y, COMBASE, \
     LHTHR, NUCLEAR, PORT, LASTRAIL, RAILHPOWERV
-from src.micropolis.context import AppContext
-from src.micropolis.macros import TestBounds
-from src.micropolis.random import sim_rand
-from src.micropolis.simulation import rand
-from src.micropolis.sprite_manager import GetSprite
+from micropolis.context import AppContext
+from micropolis.macros import TestBounds
+from micropolis.random import sim_rand
+from micropolis.simulation import rand
+from micropolis.sprite_manager import GetSprite
 
 
 # ============================================================================

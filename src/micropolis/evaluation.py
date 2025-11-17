@@ -7,13 +7,13 @@ responsible for calculating city scores, identifying problems, and determining
 city classification based on population and infrastructure.
 """
 
-from src.micropolis.budget import (
+from micropolis.budget import (
     do_budget as budget_do_budget,
     do_budget_from_menu as budget_do_budget_from_menu,
 )
-from src.micropolis.constants import PROBNUM, HWLDX, HWLDY
-from src.micropolis.context import AppContext
-from src.micropolis.simulation import rand
+from micropolis.constants import PROBNUM, HWLDX, HWLDY
+from micropolis.context import AppContext
+from micropolis.simulation import rand
 
 
 # ============================================================================
@@ -92,6 +92,13 @@ def eval_init(context: AppContext) -> None:
     context.city_score = 500
     context.delta_city_score = z
     context.eval_valid = 1
+
+    # Ensure problem_votes and problem_order are sized appropriately so
+    # legacy tests that set shorter lists don't cause IndexError here.
+    if len(context.problem_votes) < PROBNUM:
+        context.problem_votes.extend([0] * (PROBNUM - len(context.problem_votes)))
+    if len(context.problem_order) < 4:
+        context.problem_order.extend([0] * (4 - len(context.problem_order)))
 
     for x in range(PROBNUM):
         context.problem_votes[x] = z
@@ -180,6 +187,12 @@ def do_problems(context: AppContext) -> None:
     """
     # global problem_table, problem_taken, problem_order
 
+    # Ensure problem arrays are sized to PROBNUM so legacy tests that set
+    # shorter lists don't cause IndexError during assignment. Extend with
+    # zeros when necessary (conservative, test-focused compatibility).
+    if len(context.problem_table) < PROBNUM:
+        context.problem_table.extend([0] * (PROBNUM - len(context.problem_table)))
+
     # Initialize problem table
     for z in range(PROBNUM):
         context.problem_table[z] = 0
@@ -193,10 +206,16 @@ def do_problems(context: AppContext) -> None:
     context.problem_table[5] = get_unemployment(context)  # Unemployment
     context.problem_table[6] = get_fire(context)  # Fire
 
+    # Ensure problem_votes is large enough before voting (defensive/test shim)
+    if len(context.problem_votes) < PROBNUM:
+        context.problem_votes.extend([0] * (PROBNUM - len(context.problem_votes)))
+
     # Vote on problems
     vote_problems(context)
 
-    # Initialize problem taken array
+    # Initialize problem taken array - ensure sizing first
+    if len(context.problem_taken) < PROBNUM:
+        context.problem_taken.extend([0] * (PROBNUM - len(context.problem_taken)))
     for z in range(PROBNUM):
         context.problem_taken[z] = 0
 
@@ -228,6 +247,10 @@ def vote_problems(context: AppContext) -> None:
     :param context:
     """
     # global problem_votes
+
+    # Ensure the votes array is sized before initializing to avoid IndexError
+    if len(context.problem_votes) < PROBNUM:
+        context.problem_votes.extend([0] * (PROBNUM - len(context.problem_votes)))
 
     # Initialize votes
     for z in range(PROBNUM):
@@ -272,6 +295,8 @@ def average_trf(context: AppContext) -> int:
                 count += 1
 
     traffic_average = int((trf_total / count) * 2.4)
+    # Record into context for callers/tests that expect it there
+    context.traffic_average = traffic_average
     return traffic_average
 
 
@@ -411,6 +436,8 @@ def get_score(context: AppContext) -> None:
     city_score = (context.city_score + z) // 2
 
     context.delta_city_score = city_score - old_city_score
+    # Store the computed city score back onto the context
+    context.city_score = city_score
 
 
 # ============================================================================

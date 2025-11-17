@@ -1,0 +1,6466 @@
+{
+  "version": 1,
+  "generated": "2025-11-15T00:05:36.565123+00:00",
+  "assets": {
+    "images": [
+      {
+        "name": "airport.png",
+        "logical_name": "airport",
+        "path": "images/airport.png",
+        "category": "images",
+        "size": 2200,
+        "width": 96,
+        "height": 96,
+        "legacy_source": "images/airport.xpm"
+      },
+      {
+        "name": "background-micropolis.png",
+        "logical_name": "background-micropolis",
+        "path": "images/background-micropolis.png",
+        "category": "images",
+        "size": 1169575,
+        "width": 1200,
+        "height": 900,
+        "legacy_source": "images/background-micropolis.xpm"
+      },
+      {
+        "name": "button1hilite.png",
+        "logical_name": "button1hilite",
+        "path": "images/button1hilite.png",
+        "category": "images",
+        "size": 14592,
+        "width": 157,
+        "height": 90,
+        "legacy_source": "images/button1hilite.xpm"
+      },
+      {
+        "name": "button2hilite.png",
+        "logical_name": "button2hilite",
+        "path": "images/button2hilite.png",
+        "category": "images",
+        "size": 17789,
+        "width": 157,
+        "height": 90,
+        "legacy_source": "images/button2hilite.xpm"
+      },
+      {
+        "name": "button3hilite.png",
+        "logical_name": "button3hilite",
+        "path": "images/button3hilite.png",
+        "category": "images",
+        "size": 12754,
+        "width": 157,
+        "height": 90,
+        "legacy_source": "images/button3hilite.xpm"
+      },
+      {
+        "name": "button4hilite.png",
+        "logical_name": "button4hilite",
+        "path": "images/button4hilite.png",
+        "category": "images",
+        "size": 13273,
+        "width": 157,
+        "height": 90,
+        "legacy_source": "images/button4hilite.xpm"
+      },
+      {
+        "name": "checkbox1checked.png",
+        "logical_name": "checkbox1checked",
+        "path": "images/checkbox1checked.png",
+        "category": "images",
+        "size": 15487,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox1checked.xpm"
+      },
+      {
+        "name": "checkbox1hilite.png",
+        "logical_name": "checkbox1hilite",
+        "path": "images/checkbox1hilite.png",
+        "category": "images",
+        "size": 13253,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox1hilite.xpm"
+      },
+      {
+        "name": "checkbox1hilitechecked.png",
+        "logical_name": "checkbox1hilitechecked",
+        "path": "images/checkbox1hilitechecked.png",
+        "category": "images",
+        "size": 15559,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox1hilitechecked.xpm"
+      },
+      {
+        "name": "checkbox2checked.png",
+        "logical_name": "checkbox2checked",
+        "path": "images/checkbox2checked.png",
+        "category": "images",
+        "size": 17098,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox2checked.xpm"
+      },
+      {
+        "name": "checkbox2hilite.png",
+        "logical_name": "checkbox2hilite",
+        "path": "images/checkbox2hilite.png",
+        "category": "images",
+        "size": 14243,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox2hilite.xpm"
+      },
+      {
+        "name": "checkbox2hilitechecked.png",
+        "logical_name": "checkbox2hilitechecked",
+        "path": "images/checkbox2hilitechecked.png",
+        "category": "images",
+        "size": 16917,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox2hilitechecked.xpm"
+      },
+      {
+        "name": "checkbox3checked.png",
+        "logical_name": "checkbox3checked",
+        "path": "images/checkbox3checked.png",
+        "category": "images",
+        "size": 16066,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox3checked.xpm"
+      },
+      {
+        "name": "checkbox3hilite.png",
+        "logical_name": "checkbox3hilite",
+        "path": "images/checkbox3hilite.png",
+        "category": "images",
+        "size": 13654,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox3hilite.xpm"
+      },
+      {
+        "name": "checkbox3hilitechecked.png",
+        "logical_name": "checkbox3hilitechecked",
+        "path": "images/checkbox3hilitechecked.png",
+        "category": "images",
+        "size": 15866,
+        "width": 190,
+        "height": 70,
+        "legacy_source": "images/checkbox3hilitechecked.xpm"
+      },
+      {
+        "name": "coal.png",
+        "logical_name": "coal",
+        "path": "images/coal.png",
+        "category": "images",
+        "size": 1191,
+        "width": 64,
+        "height": 64,
+        "legacy_source": "images/coal.xpm"
+      },
+      {
+        "name": "com.png",
+        "logical_name": "com",
+        "path": "images/com.png",
+        "category": "images",
+        "size": 301,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/com.xpm"
+      },
+      {
+        "name": "demandg.png",
+        "logical_name": "demandg",
+        "path": "images/demandg.png",
+        "category": "images",
+        "size": 300,
+        "width": 39,
+        "height": 47,
+        "legacy_source": "images/demandg.xpm"
+      },
+      {
+        "name": "fire.png",
+        "logical_name": "fire",
+        "path": "images/fire.png",
+        "category": "images",
+        "size": 835,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/fire.xpm"
+      },
+      {
+        "name": "gr10.png",
+        "logical_name": "gr10",
+        "path": "images/gr10.png",
+        "category": "images",
+        "size": 400,
+        "width": 69,
+        "height": 26,
+        "legacy_source": "images/gr10.xpm"
+      },
+      {
+        "name": "gr10hi.png",
+        "logical_name": "gr10hi",
+        "path": "images/gr10hi.png",
+        "category": "images",
+        "size": 384,
+        "width": 69,
+        "height": 26,
+        "legacy_source": "images/gr10hi.xpm"
+      },
+      {
+        "name": "gr120.png",
+        "logical_name": "gr120",
+        "path": "images/gr120.png",
+        "category": "images",
+        "size": 424,
+        "width": 69,
+        "height": 26,
+        "legacy_source": "images/gr120.xpm"
+      },
+      {
+        "name": "gr120hi.png",
+        "logical_name": "gr120hi",
+        "path": "images/gr120hi.png",
+        "category": "images",
+        "size": 406,
+        "width": 69,
+        "height": 26,
+        "legacy_source": "images/gr120hi.xpm"
+      },
+      {
+        "name": "grcom.png",
+        "logical_name": "grcom",
+        "path": "images/grcom.png",
+        "category": "images",
+        "size": 420,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grcom.xpm"
+      },
+      {
+        "name": "grcomhi.png",
+        "logical_name": "grcomhi",
+        "path": "images/grcomhi.png",
+        "category": "images",
+        "size": 428,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grcomhi.xpm"
+      },
+      {
+        "name": "grcrim.png",
+        "logical_name": "grcrim",
+        "path": "images/grcrim.png",
+        "category": "images",
+        "size": 397,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grcrim.xpm"
+      },
+      {
+        "name": "grcrimhi.png",
+        "logical_name": "grcrimhi",
+        "path": "images/grcrimhi.png",
+        "category": "images",
+        "size": 392,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grcrimhi.xpm"
+      },
+      {
+        "name": "grind.png",
+        "logical_name": "grind",
+        "path": "images/grind.png",
+        "category": "images",
+        "size": 471,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grind.xpm"
+      },
+      {
+        "name": "grindhi.png",
+        "logical_name": "grindhi",
+        "path": "images/grindhi.png",
+        "category": "images",
+        "size": 472,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grindhi.xpm"
+      },
+      {
+        "name": "grmony.png",
+        "logical_name": "grmony",
+        "path": "images/grmony.png",
+        "category": "images",
+        "size": 372,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grmony.xpm"
+      },
+      {
+        "name": "grmonyhi.png",
+        "logical_name": "grmonyhi",
+        "path": "images/grmonyhi.png",
+        "category": "images",
+        "size": 360,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grmonyhi.xpm"
+      },
+      {
+        "name": "grpoll.png",
+        "logical_name": "grpoll",
+        "path": "images/grpoll.png",
+        "category": "images",
+        "size": 422,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grpoll.xpm"
+      },
+      {
+        "name": "grpollhi.png",
+        "logical_name": "grpollhi",
+        "path": "images/grpollhi.png",
+        "category": "images",
+        "size": 405,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grpollhi.xpm"
+      },
+      {
+        "name": "grres.png",
+        "logical_name": "grres",
+        "path": "images/grres.png",
+        "category": "images",
+        "size": 421,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grres.xpm"
+      },
+      {
+        "name": "grreshi.png",
+        "logical_name": "grreshi",
+        "path": "images/grreshi.png",
+        "category": "images",
+        "size": 430,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/grreshi.xpm"
+      },
+      {
+        "name": "icairp.png",
+        "logical_name": "icairp",
+        "path": "images/icairp.png",
+        "category": "images",
+        "size": 1420,
+        "width": 58,
+        "height": 58,
+        "legacy_source": "images/icairp.xpm"
+      },
+      {
+        "name": "icairphi.png",
+        "logical_name": "icairphi",
+        "path": "images/icairphi.png",
+        "category": "images",
+        "size": 1656,
+        "width": 58,
+        "height": 58,
+        "legacy_source": "images/icairphi.xpm"
+      },
+      {
+        "name": "icchlk.png",
+        "logical_name": "icchlk",
+        "path": "images/icchlk.png",
+        "category": "images",
+        "size": 346,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icchlk.xpm"
+      },
+      {
+        "name": "icchlkhi.png",
+        "logical_name": "icchlkhi",
+        "path": "images/icchlkhi.png",
+        "category": "images",
+        "size": 333,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icchlkhi.xpm"
+      },
+      {
+        "name": "iccoal.png",
+        "logical_name": "iccoal",
+        "path": "images/iccoal.png",
+        "category": "images",
+        "size": 998,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/iccoal.xpm"
+      },
+      {
+        "name": "iccoalhi.png",
+        "logical_name": "iccoalhi",
+        "path": "images/iccoalhi.png",
+        "category": "images",
+        "size": 999,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/iccoalhi.xpm"
+      },
+      {
+        "name": "iccom.png",
+        "logical_name": "iccom",
+        "path": "images/iccom.png",
+        "category": "images",
+        "size": 566,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/iccom.xpm"
+      },
+      {
+        "name": "iccomhi.png",
+        "logical_name": "iccomhi",
+        "path": "images/iccomhi.png",
+        "category": "images",
+        "size": 512,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/iccomhi.xpm"
+      },
+      {
+        "name": "icdozr.png",
+        "logical_name": "icdozr",
+        "path": "images/icdozr.png",
+        "category": "images",
+        "size": 500,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icdozr.xpm"
+      },
+      {
+        "name": "icdozrhi.png",
+        "logical_name": "icdozrhi",
+        "path": "images/icdozrhi.png",
+        "category": "images",
+        "size": 462,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icdozrhi.xpm"
+      },
+      {
+        "name": "icersr.png",
+        "logical_name": "icersr",
+        "path": "images/icersr.png",
+        "category": "images",
+        "size": 398,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icersr.xpm"
+      },
+      {
+        "name": "icersrhi.png",
+        "logical_name": "icersrhi",
+        "path": "images/icersrhi.png",
+        "category": "images",
+        "size": 328,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icersrhi.xpm"
+      },
+      {
+        "name": "icfire.png",
+        "logical_name": "icfire",
+        "path": "images/icfire.png",
+        "category": "images",
+        "size": 619,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icfire.xpm"
+      },
+      {
+        "name": "icfirehi.png",
+        "logical_name": "icfirehi",
+        "path": "images/icfirehi.png",
+        "category": "images",
+        "size": 687,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icfirehi.xpm"
+      },
+      {
+        "name": "icind.png",
+        "logical_name": "icind",
+        "path": "images/icind.png",
+        "category": "images",
+        "size": 595,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/icind.xpm"
+      },
+      {
+        "name": "icindhi.png",
+        "logical_name": "icindhi",
+        "path": "images/icindhi.png",
+        "category": "images",
+        "size": 511,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/icindhi.xpm"
+      },
+      {
+        "name": "icnuc.png",
+        "logical_name": "icnuc",
+        "path": "images/icnuc.png",
+        "category": "images",
+        "size": 896,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/icnuc.xpm"
+      },
+      {
+        "name": "icnuchi.png",
+        "logical_name": "icnuchi",
+        "path": "images/icnuchi.png",
+        "category": "images",
+        "size": 968,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/icnuchi.xpm"
+      },
+      {
+        "name": "icpark.png",
+        "logical_name": "icpark",
+        "path": "images/icpark.png",
+        "category": "images",
+        "size": 622,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icpark.xpm"
+      },
+      {
+        "name": "icparkhi.png",
+        "logical_name": "icparkhi",
+        "path": "images/icparkhi.png",
+        "category": "images",
+        "size": 548,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icparkhi.xpm"
+      },
+      {
+        "name": "icpol.png",
+        "logical_name": "icpol",
+        "path": "images/icpol.png",
+        "category": "images",
+        "size": 659,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icpol.xpm"
+      },
+      {
+        "name": "icpolhi.png",
+        "logical_name": "icpolhi",
+        "path": "images/icpolhi.png",
+        "category": "images",
+        "size": 695,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icpolhi.xpm"
+      },
+      {
+        "name": "icqry.png",
+        "logical_name": "icqry",
+        "path": "images/icqry.png",
+        "category": "images",
+        "size": 365,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icqry.xpm"
+      },
+      {
+        "name": "icqryhi.png",
+        "logical_name": "icqryhi",
+        "path": "images/icqryhi.png",
+        "category": "images",
+        "size": 307,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icqryhi.xpm"
+      },
+      {
+        "name": "icrail.png",
+        "logical_name": "icrail",
+        "path": "images/icrail.png",
+        "category": "images",
+        "size": 474,
+        "width": 56,
+        "height": 24,
+        "legacy_source": "images/icrail.xpm"
+      },
+      {
+        "name": "icrailhi.png",
+        "logical_name": "icrailhi",
+        "path": "images/icrailhi.png",
+        "category": "images",
+        "size": 424,
+        "width": 56,
+        "height": 24,
+        "legacy_source": "images/icrailhi.xpm"
+      },
+      {
+        "name": "icres.png",
+        "logical_name": "icres",
+        "path": "images/icres.png",
+        "category": "images",
+        "size": 538,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/icres.xpm"
+      },
+      {
+        "name": "icreshi.png",
+        "logical_name": "icreshi",
+        "path": "images/icreshi.png",
+        "category": "images",
+        "size": 514,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/icreshi.xpm"
+      },
+      {
+        "name": "icroad.png",
+        "logical_name": "icroad",
+        "path": "images/icroad.png",
+        "category": "images",
+        "size": 373,
+        "width": 56,
+        "height": 24,
+        "legacy_source": "images/icroad.xpm"
+      },
+      {
+        "name": "icroadhi.png",
+        "logical_name": "icroadhi",
+        "path": "images/icroadhi.png",
+        "category": "images",
+        "size": 321,
+        "width": 56,
+        "height": 24,
+        "legacy_source": "images/icroadhi.xpm"
+      },
+      {
+        "name": "icseap.png",
+        "logical_name": "icseap",
+        "path": "images/icseap.png",
+        "category": "images",
+        "size": 786,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/icseap.xpm"
+      },
+      {
+        "name": "icseaphi.png",
+        "logical_name": "icseaphi",
+        "path": "images/icseaphi.png",
+        "category": "images",
+        "size": 1088,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/icseaphi.xpm"
+      },
+      {
+        "name": "icstad.png",
+        "logical_name": "icstad",
+        "path": "images/icstad.png",
+        "category": "images",
+        "size": 751,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/icstad.xpm"
+      },
+      {
+        "name": "icstadhi.png",
+        "logical_name": "icstadhi",
+        "path": "images/icstadhi.png",
+        "category": "images",
+        "size": 876,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/icstadhi.xpm"
+      },
+      {
+        "name": "icwire.png",
+        "logical_name": "icwire",
+        "path": "images/icwire.png",
+        "category": "images",
+        "size": 394,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icwire.xpm"
+      },
+      {
+        "name": "icwirehi.png",
+        "logical_name": "icwirehi",
+        "path": "images/icwirehi.png",
+        "category": "images",
+        "size": 322,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/icwirehi.xpm"
+      },
+      {
+        "name": "ind.png",
+        "logical_name": "ind",
+        "path": "images/ind.png",
+        "category": "images",
+        "size": 234,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/ind.xpm"
+      },
+      {
+        "name": "key.png",
+        "logical_name": "key",
+        "path": "images/key.png",
+        "category": "images",
+        "size": 334,
+        "width": 53,
+        "height": 23,
+        "legacy_source": "images/key.xpm"
+      },
+      {
+        "name": "key2city.png",
+        "logical_name": "key2city",
+        "path": "images/key2city.png",
+        "category": "images",
+        "size": 801,
+        "width": 134,
+        "height": 56,
+        "legacy_source": "images/key2city.xpm"
+      },
+      {
+        "name": "leftdisabled.png",
+        "logical_name": "leftdisabled",
+        "path": "images/leftdisabled.png",
+        "category": "images",
+        "size": 3003,
+        "width": 50,
+        "height": 50,
+        "legacy_source": "images/leftdisabled.xpm"
+      },
+      {
+        "name": "lefthilite.png",
+        "logical_name": "lefthilite",
+        "path": "images/lefthilite.png",
+        "category": "images",
+        "size": 3696,
+        "width": 50,
+        "height": 50,
+        "legacy_source": "images/lefthilite.xpm"
+      },
+      {
+        "name": "legendmm.png",
+        "logical_name": "legendmm",
+        "path": "images/legendmm.png",
+        "category": "images",
+        "size": 273,
+        "width": 93,
+        "height": 14,
+        "legacy_source": "images/legendmm.xpm"
+      },
+      {
+        "name": "legendn.png",
+        "logical_name": "legendn",
+        "path": "images/legendn.png",
+        "category": "images",
+        "size": 77,
+        "width": 1,
+        "height": 14,
+        "legacy_source": "images/legendn.xpm"
+      },
+      {
+        "name": "legendpm.png",
+        "logical_name": "legendpm",
+        "path": "images/legendpm.png",
+        "category": "images",
+        "size": 269,
+        "width": 93,
+        "height": 14,
+        "legacy_source": "images/legendpm.xpm"
+      },
+      {
+        "name": "maphilite.png",
+        "logical_name": "maphilite",
+        "path": "images/maphilite.png",
+        "category": "images",
+        "size": 14949,
+        "width": 396,
+        "height": 338,
+        "legacy_source": "images/maphilite.xpm"
+      },
+      {
+        "name": "micropolisg.png",
+        "logical_name": "micropolisg",
+        "path": "images/micropolisg.png",
+        "category": "images",
+        "size": 781,
+        "width": 37,
+        "height": 47,
+        "legacy_source": "images/micropolisg.xpm"
+      },
+      {
+        "name": "micropolism.png",
+        "logical_name": "micropolism",
+        "path": "images/micropolism.png",
+        "category": "images",
+        "size": 1105,
+        "width": 58,
+        "height": 67,
+        "legacy_source": "images/micropolism.xpm"
+      },
+      {
+        "name": "micropoliss.png",
+        "logical_name": "micropoliss",
+        "path": "images/micropoliss.png",
+        "category": "images",
+        "size": 777,
+        "width": 37,
+        "height": 47,
+        "legacy_source": "images/micropoliss.xpm"
+      },
+      {
+        "name": "nuclear.png",
+        "logical_name": "nuclear",
+        "path": "images/nuclear.png",
+        "category": "images",
+        "size": 1312,
+        "width": 64,
+        "height": 64,
+        "legacy_source": "images/nuclear.xpm"
+      },
+      {
+        "name": "obj1-0.png",
+        "logical_name": "obj1-0",
+        "path": "images/obj1-0.png",
+        "category": "images",
+        "size": 251,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj1-0.xpm"
+      },
+      {
+        "name": "obj1-1.png",
+        "logical_name": "obj1-1",
+        "path": "images/obj1-1.png",
+        "category": "images",
+        "size": 222,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj1-1.xpm"
+      },
+      {
+        "name": "obj1-2.png",
+        "logical_name": "obj1-2",
+        "path": "images/obj1-2.png",
+        "category": "images",
+        "size": 272,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj1-2.xpm"
+      },
+      {
+        "name": "obj1-3.png",
+        "logical_name": "obj1-3",
+        "path": "images/obj1-3.png",
+        "category": "images",
+        "size": 281,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj1-3.xpm"
+      },
+      {
+        "name": "obj1-4.png",
+        "logical_name": "obj1-4",
+        "path": "images/obj1-4.png",
+        "category": "images",
+        "size": 83,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj1-4.xpm"
+      },
+      {
+        "name": "obj2-0.png",
+        "logical_name": "obj2-0",
+        "path": "images/obj2-0.png",
+        "category": "images",
+        "size": 390,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj2-0.xpm"
+      },
+      {
+        "name": "obj2-1.png",
+        "logical_name": "obj2-1",
+        "path": "images/obj2-1.png",
+        "category": "images",
+        "size": 400,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj2-1.xpm"
+      },
+      {
+        "name": "obj2-2.png",
+        "logical_name": "obj2-2",
+        "path": "images/obj2-2.png",
+        "category": "images",
+        "size": 348,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj2-2.xpm"
+      },
+      {
+        "name": "obj2-3.png",
+        "logical_name": "obj2-3",
+        "path": "images/obj2-3.png",
+        "category": "images",
+        "size": 396,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj2-3.xpm"
+      },
+      {
+        "name": "obj2-4.png",
+        "logical_name": "obj2-4",
+        "path": "images/obj2-4.png",
+        "category": "images",
+        "size": 384,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj2-4.xpm"
+      },
+      {
+        "name": "obj2-5.png",
+        "logical_name": "obj2-5",
+        "path": "images/obj2-5.png",
+        "category": "images",
+        "size": 378,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj2-5.xpm"
+      },
+      {
+        "name": "obj2-6.png",
+        "logical_name": "obj2-6",
+        "path": "images/obj2-6.png",
+        "category": "images",
+        "size": 341,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj2-6.xpm"
+      },
+      {
+        "name": "obj2-7.png",
+        "logical_name": "obj2-7",
+        "path": "images/obj2-7.png",
+        "category": "images",
+        "size": 397,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj2-7.xpm"
+      },
+      {
+        "name": "obj3-0.png",
+        "logical_name": "obj3-0",
+        "path": "images/obj3-0.png",
+        "category": "images",
+        "size": 502,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-0.xpm"
+      },
+      {
+        "name": "obj3-1.png",
+        "logical_name": "obj3-1",
+        "path": "images/obj3-1.png",
+        "category": "images",
+        "size": 477,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-1.xpm"
+      },
+      {
+        "name": "obj3-10.png",
+        "logical_name": "obj3-10",
+        "path": "images/obj3-10.png",
+        "category": "images",
+        "size": 357,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-10.xpm"
+      },
+      {
+        "name": "obj3-2.png",
+        "logical_name": "obj3-2",
+        "path": "images/obj3-2.png",
+        "category": "images",
+        "size": 443,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-2.xpm"
+      },
+      {
+        "name": "obj3-3.png",
+        "logical_name": "obj3-3",
+        "path": "images/obj3-3.png",
+        "category": "images",
+        "size": 480,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-3.xpm"
+      },
+      {
+        "name": "obj3-4.png",
+        "logical_name": "obj3-4",
+        "path": "images/obj3-4.png",
+        "category": "images",
+        "size": 523,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-4.xpm"
+      },
+      {
+        "name": "obj3-5.png",
+        "logical_name": "obj3-5",
+        "path": "images/obj3-5.png",
+        "category": "images",
+        "size": 476,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-5.xpm"
+      },
+      {
+        "name": "obj3-6.png",
+        "logical_name": "obj3-6",
+        "path": "images/obj3-6.png",
+        "category": "images",
+        "size": 443,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-6.xpm"
+      },
+      {
+        "name": "obj3-7.png",
+        "logical_name": "obj3-7",
+        "path": "images/obj3-7.png",
+        "category": "images",
+        "size": 477,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-7.xpm"
+      },
+      {
+        "name": "obj3-8.png",
+        "logical_name": "obj3-8",
+        "path": "images/obj3-8.png",
+        "category": "images",
+        "size": 450,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-8.xpm"
+      },
+      {
+        "name": "obj3-9.png",
+        "logical_name": "obj3-9",
+        "path": "images/obj3-9.png",
+        "category": "images",
+        "size": 419,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj3-9.xpm"
+      },
+      {
+        "name": "obj4-0.png",
+        "logical_name": "obj4-0",
+        "path": "images/obj4-0.png",
+        "category": "images",
+        "size": 569,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj4-0.xpm"
+      },
+      {
+        "name": "obj4-1.png",
+        "logical_name": "obj4-1",
+        "path": "images/obj4-1.png",
+        "category": "images",
+        "size": 629,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj4-1.xpm"
+      },
+      {
+        "name": "obj4-2.png",
+        "logical_name": "obj4-2",
+        "path": "images/obj4-2.png",
+        "category": "images",
+        "size": 477,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj4-2.xpm"
+      },
+      {
+        "name": "obj4-3.png",
+        "logical_name": "obj4-3",
+        "path": "images/obj4-3.png",
+        "category": "images",
+        "size": 642,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj4-3.xpm"
+      },
+      {
+        "name": "obj4-4.png",
+        "logical_name": "obj4-4",
+        "path": "images/obj4-4.png",
+        "category": "images",
+        "size": 601,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj4-4.xpm"
+      },
+      {
+        "name": "obj4-5.png",
+        "logical_name": "obj4-5",
+        "path": "images/obj4-5.png",
+        "category": "images",
+        "size": 660,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj4-5.xpm"
+      },
+      {
+        "name": "obj4-6.png",
+        "logical_name": "obj4-6",
+        "path": "images/obj4-6.png",
+        "category": "images",
+        "size": 464,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj4-6.xpm"
+      },
+      {
+        "name": "obj4-7.png",
+        "logical_name": "obj4-7",
+        "path": "images/obj4-7.png",
+        "category": "images",
+        "size": 638,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj4-7.xpm"
+      },
+      {
+        "name": "obj5-0.png",
+        "logical_name": "obj5-0",
+        "path": "images/obj5-0.png",
+        "category": "images",
+        "size": 519,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-0.xpm"
+      },
+      {
+        "name": "obj5-1.png",
+        "logical_name": "obj5-1",
+        "path": "images/obj5-1.png",
+        "category": "images",
+        "size": 456,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-1.xpm"
+      },
+      {
+        "name": "obj5-10.png",
+        "logical_name": "obj5-10",
+        "path": "images/obj5-10.png",
+        "category": "images",
+        "size": 596,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-10.xpm"
+      },
+      {
+        "name": "obj5-11.png",
+        "logical_name": "obj5-11",
+        "path": "images/obj5-11.png",
+        "category": "images",
+        "size": 551,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-11.xpm"
+      },
+      {
+        "name": "obj5-12.png",
+        "logical_name": "obj5-12",
+        "path": "images/obj5-12.png",
+        "category": "images",
+        "size": 546,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-12.xpm"
+      },
+      {
+        "name": "obj5-13.png",
+        "logical_name": "obj5-13",
+        "path": "images/obj5-13.png",
+        "category": "images",
+        "size": 461,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-13.xpm"
+      },
+      {
+        "name": "obj5-14.png",
+        "logical_name": "obj5-14",
+        "path": "images/obj5-14.png",
+        "category": "images",
+        "size": 484,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-14.xpm"
+      },
+      {
+        "name": "obj5-15.png",
+        "logical_name": "obj5-15",
+        "path": "images/obj5-15.png",
+        "category": "images",
+        "size": 458,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-15.xpm"
+      },
+      {
+        "name": "obj5-2.png",
+        "logical_name": "obj5-2",
+        "path": "images/obj5-2.png",
+        "category": "images",
+        "size": 499,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-2.xpm"
+      },
+      {
+        "name": "obj5-3.png",
+        "logical_name": "obj5-3",
+        "path": "images/obj5-3.png",
+        "category": "images",
+        "size": 563,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-3.xpm"
+      },
+      {
+        "name": "obj5-4.png",
+        "logical_name": "obj5-4",
+        "path": "images/obj5-4.png",
+        "category": "images",
+        "size": 528,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-4.xpm"
+      },
+      {
+        "name": "obj5-5.png",
+        "logical_name": "obj5-5",
+        "path": "images/obj5-5.png",
+        "category": "images",
+        "size": 521,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-5.xpm"
+      },
+      {
+        "name": "obj5-6.png",
+        "logical_name": "obj5-6",
+        "path": "images/obj5-6.png",
+        "category": "images",
+        "size": 512,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-6.xpm"
+      },
+      {
+        "name": "obj5-7.png",
+        "logical_name": "obj5-7",
+        "path": "images/obj5-7.png",
+        "category": "images",
+        "size": 535,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-7.xpm"
+      },
+      {
+        "name": "obj5-8.png",
+        "logical_name": "obj5-8",
+        "path": "images/obj5-8.png",
+        "category": "images",
+        "size": 502,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-8.xpm"
+      },
+      {
+        "name": "obj5-9.png",
+        "logical_name": "obj5-9",
+        "path": "images/obj5-9.png",
+        "category": "images",
+        "size": 568,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj5-9.xpm"
+      },
+      {
+        "name": "obj6-0.png",
+        "logical_name": "obj6-0",
+        "path": "images/obj6-0.png",
+        "category": "images",
+        "size": 669,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj6-0.xpm"
+      },
+      {
+        "name": "obj6-1.png",
+        "logical_name": "obj6-1",
+        "path": "images/obj6-1.png",
+        "category": "images",
+        "size": 620,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj6-1.xpm"
+      },
+      {
+        "name": "obj6-2.png",
+        "logical_name": "obj6-2",
+        "path": "images/obj6-2.png",
+        "category": "images",
+        "size": 634,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj6-2.xpm"
+      },
+      {
+        "name": "obj7-0.png",
+        "logical_name": "obj7-0",
+        "path": "images/obj7-0.png",
+        "category": "images",
+        "size": 219,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj7-0.xpm"
+      },
+      {
+        "name": "obj7-1.png",
+        "logical_name": "obj7-1",
+        "path": "images/obj7-1.png",
+        "category": "images",
+        "size": 380,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj7-1.xpm"
+      },
+      {
+        "name": "obj7-2.png",
+        "logical_name": "obj7-2",
+        "path": "images/obj7-2.png",
+        "category": "images",
+        "size": 673,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj7-2.xpm"
+      },
+      {
+        "name": "obj7-3.png",
+        "logical_name": "obj7-3",
+        "path": "images/obj7-3.png",
+        "category": "images",
+        "size": 776,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj7-3.xpm"
+      },
+      {
+        "name": "obj7-4.png",
+        "logical_name": "obj7-4",
+        "path": "images/obj7-4.png",
+        "category": "images",
+        "size": 711,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj7-4.xpm"
+      },
+      {
+        "name": "obj7-5.png",
+        "logical_name": "obj7-5",
+        "path": "images/obj7-5.png",
+        "category": "images",
+        "size": 326,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/obj7-5.xpm"
+      },
+      {
+        "name": "obj8-0.png",
+        "logical_name": "obj8-0",
+        "path": "images/obj8-0.png",
+        "category": "images",
+        "size": 251,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj8-0.xpm"
+      },
+      {
+        "name": "obj8-1.png",
+        "logical_name": "obj8-1",
+        "path": "images/obj8-1.png",
+        "category": "images",
+        "size": 222,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj8-1.xpm"
+      },
+      {
+        "name": "obj8-2.png",
+        "logical_name": "obj8-2",
+        "path": "images/obj8-2.png",
+        "category": "images",
+        "size": 272,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj8-2.xpm"
+      },
+      {
+        "name": "obj8-3.png",
+        "logical_name": "obj8-3",
+        "path": "images/obj8-3.png",
+        "category": "images",
+        "size": 281,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/obj8-3.xpm"
+      },
+      {
+        "name": "playhilite.png",
+        "logical_name": "playhilite",
+        "path": "images/playhilite.png",
+        "category": "images",
+        "size": 11624,
+        "width": 180,
+        "height": 50,
+        "legacy_source": "images/playhilite.xpm"
+      },
+      {
+        "name": "police.png",
+        "logical_name": "police",
+        "path": "images/police.png",
+        "category": "images",
+        "size": 840,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/police.xpm"
+      },
+      {
+        "name": "res.png",
+        "logical_name": "res",
+        "path": "images/res.png",
+        "category": "images",
+        "size": 288,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/res.xpm"
+      },
+      {
+        "name": "rightdisabled.png",
+        "logical_name": "rightdisabled",
+        "path": "images/rightdisabled.png",
+        "category": "images",
+        "size": 2865,
+        "width": 50,
+        "height": 50,
+        "legacy_source": "images/rightdisabled.xpm"
+      },
+      {
+        "name": "righthilite.png",
+        "logical_name": "righthilite",
+        "path": "images/righthilite.png",
+        "category": "images",
+        "size": 3501,
+        "width": 50,
+        "height": 50,
+        "legacy_source": "images/righthilite.xpm"
+      },
+      {
+        "name": "scbern.png",
+        "logical_name": "scbern",
+        "path": "images/scbern.png",
+        "category": "images",
+        "size": 1482,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scbern.xpm"
+      },
+      {
+        "name": "scbernhi.png",
+        "logical_name": "scbernhi",
+        "path": "images/scbernhi.png",
+        "category": "images",
+        "size": 1466,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scbernhi.xpm"
+      },
+      {
+        "name": "scbos.png",
+        "logical_name": "scbos",
+        "path": "images/scbos.png",
+        "category": "images",
+        "size": 1428,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scbos.xpm"
+      },
+      {
+        "name": "scboshi.png",
+        "logical_name": "scboshi",
+        "path": "images/scboshi.png",
+        "category": "images",
+        "size": 1407,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scboshi.xpm"
+      },
+      {
+        "name": "scdet.png",
+        "logical_name": "scdet",
+        "path": "images/scdet.png",
+        "category": "images",
+        "size": 1319,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scdet.xpm"
+      },
+      {
+        "name": "scdethi.png",
+        "logical_name": "scdethi",
+        "path": "images/scdethi.png",
+        "category": "images",
+        "size": 1304,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scdethi.xpm"
+      },
+      {
+        "name": "scdull.png",
+        "logical_name": "scdull",
+        "path": "images/scdull.png",
+        "category": "images",
+        "size": 1324,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scdull.xpm"
+      },
+      {
+        "name": "scdullhi.png",
+        "logical_name": "scdullhi",
+        "path": "images/scdullhi.png",
+        "category": "images",
+        "size": 1264,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scdullhi.xpm"
+      },
+      {
+        "name": "scenario1hilite.png",
+        "logical_name": "scenario1hilite",
+        "path": "images/scenario1hilite.png",
+        "category": "images",
+        "size": 52024,
+        "width": 209,
+        "height": 188,
+        "legacy_source": "images/scenario1hilite.xpm"
+      },
+      {
+        "name": "scenario2hilite.png",
+        "logical_name": "scenario2hilite",
+        "path": "images/scenario2hilite.png",
+        "category": "images",
+        "size": 53318,
+        "width": 209,
+        "height": 188,
+        "legacy_source": "images/scenario2hilite.xpm"
+      },
+      {
+        "name": "scenario3hilite.png",
+        "logical_name": "scenario3hilite",
+        "path": "images/scenario3hilite.png",
+        "category": "images",
+        "size": 58216,
+        "width": 209,
+        "height": 188,
+        "legacy_source": "images/scenario3hilite.xpm"
+      },
+      {
+        "name": "scenario4hilite.png",
+        "logical_name": "scenario4hilite",
+        "path": "images/scenario4hilite.png",
+        "category": "images",
+        "size": 55756,
+        "width": 209,
+        "height": 188,
+        "legacy_source": "images/scenario4hilite.xpm"
+      },
+      {
+        "name": "scenario5hilite.png",
+        "logical_name": "scenario5hilite",
+        "path": "images/scenario5hilite.png",
+        "category": "images",
+        "size": 53481,
+        "width": 209,
+        "height": 188,
+        "legacy_source": "images/scenario5hilite.xpm"
+      },
+      {
+        "name": "scenario6hilite.png",
+        "logical_name": "scenario6hilite",
+        "path": "images/scenario6hilite.png",
+        "category": "images",
+        "size": 58624,
+        "width": 209,
+        "height": 188,
+        "legacy_source": "images/scenario6hilite.xpm"
+      },
+      {
+        "name": "scenario7hilite.png",
+        "logical_name": "scenario7hilite",
+        "path": "images/scenario7hilite.png",
+        "category": "images",
+        "size": 57097,
+        "width": 209,
+        "height": 188,
+        "legacy_source": "images/scenario7hilite.xpm"
+      },
+      {
+        "name": "scenario8hilite.png",
+        "logical_name": "scenario8hilite",
+        "path": "images/scenario8hilite.png",
+        "category": "images",
+        "size": 56700,
+        "width": 209,
+        "height": 188,
+        "legacy_source": "images/scenario8hilite.xpm"
+      },
+      {
+        "name": "scham.png",
+        "logical_name": "scham",
+        "path": "images/scham.png",
+        "category": "images",
+        "size": 1450,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scham.xpm"
+      },
+      {
+        "name": "schamhi.png",
+        "logical_name": "schamhi",
+        "path": "images/schamhi.png",
+        "category": "images",
+        "size": 1413,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/schamhi.xpm"
+      },
+      {
+        "name": "sclcty.png",
+        "logical_name": "sclcty",
+        "path": "images/sclcty.png",
+        "category": "images",
+        "size": 519,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/sclcty.xpm"
+      },
+      {
+        "name": "sclctyhi.png",
+        "logical_name": "sclctyhi",
+        "path": "images/sclctyhi.png",
+        "category": "images",
+        "size": 649,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/sclctyhi.xpm"
+      },
+      {
+        "name": "scncty.png",
+        "logical_name": "scncty",
+        "path": "images/scncty.png",
+        "category": "images",
+        "size": 516,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scncty.xpm"
+      },
+      {
+        "name": "scnctyhi.png",
+        "logical_name": "scnctyhi",
+        "path": "images/scnctyhi.png",
+        "category": "images",
+        "size": 654,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scnctyhi.xpm"
+      },
+      {
+        "name": "scrio.png",
+        "logical_name": "scrio",
+        "path": "images/scrio.png",
+        "category": "images",
+        "size": 1435,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scrio.xpm"
+      },
+      {
+        "name": "scriohi.png",
+        "logical_name": "scriohi",
+        "path": "images/scriohi.png",
+        "category": "images",
+        "size": 1421,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scriohi.xpm"
+      },
+      {
+        "name": "scsfo.png",
+        "logical_name": "scsfo",
+        "path": "images/scsfo.png",
+        "category": "images",
+        "size": 1378,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scsfo.xpm"
+      },
+      {
+        "name": "scsfohi.png",
+        "logical_name": "scsfohi",
+        "path": "images/scsfohi.png",
+        "category": "images",
+        "size": 1359,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/scsfohi.xpm"
+      },
+      {
+        "name": "sctkyo.png",
+        "logical_name": "sctkyo",
+        "path": "images/sctkyo.png",
+        "category": "images",
+        "size": 1321,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/sctkyo.xpm"
+      },
+      {
+        "name": "sctkyohi.png",
+        "logical_name": "sctkyohi",
+        "path": "images/sctkyohi.png",
+        "category": "images",
+        "size": 1289,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/sctkyohi.xpm"
+      },
+      {
+        "name": "seaport.png",
+        "logical_name": "seaport",
+        "path": "images/seaport.png",
+        "category": "images",
+        "size": 1662,
+        "width": 64,
+        "height": 64,
+        "legacy_source": "images/seaport.xpm"
+      },
+      {
+        "name": "spacer.png",
+        "logical_name": "spacer",
+        "path": "images/spacer.png",
+        "category": "images",
+        "size": 86,
+        "width": 126,
+        "height": 2,
+        "legacy_source": "images/spacer.xpm"
+      },
+      {
+        "name": "stadium.png",
+        "logical_name": "stadium",
+        "path": "images/stadium.png",
+        "category": "images",
+        "size": 1434,
+        "width": 64,
+        "height": 64,
+        "legacy_source": "images/stadium.xpm"
+      },
+      {
+        "name": "tiles-0.png",
+        "logical_name": "tiles-0",
+        "path": "images/tiles-0.png",
+        "category": "images",
+        "size": 2250,
+        "width": 96,
+        "height": 96,
+        "legacy_source": "images/tiles-0.xpm"
+      },
+      {
+        "name": "tiles-1.png",
+        "logical_name": "tiles-1",
+        "path": "images/tiles-1.png",
+        "category": "images",
+        "size": 1199,
+        "width": 64,
+        "height": 64,
+        "legacy_source": "images/tiles-1.xpm"
+      },
+      {
+        "name": "tiles-10.png",
+        "logical_name": "tiles-10",
+        "path": "images/tiles-10.png",
+        "category": "images",
+        "size": 423,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-10.xpm"
+      },
+      {
+        "name": "tiles-100.png",
+        "logical_name": "tiles-100",
+        "path": "images/tiles-100.png",
+        "category": "images",
+        "size": 546,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-100.xpm"
+      },
+      {
+        "name": "tiles-101.png",
+        "logical_name": "tiles-101",
+        "path": "images/tiles-101.png",
+        "category": "images",
+        "size": 461,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-101.xpm"
+      },
+      {
+        "name": "tiles-102.png",
+        "logical_name": "tiles-102",
+        "path": "images/tiles-102.png",
+        "category": "images",
+        "size": 484,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-102.xpm"
+      },
+      {
+        "name": "tiles-103.png",
+        "logical_name": "tiles-103",
+        "path": "images/tiles-103.png",
+        "category": "images",
+        "size": 458,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-103.xpm"
+      },
+      {
+        "name": "tiles-104.png",
+        "logical_name": "tiles-104",
+        "path": "images/tiles-104.png",
+        "category": "images",
+        "size": 456,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-104.xpm"
+      },
+      {
+        "name": "tiles-105.png",
+        "logical_name": "tiles-105",
+        "path": "images/tiles-105.png",
+        "category": "images",
+        "size": 499,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-105.xpm"
+      },
+      {
+        "name": "tiles-106.png",
+        "logical_name": "tiles-106",
+        "path": "images/tiles-106.png",
+        "category": "images",
+        "size": 563,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-106.xpm"
+      },
+      {
+        "name": "tiles-107.png",
+        "logical_name": "tiles-107",
+        "path": "images/tiles-107.png",
+        "category": "images",
+        "size": 528,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-107.xpm"
+      },
+      {
+        "name": "tiles-108.png",
+        "logical_name": "tiles-108",
+        "path": "images/tiles-108.png",
+        "category": "images",
+        "size": 521,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-108.xpm"
+      },
+      {
+        "name": "tiles-109.png",
+        "logical_name": "tiles-109",
+        "path": "images/tiles-109.png",
+        "category": "images",
+        "size": 512,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-109.xpm"
+      },
+      {
+        "name": "tiles-11.png",
+        "logical_name": "tiles-11",
+        "path": "images/tiles-11.png",
+        "category": "images",
+        "size": 393,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-11.xpm"
+      },
+      {
+        "name": "tiles-110.png",
+        "logical_name": "tiles-110",
+        "path": "images/tiles-110.png",
+        "category": "images",
+        "size": 535,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-110.xpm"
+      },
+      {
+        "name": "tiles-111.png",
+        "logical_name": "tiles-111",
+        "path": "images/tiles-111.png",
+        "category": "images",
+        "size": 502,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-111.xpm"
+      },
+      {
+        "name": "tiles-112.png",
+        "logical_name": "tiles-112",
+        "path": "images/tiles-112.png",
+        "category": "images",
+        "size": 568,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-112.xpm"
+      },
+      {
+        "name": "tiles-113.png",
+        "logical_name": "tiles-113",
+        "path": "images/tiles-113.png",
+        "category": "images",
+        "size": 663,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-113.xpm"
+      },
+      {
+        "name": "tiles-114.png",
+        "logical_name": "tiles-114",
+        "path": "images/tiles-114.png",
+        "category": "images",
+        "size": 619,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-114.xpm"
+      },
+      {
+        "name": "tiles-115.png",
+        "logical_name": "tiles-115",
+        "path": "images/tiles-115.png",
+        "category": "images",
+        "size": 639,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-115.xpm"
+      },
+      {
+        "name": "tiles-116.png",
+        "logical_name": "tiles-116",
+        "path": "images/tiles-116.png",
+        "category": "images",
+        "size": 219,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-116.xpm"
+      },
+      {
+        "name": "tiles-117.png",
+        "logical_name": "tiles-117",
+        "path": "images/tiles-117.png",
+        "category": "images",
+        "size": 380,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-117.xpm"
+      },
+      {
+        "name": "tiles-118.png",
+        "logical_name": "tiles-118",
+        "path": "images/tiles-118.png",
+        "category": "images",
+        "size": 673,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-118.xpm"
+      },
+      {
+        "name": "tiles-119.png",
+        "logical_name": "tiles-119",
+        "path": "images/tiles-119.png",
+        "category": "images",
+        "size": 776,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-119.xpm"
+      },
+      {
+        "name": "tiles-12.png",
+        "logical_name": "tiles-12",
+        "path": "images/tiles-12.png",
+        "category": "images",
+        "size": 405,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-12.xpm"
+      },
+      {
+        "name": "tiles-120.png",
+        "logical_name": "tiles-120",
+        "path": "images/tiles-120.png",
+        "category": "images",
+        "size": 711,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-120.xpm"
+      },
+      {
+        "name": "tiles-121.png",
+        "logical_name": "tiles-121",
+        "path": "images/tiles-121.png",
+        "category": "images",
+        "size": 326,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-121.xpm"
+      },
+      {
+        "name": "tiles-122.png",
+        "logical_name": "tiles-122",
+        "path": "images/tiles-122.png",
+        "category": "images",
+        "size": 245,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-122.xpm"
+      },
+      {
+        "name": "tiles-123.png",
+        "logical_name": "tiles-123",
+        "path": "images/tiles-123.png",
+        "category": "images",
+        "size": 221,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-123.xpm"
+      },
+      {
+        "name": "tiles-124.png",
+        "logical_name": "tiles-124",
+        "path": "images/tiles-124.png",
+        "category": "images",
+        "size": 270,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-124.xpm"
+      },
+      {
+        "name": "tiles-125.png",
+        "logical_name": "tiles-125",
+        "path": "images/tiles-125.png",
+        "category": "images",
+        "size": 280,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-125.xpm"
+      },
+      {
+        "name": "tiles-126.png",
+        "logical_name": "tiles-126",
+        "path": "images/tiles-126.png",
+        "category": "images",
+        "size": 844,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-126.xpm"
+      },
+      {
+        "name": "tiles-127.png",
+        "logical_name": "tiles-127",
+        "path": "images/tiles-127.png",
+        "category": "images",
+        "size": 288,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-127.xpm"
+      },
+      {
+        "name": "tiles-128.png",
+        "logical_name": "tiles-128",
+        "path": "images/tiles-128.png",
+        "category": "images",
+        "size": 1443,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-128.xpm"
+      },
+      {
+        "name": "tiles-129.png",
+        "logical_name": "tiles-129",
+        "path": "images/tiles-129.png",
+        "category": "images",
+        "size": 1482,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-129.xpm"
+      },
+      {
+        "name": "tiles-13.png",
+        "logical_name": "tiles-13",
+        "path": "images/tiles-13.png",
+        "category": "images",
+        "size": 472,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-13.xpm"
+      },
+      {
+        "name": "tiles-130.png",
+        "logical_name": "tiles-130",
+        "path": "images/tiles-130.png",
+        "category": "images",
+        "size": 1392,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-130.xpm"
+      },
+      {
+        "name": "tiles-131.png",
+        "logical_name": "tiles-131",
+        "path": "images/tiles-131.png",
+        "category": "images",
+        "size": 1428,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-131.xpm"
+      },
+      {
+        "name": "tiles-132.png",
+        "logical_name": "tiles-132",
+        "path": "images/tiles-132.png",
+        "category": "images",
+        "size": 1233,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-132.xpm"
+      },
+      {
+        "name": "tiles-133.png",
+        "logical_name": "tiles-133",
+        "path": "images/tiles-133.png",
+        "category": "images",
+        "size": 1319,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-133.xpm"
+      },
+      {
+        "name": "tiles-134.png",
+        "logical_name": "tiles-134",
+        "path": "images/tiles-134.png",
+        "category": "images",
+        "size": 1255,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-134.xpm"
+      },
+      {
+        "name": "tiles-135.png",
+        "logical_name": "tiles-135",
+        "path": "images/tiles-135.png",
+        "category": "images",
+        "size": 1324,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-135.xpm"
+      },
+      {
+        "name": "tiles-136.png",
+        "logical_name": "tiles-136",
+        "path": "images/tiles-136.png",
+        "category": "images",
+        "size": 1417,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-136.xpm"
+      },
+      {
+        "name": "tiles-137.png",
+        "logical_name": "tiles-137",
+        "path": "images/tiles-137.png",
+        "category": "images",
+        "size": 1450,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-137.xpm"
+      },
+      {
+        "name": "tiles-138.png",
+        "logical_name": "tiles-138",
+        "path": "images/tiles-138.png",
+        "category": "images",
+        "size": 649,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-138.xpm"
+      },
+      {
+        "name": "tiles-139.png",
+        "logical_name": "tiles-139",
+        "path": "images/tiles-139.png",
+        "category": "images",
+        "size": 519,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-139.xpm"
+      },
+      {
+        "name": "tiles-14.png",
+        "logical_name": "tiles-14",
+        "path": "images/tiles-14.png",
+        "category": "images",
+        "size": 471,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-14.xpm"
+      },
+      {
+        "name": "tiles-140.png",
+        "logical_name": "tiles-140",
+        "path": "images/tiles-140.png",
+        "category": "images",
+        "size": 654,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-140.xpm"
+      },
+      {
+        "name": "tiles-141.png",
+        "logical_name": "tiles-141",
+        "path": "images/tiles-141.png",
+        "category": "images",
+        "size": 516,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-141.xpm"
+      },
+      {
+        "name": "tiles-142.png",
+        "logical_name": "tiles-142",
+        "path": "images/tiles-142.png",
+        "category": "images",
+        "size": 1395,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-142.xpm"
+      },
+      {
+        "name": "tiles-143.png",
+        "logical_name": "tiles-143",
+        "path": "images/tiles-143.png",
+        "category": "images",
+        "size": 1435,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-143.xpm"
+      },
+      {
+        "name": "tiles-144.png",
+        "logical_name": "tiles-144",
+        "path": "images/tiles-144.png",
+        "category": "images",
+        "size": 1324,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-144.xpm"
+      },
+      {
+        "name": "tiles-145.png",
+        "logical_name": "tiles-145",
+        "path": "images/tiles-145.png",
+        "category": "images",
+        "size": 1378,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-145.xpm"
+      },
+      {
+        "name": "tiles-146.png",
+        "logical_name": "tiles-146",
+        "path": "images/tiles-146.png",
+        "category": "images",
+        "size": 1280,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-146.xpm"
+      },
+      {
+        "name": "tiles-147.png",
+        "logical_name": "tiles-147",
+        "path": "images/tiles-147.png",
+        "category": "images",
+        "size": 1321,
+        "width": 67,
+        "height": 57,
+        "legacy_source": "images/tiles-147.xpm"
+      },
+      {
+        "name": "tiles-148.png",
+        "logical_name": "tiles-148",
+        "path": "images/tiles-148.png",
+        "category": "images",
+        "size": 1654,
+        "width": 64,
+        "height": 64,
+        "legacy_source": "images/tiles-148.xpm"
+      },
+      {
+        "name": "tiles-149.png",
+        "logical_name": "tiles-149",
+        "path": "images/tiles-149.png",
+        "category": "images",
+        "size": 781,
+        "width": 37,
+        "height": 47,
+        "legacy_source": "images/tiles-149.xpm"
+      },
+      {
+        "name": "tiles-15.png",
+        "logical_name": "tiles-15",
+        "path": "images/tiles-15.png",
+        "category": "images",
+        "size": 360,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-15.xpm"
+      },
+      {
+        "name": "tiles-150.png",
+        "logical_name": "tiles-150",
+        "path": "images/tiles-150.png",
+        "category": "images",
+        "size": 538,
+        "width": 123,
+        "height": 30,
+        "legacy_source": "images/tiles-150.xpm"
+      },
+      {
+        "name": "tiles-151.png",
+        "logical_name": "tiles-151",
+        "path": "images/tiles-151.png",
+        "category": "images",
+        "size": 1105,
+        "width": 58,
+        "height": 67,
+        "legacy_source": "images/tiles-151.xpm"
+      },
+      {
+        "name": "tiles-152.png",
+        "logical_name": "tiles-152",
+        "path": "images/tiles-152.png",
+        "category": "images",
+        "size": 777,
+        "width": 37,
+        "height": 47,
+        "legacy_source": "images/tiles-152.xpm"
+      },
+      {
+        "name": "tiles-153.png",
+        "logical_name": "tiles-153",
+        "path": "images/tiles-153.png",
+        "category": "images",
+        "size": 86,
+        "width": 126,
+        "height": 2,
+        "legacy_source": "images/tiles-153.xpm"
+      },
+      {
+        "name": "tiles-154.png",
+        "logical_name": "tiles-154",
+        "path": "images/tiles-154.png",
+        "category": "images",
+        "size": 1420,
+        "width": 64,
+        "height": 64,
+        "legacy_source": "images/tiles-154.xpm"
+      },
+      {
+        "name": "tiles-155.png",
+        "logical_name": "tiles-155",
+        "path": "images/tiles-155.png",
+        "category": "images",
+        "size": 62024,
+        "width": 16,
+        "height": 15360,
+        "legacy_source": "images/tiles-155.xpm"
+      },
+      {
+        "name": "tiles-156.png",
+        "logical_name": "tiles-156",
+        "path": "images/tiles-156.png",
+        "category": "images",
+        "size": 70,
+        "width": 1,
+        "height": 1,
+        "legacy_source": "images/tiles-156.xpm"
+      },
+      {
+        "name": "tiles-16.png",
+        "logical_name": "tiles-16",
+        "path": "images/tiles-16.png",
+        "category": "images",
+        "size": 372,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-16.xpm"
+      },
+      {
+        "name": "tiles-17.png",
+        "logical_name": "tiles-17",
+        "path": "images/tiles-17.png",
+        "category": "images",
+        "size": 405,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-17.xpm"
+      },
+      {
+        "name": "tiles-18.png",
+        "logical_name": "tiles-18",
+        "path": "images/tiles-18.png",
+        "category": "images",
+        "size": 422,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-18.xpm"
+      },
+      {
+        "name": "tiles-19.png",
+        "logical_name": "tiles-19",
+        "path": "images/tiles-19.png",
+        "category": "images",
+        "size": 421,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-19.xpm"
+      },
+      {
+        "name": "tiles-2.png",
+        "logical_name": "tiles-2",
+        "path": "images/tiles-2.png",
+        "category": "images",
+        "size": 301,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-2.xpm"
+      },
+      {
+        "name": "tiles-20.png",
+        "logical_name": "tiles-20",
+        "path": "images/tiles-20.png",
+        "category": "images",
+        "size": 425,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-20.xpm"
+      },
+      {
+        "name": "tiles-21.png",
+        "logical_name": "tiles-21",
+        "path": "images/tiles-21.png",
+        "category": "images",
+        "size": 1692,
+        "width": 58,
+        "height": 58,
+        "legacy_source": "images/tiles-21.xpm"
+      },
+      {
+        "name": "tiles-22.png",
+        "logical_name": "tiles-22",
+        "path": "images/tiles-22.png",
+        "category": "images",
+        "size": 1450,
+        "width": 58,
+        "height": 58,
+        "legacy_source": "images/tiles-22.xpm"
+      },
+      {
+        "name": "tiles-23.png",
+        "logical_name": "tiles-23",
+        "path": "images/tiles-23.png",
+        "category": "images",
+        "size": 150,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-23.xpm"
+      },
+      {
+        "name": "tiles-24.png",
+        "logical_name": "tiles-24",
+        "path": "images/tiles-24.png",
+        "category": "images",
+        "size": 152,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-24.xpm"
+      },
+      {
+        "name": "tiles-25.png",
+        "logical_name": "tiles-25",
+        "path": "images/tiles-25.png",
+        "category": "images",
+        "size": 1029,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/tiles-25.xpm"
+      },
+      {
+        "name": "tiles-26.png",
+        "logical_name": "tiles-26",
+        "path": "images/tiles-26.png",
+        "category": "images",
+        "size": 1021,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/tiles-26.xpm"
+      },
+      {
+        "name": "tiles-27.png",
+        "logical_name": "tiles-27",
+        "path": "images/tiles-27.png",
+        "category": "images",
+        "size": 516,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/tiles-27.xpm"
+      },
+      {
+        "name": "tiles-28.png",
+        "logical_name": "tiles-28",
+        "path": "images/tiles-28.png",
+        "category": "images",
+        "size": 554,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/tiles-28.xpm"
+      },
+      {
+        "name": "tiles-29.png",
+        "logical_name": "tiles-29",
+        "path": "images/tiles-29.png",
+        "category": "images",
+        "size": 462,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-29.xpm"
+      },
+      {
+        "name": "tiles-3.png",
+        "logical_name": "tiles-3",
+        "path": "images/tiles-3.png",
+        "category": "images",
+        "size": 300,
+        "width": 39,
+        "height": 47,
+        "legacy_source": "images/tiles-3.xpm"
+      },
+      {
+        "name": "tiles-30.png",
+        "logical_name": "tiles-30",
+        "path": "images/tiles-30.png",
+        "category": "images",
+        "size": 497,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-30.xpm"
+      },
+      {
+        "name": "tiles-31.png",
+        "logical_name": "tiles-31",
+        "path": "images/tiles-31.png",
+        "category": "images",
+        "size": 158,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-31.xpm"
+      },
+      {
+        "name": "tiles-32.png",
+        "logical_name": "tiles-32",
+        "path": "images/tiles-32.png",
+        "category": "images",
+        "size": 157,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-32.xpm"
+      },
+      {
+        "name": "tiles-33.png",
+        "logical_name": "tiles-33",
+        "path": "images/tiles-33.png",
+        "category": "images",
+        "size": 677,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-33.xpm"
+      },
+      {
+        "name": "tiles-34.png",
+        "logical_name": "tiles-34",
+        "path": "images/tiles-34.png",
+        "category": "images",
+        "size": 607,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-34.xpm"
+      },
+      {
+        "name": "tiles-35.png",
+        "logical_name": "tiles-35",
+        "path": "images/tiles-35.png",
+        "category": "images",
+        "size": 518,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/tiles-35.xpm"
+      },
+      {
+        "name": "tiles-36.png",
+        "logical_name": "tiles-36",
+        "path": "images/tiles-36.png",
+        "category": "images",
+        "size": 597,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/tiles-36.xpm"
+      },
+      {
+        "name": "tiles-37.png",
+        "logical_name": "tiles-37",
+        "path": "images/tiles-37.png",
+        "category": "images",
+        "size": 985,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/tiles-37.xpm"
+      },
+      {
+        "name": "tiles-38.png",
+        "logical_name": "tiles-38",
+        "path": "images/tiles-38.png",
+        "category": "images",
+        "size": 905,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/tiles-38.xpm"
+      },
+      {
+        "name": "tiles-39.png",
+        "logical_name": "tiles-39",
+        "path": "images/tiles-39.png",
+        "category": "images",
+        "size": 584,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-39.xpm"
+      },
+      {
+        "name": "tiles-4.png",
+        "logical_name": "tiles-4",
+        "path": "images/tiles-4.png",
+        "category": "images",
+        "size": 837,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-4.xpm"
+      },
+      {
+        "name": "tiles-40.png",
+        "logical_name": "tiles-40",
+        "path": "images/tiles-40.png",
+        "category": "images",
+        "size": 648,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-40.xpm"
+      },
+      {
+        "name": "tiles-41.png",
+        "logical_name": "tiles-41",
+        "path": "images/tiles-41.png",
+        "category": "images",
+        "size": 706,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-41.xpm"
+      },
+      {
+        "name": "tiles-42.png",
+        "logical_name": "tiles-42",
+        "path": "images/tiles-42.png",
+        "category": "images",
+        "size": 661,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-42.xpm"
+      },
+      {
+        "name": "tiles-43.png",
+        "logical_name": "tiles-43",
+        "path": "images/tiles-43.png",
+        "category": "images",
+        "size": 153,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-43.xpm"
+      },
+      {
+        "name": "tiles-44.png",
+        "logical_name": "tiles-44",
+        "path": "images/tiles-44.png",
+        "category": "images",
+        "size": 153,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-44.xpm"
+      },
+      {
+        "name": "tiles-45.png",
+        "logical_name": "tiles-45",
+        "path": "images/tiles-45.png",
+        "category": "images",
+        "size": 426,
+        "width": 56,
+        "height": 24,
+        "legacy_source": "images/tiles-45.xpm"
+      },
+      {
+        "name": "tiles-46.png",
+        "logical_name": "tiles-46",
+        "path": "images/tiles-46.png",
+        "category": "images",
+        "size": 477,
+        "width": 56,
+        "height": 24,
+        "legacy_source": "images/tiles-46.xpm"
+      },
+      {
+        "name": "tiles-47.png",
+        "logical_name": "tiles-47",
+        "path": "images/tiles-47.png",
+        "category": "images",
+        "size": 534,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/tiles-47.xpm"
+      },
+      {
+        "name": "tiles-48.png",
+        "logical_name": "tiles-48",
+        "path": "images/tiles-48.png",
+        "category": "images",
+        "size": 569,
+        "width": 34,
+        "height": 50,
+        "legacy_source": "images/tiles-48.xpm"
+      },
+      {
+        "name": "tiles-49.png",
+        "logical_name": "tiles-49",
+        "path": "images/tiles-49.png",
+        "category": "images",
+        "size": 315,
+        "width": 56,
+        "height": 24,
+        "legacy_source": "images/tiles-49.xpm"
+      },
+      {
+        "name": "tiles-5.png",
+        "logical_name": "tiles-5",
+        "path": "images/tiles-5.png",
+        "category": "images",
+        "size": 384,
+        "width": 69,
+        "height": 26,
+        "legacy_source": "images/tiles-5.xpm"
+      },
+      {
+        "name": "tiles-50.png",
+        "logical_name": "tiles-50",
+        "path": "images/tiles-50.png",
+        "category": "images",
+        "size": 366,
+        "width": 56,
+        "height": 24,
+        "legacy_source": "images/tiles-50.xpm"
+      },
+      {
+        "name": "tiles-51.png",
+        "logical_name": "tiles-51",
+        "path": "images/tiles-51.png",
+        "category": "images",
+        "size": 1108,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/tiles-51.xpm"
+      },
+      {
+        "name": "tiles-52.png",
+        "logical_name": "tiles-52",
+        "path": "images/tiles-52.png",
+        "category": "images",
+        "size": 796,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/tiles-52.xpm"
+      },
+      {
+        "name": "tiles-53.png",
+        "logical_name": "tiles-53",
+        "path": "images/tiles-53.png",
+        "category": "images",
+        "size": 867,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/tiles-53.xpm"
+      },
+      {
+        "name": "tiles-54.png",
+        "logical_name": "tiles-54",
+        "path": "images/tiles-54.png",
+        "category": "images",
+        "size": 764,
+        "width": 42,
+        "height": 42,
+        "legacy_source": "images/tiles-54.xpm"
+      },
+      {
+        "name": "tiles-55.png",
+        "logical_name": "tiles-55",
+        "path": "images/tiles-55.png",
+        "category": "images",
+        "size": 322,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-55.xpm"
+      },
+      {
+        "name": "tiles-56.png",
+        "logical_name": "tiles-56",
+        "path": "images/tiles-56.png",
+        "category": "images",
+        "size": 394,
+        "width": 34,
+        "height": 34,
+        "legacy_source": "images/tiles-56.xpm"
+      },
+      {
+        "name": "tiles-57.png",
+        "logical_name": "tiles-57",
+        "path": "images/tiles-57.png",
+        "category": "images",
+        "size": 234,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-57.xpm"
+      },
+      {
+        "name": "tiles-58.png",
+        "logical_name": "tiles-58",
+        "path": "images/tiles-58.png",
+        "category": "images",
+        "size": 801,
+        "width": 134,
+        "height": 56,
+        "legacy_source": "images/tiles-58.xpm"
+      },
+      {
+        "name": "tiles-59.png",
+        "logical_name": "tiles-59",
+        "path": "images/tiles-59.png",
+        "category": "images",
+        "size": 334,
+        "width": 53,
+        "height": 23,
+        "legacy_source": "images/tiles-59.xpm"
+      },
+      {
+        "name": "tiles-6.png",
+        "logical_name": "tiles-6",
+        "path": "images/tiles-6.png",
+        "category": "images",
+        "size": 400,
+        "width": 69,
+        "height": 26,
+        "legacy_source": "images/tiles-6.xpm"
+      },
+      {
+        "name": "tiles-60.png",
+        "logical_name": "tiles-60",
+        "path": "images/tiles-60.png",
+        "category": "images",
+        "size": 273,
+        "width": 93,
+        "height": 14,
+        "legacy_source": "images/tiles-60.xpm"
+      },
+      {
+        "name": "tiles-61.png",
+        "logical_name": "tiles-61",
+        "path": "images/tiles-61.png",
+        "category": "images",
+        "size": 77,
+        "width": 1,
+        "height": 14,
+        "legacy_source": "images/tiles-61.xpm"
+      },
+      {
+        "name": "tiles-62.png",
+        "logical_name": "tiles-62",
+        "path": "images/tiles-62.png",
+        "category": "images",
+        "size": 269,
+        "width": 93,
+        "height": 14,
+        "legacy_source": "images/tiles-62.xpm"
+      },
+      {
+        "name": "tiles-63.png",
+        "logical_name": "tiles-63",
+        "path": "images/tiles-63.png",
+        "category": "images",
+        "size": 478,
+        "width": 58,
+        "height": 39,
+        "legacy_source": "images/tiles-63.xpm"
+      },
+      {
+        "name": "tiles-64.png",
+        "logical_name": "tiles-64",
+        "path": "images/tiles-64.png",
+        "category": "images",
+        "size": 1361,
+        "width": 64,
+        "height": 64,
+        "legacy_source": "images/tiles-64.xpm"
+      },
+      {
+        "name": "tiles-65.png",
+        "logical_name": "tiles-65",
+        "path": "images/tiles-65.png",
+        "category": "images",
+        "size": 245,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-65.xpm"
+      },
+      {
+        "name": "tiles-66.png",
+        "logical_name": "tiles-66",
+        "path": "images/tiles-66.png",
+        "category": "images",
+        "size": 221,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-66.xpm"
+      },
+      {
+        "name": "tiles-67.png",
+        "logical_name": "tiles-67",
+        "path": "images/tiles-67.png",
+        "category": "images",
+        "size": 270,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-67.xpm"
+      },
+      {
+        "name": "tiles-68.png",
+        "logical_name": "tiles-68",
+        "path": "images/tiles-68.png",
+        "category": "images",
+        "size": 280,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-68.xpm"
+      },
+      {
+        "name": "tiles-69.png",
+        "logical_name": "tiles-69",
+        "path": "images/tiles-69.png",
+        "category": "images",
+        "size": 83,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-69.xpm"
+      },
+      {
+        "name": "tiles-7.png",
+        "logical_name": "tiles-7",
+        "path": "images/tiles-7.png",
+        "category": "images",
+        "size": 406,
+        "width": 69,
+        "height": 26,
+        "legacy_source": "images/tiles-7.xpm"
+      },
+      {
+        "name": "tiles-70.png",
+        "logical_name": "tiles-70",
+        "path": "images/tiles-70.png",
+        "category": "images",
+        "size": 396,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-70.xpm"
+      },
+      {
+        "name": "tiles-71.png",
+        "logical_name": "tiles-71",
+        "path": "images/tiles-71.png",
+        "category": "images",
+        "size": 397,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-71.xpm"
+      },
+      {
+        "name": "tiles-72.png",
+        "logical_name": "tiles-72",
+        "path": "images/tiles-72.png",
+        "category": "images",
+        "size": 344,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-72.xpm"
+      },
+      {
+        "name": "tiles-73.png",
+        "logical_name": "tiles-73",
+        "path": "images/tiles-73.png",
+        "category": "images",
+        "size": 403,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-73.xpm"
+      },
+      {
+        "name": "tiles-74.png",
+        "logical_name": "tiles-74",
+        "path": "images/tiles-74.png",
+        "category": "images",
+        "size": 397,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-74.xpm"
+      },
+      {
+        "name": "tiles-75.png",
+        "logical_name": "tiles-75",
+        "path": "images/tiles-75.png",
+        "category": "images",
+        "size": 383,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-75.xpm"
+      },
+      {
+        "name": "tiles-76.png",
+        "logical_name": "tiles-76",
+        "path": "images/tiles-76.png",
+        "category": "images",
+        "size": 339,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-76.xpm"
+      },
+      {
+        "name": "tiles-77.png",
+        "logical_name": "tiles-77",
+        "path": "images/tiles-77.png",
+        "category": "images",
+        "size": 405,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-77.xpm"
+      },
+      {
+        "name": "tiles-78.png",
+        "logical_name": "tiles-78",
+        "path": "images/tiles-78.png",
+        "category": "images",
+        "size": 511,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-78.xpm"
+      },
+      {
+        "name": "tiles-79.png",
+        "logical_name": "tiles-79",
+        "path": "images/tiles-79.png",
+        "category": "images",
+        "size": 373,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-79.xpm"
+      },
+      {
+        "name": "tiles-8.png",
+        "logical_name": "tiles-8",
+        "path": "images/tiles-8.png",
+        "category": "images",
+        "size": 424,
+        "width": 69,
+        "height": 26,
+        "legacy_source": "images/tiles-8.xpm"
+      },
+      {
+        "name": "tiles-80.png",
+        "logical_name": "tiles-80",
+        "path": "images/tiles-80.png",
+        "category": "images",
+        "size": 485,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-80.xpm"
+      },
+      {
+        "name": "tiles-81.png",
+        "logical_name": "tiles-81",
+        "path": "images/tiles-81.png",
+        "category": "images",
+        "size": 448,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-81.xpm"
+      },
+      {
+        "name": "tiles-82.png",
+        "logical_name": "tiles-82",
+        "path": "images/tiles-82.png",
+        "category": "images",
+        "size": 482,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-82.xpm"
+      },
+      {
+        "name": "tiles-83.png",
+        "logical_name": "tiles-83",
+        "path": "images/tiles-83.png",
+        "category": "images",
+        "size": 534,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-83.xpm"
+      },
+      {
+        "name": "tiles-84.png",
+        "logical_name": "tiles-84",
+        "path": "images/tiles-84.png",
+        "category": "images",
+        "size": 480,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-84.xpm"
+      },
+      {
+        "name": "tiles-85.png",
+        "logical_name": "tiles-85",
+        "path": "images/tiles-85.png",
+        "category": "images",
+        "size": 443,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-85.xpm"
+      },
+      {
+        "name": "tiles-86.png",
+        "logical_name": "tiles-86",
+        "path": "images/tiles-86.png",
+        "category": "images",
+        "size": 456,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-86.xpm"
+      },
+      {
+        "name": "tiles-87.png",
+        "logical_name": "tiles-87",
+        "path": "images/tiles-87.png",
+        "category": "images",
+        "size": 465,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-87.xpm"
+      },
+      {
+        "name": "tiles-88.png",
+        "logical_name": "tiles-88",
+        "path": "images/tiles-88.png",
+        "category": "images",
+        "size": 423,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-88.xpm"
+      },
+      {
+        "name": "tiles-89.png",
+        "logical_name": "tiles-89",
+        "path": "images/tiles-89.png",
+        "category": "images",
+        "size": 555,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-89.xpm"
+      },
+      {
+        "name": "tiles-9.png",
+        "logical_name": "tiles-9",
+        "path": "images/tiles-9.png",
+        "category": "images",
+        "size": 430,
+        "width": 32,
+        "height": 32,
+        "legacy_source": "images/tiles-9.xpm"
+      },
+      {
+        "name": "tiles-90.png",
+        "logical_name": "tiles-90",
+        "path": "images/tiles-90.png",
+        "category": "images",
+        "size": 626,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-90.xpm"
+      },
+      {
+        "name": "tiles-91.png",
+        "logical_name": "tiles-91",
+        "path": "images/tiles-91.png",
+        "category": "images",
+        "size": 475,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-91.xpm"
+      },
+      {
+        "name": "tiles-92.png",
+        "logical_name": "tiles-92",
+        "path": "images/tiles-92.png",
+        "category": "images",
+        "size": 629,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-92.xpm"
+      },
+      {
+        "name": "tiles-93.png",
+        "logical_name": "tiles-93",
+        "path": "images/tiles-93.png",
+        "category": "images",
+        "size": 587,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-93.xpm"
+      },
+      {
+        "name": "tiles-94.png",
+        "logical_name": "tiles-94",
+        "path": "images/tiles-94.png",
+        "category": "images",
+        "size": 652,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-94.xpm"
+      },
+      {
+        "name": "tiles-95.png",
+        "logical_name": "tiles-95",
+        "path": "images/tiles-95.png",
+        "category": "images",
+        "size": 461,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-95.xpm"
+      },
+      {
+        "name": "tiles-96.png",
+        "logical_name": "tiles-96",
+        "path": "images/tiles-96.png",
+        "category": "images",
+        "size": 628,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-96.xpm"
+      },
+      {
+        "name": "tiles-97.png",
+        "logical_name": "tiles-97",
+        "path": "images/tiles-97.png",
+        "category": "images",
+        "size": 519,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-97.xpm"
+      },
+      {
+        "name": "tiles-98.png",
+        "logical_name": "tiles-98",
+        "path": "images/tiles-98.png",
+        "category": "images",
+        "size": 596,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-98.xpm"
+      },
+      {
+        "name": "tiles-99.png",
+        "logical_name": "tiles-99",
+        "path": "images/tiles-99.png",
+        "category": "images",
+        "size": 551,
+        "width": 48,
+        "height": 48,
+        "legacy_source": "images/tiles-99.xpm"
+      },
+      {
+        "name": "tiles.png",
+        "logical_name": "tiles",
+        "path": "images/tiles.png",
+        "category": "images",
+        "size": 79868,
+        "width": 16,
+        "height": 15360,
+        "legacy_source": "images/tiles.xpm"
+      },
+      {
+        "name": "tilesbw.png",
+        "logical_name": "tilesbw",
+        "path": "images/tilesbw.png",
+        "category": "images",
+        "size": 62024,
+        "width": 16,
+        "height": 15360,
+        "legacy_source": "images/tilesbw.xpm"
+      },
+      {
+        "name": "tilessm.png",
+        "logical_name": "tilessm",
+        "path": "images/tilessm.png",
+        "category": "images",
+        "size": 6246,
+        "width": 4,
+        "height": 2880,
+        "legacy_source": "images/tilessm.xpm"
+      }
+    ],
+    "fonts": [
+      {
+        "name": "DejaVuLGCSans-Bold.ttf",
+        "logical_name": "dejavulgcsans-bold",
+        "path": "dejavu-lgc/DejaVuLGCSans-Bold.ttf",
+        "category": "fonts",
+        "size": 426444,
+        "x11_descriptor": "-misc-dejavu lgc sans-bold-r-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSans-BoldOblique.ttf",
+        "logical_name": "dejavulgcsans-boldoblique",
+        "path": "dejavu-lgc/DejaVuLGCSans-BoldOblique.ttf",
+        "category": "fonts",
+        "size": 431012,
+        "x11_descriptor": "-misc-dejavu lgc sans-bold-o-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSans-ExtraLight.ttf",
+        "logical_name": "dejavulgcsans-extralight",
+        "path": "dejavu-lgc/DejaVuLGCSans-ExtraLight.ttf",
+        "category": "fonts",
+        "size": 129628,
+        "x11_descriptor": "-misc-dejavu lgc sans light-extralight-r-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSans-Oblique.ttf",
+        "logical_name": "dejavulgcsans-oblique",
+        "path": "dejavu-lgc/DejaVuLGCSans-Oblique.ttf",
+        "category": "fonts",
+        "size": 419056,
+        "x11_descriptor": "-misc-dejavu lgc sans-medium-o-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSans.ttf",
+        "logical_name": "dejavulgcsans",
+        "path": "dejavu-lgc/DejaVuLGCSans.ttf",
+        "category": "fonts",
+        "size": 446304,
+        "x11_descriptor": "-misc-dejavu lgc sans-medium-r-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSansCondensed-Bold.ttf",
+        "logical_name": "dejavulgcsanscondensed-bold",
+        "path": "dejavu-lgc/DejaVuLGCSansCondensed-Bold.ttf",
+        "category": "fonts",
+        "size": 353312,
+        "x11_descriptor": "-misc-dejavu lgc sans condensed-bold-r-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSansCondensed-BoldOblique.ttf",
+        "logical_name": "dejavulgcsanscondensed-boldoblique",
+        "path": "dejavu-lgc/DejaVuLGCSansCondensed-BoldOblique.ttf",
+        "category": "fonts",
+        "size": 360160,
+        "x11_descriptor": "-misc-dejavu lgc sans condensed-bold-o-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSansCondensed-Oblique.ttf",
+        "logical_name": "dejavulgcsanscondensed-oblique",
+        "path": "dejavu-lgc/DejaVuLGCSansCondensed-Oblique.ttf",
+        "category": "fonts",
+        "size": 348696,
+        "x11_descriptor": "-misc-dejavu lgc sans condensed-medium-o-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSansCondensed.ttf",
+        "logical_name": "dejavulgcsanscondensed",
+        "path": "dejavu-lgc/DejaVuLGCSansCondensed.ttf",
+        "category": "fonts",
+        "size": 360476,
+        "x11_descriptor": "-misc-dejavu lgc sans condensed-medium-r-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSansMono-Bold.ttf",
+        "logical_name": "dejavulgcsansmono-bold",
+        "path": "dejavu-lgc/DejaVuLGCSansMono-Bold.ttf",
+        "category": "fonts",
+        "size": 229384,
+        "x11_descriptor": "-misc-dejavu lgc sans mono-bold-r-normal--0-0-0-0-m-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSansMono-BoldOblique.ttf",
+        "logical_name": "dejavulgcsansmono-boldoblique",
+        "path": "dejavu-lgc/DejaVuLGCSansMono-BoldOblique.ttf",
+        "category": "fonts",
+        "size": 177804,
+        "x11_descriptor": "-misc-dejavu lgc sans mono-bold-o-normal--0-0-0-0-m-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSansMono-Oblique.ttf",
+        "logical_name": "dejavulgcsansmono-oblique",
+        "path": "dejavu-lgc/DejaVuLGCSansMono-Oblique.ttf",
+        "category": "fonts",
+        "size": 185036,
+        "x11_descriptor": "-misc-dejavu lgc sans mono-medium-o-normal--0-0-0-0-m-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSansMono.ttf",
+        "logical_name": "dejavulgcsansmono",
+        "path": "dejavu-lgc/DejaVuLGCSansMono.ttf",
+        "category": "fonts",
+        "size": 237540,
+        "x11_descriptor": "-misc-dejavu lgc sans mono-medium-r-normal--0-0-0-0-m-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSerif-Bold.ttf",
+        "logical_name": "dejavulgcserif-bold",
+        "path": "dejavu-lgc/DejaVuLGCSerif-Bold.ttf",
+        "category": "fonts",
+        "size": 199476,
+        "x11_descriptor": "-misc-dejavu lgc serif-bold-r-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSerif-BoldOblique.ttf",
+        "logical_name": "dejavulgcserif-boldoblique",
+        "path": "dejavu-lgc/DejaVuLGCSerif-BoldOblique.ttf",
+        "category": "fonts",
+        "size": 181220,
+        "x11_descriptor": "-misc-dejavu lgc serif-bold-o-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSerif-Oblique.ttf",
+        "logical_name": "dejavulgcserif-oblique",
+        "path": "dejavu-lgc/DejaVuLGCSerif-Oblique.ttf",
+        "category": "fonts",
+        "size": 179844,
+        "x11_descriptor": "-misc-dejavu lgc serif-medium-o-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSerif.ttf",
+        "logical_name": "dejavulgcserif",
+        "path": "dejavu-lgc/DejaVuLGCSerif.ttf",
+        "category": "fonts",
+        "size": 211672,
+        "x11_descriptor": "-misc-dejavu lgc serif-medium-r-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSerifCondensed-Bold.ttf",
+        "logical_name": "dejavulgcserifcondensed-bold",
+        "path": "dejavu-lgc/DejaVuLGCSerifCondensed-Bold.ttf",
+        "category": "fonts",
+        "size": 175796,
+        "x11_descriptor": "-misc-dejavu lgc serif condensed-bold-r-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSerifCondensed-BoldOblique.ttf",
+        "logical_name": "dejavulgcserifcondensed-boldoblique",
+        "path": "dejavu-lgc/DejaVuLGCSerifCondensed-BoldOblique.ttf",
+        "category": "fonts",
+        "size": 179492,
+        "x11_descriptor": "-misc-dejavu lgc serif condensed-bold-o-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSerifCondensed-Oblique.ttf",
+        "logical_name": "dejavulgcserifcondensed-oblique",
+        "path": "dejavu-lgc/DejaVuLGCSerifCondensed-Oblique.ttf",
+        "category": "fonts",
+        "size": 178232,
+        "x11_descriptor": "-misc-dejavu lgc serif condensed-medium-o-normal--0-0-0-0-p-0-iso8859-1"
+      },
+      {
+        "name": "DejaVuLGCSerifCondensed.ttf",
+        "logical_name": "dejavulgcserifcondensed",
+        "path": "dejavu-lgc/DejaVuLGCSerifCondensed.ttf",
+        "category": "fonts",
+        "size": 174264,
+        "x11_descriptor": "-misc-dejavu lgc serif condensed-medium-r-normal--0-0-0-0-p-0-iso8859-1"
+      }
+    ],
+    "sounds": [
+      {
+        "name": "rumble.wav",
+        "logical_name": "rumble",
+        "legacy_name": "Rumble",
+        "path": "sounds/rumble.wav",
+        "category": "sounds",
+        "size": 11906,
+        "legacy_source": "rumble.au"
+      },
+      {
+        "name": "heavytraffic.wav",
+        "logical_name": "heavytraffic",
+        "legacy_name": "HeavyTraffic",
+        "path": "sounds/heavytraffic.wav",
+        "category": "sounds",
+        "size": 91640,
+        "legacy_source": "traffic.au"
+      },
+      {
+        "name": "siren.wav",
+        "logical_name": "siren",
+        "legacy_name": "Siren",
+        "path": "sounds/siren.wav",
+        "category": "sounds",
+        "size": 103232,
+        "legacy_source": "siren.au"
+      },
+      {
+        "name": "honkhonk-low.wav",
+        "logical_name": "honkhonklow",
+        "legacy_name": "HonkHonk-Low",
+        "path": "sounds/honkhonk-low.wav",
+        "category": "sounds",
+        "size": 41954,
+        "legacy_source": "honk-low.au"
+      },
+      {
+        "name": "monster.wav",
+        "logical_name": "monster",
+        "legacy_name": "Monster",
+        "path": "sounds/monster.wav",
+        "category": "sounds",
+        "size": 32666,
+        "legacy_source": "monster.au"
+      },
+      {
+        "name": "explosion-high.wav",
+        "logical_name": "explosionhigh",
+        "legacy_name": "Explosion-High",
+        "path": "sounds/explosion-high.wav",
+        "category": "sounds",
+        "size": 70924,
+        "legacy_source": "expl-hi.au"
+      },
+      {
+        "name": "honkhonk-high.wav",
+        "logical_name": "honkhonkhigh",
+        "legacy_name": "HonkHonk-High",
+        "path": "sounds/honkhonk-high.wav",
+        "category": "sounds",
+        "size": 29200,
+        "legacy_source": "honk-hi.au"
+      },
+      {
+        "name": "honkhonk-med.wav",
+        "logical_name": "honkhonkmed",
+        "legacy_name": "HonkHonk-Med",
+        "path": "sounds/honkhonk-med.wav",
+        "category": "sounds",
+        "size": 35334,
+        "legacy_source": "honk-med.au"
+      },
+      {
+        "name": "explosion-low.wav",
+        "logical_name": "explosionlow",
+        "legacy_name": "Explosion-Low",
+        "path": "sounds/explosion-low.wav",
+        "category": "sounds",
+        "size": 226900,
+        "legacy_source": "expl-low.au"
+      },
+      {
+        "name": "quackquack.wav",
+        "logical_name": "quackquack",
+        "legacy_name": "QuackQuack",
+        "path": "sounds/quackquack.wav",
+        "category": "sounds",
+        "size": 42820,
+        "legacy_source": "quack.au"
+      },
+      {
+        "name": "ignition.wav",
+        "logical_name": "ignition",
+        "legacy_name": "Ignition",
+        "path": "sounds/ignition.wav",
+        "category": "sounds",
+        "size": 134394,
+        "legacy_source": "ignition.au"
+      },
+      {
+        "name": "whip.wav",
+        "logical_name": "whip",
+        "legacy_name": "Whip",
+        "path": "sounds/whip.wav",
+        "category": "sounds",
+        "size": 76326,
+        "legacy_source": "whip.au"
+      },
+      {
+        "name": "cuckoo.wav",
+        "logical_name": "cuckoo",
+        "legacy_name": "Cuckoo",
+        "path": "sounds/cuckoo.wav",
+        "category": "sounds",
+        "size": 35058,
+        "legacy_source": "cuckoo.au"
+      },
+      {
+        "name": "boing.wav",
+        "logical_name": "boing",
+        "legacy_name": "Boing",
+        "path": "sounds/boing.wav",
+        "category": "sounds",
+        "size": 18908,
+        "legacy_source": "boing.au"
+      },
+      {
+        "name": "skid.wav",
+        "logical_name": "skid",
+        "legacy_name": "Skid",
+        "path": "sounds/skid.wav",
+        "category": "sounds",
+        "size": 31078,
+        "legacy_source": "skid.au"
+      },
+      {
+        "name": "computer.wav",
+        "logical_name": "computer",
+        "legacy_name": "Computer",
+        "path": "sounds/computer.wav",
+        "category": "sounds",
+        "size": 119604,
+        "legacy_source": "computer.au"
+      },
+      {
+        "name": "sorry.wav",
+        "logical_name": "sorry",
+        "legacy_name": "Sorry",
+        "path": "sounds/sorry.wav",
+        "category": "sounds",
+        "size": 16696,
+        "legacy_source": "sorry.au"
+      },
+      {
+        "name": "uhuh.wav",
+        "logical_name": "uhuh",
+        "legacy_name": "UhUh",
+        "path": "sounds/uhuh.wav",
+        "category": "sounds",
+        "size": 16564,
+        "legacy_source": "uhuh.au"
+      },
+      {
+        "name": "woosh.wav",
+        "logical_name": "woosh",
+        "legacy_name": "Woosh",
+        "path": "sounds/woosh.wav",
+        "category": "sounds",
+        "size": 9150,
+        "legacy_source": "woosh.au"
+      },
+      {
+        "name": "aaah.wav",
+        "logical_name": "aaah",
+        "legacy_name": "Aaah",
+        "path": "sounds/aaah.wav",
+        "category": "sounds",
+        "size": 52380,
+        "legacy_source": "aaah.au"
+      },
+      {
+        "name": "oop.wav",
+        "logical_name": "oop",
+        "legacy_name": "Oop",
+        "path": "sounds/oop.wav",
+        "category": "sounds",
+        "size": 4988,
+        "legacy_source": "oop.au"
+      },
+      {
+        "name": "beep.wav",
+        "logical_name": "beep",
+        "legacy_name": "Beep",
+        "path": "sounds/beep.wav",
+        "category": "sounds",
+        "size": 4856,
+        "legacy_source": "beep.au"
+      },
+      {
+        "name": "bop.wav",
+        "logical_name": "bop",
+        "legacy_name": "Bop",
+        "path": "sounds/bop.wav",
+        "category": "sounds",
+        "size": 6548,
+        "legacy_source": "bop.au"
+      },
+      {
+        "name": "zone.wav",
+        "logical_name": "zone",
+        "legacy_name": "Zone",
+        "path": "sounds/zone.wav",
+        "category": "sounds",
+        "size": 19288,
+        "legacy_source": "zone.au"
+      },
+      {
+        "name": "build.wav",
+        "logical_name": "build",
+        "legacy_name": "Build",
+        "path": "sounds/build.wav",
+        "category": "sounds",
+        "size": 18780,
+        "legacy_source": "build.au"
+      },
+      {
+        "name": "res.wav",
+        "logical_name": "res",
+        "legacy_name": "Res",
+        "path": "sounds/res.wav",
+        "category": "sounds",
+        "size": 22418,
+        "legacy_source": "res.au"
+      },
+      {
+        "name": "com.wav",
+        "logical_name": "com",
+        "legacy_name": "Com",
+        "path": "sounds/com.wav",
+        "category": "sounds",
+        "size": 17082,
+        "legacy_source": "com.au"
+      },
+      {
+        "name": "ind.wav",
+        "logical_name": "ind",
+        "legacy_name": "Ind",
+        "path": "sounds/ind.wav",
+        "category": "sounds",
+        "size": 21652,
+        "legacy_source": "ind.au"
+      },
+      {
+        "name": "fire.wav",
+        "logical_name": "fire",
+        "legacy_name": "Fire",
+        "path": "sounds/fire.wav",
+        "category": "sounds",
+        "size": 29744,
+        "legacy_source": "fire.au"
+      },
+      {
+        "name": "query.wav",
+        "logical_name": "query",
+        "legacy_name": "Query",
+        "path": "sounds/query.wav",
+        "category": "sounds",
+        "size": 16322,
+        "legacy_source": "query.au"
+      },
+      {
+        "name": "police.wav",
+        "logical_name": "police",
+        "legacy_name": "Police",
+        "path": "sounds/police.wav",
+        "category": "sounds",
+        "size": 36662,
+        "legacy_source": "police.au"
+      },
+      {
+        "name": "wire.wav",
+        "logical_name": "wire",
+        "legacy_name": "Wire",
+        "path": "sounds/wire.wav",
+        "category": "sounds",
+        "size": 16564,
+        "legacy_source": "wire.au"
+      },
+      {
+        "name": "bulldozer.wav",
+        "logical_name": "bulldozer",
+        "legacy_name": "Bulldozer",
+        "path": "sounds/bulldozer.wav",
+        "category": "sounds",
+        "size": 17188,
+        "legacy_source": "bulldoze.au"
+      },
+      {
+        "name": "rail.wav",
+        "logical_name": "rail",
+        "legacy_name": "Rail",
+        "path": "sounds/rail.wav",
+        "category": "sounds",
+        "size": 14354,
+        "legacy_source": "rail.au"
+      },
+      {
+        "name": "road.wav",
+        "logical_name": "road",
+        "legacy_name": "Road",
+        "path": "sounds/road.wav",
+        "category": "sounds",
+        "size": 12982,
+        "legacy_source": "road.au"
+      },
+      {
+        "name": "chalk.wav",
+        "logical_name": "chalk",
+        "legacy_name": "Chalk",
+        "path": "sounds/chalk.wav",
+        "category": "sounds",
+        "size": 15920,
+        "legacy_source": "chalk.au"
+      },
+      {
+        "name": "eraser.wav",
+        "logical_name": "eraser",
+        "legacy_name": "Eraser",
+        "path": "sounds/eraser.wav",
+        "category": "sounds",
+        "size": 26708,
+        "legacy_source": "eraser.au"
+      },
+      {
+        "name": "stadium.wav",
+        "logical_name": "stadium",
+        "legacy_name": "Stadium",
+        "path": "sounds/stadium.wav",
+        "category": "sounds",
+        "size": 28890,
+        "legacy_source": "stadium.au"
+      },
+      {
+        "name": "park.wav",
+        "logical_name": "park",
+        "legacy_name": "Park",
+        "path": "sounds/park.wav",
+        "category": "sounds",
+        "size": 17734,
+        "legacy_source": "park.au"
+      },
+      {
+        "name": "seaport.wav",
+        "logical_name": "seaport",
+        "legacy_name": "Seaport",
+        "path": "sounds/seaport.wav",
+        "category": "sounds",
+        "size": 22502,
+        "legacy_source": "seaport.au"
+      },
+      {
+        "name": "coal.wav",
+        "logical_name": "coal",
+        "legacy_name": "Coal",
+        "path": "sounds/coal.wav",
+        "category": "sounds",
+        "size": 35820,
+        "legacy_source": "coal.au"
+      },
+      {
+        "name": "nuclear.wav",
+        "logical_name": "nuclear",
+        "legacy_name": "Nuclear",
+        "path": "sounds/nuclear.wav",
+        "category": "sounds",
+        "size": 38548,
+        "legacy_source": "nuclear.au"
+      },
+      {
+        "name": "airport.wav",
+        "logical_name": "airport",
+        "legacy_name": "Airport",
+        "path": "sounds/airport.wav",
+        "category": "sounds",
+        "size": 16696,
+        "legacy_source": "airport.au"
+      },
+      {
+        "name": "o.wav",
+        "logical_name": "o",
+        "legacy_name": "O",
+        "path": "sounds/o.wav",
+        "category": "sounds",
+        "size": 4338,
+        "legacy_source": "o.au"
+      },
+      {
+        "name": "a.wav",
+        "logical_name": "a",
+        "legacy_name": "A",
+        "path": "sounds/a.wav",
+        "category": "sounds",
+        "size": 4338,
+        "legacy_source": "a.au"
+      },
+      {
+        "name": "e.wav",
+        "logical_name": "e",
+        "legacy_name": "E",
+        "path": "sounds/e.wav",
+        "category": "sounds",
+        "size": 3946,
+        "legacy_source": "e.au"
+      },
+      {
+        "name": "explosion-hi.wav",
+        "logical_name": "explosionhi",
+        "path": "sounds/explosion-hi.wav",
+        "category": "sounds",
+        "size": 12916
+      },
+      {
+        "name": "honkhonk-hi.wav",
+        "logical_name": "honkhonkhi",
+        "path": "sounds/honkhonk-hi.wav",
+        "category": "sounds",
+        "size": 5347
+      },
+      {
+        "name": "quack.wav",
+        "logical_name": "quack",
+        "path": "sounds/quack.wav",
+        "category": "sounds",
+        "size": 7818
+      }
+    ],
+    "raw": [
+      {
+        "name": "buildidx.tcl",
+        "path": "buildidx.tcl",
+        "category": "raw",
+        "size": 3199
+      },
+      {
+        "name": "button.tcl",
+        "path": "button.tcl",
+        "category": "raw",
+        "size": 2602
+      },
+      {
+        "name": "fonts.alias",
+        "path": "dejavu-lgc/fonts.alias",
+        "category": "raw",
+        "size": 20352
+      },
+      {
+        "name": "fonts.dir",
+        "path": "dejavu-lgc/fonts.dir",
+        "category": "raw",
+        "size": 1992
+      },
+      {
+        "name": "fonts.scale",
+        "path": "dejavu-lgc/fonts.scale",
+        "category": "raw",
+        "size": 1992
+      },
+      {
+        "name": "entry.tcl",
+        "path": "entry.tcl",
+        "category": "raw",
+        "size": 2114
+      },
+      {
+        "name": "help.tcl",
+        "path": "help.tcl",
+        "category": "raw",
+        "size": 11631
+      },
+      {
+        "name": "hexa.112",
+        "path": "hexa.112",
+        "category": "raw",
+        "size": 36864
+      },
+      {
+        "name": "hexa.232",
+        "path": "hexa.232",
+        "category": "raw",
+        "size": 25344
+      },
+      {
+        "name": "hexa.384",
+        "path": "hexa.384",
+        "category": "raw",
+        "size": 8192
+      },
+      {
+        "name": "hexa.385",
+        "path": "hexa.385",
+        "category": "raw",
+        "size": 8000
+      },
+      {
+        "name": "hexa.386",
+        "path": "hexa.386",
+        "category": "raw",
+        "size": 31000
+      },
+      {
+        "name": "hexa.387",
+        "path": "hexa.387",
+        "category": "raw",
+        "size": 4096
+      },
+      {
+        "name": "hexa.388",
+        "path": "hexa.388",
+        "category": "raw",
+        "size": 12000
+      },
+      {
+        "name": "hexa.456",
+        "path": "hexa.456",
+        "category": "raw",
+        "size": 18432
+      },
+      {
+        "name": "hexa.544",
+        "path": "hexa.544",
+        "category": "raw",
+        "size": 122880
+      },
+      {
+        "name": "hexa.563",
+        "path": "hexa.563",
+        "category": "raw",
+        "size": 13824
+      },
+      {
+        "name": "hexa.999",
+        "path": "hexa.999",
+        "category": "raw",
+        "size": 25344
+      },
+      {
+        "name": "airport.xpm",
+        "path": "images/airport.xpm",
+        "category": "raw",
+        "size": 9926
+      },
+      {
+        "name": "background-micropolis.xpm",
+        "path": "images/background-micropolis.xpm",
+        "category": "raw",
+        "size": 2167822
+      },
+      {
+        "name": "button1hilite.xpm",
+        "path": "images/button1hilite.xpm",
+        "category": "raw",
+        "size": 32832
+      },
+      {
+        "name": "button2hilite.xpm",
+        "path": "images/button2hilite.xpm",
+        "category": "raw",
+        "size": 32832
+      },
+      {
+        "name": "button3hilite.xpm",
+        "path": "images/button3hilite.xpm",
+        "category": "raw",
+        "size": 32832
+      },
+      {
+        "name": "button4hilite.xpm",
+        "path": "images/button4hilite.xpm",
+        "category": "raw",
+        "size": 32832
+      },
+      {
+        "name": "checkbox1checked.xpm",
+        "path": "images/checkbox1checked.xpm",
+        "category": "raw",
+        "size": 31095
+      },
+      {
+        "name": "checkbox1hilite.xpm",
+        "path": "images/checkbox1hilite.xpm",
+        "category": "raw",
+        "size": 30390
+      },
+      {
+        "name": "checkbox1hilitechecked.xpm",
+        "path": "images/checkbox1hilitechecked.xpm",
+        "category": "raw",
+        "size": 31101
+      },
+      {
+        "name": "checkbox2checked.xpm",
+        "path": "images/checkbox2checked.xpm",
+        "category": "raw",
+        "size": 31095
+      },
+      {
+        "name": "checkbox2hilite.xpm",
+        "path": "images/checkbox2hilite.xpm",
+        "category": "raw",
+        "size": 30758
+      },
+      {
+        "name": "checkbox2hilitechecked.xpm",
+        "path": "images/checkbox2hilitechecked.xpm",
+        "category": "raw",
+        "size": 31101
+      },
+      {
+        "name": "checkbox3checked.xpm",
+        "path": "images/checkbox3checked.xpm",
+        "category": "raw",
+        "size": 31095
+      },
+      {
+        "name": "checkbox3hilite.xpm",
+        "path": "images/checkbox3hilite.xpm",
+        "category": "raw",
+        "size": 30486
+      },
+      {
+        "name": "checkbox3hilitechecked.xpm",
+        "path": "images/checkbox3hilitechecked.xpm",
+        "category": "raw",
+        "size": 31101
+      },
+      {
+        "name": "coal.xpm",
+        "path": "images/coal.xpm",
+        "category": "raw",
+        "size": 4713
+      },
+      {
+        "name": "com.xpm",
+        "path": "images/com.xpm",
+        "category": "raw",
+        "size": 2681
+      },
+      {
+        "name": "demandg.xpm",
+        "path": "images/demandg.xpm",
+        "category": "raw",
+        "size": 2216
+      },
+      {
+        "name": "fire.xpm",
+        "path": "images/fire.xpm",
+        "category": "raw",
+        "size": 2872
+      },
+      {
+        "name": "gr10.xpm",
+        "path": "images/gr10.xpm",
+        "category": "raw",
+        "size": 2118
+      },
+      {
+        "name": "gr10hi.xpm",
+        "path": "images/gr10hi.xpm",
+        "category": "raw",
+        "size": 2168
+      },
+      {
+        "name": "gr120.xpm",
+        "path": "images/gr120.xpm",
+        "category": "raw",
+        "size": 2118
+      },
+      {
+        "name": "gr120hi.xpm",
+        "path": "images/gr120hi.xpm",
+        "category": "raw",
+        "size": 2168
+      },
+      {
+        "name": "grcom.xpm",
+        "path": "images/grcom.xpm",
+        "category": "raw",
+        "size": 1498
+      },
+      {
+        "name": "grcomhi.xpm",
+        "path": "images/grcomhi.xpm",
+        "category": "raw",
+        "size": 1498
+      },
+      {
+        "name": "grcrim.xpm",
+        "path": "images/grcrim.xpm",
+        "category": "raw",
+        "size": 1392
+      },
+      {
+        "name": "grcrimhi.xpm",
+        "path": "images/grcrimhi.xpm",
+        "category": "raw",
+        "size": 1392
+      },
+      {
+        "name": "grind.xpm",
+        "path": "images/grind.xpm",
+        "category": "raw",
+        "size": 1407
+      },
+      {
+        "name": "grindhi.xpm",
+        "path": "images/grindhi.xpm",
+        "category": "raw",
+        "size": 1407
+      },
+      {
+        "name": "grmony.xpm",
+        "path": "images/grmony.xpm",
+        "category": "raw",
+        "size": 1392
+      },
+      {
+        "name": "grmonyhi.xpm",
+        "path": "images/grmonyhi.xpm",
+        "category": "raw",
+        "size": 1392
+      },
+      {
+        "name": "grpoll.xpm",
+        "path": "images/grpoll.xpm",
+        "category": "raw",
+        "size": 1423
+      },
+      {
+        "name": "grpollhi.xpm",
+        "path": "images/grpollhi.xpm",
+        "category": "raw",
+        "size": 1423
+      },
+      {
+        "name": "grres.xpm",
+        "path": "images/grres.xpm",
+        "category": "raw",
+        "size": 1438
+      },
+      {
+        "name": "grreshi.xpm",
+        "path": "images/grreshi.xpm",
+        "category": "raw",
+        "size": 1423
+      },
+      {
+        "name": "icairp.xpm",
+        "path": "images/icairp.xpm",
+        "category": "raw",
+        "size": 3897
+      },
+      {
+        "name": "icairphi.xpm",
+        "path": "images/icairphi.xpm",
+        "category": "raw",
+        "size": 3897
+      },
+      {
+        "name": "icchlk.xpm",
+        "path": "images/icchlk.xpm",
+        "category": "raw",
+        "size": 1516
+      },
+      {
+        "name": "icchlkhi.xpm",
+        "path": "images/icchlkhi.xpm",
+        "category": "raw",
+        "size": 1516
+      },
+      {
+        "name": "iccoal.xpm",
+        "path": "images/iccoal.xpm",
+        "category": "raw",
+        "size": 2263
+      },
+      {
+        "name": "iccoalhi.xpm",
+        "path": "images/iccoalhi.xpm",
+        "category": "raw",
+        "size": 2263
+      },
+      {
+        "name": "iccom.xpm",
+        "path": "images/iccom.xpm",
+        "category": "raw",
+        "size": 2186
+      },
+      {
+        "name": "iccomhi.xpm",
+        "path": "images/iccomhi.xpm",
+        "category": "raw",
+        "size": 2186
+      },
+      {
+        "name": "icdozr.xpm",
+        "path": "images/icdozr.xpm",
+        "category": "raw",
+        "size": 1547
+      },
+      {
+        "name": "icdozrhi.xpm",
+        "path": "images/icdozrhi.xpm",
+        "category": "raw",
+        "size": 1547
+      },
+      {
+        "name": "icersr.xpm",
+        "path": "images/icersr.xpm",
+        "category": "raw",
+        "size": 1530
+      },
+      {
+        "name": "icersrhi.xpm",
+        "path": "images/icersrhi.xpm",
+        "category": "raw",
+        "size": 1530
+      },
+      {
+        "name": "icfire.xpm",
+        "path": "images/icfire.xpm",
+        "category": "raw",
+        "size": 1608
+      },
+      {
+        "name": "icfirehi.xpm",
+        "path": "images/icfirehi.xpm",
+        "category": "raw",
+        "size": 1608
+      },
+      {
+        "name": "icind.xpm",
+        "path": "images/icind.xpm",
+        "category": "raw",
+        "size": 2140
+      },
+      {
+        "name": "icindhi.xpm",
+        "path": "images/icindhi.xpm",
+        "category": "raw",
+        "size": 2140
+      },
+      {
+        "name": "icnuc.xpm",
+        "path": "images/icnuc.xpm",
+        "category": "raw",
+        "size": 2248
+      },
+      {
+        "name": "icnuchi.xpm",
+        "path": "images/icnuchi.xpm",
+        "category": "raw",
+        "size": 2248
+      },
+      {
+        "name": "icpark.xpm",
+        "path": "images/icpark.xpm",
+        "category": "raw",
+        "size": 1578
+      },
+      {
+        "name": "icparkhi.xpm",
+        "path": "images/icparkhi.xpm",
+        "category": "raw",
+        "size": 1578
+      },
+      {
+        "name": "icpol.xpm",
+        "path": "images/icpol.xpm",
+        "category": "raw",
+        "size": 1578
+      },
+      {
+        "name": "icpolhi.xpm",
+        "path": "images/icpolhi.xpm",
+        "category": "raw",
+        "size": 1578
+      },
+      {
+        "name": "icqry.xpm",
+        "path": "images/icqry.xpm",
+        "category": "raw",
+        "size": 1531
+      },
+      {
+        "name": "icqryhi.xpm",
+        "path": "images/icqryhi.xpm",
+        "category": "raw",
+        "size": 1531
+      },
+      {
+        "name": "icrail.xpm",
+        "path": "images/icrail.xpm",
+        "category": "raw",
+        "size": 1665
+      },
+      {
+        "name": "icrailhi.xpm",
+        "path": "images/icrailhi.xpm",
+        "category": "raw",
+        "size": 1665
+      },
+      {
+        "name": "icres.xpm",
+        "path": "images/icres.xpm",
+        "category": "raw",
+        "size": 2140
+      },
+      {
+        "name": "icreshi.xpm",
+        "path": "images/icreshi.xpm",
+        "category": "raw",
+        "size": 2140
+      },
+      {
+        "name": "icroad.xpm",
+        "path": "images/icroad.xpm",
+        "category": "raw",
+        "size": 1635
+      },
+      {
+        "name": "icroadhi.xpm",
+        "path": "images/icroadhi.xpm",
+        "category": "raw",
+        "size": 1635
+      },
+      {
+        "name": "icseap.xpm",
+        "path": "images/icseap.xpm",
+        "category": "raw",
+        "size": 2248
+      },
+      {
+        "name": "icseaphi.xpm",
+        "path": "images/icseaphi.xpm",
+        "category": "raw",
+        "size": 2248
+      },
+      {
+        "name": "icstad.xpm",
+        "path": "images/icstad.xpm",
+        "category": "raw",
+        "size": 2172
+      },
+      {
+        "name": "icstadhi.xpm",
+        "path": "images/icstadhi.xpm",
+        "category": "raw",
+        "size": 2187
+      },
+      {
+        "name": "icwire.xpm",
+        "path": "images/icwire.xpm",
+        "category": "raw",
+        "size": 1502
+      },
+      {
+        "name": "icwirehi.xpm",
+        "path": "images/icwirehi.xpm",
+        "category": "raw",
+        "size": 1502
+      },
+      {
+        "name": "ind.xpm",
+        "path": "images/ind.xpm",
+        "category": "raw",
+        "size": 2681
+      },
+      {
+        "name": "key.xpm",
+        "path": "images/key.xpm",
+        "category": "raw",
+        "size": 1481
+      },
+      {
+        "name": "key2city.xpm",
+        "path": "images/key2city.xpm",
+        "category": "raw",
+        "size": 7889
+      },
+      {
+        "name": "leftdisabled.xpm",
+        "path": "images/leftdisabled.xpm",
+        "category": "raw",
+        "size": 3668
+      },
+      {
+        "name": "lefthilite.xpm",
+        "path": "images/lefthilite.xpm",
+        "category": "raw",
+        "size": 9408
+      },
+      {
+        "name": "legendmm.xpm",
+        "path": "images/legendmm.xpm",
+        "category": "raw",
+        "size": 1710
+      },
+      {
+        "name": "legendn.xpm",
+        "path": "images/legendn.xpm",
+        "category": "raw",
+        "size": 191
+      },
+      {
+        "name": "legendpm.xpm",
+        "path": "images/legendpm.xpm",
+        "category": "raw",
+        "size": 1710
+      },
+      {
+        "name": "maphilite.xpm",
+        "path": "images/maphilite.xpm",
+        "category": "raw",
+        "size": 272777
+      },
+      {
+        "name": "micropolisg.xpm",
+        "path": "images/micropolisg.xpm",
+        "category": "raw",
+        "size": 2348
+      },
+      {
+        "name": "micropolism.xpm",
+        "path": "images/micropolism.xpm",
+        "category": "raw",
+        "size": 4550
+      },
+      {
+        "name": "micropoliss.xpm",
+        "path": "images/micropoliss.xpm",
+        "category": "raw",
+        "size": 2348
+      },
+      {
+        "name": "nuclear.xpm",
+        "path": "images/nuclear.xpm",
+        "category": "raw",
+        "size": 4668
+      },
+      {
+        "name": "obj1-0.xpm",
+        "path": "images/obj1-0.xpm",
+        "category": "raw",
+        "size": 1345
+      },
+      {
+        "name": "obj1-1.xpm",
+        "path": "images/obj1-1.xpm",
+        "category": "raw",
+        "size": 1345
+      },
+      {
+        "name": "obj1-2.xpm",
+        "path": "images/obj1-2.xpm",
+        "category": "raw",
+        "size": 1345
+      },
+      {
+        "name": "obj1-3.xpm",
+        "path": "images/obj1-3.xpm",
+        "category": "raw",
+        "size": 1345
+      },
+      {
+        "name": "obj1-4.xpm",
+        "path": "images/obj1-4.xpm",
+        "category": "raw",
+        "size": 1219
+      },
+      {
+        "name": "obj2-0.xpm",
+        "path": "images/obj2-0.xpm",
+        "category": "raw",
+        "size": 1409
+      },
+      {
+        "name": "obj2-1.xpm",
+        "path": "images/obj2-1.xpm",
+        "category": "raw",
+        "size": 1409
+      },
+      {
+        "name": "obj2-2.xpm",
+        "path": "images/obj2-2.xpm",
+        "category": "raw",
+        "size": 1409
+      },
+      {
+        "name": "obj2-3.xpm",
+        "path": "images/obj2-3.xpm",
+        "category": "raw",
+        "size": 1409
+      },
+      {
+        "name": "obj2-4.xpm",
+        "path": "images/obj2-4.xpm",
+        "category": "raw",
+        "size": 1409
+      },
+      {
+        "name": "obj2-5.xpm",
+        "path": "images/obj2-5.xpm",
+        "category": "raw",
+        "size": 1409
+      },
+      {
+        "name": "obj2-6.xpm",
+        "path": "images/obj2-6.xpm",
+        "category": "raw",
+        "size": 1409
+      },
+      {
+        "name": "obj2-7.xpm",
+        "path": "images/obj2-7.xpm",
+        "category": "raw",
+        "size": 1409
+      },
+      {
+        "name": "obj3-0.xpm",
+        "path": "images/obj3-0.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-1.xpm",
+        "path": "images/obj3-1.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-10.xpm",
+        "path": "images/obj3-10.xpm",
+        "category": "raw",
+        "size": 2690
+      },
+      {
+        "name": "obj3-2.xpm",
+        "path": "images/obj3-2.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-3.xpm",
+        "path": "images/obj3-3.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-4.xpm",
+        "path": "images/obj3-4.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-5.xpm",
+        "path": "images/obj3-5.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-6.xpm",
+        "path": "images/obj3-6.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-7.xpm",
+        "path": "images/obj3-7.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-8.xpm",
+        "path": "images/obj3-8.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj3-9.xpm",
+        "path": "images/obj3-9.xpm",
+        "category": "raw",
+        "size": 2731
+      },
+      {
+        "name": "obj4-0.xpm",
+        "path": "images/obj4-0.xpm",
+        "category": "raw",
+        "size": 2753
+      },
+      {
+        "name": "obj4-1.xpm",
+        "path": "images/obj4-1.xpm",
+        "category": "raw",
+        "size": 2753
+      },
+      {
+        "name": "obj4-2.xpm",
+        "path": "images/obj4-2.xpm",
+        "category": "raw",
+        "size": 2753
+      },
+      {
+        "name": "obj4-3.xpm",
+        "path": "images/obj4-3.xpm",
+        "category": "raw",
+        "size": 2753
+      },
+      {
+        "name": "obj4-4.xpm",
+        "path": "images/obj4-4.xpm",
+        "category": "raw",
+        "size": 2753
+      },
+      {
+        "name": "obj4-5.xpm",
+        "path": "images/obj4-5.xpm",
+        "category": "raw",
+        "size": 2753
+      },
+      {
+        "name": "obj4-6.xpm",
+        "path": "images/obj4-6.xpm",
+        "category": "raw",
+        "size": 2753
+      },
+      {
+        "name": "obj4-7.xpm",
+        "path": "images/obj4-7.xpm",
+        "category": "raw",
+        "size": 2753
+      },
+      {
+        "name": "obj5-0.xpm",
+        "path": "images/obj5-0.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-1.xpm",
+        "path": "images/obj5-1.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-10.xpm",
+        "path": "images/obj5-10.xpm",
+        "category": "raw",
+        "size": 2669
+      },
+      {
+        "name": "obj5-11.xpm",
+        "path": "images/obj5-11.xpm",
+        "category": "raw",
+        "size": 2669
+      },
+      {
+        "name": "obj5-12.xpm",
+        "path": "images/obj5-12.xpm",
+        "category": "raw",
+        "size": 2669
+      },
+      {
+        "name": "obj5-13.xpm",
+        "path": "images/obj5-13.xpm",
+        "category": "raw",
+        "size": 2669
+      },
+      {
+        "name": "obj5-14.xpm",
+        "path": "images/obj5-14.xpm",
+        "category": "raw",
+        "size": 2648
+      },
+      {
+        "name": "obj5-15.xpm",
+        "path": "images/obj5-15.xpm",
+        "category": "raw",
+        "size": 2648
+      },
+      {
+        "name": "obj5-2.xpm",
+        "path": "images/obj5-2.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-3.xpm",
+        "path": "images/obj5-3.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-4.xpm",
+        "path": "images/obj5-4.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-5.xpm",
+        "path": "images/obj5-5.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-6.xpm",
+        "path": "images/obj5-6.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-7.xpm",
+        "path": "images/obj5-7.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-8.xpm",
+        "path": "images/obj5-8.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj5-9.xpm",
+        "path": "images/obj5-9.xpm",
+        "category": "raw",
+        "size": 2668
+      },
+      {
+        "name": "obj6-0.xpm",
+        "path": "images/obj6-0.xpm",
+        "category": "raw",
+        "size": 2647
+      },
+      {
+        "name": "obj6-1.xpm",
+        "path": "images/obj6-1.xpm",
+        "category": "raw",
+        "size": 2647
+      },
+      {
+        "name": "obj6-2.xpm",
+        "path": "images/obj6-2.xpm",
+        "category": "raw",
+        "size": 2647
+      },
+      {
+        "name": "obj7-0.xpm",
+        "path": "images/obj7-0.xpm",
+        "category": "raw",
+        "size": 2605
+      },
+      {
+        "name": "obj7-1.xpm",
+        "path": "images/obj7-1.xpm",
+        "category": "raw",
+        "size": 2626
+      },
+      {
+        "name": "obj7-2.xpm",
+        "path": "images/obj7-2.xpm",
+        "category": "raw",
+        "size": 2626
+      },
+      {
+        "name": "obj7-3.xpm",
+        "path": "images/obj7-3.xpm",
+        "category": "raw",
+        "size": 2626
+      },
+      {
+        "name": "obj7-4.xpm",
+        "path": "images/obj7-4.xpm",
+        "category": "raw",
+        "size": 2647
+      },
+      {
+        "name": "obj7-5.xpm",
+        "path": "images/obj7-5.xpm",
+        "category": "raw",
+        "size": 2647
+      },
+      {
+        "name": "obj8-0.xpm",
+        "path": "images/obj8-0.xpm",
+        "category": "raw",
+        "size": 1345
+      },
+      {
+        "name": "obj8-1.xpm",
+        "path": "images/obj8-1.xpm",
+        "category": "raw",
+        "size": 1345
+      },
+      {
+        "name": "obj8-2.xpm",
+        "path": "images/obj8-2.xpm",
+        "category": "raw",
+        "size": 1345
+      },
+      {
+        "name": "obj8-3.xpm",
+        "path": "images/obj8-3.xpm",
+        "category": "raw",
+        "size": 1345
+      },
+      {
+        "name": "playhilite.xpm",
+        "path": "images/playhilite.xpm",
+        "category": "raw",
+        "size": 22409
+      },
+      {
+        "name": "police.xpm",
+        "path": "images/police.xpm",
+        "category": "raw",
+        "size": 2782
+      },
+      {
+        "name": "res.xpm",
+        "path": "images/res.xpm",
+        "category": "raw",
+        "size": 2681
+      },
+      {
+        "name": "rightdisabled.xpm",
+        "path": "images/rightdisabled.xpm",
+        "category": "raw",
+        "size": 3804
+      },
+      {
+        "name": "righthilite.xpm",
+        "path": "images/righthilite.xpm",
+        "category": "raw",
+        "size": 8833
+      },
+      {
+        "name": "scbern.xpm",
+        "path": "images/scbern.xpm",
+        "category": "raw",
+        "size": 4272
+      },
+      {
+        "name": "scbernhi.xpm",
+        "path": "images/scbernhi.xpm",
+        "category": "raw",
+        "size": 4272
+      },
+      {
+        "name": "scbos.xpm",
+        "path": "images/scbos.xpm",
+        "category": "raw",
+        "size": 4272
+      },
+      {
+        "name": "scboshi.xpm",
+        "path": "images/scboshi.xpm",
+        "category": "raw",
+        "size": 4272
+      },
+      {
+        "name": "scdet.xpm",
+        "path": "images/scdet.xpm",
+        "category": "raw",
+        "size": 4272
+      },
+      {
+        "name": "scdethi.xpm",
+        "path": "images/scdethi.xpm",
+        "category": "raw",
+        "size": 4272
+      },
+      {
+        "name": "scdull.xpm",
+        "path": "images/scdull.xpm",
+        "category": "raw",
+        "size": 4287
+      },
+      {
+        "name": "scdullhi.xpm",
+        "path": "images/scdullhi.xpm",
+        "category": "raw",
+        "size": 4287
+      },
+      {
+        "name": "scenario1hilite.xpm",
+        "path": "images/scenario1hilite.xpm",
+        "category": "raw",
+        "size": 83551
+      },
+      {
+        "name": "scenario2hilite.xpm",
+        "path": "images/scenario2hilite.xpm",
+        "category": "raw",
+        "size": 83551
+      },
+      {
+        "name": "scenario3hilite.xpm",
+        "path": "images/scenario3hilite.xpm",
+        "category": "raw",
+        "size": 83551
+      },
+      {
+        "name": "scenario4hilite.xpm",
+        "path": "images/scenario4hilite.xpm",
+        "category": "raw",
+        "size": 83551
+      },
+      {
+        "name": "scenario5hilite.xpm",
+        "path": "images/scenario5hilite.xpm",
+        "category": "raw",
+        "size": 83551
+      },
+      {
+        "name": "scenario6hilite.xpm",
+        "path": "images/scenario6hilite.xpm",
+        "category": "raw",
+        "size": 83551
+      },
+      {
+        "name": "scenario7hilite.xpm",
+        "path": "images/scenario7hilite.xpm",
+        "category": "raw",
+        "size": 83551
+      },
+      {
+        "name": "scenario8hilite.xpm",
+        "path": "images/scenario8hilite.xpm",
+        "category": "raw",
+        "size": 83551
+      },
+      {
+        "name": "scham.xpm",
+        "path": "images/scham.xpm",
+        "category": "raw",
+        "size": 4272
+      },
+      {
+        "name": "schamhi.xpm",
+        "path": "images/schamhi.xpm",
+        "category": "raw",
+        "size": 4272
+      },
+      {
+        "name": "sclcty.xpm",
+        "path": "images/sclcty.xpm",
+        "category": "raw",
+        "size": 4242
+      },
+      {
+        "name": "sclctyhi.xpm",
+        "path": "images/sclctyhi.xpm",
+        "category": "raw",
+        "size": 4242
+      },
+      {
+        "name": "scncty.xpm",
+        "path": "images/scncty.xpm",
+        "category": "raw",
+        "size": 4242
+      },
+      {
+        "name": "scnctyhi.xpm",
+        "path": "images/scnctyhi.xpm",
+        "category": "raw",
+        "size": 4242
+      },
+      {
+        "name": "scrio.xpm",
+        "path": "images/scrio.xpm",
+        "category": "raw",
+        "size": 4287
+      },
+      {
+        "name": "scriohi.xpm",
+        "path": "images/scriohi.xpm",
+        "category": "raw",
+        "size": 4287
+      },
+      {
+        "name": "scsfo.xpm",
+        "path": "images/scsfo.xpm",
+        "category": "raw",
+        "size": 4287
+      },
+      {
+        "name": "scsfohi.xpm",
+        "path": "images/scsfohi.xpm",
+        "category": "raw",
+        "size": 4287
+      },
+      {
+        "name": "sctkyo.xpm",
+        "path": "images/sctkyo.xpm",
+        "category": "raw",
+        "size": 4287
+      },
+      {
+        "name": "sctkyohi.xpm",
+        "path": "images/sctkyohi.xpm",
+        "category": "raw",
+        "size": 4287
+      },
+      {
+        "name": "seaport.xpm",
+        "path": "images/seaport.xpm",
+        "category": "raw",
+        "size": 4653
+      },
+      {
+        "name": "spacer.xpm",
+        "path": "images/spacer.xpm",
+        "category": "raw",
+        "size": 411
+      },
+      {
+        "name": "stadium.xpm",
+        "path": "images/stadium.xpm",
+        "category": "raw",
+        "size": 4607
+      },
+      {
+        "name": "tiles-0.xpm",
+        "path": "images/tiles-0.xpm",
+        "category": "raw",
+        "size": 9936
+      },
+      {
+        "name": "tiles-1.xpm",
+        "path": "images/tiles-1.xpm",
+        "category": "raw",
+        "size": 4709
+      },
+      {
+        "name": "tiles-10.xpm",
+        "path": "images/tiles-10.xpm",
+        "category": "raw",
+        "size": 1541
+      },
+      {
+        "name": "tiles-100.xpm",
+        "path": "images/tiles-100.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-101.xpm",
+        "path": "images/tiles-101.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-102.xpm",
+        "path": "images/tiles-102.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-103.xpm",
+        "path": "images/tiles-103.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-104.xpm",
+        "path": "images/tiles-104.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-105.xpm",
+        "path": "images/tiles-105.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-106.xpm",
+        "path": "images/tiles-106.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-107.xpm",
+        "path": "images/tiles-107.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-108.xpm",
+        "path": "images/tiles-108.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-109.xpm",
+        "path": "images/tiles-109.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-11.xpm",
+        "path": "images/tiles-11.xpm",
+        "category": "raw",
+        "size": 1396
+      },
+      {
+        "name": "tiles-110.xpm",
+        "path": "images/tiles-110.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-111.xpm",
+        "path": "images/tiles-111.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-112.xpm",
+        "path": "images/tiles-112.xpm",
+        "category": "raw",
+        "size": 2691
+      },
+      {
+        "name": "tiles-113.xpm",
+        "path": "images/tiles-113.xpm",
+        "category": "raw",
+        "size": 2679
+      },
+      {
+        "name": "tiles-114.xpm",
+        "path": "images/tiles-114.xpm",
+        "category": "raw",
+        "size": 2679
+      },
+      {
+        "name": "tiles-115.xpm",
+        "path": "images/tiles-115.xpm",
+        "category": "raw",
+        "size": 2679
+      },
+      {
+        "name": "tiles-116.xpm",
+        "path": "images/tiles-116.xpm",
+        "category": "raw",
+        "size": 2665
+      },
+      {
+        "name": "tiles-117.xpm",
+        "path": "images/tiles-117.xpm",
+        "category": "raw",
+        "size": 2676
+      },
+      {
+        "name": "tiles-118.xpm",
+        "path": "images/tiles-118.xpm",
+        "category": "raw",
+        "size": 2676
+      },
+      {
+        "name": "tiles-119.xpm",
+        "path": "images/tiles-119.xpm",
+        "category": "raw",
+        "size": 2676
+      },
+      {
+        "name": "tiles-12.xpm",
+        "path": "images/tiles-12.xpm",
+        "category": "raw",
+        "size": 1406
+      },
+      {
+        "name": "tiles-120.xpm",
+        "path": "images/tiles-120.xpm",
+        "category": "raw",
+        "size": 2697
+      },
+      {
+        "name": "tiles-121.xpm",
+        "path": "images/tiles-121.xpm",
+        "category": "raw",
+        "size": 2697
+      },
+      {
+        "name": "tiles-122.xpm",
+        "path": "images/tiles-122.xpm",
+        "category": "raw",
+        "size": 1361
+      },
+      {
+        "name": "tiles-123.xpm",
+        "path": "images/tiles-123.xpm",
+        "category": "raw",
+        "size": 1361
+      },
+      {
+        "name": "tiles-124.xpm",
+        "path": "images/tiles-124.xpm",
+        "category": "raw",
+        "size": 1361
+      },
+      {
+        "name": "tiles-125.xpm",
+        "path": "images/tiles-125.xpm",
+        "category": "raw",
+        "size": 1361
+      },
+      {
+        "name": "tiles-126.xpm",
+        "path": "images/tiles-126.xpm",
+        "category": "raw",
+        "size": 2792
+      },
+      {
+        "name": "tiles-127.xpm",
+        "path": "images/tiles-127.xpm",
+        "category": "raw",
+        "size": 2660
+      },
+      {
+        "name": "tiles-128.xpm",
+        "path": "images/tiles-128.xpm",
+        "category": "raw",
+        "size": 4280
+      },
+      {
+        "name": "tiles-129.xpm",
+        "path": "images/tiles-129.xpm",
+        "category": "raw",
+        "size": 4295
+      },
+      {
+        "name": "tiles-13.xpm",
+        "path": "images/tiles-13.xpm",
+        "category": "raw",
+        "size": 1434
+      },
+      {
+        "name": "tiles-130.xpm",
+        "path": "images/tiles-130.xpm",
+        "category": "raw",
+        "size": 4280
+      },
+      {
+        "name": "tiles-131.xpm",
+        "path": "images/tiles-131.xpm",
+        "category": "raw",
+        "size": 4295
+      },
+      {
+        "name": "tiles-132.xpm",
+        "path": "images/tiles-132.xpm",
+        "category": "raw",
+        "size": 4280
+      },
+      {
+        "name": "tiles-133.xpm",
+        "path": "images/tiles-133.xpm",
+        "category": "raw",
+        "size": 4295
+      },
+      {
+        "name": "tiles-134.xpm",
+        "path": "images/tiles-134.xpm",
+        "category": "raw",
+        "size": 4301
+      },
+      {
+        "name": "tiles-135.xpm",
+        "path": "images/tiles-135.xpm",
+        "category": "raw",
+        "size": 4316
+      },
+      {
+        "name": "tiles-136.xpm",
+        "path": "images/tiles-136.xpm",
+        "category": "raw",
+        "size": 4280
+      },
+      {
+        "name": "tiles-137.xpm",
+        "path": "images/tiles-137.xpm",
+        "category": "raw",
+        "size": 4295
+      },
+      {
+        "name": "tiles-138.xpm",
+        "path": "images/tiles-138.xpm",
+        "category": "raw",
+        "size": 4237
+      },
+      {
+        "name": "tiles-139.xpm",
+        "path": "images/tiles-139.xpm",
+        "category": "raw",
+        "size": 4237
+      },
+      {
+        "name": "tiles-14.xpm",
+        "path": "images/tiles-14.xpm",
+        "category": "raw",
+        "size": 1441
+      },
+      {
+        "name": "tiles-140.xpm",
+        "path": "images/tiles-140.xpm",
+        "category": "raw",
+        "size": 4237
+      },
+      {
+        "name": "tiles-141.xpm",
+        "path": "images/tiles-141.xpm",
+        "category": "raw",
+        "size": 4237
+      },
+      {
+        "name": "tiles-142.xpm",
+        "path": "images/tiles-142.xpm",
+        "category": "raw",
+        "size": 4301
+      },
+      {
+        "name": "tiles-143.xpm",
+        "path": "images/tiles-143.xpm",
+        "category": "raw",
+        "size": 4316
+      },
+      {
+        "name": "tiles-144.xpm",
+        "path": "images/tiles-144.xpm",
+        "category": "raw",
+        "size": 4301
+      },
+      {
+        "name": "tiles-145.xpm",
+        "path": "images/tiles-145.xpm",
+        "category": "raw",
+        "size": 4316
+      },
+      {
+        "name": "tiles-146.xpm",
+        "path": "images/tiles-146.xpm",
+        "category": "raw",
+        "size": 4301
+      },
+      {
+        "name": "tiles-147.xpm",
+        "path": "images/tiles-147.xpm",
+        "category": "raw",
+        "size": 4316
+      },
+      {
+        "name": "tiles-148.xpm",
+        "path": "images/tiles-148.xpm",
+        "category": "raw",
+        "size": 4685
+      },
+      {
+        "name": "tiles-149.xpm",
+        "path": "images/tiles-149.xpm",
+        "category": "raw",
+        "size": 2256
+      },
+      {
+        "name": "tiles-15.xpm",
+        "path": "images/tiles-15.xpm",
+        "category": "raw",
+        "size": 1396
+      },
+      {
+        "name": "tiles-150.xpm",
+        "path": "images/tiles-150.xpm",
+        "category": "raw",
+        "size": 3976
+      },
+      {
+        "name": "tiles-151.xpm",
+        "path": "images/tiles-151.xpm",
+        "category": "raw",
+        "size": 4462
+      },
+      {
+        "name": "tiles-152.xpm",
+        "path": "images/tiles-152.xpm",
+        "category": "raw",
+        "size": 2256
+      },
+      {
+        "name": "tiles-153.xpm",
+        "path": "images/tiles-153.xpm",
+        "category": "raw",
+        "size": 404
+      },
+      {
+        "name": "tiles-154.xpm",
+        "path": "images/tiles-154.xpm",
+        "category": "raw",
+        "size": 4622
+      },
+      {
+        "name": "tiles-155.xpm",
+        "path": "images/tiles-155.xpm",
+        "category": "raw",
+        "size": 307340
+      },
+      {
+        "name": "tiles-156.xpm",
+        "path": "images/tiles-156.xpm",
+        "category": "raw",
+        "size": 0
+      },
+      {
+        "name": "tiles-16.xpm",
+        "path": "images/tiles-16.xpm",
+        "category": "raw",
+        "size": 1396
+      },
+      {
+        "name": "tiles-17.xpm",
+        "path": "images/tiles-17.xpm",
+        "category": "raw",
+        "size": 1463
+      },
+      {
+        "name": "tiles-18.xpm",
+        "path": "images/tiles-18.xpm",
+        "category": "raw",
+        "size": 1463
+      },
+      {
+        "name": "tiles-19.xpm",
+        "path": "images/tiles-19.xpm",
+        "category": "raw",
+        "size": 1435
+      },
+      {
+        "name": "tiles-2.xpm",
+        "path": "images/tiles-2.xpm",
+        "category": "raw",
+        "size": 2658
+      },
+      {
+        "name": "tiles-20.xpm",
+        "path": "images/tiles-20.xpm",
+        "category": "raw",
+        "size": 1464
+      },
+      {
+        "name": "tiles-21.xpm",
+        "path": "images/tiles-21.xpm",
+        "category": "raw",
+        "size": 3910
+      },
+      {
+        "name": "tiles-22.xpm",
+        "path": "images/tiles-22.xpm",
+        "category": "raw",
+        "size": 3910
+      },
+      {
+        "name": "tiles-23.xpm",
+        "path": "images/tiles-23.xpm",
+        "category": "raw",
+        "size": 1434
+      },
+      {
+        "name": "tiles-24.xpm",
+        "path": "images/tiles-24.xpm",
+        "category": "raw",
+        "size": 1434
+      },
+      {
+        "name": "tiles-25.xpm",
+        "path": "images/tiles-25.xpm",
+        "category": "raw",
+        "size": 2273
+      },
+      {
+        "name": "tiles-26.xpm",
+        "path": "images/tiles-26.xpm",
+        "category": "raw",
+        "size": 2239
+      },
+      {
+        "name": "tiles-27.xpm",
+        "path": "images/tiles-27.xpm",
+        "category": "raw",
+        "size": 2202
+      },
+      {
+        "name": "tiles-28.xpm",
+        "path": "images/tiles-28.xpm",
+        "category": "raw",
+        "size": 2181
+      },
+      {
+        "name": "tiles-29.xpm",
+        "path": "images/tiles-29.xpm",
+        "category": "raw",
+        "size": 1542
+      },
+      {
+        "name": "tiles-3.xpm",
+        "path": "images/tiles-3.xpm",
+        "category": "raw",
+        "size": 2202
+      },
+      {
+        "name": "tiles-30.xpm",
+        "path": "images/tiles-30.xpm",
+        "category": "raw",
+        "size": 1542
+      },
+      {
+        "name": "tiles-31.xpm",
+        "path": "images/tiles-31.xpm",
+        "category": "raw",
+        "size": 1434
+      },
+      {
+        "name": "tiles-32.xpm",
+        "path": "images/tiles-32.xpm",
+        "category": "raw",
+        "size": 1434
+      },
+      {
+        "name": "tiles-33.xpm",
+        "path": "images/tiles-33.xpm",
+        "category": "raw",
+        "size": 1612
+      },
+      {
+        "name": "tiles-34.xpm",
+        "path": "images/tiles-34.xpm",
+        "category": "raw",
+        "size": 1558
+      },
+      {
+        "name": "tiles-35.xpm",
+        "path": "images/tiles-35.xpm",
+        "category": "raw",
+        "size": 2141
+      },
+      {
+        "name": "tiles-36.xpm",
+        "path": "images/tiles-36.xpm",
+        "category": "raw",
+        "size": 2120
+      },
+      {
+        "name": "tiles-37.xpm",
+        "path": "images/tiles-37.xpm",
+        "category": "raw",
+        "size": 2252
+      },
+      {
+        "name": "tiles-38.xpm",
+        "path": "images/tiles-38.xpm",
+        "category": "raw",
+        "size": 2189
+      },
+      {
+        "name": "tiles-39.xpm",
+        "path": "images/tiles-39.xpm",
+        "category": "raw",
+        "size": 1586
+      },
+      {
+        "name": "tiles-4.xpm",
+        "path": "images/tiles-4.xpm",
+        "category": "raw",
+        "size": 2803
+      },
+      {
+        "name": "tiles-40.xpm",
+        "path": "images/tiles-40.xpm",
+        "category": "raw",
+        "size": 1586
+      },
+      {
+        "name": "tiles-41.xpm",
+        "path": "images/tiles-41.xpm",
+        "category": "raw",
+        "size": 1570
+      },
+      {
+        "name": "tiles-42.xpm",
+        "path": "images/tiles-42.xpm",
+        "category": "raw",
+        "size": 1549
+      },
+      {
+        "name": "tiles-43.xpm",
+        "path": "images/tiles-43.xpm",
+        "category": "raw",
+        "size": 1434
+      },
+      {
+        "name": "tiles-44.xpm",
+        "path": "images/tiles-44.xpm",
+        "category": "raw",
+        "size": 1434
+      },
+      {
+        "name": "tiles-45.xpm",
+        "path": "images/tiles-45.xpm",
+        "category": "raw",
+        "size": 1657
+      },
+      {
+        "name": "tiles-46.xpm",
+        "path": "images/tiles-46.xpm",
+        "category": "raw",
+        "size": 1657
+      },
+      {
+        "name": "tiles-47.xpm",
+        "path": "images/tiles-47.xpm",
+        "category": "raw",
+        "size": 2138
+      },
+      {
+        "name": "tiles-48.xpm",
+        "path": "images/tiles-48.xpm",
+        "category": "raw",
+        "size": 2117
+      },
+      {
+        "name": "tiles-49.xpm",
+        "path": "images/tiles-49.xpm",
+        "category": "raw",
+        "size": 1625
+      },
+      {
+        "name": "tiles-5.xpm",
+        "path": "images/tiles-5.xpm",
+        "category": "raw",
+        "size": 2098
+      },
+      {
+        "name": "tiles-50.xpm",
+        "path": "images/tiles-50.xpm",
+        "category": "raw",
+        "size": 1625
+      },
+      {
+        "name": "tiles-51.xpm",
+        "path": "images/tiles-51.xpm",
+        "category": "raw",
+        "size": 2262
+      },
+      {
+        "name": "tiles-52.xpm",
+        "path": "images/tiles-52.xpm",
+        "category": "raw",
+        "size": 2185
+      },
+      {
+        "name": "tiles-53.xpm",
+        "path": "images/tiles-53.xpm",
+        "category": "raw",
+        "size": 2193
+      },
+      {
+        "name": "tiles-54.xpm",
+        "path": "images/tiles-54.xpm",
+        "category": "raw",
+        "size": 2151
+      },
+      {
+        "name": "tiles-55.xpm",
+        "path": "images/tiles-55.xpm",
+        "category": "raw",
+        "size": 1498
+      },
+      {
+        "name": "tiles-56.xpm",
+        "path": "images/tiles-56.xpm",
+        "category": "raw",
+        "size": 1498
+      },
+      {
+        "name": "tiles-57.xpm",
+        "path": "images/tiles-57.xpm",
+        "category": "raw",
+        "size": 2652
+      },
+      {
+        "name": "tiles-58.xpm",
+        "path": "images/tiles-58.xpm",
+        "category": "raw",
+        "size": 7865
+      },
+      {
+        "name": "tiles-59.xpm",
+        "path": "images/tiles-59.xpm",
+        "category": "raw",
+        "size": 1447
+      },
+      {
+        "name": "tiles-6.xpm",
+        "path": "images/tiles-6.xpm",
+        "category": "raw",
+        "size": 2116
+      },
+      {
+        "name": "tiles-60.xpm",
+        "path": "images/tiles-60.xpm",
+        "category": "raw",
+        "size": 1553
+      },
+      {
+        "name": "tiles-61.xpm",
+        "path": "images/tiles-61.xpm",
+        "category": "raw",
+        "size": 198
+      },
+      {
+        "name": "tiles-62.xpm",
+        "path": "images/tiles-62.xpm",
+        "category": "raw",
+        "size": 1570
+      },
+      {
+        "name": "tiles-63.xpm",
+        "path": "images/tiles-63.xpm",
+        "category": "raw",
+        "size": 2639
+      },
+      {
+        "name": "tiles-64.xpm",
+        "path": "images/tiles-64.xpm",
+        "category": "raw",
+        "size": 4689
+      },
+      {
+        "name": "tiles-65.xpm",
+        "path": "images/tiles-65.xpm",
+        "category": "raw",
+        "size": 1360
+      },
+      {
+        "name": "tiles-66.xpm",
+        "path": "images/tiles-66.xpm",
+        "category": "raw",
+        "size": 1360
+      },
+      {
+        "name": "tiles-67.xpm",
+        "path": "images/tiles-67.xpm",
+        "category": "raw",
+        "size": 1360
+      },
+      {
+        "name": "tiles-68.xpm",
+        "path": "images/tiles-68.xpm",
+        "category": "raw",
+        "size": 1360
+      },
+      {
+        "name": "tiles-69.xpm",
+        "path": "images/tiles-69.xpm",
+        "category": "raw",
+        "size": 1285
+      },
+      {
+        "name": "tiles-7.xpm",
+        "path": "images/tiles-7.xpm",
+        "category": "raw",
+        "size": 2098
+      },
+      {
+        "name": "tiles-70.xpm",
+        "path": "images/tiles-70.xpm",
+        "category": "raw",
+        "size": 1417
+      },
+      {
+        "name": "tiles-71.xpm",
+        "path": "images/tiles-71.xpm",
+        "category": "raw",
+        "size": 1417
+      },
+      {
+        "name": "tiles-72.xpm",
+        "path": "images/tiles-72.xpm",
+        "category": "raw",
+        "size": 1417
+      },
+      {
+        "name": "tiles-73.xpm",
+        "path": "images/tiles-73.xpm",
+        "category": "raw",
+        "size": 1417
+      },
+      {
+        "name": "tiles-74.xpm",
+        "path": "images/tiles-74.xpm",
+        "category": "raw",
+        "size": 1417
+      },
+      {
+        "name": "tiles-75.xpm",
+        "path": "images/tiles-75.xpm",
+        "category": "raw",
+        "size": 1417
+      },
+      {
+        "name": "tiles-76.xpm",
+        "path": "images/tiles-76.xpm",
+        "category": "raw",
+        "size": 1417
+      },
+      {
+        "name": "tiles-77.xpm",
+        "path": "images/tiles-77.xpm",
+        "category": "raw",
+        "size": 1417
+      },
+      {
+        "name": "tiles-78.xpm",
+        "path": "images/tiles-78.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-79.xpm",
+        "path": "images/tiles-79.xpm",
+        "category": "raw",
+        "size": 2704
+      },
+      {
+        "name": "tiles-8.xpm",
+        "path": "images/tiles-8.xpm",
+        "category": "raw",
+        "size": 2116
+      },
+      {
+        "name": "tiles-80.xpm",
+        "path": "images/tiles-80.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-81.xpm",
+        "path": "images/tiles-81.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-82.xpm",
+        "path": "images/tiles-82.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-83.xpm",
+        "path": "images/tiles-83.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-84.xpm",
+        "path": "images/tiles-84.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-85.xpm",
+        "path": "images/tiles-85.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-86.xpm",
+        "path": "images/tiles-86.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-87.xpm",
+        "path": "images/tiles-87.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-88.xpm",
+        "path": "images/tiles-88.xpm",
+        "category": "raw",
+        "size": 2739
+      },
+      {
+        "name": "tiles-89.xpm",
+        "path": "images/tiles-89.xpm",
+        "category": "raw",
+        "size": 2768
+      },
+      {
+        "name": "tiles-9.xpm",
+        "path": "images/tiles-9.xpm",
+        "category": "raw",
+        "size": 1531
+      },
+      {
+        "name": "tiles-90.xpm",
+        "path": "images/tiles-90.xpm",
+        "category": "raw",
+        "size": 2768
+      },
+      {
+        "name": "tiles-91.xpm",
+        "path": "images/tiles-91.xpm",
+        "category": "raw",
+        "size": 2768
+      },
+      {
+        "name": "tiles-92.xpm",
+        "path": "images/tiles-92.xpm",
+        "category": "raw",
+        "size": 2768
+      },
+      {
+        "name": "tiles-93.xpm",
+        "path": "images/tiles-93.xpm",
+        "category": "raw",
+        "size": 2768
+      },
+      {
+        "name": "tiles-94.xpm",
+        "path": "images/tiles-94.xpm",
+        "category": "raw",
+        "size": 2768
+      },
+      {
+        "name": "tiles-95.xpm",
+        "path": "images/tiles-95.xpm",
+        "category": "raw",
+        "size": 2768
+      },
+      {
+        "name": "tiles-96.xpm",
+        "path": "images/tiles-96.xpm",
+        "category": "raw",
+        "size": 2768
+      },
+      {
+        "name": "tiles-97.xpm",
+        "path": "images/tiles-97.xpm",
+        "category": "raw",
+        "size": 2690
+      },
+      {
+        "name": "tiles-98.xpm",
+        "path": "images/tiles-98.xpm",
+        "category": "raw",
+        "size": 2690
+      },
+      {
+        "name": "tiles-99.xpm",
+        "path": "images/tiles-99.xpm",
+        "category": "raw",
+        "size": 2690
+      },
+      {
+        "name": "tiles.xpm",
+        "path": "images/tiles.xpm",
+        "category": "raw",
+        "size": 308512
+      },
+      {
+        "name": "tilesbw.xpm",
+        "path": "images/tilesbw.xpm",
+        "category": "raw",
+        "size": 308261
+      },
+      {
+        "name": "tilessm.xpm",
+        "path": "images/tilessm.xpm",
+        "category": "raw",
+        "size": 24352
+      },
+      {
+        "name": "init.tcl",
+        "path": "init.tcl",
+        "category": "raw",
+        "size": 4240
+      },
+      {
+        "name": "listbox.tcl",
+        "path": "listbox.tcl",
+        "category": "raw",
+        "size": 1170
+      },
+      {
+        "name": "menu.tcl",
+        "path": "menu.tcl",
+        "category": "raw",
+        "size": 13695
+      },
+      {
+        "name": "micropolis.tcl",
+        "path": "micropolis.tcl",
+        "category": "raw",
+        "size": 123990
+      },
+      {
+        "name": "mkindex.tcl",
+        "path": "mkindex.tcl",
+        "category": "raw",
+        "size": 1603
+      },
+      {
+        "name": "parray.tcl",
+        "path": "parray.tcl",
+        "category": "raw",
+        "size": 1001
+      },
+      {
+        "name": "snro.111",
+        "path": "snro.111",
+        "category": "raw",
+        "size": 27120
+      },
+      {
+        "name": "snro.222",
+        "path": "snro.222",
+        "category": "raw",
+        "size": 27120
+      },
+      {
+        "name": "snro.333",
+        "path": "snro.333",
+        "category": "raw",
+        "size": 27120
+      },
+      {
+        "name": "snro.444",
+        "path": "snro.444",
+        "category": "raw",
+        "size": 27120
+      },
+      {
+        "name": "snro.555",
+        "path": "snro.555",
+        "category": "raw",
+        "size": 27120
+      },
+      {
+        "name": "snro.666",
+        "path": "snro.666",
+        "category": "raw",
+        "size": 27120
+      },
+      {
+        "name": "snro.777",
+        "path": "snro.777",
+        "category": "raw",
+        "size": 27120
+      },
+      {
+        "name": "snro.888",
+        "path": "snro.888",
+        "category": "raw",
+        "size": 27120
+      },
+      {
+        "name": "sound.tcl",
+        "path": "sound.tcl",
+        "category": "raw",
+        "size": 5888
+      },
+      {
+        "name": "stri.202",
+        "path": "stri.202",
+        "category": "raw",
+        "size": 163
+      },
+      {
+        "name": "stri.219",
+        "path": "stri.219",
+        "category": "raw",
+        "size": 270
+      },
+      {
+        "name": "stri.301",
+        "path": "stri.301",
+        "category": "raw",
+        "size": 1372
+      },
+      {
+        "name": "stri.356",
+        "path": "stri.356",
+        "category": "raw",
+        "size": 182
+      },
+      {
+        "name": "tcl.tdx",
+        "path": "tcl.tdx",
+        "category": "raw",
+        "size": 655
+      },
+      {
+        "name": "tcl.tlb",
+        "path": "tcl.tlb",
+        "category": "raw",
+        "size": 16408
+      },
+      {
+        "name": "tclindex",
+        "path": "tclindex",
+        "category": "raw",
+        "size": 1723
+      },
+      {
+        "name": "tclinit.tcl",
+        "path": "tclinit.tcl",
+        "category": "raw",
+        "size": 2850
+      },
+      {
+        "name": "text.tcl",
+        "path": "text.tcl",
+        "category": "raw",
+        "size": 4657
+      },
+      {
+        "name": "tk.tcl",
+        "path": "tk.tcl",
+        "category": "raw",
+        "size": 6751
+      },
+      {
+        "name": "tk.tdx",
+        "path": "tk.tdx",
+        "category": "raw",
+        "size": 484
+      },
+      {
+        "name": "tk.tlb",
+        "path": "tk.tlb",
+        "category": "raw",
+        "size": 17947
+      },
+      {
+        "name": "tkerror.tcl",
+        "path": "tkerror.tcl",
+        "category": "raw",
+        "size": 174
+      },
+      {
+        "name": "wask.tcl",
+        "path": "wask.tcl",
+        "category": "raw",
+        "size": 5244
+      },
+      {
+        "name": "wbudget.tcl",
+        "path": "wbudget.tcl",
+        "category": "raw",
+        "size": 13237
+      },
+      {
+        "name": "weditor.tcl",
+        "path": "weditor.tcl",
+        "category": "raw",
+        "size": 20462
+      },
+      {
+        "name": "weval.tcl",
+        "path": "weval.tcl",
+        "category": "raw",
+        "size": 8904
+      },
+      {
+        "name": "wfile.tcl",
+        "path": "wfile.tcl",
+        "category": "raw",
+        "size": 6568
+      },
+      {
+        "name": "wfrob.tcl",
+        "path": "wfrob.tcl",
+        "category": "raw",
+        "size": 8307
+      },
+      {
+        "name": "wgraph.tcl",
+        "path": "wgraph.tcl",
+        "category": "raw",
+        "size": 7887
+      },
+      {
+        "name": "whead.tcl",
+        "path": "whead.tcl",
+        "category": "raw",
+        "size": 22578
+      },
+      {
+        "name": "whelp.tcl",
+        "path": "whelp.tcl",
+        "category": "raw",
+        "size": 4838
+      },
+      {
+        "name": "wish.tcl",
+        "path": "wish.tcl",
+        "category": "raw",
+        "size": 901
+      },
+      {
+        "name": "wishx.tcl",
+        "path": "wishx.tcl",
+        "category": "raw",
+        "size": 856
+      },
+      {
+        "name": "wmap.tcl",
+        "path": "wmap.tcl",
+        "category": "raw",
+        "size": 8975
+      },
+      {
+        "name": "wnotice.tcl",
+        "path": "wnotice.tcl",
+        "category": "raw",
+        "size": 5822
+      },
+      {
+        "name": "wplayer.tcl",
+        "path": "wplayer.tcl",
+        "category": "raw",
+        "size": 6052
+      },
+      {
+        "name": "wscen.tcl",
+        "path": "wscen.tcl",
+        "category": "raw",
+        "size": 6696
+      },
+      {
+        "name": "wscen_old.tcl",
+        "path": "wscen_old.tcl",
+        "category": "raw",
+        "size": 12105
+      },
+      {
+        "name": "wscen_older.tcl",
+        "path": "wscen_older.tcl",
+        "category": "raw",
+        "size": 12098
+      },
+      {
+        "name": "wsplash.tcl",
+        "path": "wsplash.tcl",
+        "category": "raw",
+        "size": 4141
+      }
+    ]
+  },
+  "stats": {
+    "images": 341,
+    "fonts": 21,
+    "sounds": 49,
+    "raw": 405,
+    "converted_images": 0,
+    "skipped_images": 0,
+    "failed_images": 0
+  }
+}

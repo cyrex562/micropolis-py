@@ -14,7 +14,7 @@ Based on the original C code from mapgener.c, terragen.c, and terra.c
 
 import random
 
-from src.micropolis.constants import (
+from micropolis.constants import (
     WORLD_X,
     WORLD_Y,
     DIR_TAB_X,
@@ -37,7 +37,7 @@ from typing import TYPE_CHECKING, Any
 # imports with context.py. Use TYPE_CHECKING for type hints and Any at
 # runtime for function signatures.
 if TYPE_CHECKING:
-    from src.micropolis.context import AppContext
+    from micropolis.context import AppContext
 
 
 def _init_random_state(seed: int) -> list[int]:

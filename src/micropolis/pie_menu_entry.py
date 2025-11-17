@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import pygame
 
-from src.micropolis.pie_menu import EntryType, PieMenu
+if TYPE_CHECKING:
+    from micropolis.pie_menu import EntryType, PieMenu
 
 
 @dataclass
@@ -10,7 +14,7 @@ class PieMenuEntry:
     """Individual entry in a pie menu."""
 
     type: EntryType
-    piemenu: 'PieMenu'
+    piemenu: PieMenu
     label: str = ""
     bitmap: pygame.Surface | None = None
 
@@ -26,12 +30,12 @@ class PieMenuEntry:
 
     # Pie slice information
     slice_size: float = 1.0  # Relative slice size
-    angle: float = 0.0       # Angle through center of slice
-    dx: float = 0.0          # Cosine of angle
-    dy: float = 0.0          # Sine of angle
-    subtend: float = 0.0     # Angle subtended by slice
-    quadrant: int = 0        # Quadrant of leading edge
-    slope: float = 0.0       # Slope of leading edge
+    angle: float = 0.0  # Angle through center of slice
+    dx: float = 0.0  # Cosine of angle
+    dy: float = 0.0  # Sine of angle
+    subtend: float = 0.0  # Angle subtended by slice
+    quadrant: int = 0  # Quadrant of leading edge
+    slope: float = 0.0  # Slope of leading edge
 
     # Commands
     command: str | None = None

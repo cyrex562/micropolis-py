@@ -1,0 +1,356 @@
+{
+    "version": 1,
+    "actions": [
+        {
+            "id": "tool.bulldozer",
+            "label": "Bulldozer",
+            "description": "Select the bulldozer tool",
+            "category": "tools",
+            "bindings": [
+                "b"
+            ]
+        },
+        {
+            "id": "tool.road",
+            "label": "Road",
+            "description": "Select the road tool",
+            "category": "tools",
+            "bindings": [
+                "r"
+            ]
+        },
+        {
+            "id": "tool.rail",
+            "label": "Rail",
+            "description": "Select the rail tool",
+            "category": "tools",
+            "bindings": [
+                "t"
+            ]
+        },
+        {
+            "id": "tool.wire",
+            "label": "Wire",
+            "description": "Select the power wire tool",
+            "category": "tools",
+            "bindings": [
+                "w"
+            ]
+        },
+        {
+            "id": "tool.residential",
+            "label": "Residential",
+            "description": "Select the residential zoning tool",
+            "category": "tools",
+            "bindings": [
+                "z"
+            ]
+        },
+        {
+            "id": "tool.commercial",
+            "label": "Commercial",
+            "description": "Select the commercial zoning tool",
+            "category": "tools",
+            "bindings": [
+                "x"
+            ]
+        },
+        {
+            "id": "tool.industrial",
+            "label": "Industrial",
+            "description": "Select the industrial zoning tool",
+            "category": "tools",
+            "bindings": [
+                "c"
+            ]
+        },
+        {
+            "id": "tool.fire",
+            "label": "Fire Station",
+            "description": "Place a fire station",
+            "category": "tools",
+            "bindings": [
+                "f"
+            ]
+        },
+        {
+            "id": "tool.police",
+            "label": "Police Station",
+            "description": "Place a police station",
+            "category": "tools",
+            "bindings": [
+                "p"
+            ]
+        },
+        {
+            "id": "tool.airport",
+            "label": "Airport",
+            "description": "Place an airport",
+            "category": "tools",
+            "bindings": [
+                "a"
+            ]
+        },
+        {
+            "id": "tool.seaport",
+            "label": "Seaport",
+            "description": "Place a seaport",
+            "category": "tools",
+            "bindings": [
+                "s"
+            ]
+        },
+        {
+            "id": "tool.nuclear",
+            "label": "Nuclear Plant",
+            "description": "Place a nuclear power plant",
+            "category": "tools",
+            "bindings": [
+                "n"
+            ]
+        },
+        {
+            "id": "tool.coal",
+            "label": "Coal Plant",
+            "description": "Place a coal power plant",
+            "category": "tools",
+            "bindings": [
+                "l"
+            ]
+        },
+        {
+            "id": "tool.park",
+            "label": "Park",
+            "description": "Place a park tile",
+            "category": "tools",
+            "bindings": [
+                "o"
+            ]
+        },
+        {
+            "id": "tool.stadium",
+            "label": "Stadium",
+            "description": "Place a stadium",
+            "category": "tools",
+            "bindings": [
+                "h"
+            ]
+        },
+        {
+            "id": "tool.query",
+            "label": "Query",
+            "description": "Query a tile for details",
+            "category": "tools",
+            "bindings": [
+                "q"
+            ]
+        },
+        {
+            "id": "simulation.pause",
+            "label": "Pause/Resume",
+            "description": "Toggle simulation pause",
+            "category": "simulation",
+            "bindings": [
+                "space"
+            ]
+        },
+        {
+            "id": "simulation.speed.turtle",
+            "label": "Speed 1",
+            "description": "Set simulation speed to turtle",
+            "category": "simulation",
+            "bindings": [
+                "1"
+            ]
+        },
+        {
+            "id": "simulation.speed.llama",
+            "label": "Speed 2",
+            "description": "Set simulation speed to llama",
+            "category": "simulation",
+            "bindings": [
+                "2"
+            ]
+        },
+        {
+            "id": "simulation.speed.cheetah",
+            "label": "Speed 3",
+            "description": "Set simulation speed to cheetah",
+            "category": "simulation",
+            "bindings": [
+                "3"
+            ]
+        },
+        {
+            "id": "simulation.speed.ludicrous",
+            "label": "Speed 4",
+            "description": "Set simulation speed to ludicrous",
+            "category": "simulation",
+            "bindings": [
+                "4"
+            ]
+        },
+        {
+            "id": "overlay.population",
+            "label": "Population Overlay",
+            "description": "Show population density overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+1"
+            ]
+        },
+        {
+            "id": "overlay.pollution",
+            "label": "Pollution Overlay",
+            "description": "Show pollution overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+2"
+            ]
+        },
+        {
+            "id": "overlay.crime",
+            "label": "Crime Overlay",
+            "description": "Show crime overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+3"
+            ]
+        },
+        {
+            "id": "overlay.traffic",
+            "label": "Traffic Overlay",
+            "description": "Show traffic overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+4"
+            ]
+        },
+        {
+            "id": "overlay.power",
+            "label": "Power Overlay",
+            "description": "Show power overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+5"
+            ]
+        },
+        {
+            "id": "overlay.land_value",
+            "label": "Land Value Overlay",
+            "description": "Show land value overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+6"
+            ]
+        },
+        {
+            "id": "overlay.growth",
+            "label": "Rate of Growth Overlay",
+            "description": "Show rate of growth overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+7"
+            ]
+        },
+        {
+            "id": "overlay.fire",
+            "label": "Fire Coverage Overlay",
+            "description": "Show fire coverage overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+8"
+            ]
+        },
+        {
+            "id": "overlay.police",
+            "label": "Police Coverage Overlay",
+            "description": "Show police coverage overlay",
+            "category": "overlays",
+            "bindings": [
+                "shift+9"
+            ]
+        },
+        {
+            "id": "overlay.dynamic_filter",
+            "label": "Dynamic Filter",
+            "description": "Toggle dynamic overlay filter",
+            "category": "overlays",
+            "bindings": [
+                "shift+0"
+            ]
+        },
+        {
+            "id": "system.save",
+            "label": "Save City",
+            "description": "Save the current city",
+            "category": "system",
+            "bindings": [
+                "ctrl+s"
+            ]
+        },
+        {
+            "id": "system.open",
+            "label": "Open City",
+            "description": "Open a city file",
+            "category": "system",
+            "bindings": [
+                "ctrl+o"
+            ]
+        },
+        {
+            "id": "system.new",
+            "label": "New City",
+            "description": "Create a new city",
+            "category": "system",
+            "bindings": [
+                "ctrl+n"
+            ]
+        },
+        {
+            "id": "system.quit",
+            "label": "Quit",
+            "description": "Quit Micropolis",
+            "category": "system",
+            "bindings": [
+                "ctrl+q"
+            ]
+        },
+        {
+            "id": "system.help",
+            "label": "Help",
+            "description": "Open help",
+            "category": "system",
+            "bindings": [
+                "f1"
+            ]
+        },
+        {
+            "id": "system.budget",
+            "label": "Budget",
+            "description": "Open the budget dialog",
+            "category": "system",
+            "bindings": [
+                "f2"
+            ]
+        },
+        {
+            "id": "system.evaluation",
+            "label": "Evaluation",
+            "description": "Open the evaluation panel",
+            "category": "system",
+            "bindings": [
+                "f3"
+            ]
+        },
+        {
+            "id": "ui.show_keybindings",
+            "label": "Keybinding Panel",
+            "description": "Open the keybindings panel",
+            "category": "ui",
+            "bindings": [
+                "ctrl+,"
+            ]
+        }
+    ]
+}

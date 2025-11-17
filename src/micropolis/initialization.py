@@ -5,26 +5,29 @@ This module contains the initialization functions ported from s_init.c,
 responsible for setting up the initial simulation state and resetting components.
 """
 
+import logging
 import time
+from typing import TYPE_CHECKING
 
-from src.micropolis.allocation import init_map_arrays
-from src.micropolis.constants import (
+from micropolis.allocation import init_map_arrays
+from micropolis.constants import (
+    ALMAP,
+    DOZE_STATE,
     HWLDX,
     HWLDY,
     QWX,
     QWY,
     SM_X,
     SM_Y,
-    ALMAP,
-    DOZE_STATE,
 )
-from src.micropolis.context import AppContext
-from src.micropolis.random import sim_srand, sim_srandom
-from typing import TYPE_CHECKING
+from micropolis.context import AppContext
+from micropolis.random import sim_srand, sim_srandom
 
 if TYPE_CHECKING:
     # type-only import to avoid circular import at module import time
-    from src.micropolis.simulation import do_sim_init
+    from micropolis.simulation import do_sim_init
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================
@@ -32,7 +35,7 @@ if TYPE_CHECKING:
 # ============================================================================
 
 
-def RandomlySeedRand() -> None:
+def RandomlySeedRand(context: AppContext) -> None:
     """
     Seed the random number generator with current time.
 
@@ -41,7 +44,8 @@ def RandomlySeedRand() -> None:
     # Use current time as seed for reproducibility testing
     # In production, you might want to use a more random seed
     current_time = int(time.time())
-    sim_srand(current_time)
+    # Seed both random generators with the AppContext-aware functions
+    sim_srand(context, current_time)
     sim_srandom(context, current_time)
 
 
@@ -138,7 +142,7 @@ def InitWillStuff(context: AppContext) -> None:
     This is called when starting a new game or loading a saved game.
     """
     # Seed random number generator
-    RandomlySeedRand()
+    RandomlySeedRand(context)
 
     # Initialize graph maximums
     InitGraphMax(context)
@@ -230,6 +234,7 @@ def ResetMapState(context: AppContext) -> None:
     :param context:
     """
     if not context.sim:
+        logger.warning("ResetMapState called but context.sim is None - skipping")
         return
 
     view = context.sim.map
@@ -245,6 +250,7 @@ def ResetEditorState(context: AppContext) -> None:
     Sets all editor views to use the bulldozer tool.
     """
     if not context.sim:
+        logger.warning("ResetEditorState called but context.sim is None - skipping")
         return
 
     view = context.sim.editor
@@ -304,7 +310,7 @@ def InitGame(context: AppContext) -> None:
 
     InitFundingLevel(context)
     # Import do_sim_init here to avoid circular import issues
-    from src.micropolis.simulation import do_sim_init
+    from micropolis.simulation import do_sim_init
 
     do_sim_init(context)
     context.init_sim_load = 2

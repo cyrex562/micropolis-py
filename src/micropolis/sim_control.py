@@ -8,10 +8,9 @@ through TCL commands in the original implementation.
 """
 
 from collections.abc import Callable
-from types import SimpleNamespace
 from typing import Any
 
-from src.micropolis import (
+from micropolis import (
     audio,
     disasters,
     engine,
@@ -25,10 +24,12 @@ from src.micropolis import (
     traffic,
     ui_utilities,
 )
-from src.micropolis.constants import COP, DYMAP, GOD, WORLD_X, WORLD_Y
-from src.micropolis.context import AppContext
+from micropolis.constants import COP, DYMAP, GOD, WORLD_X, WORLD_Y
+from micropolis.context import AppContext
+from micropolis.state_contract import LegacyStateContract, LegacyTypes
 
-types = SimpleNamespace()
+types = LegacyTypes()
+state_contract = LegacyStateContract()
 
 _LEGACY_CITY_NAME = "Micropolis"
 _LEGACY_PENDING_CITY_NAME = "Test City"
@@ -1658,5 +1659,5 @@ def initialize_sim_control(context: AppContext) -> None:
     context.multi_player_mode = False
     context.sugar_mode = False
 
+    state_contract.bind(context, types)
     context.city_name = _LEGACY_CITY_NAME
-    _legacy_set("CityName", context.city_name)

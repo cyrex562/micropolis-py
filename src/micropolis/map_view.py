@@ -17,20 +17,60 @@ from typing import Any
 
 import pygame
 
-from src.micropolis.constants import VAL_NONE, VAL_LOW, VAL_MEDIUM, VAL_HIGH, VAL_VERYHIGH, valGrayMap, valMap, WORLD_X, \
-    WORLD_Y, \
-    LOMASK, RESBASE, COMBASE, INDBASE, TILE_COUNT, ZONEBIT, PWRBIT, CONDBIT, HWLDX, HWLDY, SM_X, SM_Y, \
-    VAL_VERYPLUS, VAL_PLUS, VAL_VERYMINUS, VAL_MINUS, ALMAP, REMAP, COMAP, INMAP, PRMAP, RDMAP, PDMAP, RGMAP, TDMAP, \
-    PLMAP, CRMAP, LVMAP, FIMAP, POMAP, DYMAP
-from src.micropolis.context import AppContext
+from micropolis.constants import (
+    VAL_NONE,
+    VAL_LOW,
+    VAL_MEDIUM,
+    VAL_HIGH,
+    VAL_VERYHIGH,
+    valGrayMap,
+    valMap,
+    WORLD_X,
+    WORLD_Y,
+    LOMASK,
+    RESBASE,
+    COMBASE,
+    INDBASE,
+    TILE_COUNT,
+    ZONEBIT,
+    PWRBIT,
+    CONDBIT,
+    HWLDX,
+    HWLDY,
+    SM_X,
+    SM_Y,
+    VAL_VERYPLUS,
+    VAL_PLUS,
+    VAL_VERYMINUS,
+    VAL_MINUS,
+    ALMAP,
+    REMAP,
+    COMAP,
+    INMAP,
+    PRMAP,
+    RDMAP,
+    PDMAP,
+    RGMAP,
+    TDMAP,
+    PLMAP,
+    CRMAP,
+    LVMAP,
+    FIMAP,
+    POMAP,
+    DYMAP,
+    NMAPS,
+)
+from micropolis.context import AppContext
 
 
 # ============================================================================
 # Map Procedure Array
 # ============================================================================
 
-
-
+# Module-level compatibility map procedures array (legacy API)
+# Also populated by setUpMapProcs for backward compatibility with callers that
+# reference map_view.mapProcs directly.
+mapProcs: list = [None] * NMAPS
 
 # ============================================================================
 # Utility Functions
@@ -234,8 +274,6 @@ def drawPower(context: AppContext, view: Any) -> None:
     """
     if not (hasattr(view, "surface") and view.surface):
         return
-
-
 
     # Get color values
     if hasattr(view, "x") and view.x and not view.x.color:
@@ -491,7 +529,9 @@ def dynamicFilter(context: AppContext, col: int, row: int) -> bool:
     # Check rate of growth
     rate_check = (context.dynamic_data[2] > context.dynamic_data[3]) or (
         (context.rate_og_mem[c >> 2][r >> 2] >= ((2 * context.dynamic_data[2]) - 256))
-        and (context.rate_og_mem[c >> 2][r >> 2] <= ((2 * context.dynamic_data[3]) - 256))
+        and (
+            context.rate_og_mem[c >> 2][r >> 2] <= ((2 * context.dynamic_data[3]) - 256)
+        )
     )
 
     # Check traffic density
@@ -571,9 +611,10 @@ def MemDrawMap(context: AppContext, view: Any) -> None:
         view: SimView to render the map into
         :param context:
     """
-    # Call the appropriate drawing function
+    # Call the appropriate drawing function. Map procedures are registered
+    # as callables that expect (context, view) so pass both parameters here.
     if view.map_state < len(context.mapProcs) and context.mapProcs[view.map_state]:
-        context.mapProcs[view.map_state](view)
+        context.mapProcs[view.map_state](context, view)
 
     # Apply dithering if needed for monochrome displays
     if hasattr(view, "x") and view.x and not view.x.color:
@@ -602,6 +643,22 @@ def setUpMapProcs(context: AppContext) -> None:
     context.mapProcs[FIMAP] = drawFireRadius
     context.mapProcs[POMAP] = drawPoliceRadius
     context.mapProcs[DYMAP] = drawDynamic
+    # Maintain module-level compatibility as well
+    mapProcs[ALMAP] = drawAll
+    mapProcs[REMAP] = drawRes
+    mapProcs[COMAP] = drawCom
+    mapProcs[INMAP] = drawInd
+    mapProcs[PRMAP] = drawPower
+    mapProcs[RDMAP] = drawLilTransMap
+    mapProcs[PDMAP] = drawPopDensity
+    mapProcs[RGMAP] = drawRateOfGrowth
+    mapProcs[TDMAP] = drawTrafMap
+    mapProcs[PLMAP] = drawPolMap
+    mapProcs[CRMAP] = drawCrimeMap
+    mapProcs[LVMAP] = drawLandMap
+    mapProcs[FIMAP] = drawFireRadius
+    mapProcs[POMAP] = drawPoliceRadius
+    mapProcs[DYMAP] = drawDynamic
 
 
 # ============================================================================
@@ -611,3 +668,19 @@ def setUpMapProcs(context: AppContext) -> None:
 # Set up the map procedures when module is imported
 # TODO: call setupMapProcs in actual init function of game instead of when imported
 # setUpMapProcs(context)
+# Populate module-level mapProcs for legacy callers that expect map_view.mapProcs
+mapProcs[ALMAP] = drawAll
+mapProcs[REMAP] = drawRes
+mapProcs[COMAP] = drawCom
+mapProcs[INMAP] = drawInd
+mapProcs[PRMAP] = drawPower
+mapProcs[RDMAP] = drawLilTransMap
+mapProcs[PDMAP] = drawPopDensity
+mapProcs[RGMAP] = drawRateOfGrowth
+mapProcs[TDMAP] = drawTrafMap
+mapProcs[PLMAP] = drawPolMap
+mapProcs[CRMAP] = drawCrimeMap
+mapProcs[LVMAP] = drawLandMap
+mapProcs[FIMAP] = drawFireRadius
+mapProcs[POMAP] = drawPoliceRadius
+mapProcs[DYMAP] = drawDynamic

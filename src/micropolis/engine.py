@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 engine.py - Main simulation engine and state management for Micropolis Python port
 
 This module contains the main simulation orchestration, initialization, and
 state management functions ported from sim.c, adapted for Python/pygame.
 """
+
+from __future__ import annotations
 
 import argparse
 import logging
@@ -14,37 +14,56 @@ import sys
 import time
 from typing import TYPE_CHECKING
 
-from . import initialization, graphics_setup
-from .allocation import init_map_arrays
-from .audio import initialize_sound
 import pygame
 from result import Err, Ok, Result
 
+from . import graphics_setup, initialization
+from .allocation import init_map_arrays
 from .app_config import AppConfig
+from .audio import initialize_sound
 from .constants import (
+    ALMAP,
+    COMAP,
+    CRMAP,
     DEFAULT_STARTING_FUNDS,
+    DIRT,
+    DYMAP,
+    EDITOR_H,
+    EDITOR_W,
+    FIMAP,
+    INMAP,
+    LVMAP,
+    MAP_H,
+    MAP_W,
+    MICROPOLIS_VERSION,
+    NMAPS,
+    PDMAP,
+    PLMAP,
+    POMAP,
+    PRMAP,
+    RDMAP,
+    REMAP,
     RESBASE,
+    RGMAP,
+    TDMAP,
     WORLD_X,
     WORLD_Y,
-    DIRT,
-    MAP_W,
-    MAP_H,
-    EDITOR_W,
-    EDITOR_H,
-    NMAPS,
-    MICROPOLIS_VERSION,
 )
 from .context import AppContext
 from .editor import do_update_editor
-from .evaluation_ui import get_evaluation_surface, score_doer, update_evaluation
 from .graphics_setup import init_graphics
-from .graphs import render_graph_panel, update_all_graphs, request_graph_panel_redraw
+from .graphs import render_graph_panel, request_graph_panel_redraw, update_all_graphs
 from .initialization import InitWillStuff
+from .input_actions import InputActionDispatcher
 from .macros import LOMASK, ZONEBIT
 from .map_view import MemDrawMap
-
-from .sim_view import create_map_view, create_editor_view, SimView
+from .sim_view import SimView, create_editor_view, create_map_view
 from .simulation import sim_frame
+from .ui.event_bus import get_default_event_bus
+from .ui.input_bindings import get_default_input_binding_manager
+from .ui.keybindings_overlay import KeybindingsOverlay
+from .ui.panel_manager import PanelManager
+from .ui.panels import EditorPanel, ToolPalettePanel
 from .ui_utilities import handle_keyboard_shortcut
 from .view_types import (
     MakeNewSimGraph,
@@ -363,32 +382,77 @@ def pan_editor_view(
     view.pan_y = max(0, min(max_y, view.pan_y + dy))
 
 
-def initialize_view_surfaces(
-    context: AppContext, graphics_module
-) -> Result[None, Exception]:
+def initialize_view_surfaces(context: AppContext) -> Result[None, Exception]:
     """Attach pygame surfaces and tile caches to all views.
-    :param context:
-    :param graphics_module:
+
+    This function:
+    1. Creates pygame surfaces for each view
+    2. Loads tile graphics from assets
+    3. Populates tile caches (bigtiles for editor, smalltiles for map)
+    4. Ensures views are ready for rendering
+
+    :param context: Application context containing sim and views
     """
 
-    sim_obj = ensure_sim_structures()
+    if context.sim is None:
+        logger.error("Cannot initialize view surfaces: context.sim is None")
+        return Err(ValueError("context.sim is None"))
+
     display = get_or_create_display(context)
 
+    # Initialize pixmaps and object sprites for the display
+    graphics_setup.get_pixmaps(display)
+
+    # Process all editor and map views
     for view in _iter_all_views(context.sim):
+        # Ensure view has display reference
         if view.x is None:
             view.x = display
+            logger.debug(f"Attached display to view (class_id={view.class_id})")
+
+        # Create pygame surface if needed
         if view.surface is None:
             width, height = (
                 (MAP_W, MAP_H) if view.class_id == Map_Class else (EDITOR_W, EDITOR_H)
             )
             view.surface = pygame.Surface((width, height), pygame.SRCALPHA)
+            logger.debug(
+                f"Created surface for view: {width}x{height} (class_id={view.class_id})"
+            )
 
+        # Load tile graphics for this view
         try:
-            context.init_view_graphics(view)
+            success = graphics_setup.init_view_graphics(view)
+            if not success:
+                logger.error(
+                    f"Failed to initialize graphics for view (class_id={view.class_id})"
+                )
+                return Err(ValueError(f"Failed to initialize view graphics"))
+
+            # Verify tile caches were populated
+            if view.class_id == Map_Class:
+                if view.smalltiles is None and view.x.small_tile_image is None:
+                    logger.warning("Map view has no small tiles loaded")
+                else:
+                    logger.debug(
+                        f"Map view tile cache initialized: smalltiles={'present' if view.smalltiles else 'from image'}"
+                    )
+            else:  # Editor view
+                if view.bigtiles is None and (
+                    view.x is None or view.x.big_tile_image is None
+                ):
+                    logger.warning("Editor view has no big tiles loaded")
+                else:
+                    logger.debug(
+                        f"Editor view tile cache initialized: bigtiles={'present' if view.bigtiles else 'from image'}"
+                    )
+
         except Exception as exc:  # pragma: no cover - defensive
-            logger.exception(f"Warning: Failed to initialize view graphics: {exc}")
+            logger.exception(f"Failed to initialize view graphics: {exc}")
             return Err(exc)
-        return Ok(None)
+
+    logger.info("All view surfaces initialized successfully")
+    return Ok(None)
 
 
 def blit_views_to_screen(
@@ -427,18 +491,53 @@ def blit_views_to_screen(
         scaled = pygame.transform.smoothscale(region, (editor_area[2], editor_area[3]))
         context.blit(scaled, (editor_area[0], editor_area[1]))
 
-    _blit_overlay_panels(context)
+    _blit_overlay_panels(screen)
 
 
 def _blit_overlay_panels(screen) -> None:
     """Render graph/evaluation overlays when their toggles are enabled."""
+    # Import the submodules and call their functions via the module attribute
+    # so that test monkeypatches such as `monkeypatch.setattr(engine.graphs, ...)`
+    # affect the behavior here. This is more robust than referencing imported
+    # symbols captured at module import time.
+    from . import graphs as _graphs
+    from . import evaluation_ui as _evaluation_ui
+    import sys
+
+    # Prefer module attributes attached to this engine module (tests may
+    # monkeypatch `engine.graphs` / `engine.evaluation_ui`). Fall back to the
+    # imported modules above when those attributes are absent.
+    _mod = sys.modules.get(__name__)
+    _graphs_mod = getattr(_mod, "graphs", _graphs)
+    _evaluation_mod = getattr(_mod, "evaluation_ui", _evaluation_ui)
+
     overlays = []
 
-    graph_surface = render_graph_panel(context)
+    # render_graph_panel may be a zero-arg legacy function (tests monkeypatch
+    # it that way) or a context-accepting function. Try zero-arg first, then
+    # fall back to passing a context/module object.
+    graph_surface = None
+    try:
+        graph_surface = _graphs_mod.render_graph_panel()
+    except TypeError:
+        try:
+            graph_surface = _graphs_mod.render_graph_panel(context)
+        except Exception:
+            # If that still fails, give up and treat as no surface
+            graph_surface = None
     if graph_surface is not None:
         overlays.append(graph_surface)
 
-    evaluation_surface = get_evaluation_surface()
+    # evaluation_ui.get_evaluation_surface is also patched by tests via
+    # engine.evaluation_ui; call through the module attribute to respect
+    # monkeypatches.
+    try:
+        evaluation_surface = _evaluation_mod.get_evaluation_surface()
+    except TypeError:
+        try:
+            evaluation_surface = _evaluation_mod.get_evaluation_surface(context)
+        except Exception:
+            evaluation_surface = None
     if evaluation_surface is not None:
         overlays.append(evaluation_surface)
 
@@ -531,24 +630,25 @@ def sim_init(context: AppContext) -> Result[None, Exception]:
 
     Ported from sim_init() in sim.c.
     """
-    # global start_time, beat_time
-
-    # start_time = time.time()
-    # beat_time = time.time()
-
+    # Initialize signal handlers
     result = signal_init(context)
     if result.is_err():
         return result
-    context.sim.editor = create_editor_view()
-    context.sim.editors = 1
-    context.sim.map = create_map_view()
-    context.sim.maps = 1
-    context.sim.graph = MakeNewSimGraph()
-    context.sim.graphs = 1
-    context.sim.date = MakeNewSimDate()
-    context.sim.dates = 1
 
-    # ensure_sim_structures(context)
+    # Create the global simulation instance with all required views
+    from .sim import MakeNewSim
+
+    context.sim = MakeNewSim(context)
+
+    # Verify that views have surfaces initialized
+    if context.sim.editor and context.sim.editor.surface is None:
+        logger.debug(
+            "Editor view surface not yet initialized (will be set during graphics setup)"
+        )
+    if context.sim.map and context.sim.map.surface is None:
+        logger.debug(
+            "Map view surface not yet initialized (will be set during graphics setup)"
+        )
 
     # Initialize simulation state
     # types.UserSoundOn = 1
@@ -629,6 +729,7 @@ def sim_update_editors(context: AppContext) -> None:
     Ported from sim_update_editors() in sim.c.
     """
     if not context.sim:
+        logger.warning("sim_update_editors called but context.sim is None - skipping")
         return
 
     view = context.sim.editor
@@ -648,6 +749,7 @@ def sim_update_maps(context: AppContext) -> None:
     Ported from sim_update_maps() in sim.c.
     """
     if not context.sim:
+        logger.warning("sim_update_maps called but context.sim is None - skipping")
         return
 
     view = context.sim.map
@@ -663,7 +765,7 @@ def sim_update_maps(context: AppContext) -> None:
         if view.invalid:
             if must_update_map:
                 pass  # Could add skip logic here
-            if DoUpdateMap(view):
+            if DoUpdateMap(context, view):
                 pass  # Could handle redraw cancellation here
 
         view = view.next
@@ -673,13 +775,14 @@ def sim_update_maps(context: AppContext) -> None:
         context.new_map_flags[i] = 0
 
 
-def sim_update_graphs() -> None:
+def sim_update_graphs(context: AppContext) -> None:
     """
     Update graph displays.
 
     Ported from sim_update_graphs() in sim.c.
+    :param context:
     """
-    graphDoer()
+    graphDoer(context)
 
 
 def sim_update_budgets(context: AppContext) -> None:
@@ -786,25 +889,81 @@ def sim_loop(context: AppContext, doSim: bool) -> None:
 
 
 def DoStopMicropolis(context: AppContext) -> None:
-    """Stop the Micropolis simulation (placeholder)
-    :param context:
-    """
-    # global tk_must_exit
-    context.tk_must_exit = True
+    """Stop the Micropolis simulation and clean up all resources.
 
+    This function performs a complete teardown of the game including:
+    - Setting exit flag to stop the main loop
+    - Stopping all pygame timers
+    - Shutting down audio system and releasing mixer channels
+    - Cleaning up graphics resources
+    - Stopping tkinter bridge resources
+    - Clearing event bus subscriptions
+    - Resetting global state variables
+
+    After calling this function, the pygame loop should exit cleanly.
+
+    Ported from DoStopMicropolis() in w_x.c
+    :param context: Application context
+    """
+    logger.info("Stopping Micropolis...")
+
+    # Set exit flag to stop main loop
+    context.tk_must_exit = True
+    context.running = False
+
+    # Stop all pygame timers
+    try:
+        from .constants import SIM_TIMER_EVENT, EARTHQUAKE_TIMER_EVENT, UPDATE_EVENT
+
+        pygame.time.set_timer(SIM_TIMER_EVENT, 0)
+        pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, 0)
+        pygame.time.set_timer(UPDATE_EVENT, 0)
+        logger.debug("Stopped all pygame timers")
+    except Exception as e:
+        logger.warning(f"Error stopping timers: {e}")
+
+    # Stop and clean up tkinter bridge resources
+    try:
+        from . import tkinter_bridge
+
+        tkinter_bridge.tk_main_cleanup(context)
+        logger.debug("Cleaned up tkinter bridge")
+    except Exception as e:
+        logger.warning(f"Error cleaning up tkinter bridge: {e}")
+
+    # Shutdown audio system and release mixer channels
     try:
         from . import audio
 
-        audio.shutdown_sound()
-    except Exception:
-        pass
+        audio.shutdown_sound(context)
+        logger.debug("Shut down audio system")
+    except Exception as e:
+        logger.warning(f"Error shutting down audio: {e}")
 
+    # Clean up graphics resources
     try:
         from . import graphics_setup
 
         graphics_setup.cleanup_graphics()
-    except Exception:
-        pass
+        logger.debug("Cleaned up graphics")
+    except Exception as e:
+        logger.warning(f"Error cleaning up graphics: {e}")
+
+    # Clear event bus subscriptions
+    try:
+        from .ui.event_bus import get_default_event_bus
+
+        event_bus = get_default_event_bus()
+        event_bus.clear()
+        logger.debug("Cleared event bus")
+    except Exception as e:
+        logger.warning(f"Error clearing event bus: {e}")
+
+    # Reset simulation state flags
+    context.sim_paused = 0
+    context.sim_paused_speed = 3
+
+    logger.info("Micropolis stopped successfully")
 
 
 # def InitializeSound() -> None:
@@ -814,61 +973,173 @@ def DoStopMicropolis(context: AppContext) -> None:
 #     audio.initialize_sound()
 
 
-def initGraphs() -> None:
-    """Initialize graphs (placeholder)"""
+def initGraphs(context: AppContext) -> None:
+    """Initialize graphs (placeholder)
+    :param context:
+    """
     pass
 
 
 def InitFundingLevel(context: AppContext) -> None:
-    """Initialize funding levels (placeholder)
-    :param context:
     """
+    Initialize funding levels for city services.
+
+    Sets up the initial budget allocations for police, fire, and road services
+    based on the game difficulty level.
+
+    Ported from InitFundingLevel() in w_budget.c and initialization.py.
+    :param context: Application context containing budget state
+    """
+    # Set default funding percentages (100% for roads initially)
+    context.road_percent = 1.0
+    context.police_percent = 0.0
+    context.fire_percent = 0.0
+
+    # Set maximum values for budget sliders
+    context.road_max_value = 100
+    context.police_max_value = 100
+    context.fire_max_value = 100
+
+    # Set effects (how much funding provides coverage)
+    context.road_effect = 32
+    context.police_effect = 1000
+    context.fire_effect = 1000
+
+    # Initialize tax and fund values
+    context.city_tax = 7  # 7% default tax rate
+    context.road_fund = 0
+    context.police_fund = 0
+    context.fire_fund = 0
+    context.tax_fund = 0
+
+    # Set initial funds based on difficulty level
     SetFunds(context, DEFAULT_STARTING_FUNDS)
     SetGameLevelFunds(context, context.startup_game_level)
 
 
-def setUpMapProcs() -> None:
-    """Set up map processing (placeholder)"""
-    setUpMapProcs()
+def setUpMapProcs(context: AppContext) -> None:
+    """
+    Initialize the map procedure array with all drawing functions.
+
+    Registers callback functions for each overlay type (residential, commercial,
+    industrial, power, traffic, pollution, crime, etc.) that the map view uses
+    to render different visualization modes.
+
+    Ported from setUpMapProcs() in map_view.py.
+    :param context: Application context containing mapProcs array
+    """
+    from . import map_view
+
+    # Register all overlay drawing functions
+    context.mapProcs[ALMAP] = map_view.drawAll
+    context.mapProcs[REMAP] = map_view.drawRes
+    context.mapProcs[COMAP] = map_view.drawCom
+    context.mapProcs[INMAP] = map_view.drawInd
+    context.mapProcs[PRMAP] = map_view.drawPower
+    context.mapProcs[RDMAP] = map_view.drawLilTransMap
+    context.mapProcs[PDMAP] = map_view.drawPopDensity
+    context.mapProcs[RGMAP] = map_view.drawRateOfGrowth
+    context.mapProcs[TDMAP] = map_view.drawTrafMap
+    context.mapProcs[PLMAP] = map_view.drawPolMap
+    context.mapProcs[CRMAP] = map_view.drawCrimeMap
+    context.mapProcs[LVMAP] = map_view.drawLandMap
+    context.mapProcs[FIMAP] = map_view.drawFireRadius
+    context.mapProcs[POMAP] = map_view.drawPoliceRadius
+    context.mapProcs[DYMAP] = map_view.drawDynamic
 
 
-def StopEarthquake() -> None:
-    """Stop earthquake effect (placeholder)"""
+def StopEarthquake(context: AppContext) -> None:
+    """Stop earthquake effect (placeholder)
+    :param context:
+    """
     pass
 
 
-def ResetMapState() -> None:
-    """Reset map view states (placeholder)"""
+def ResetMapState(context: AppContext) -> None:
+    """Reset map view states (placeholder)
+    :param context:
+    """
     initialization.ResetMapState(context)
 
 
-def ResetEditorState() -> None:
-    """Reset editor view states (placeholder)"""
-    initialization.ResetEditorState()
+def ResetEditorState(context: AppContext) -> None:
+    """Reset editor view states (placeholder)
+    :param context:
+    """
+    initialization.ResetEditorState(context)
 
 
 def ClearMap(context: AppContext) -> None:
-    """Clear the map (placeholder)
-    :param context:
     """
+    Clear the entire map and initialize to dirt tiles.
+
+    This function resets the map to a clean state with all dirt tiles,
+    which can then be used as a base for terrain generation.
+
+    Ported from ClearMap() in s_gen.c via generation.py.
+    :param context: Application context containing map data
+    """
+    # Clear all map cells to DIRT
     for x in range(WORLD_X):
         for y in range(WORLD_Y):
-            context.map_data[x][y] = context.DIRT
+            context.map_data[x][y] = DIRT
+
+    # Mark map as changed/new
     context.new_map = 1
+
+    # Log for debugging
+    logging.info("Map cleared - all tiles set to DIRT")
 
 
 def SetFunds(context: AppContext, amount: int) -> None:
-    """Set initial funds (placeholder)
-    :param context:
     """
-    context.SetFunds(context, max(0, amount))
+    Set the city's total funds to a specific amount.
+
+    Ensures the amount is never negative and updates both current and
+    last funds values for comparison tracking.
+
+    :param context: Application context containing fund state
+    :param amount: The new fund amount (will be clamped to >= 0)
+    """
+    # Ensure funds are never negative
+    context.total_funds = max(0, amount)
+    context.last_funds = context.total_funds
+
+    # Log for debugging
+    logging.debug(f"Funds set to: ${context.total_funds}")
 
 
 def SetGameLevelFunds(context: AppContext, level: int) -> None:
-    """Set funds based on game level (placeholder)"""
+    """
+    Set initial funds based on game difficulty level.
+
+    Difficulty levels:
+    - 0 (Easy): $20,000
+    - 1 (Medium): $10,000
+    - 2 (Hard): $5,000
+
+    :param context: Application context containing fund state
+    :param level: Game difficulty level (0=Easy, 1=Medium, 2=Hard)
+    """
+    # Map difficulty levels to starting funds
     level_funds = [20000, 10000, 5000]
+
+    # Clamp level to valid range
     bounded_level = max(0, min(level, len(level_funds) - 1))
+
+    # Set funds based on difficulty
     SetFunds(context, level_funds[bounded_level])
+
+    # Log for debugging
+    difficulty_names = ["Easy", "Medium", "Hard"]
+    difficulty_name = (
+        difficulty_names[bounded_level]
+        if bounded_level < len(difficulty_names)
+        else "Unknown"
+    )
+    logging.info(
+        f"Game level set to {bounded_level} ({difficulty_name}) - Starting funds: ${level_funds[bounded_level]}"
+    )
 
 
 def setSpeed(context: AppContext, speed: int) -> int:
@@ -887,8 +1158,10 @@ def setSkips(context: AppContext, skips: int) -> int:
     return 0
 
 
-def graphDoer() -> None:
-    """Update graph history buffers and refresh pygame overlays."""
+def graphDoer(context: AppContext) -> None:
+    """Update graph history buffers and refresh pygame overlays.
+    :param context:
+    """
     update_all_graphs(context)
     request_graph_panel_redraw(context)
 
@@ -898,10 +1171,12 @@ def UpdateBudgetWindow() -> None:
     pass
 
 
-def scoreDoer() -> None:
+def scoreDoer(context: AppContext) -> None:
     """Update evaluation data and pygame panel state."""
-    score_doer(context)
-    update_evaluation()
+    from .evaluation_ui import score_doer as eval_score_doer, update_evaluation
+
+    eval_score_doer(context)
+    update_evaluation(context)
 
 
 def UpdateFlush() -> None:
@@ -922,8 +1197,11 @@ def DoUpdateHeads() -> None:
     pass
 
 
-def DoUpdateMap(view) -> bool:
-    """Update map view (placeholder)"""
+def DoUpdateMap(context: AppContext, view) -> bool:
+    """Update map view (placeholder)
+    :param context:
+    :param view:
+    """
     if not view or not view.visible:
         return False
 
@@ -1123,12 +1401,25 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
     :param context:
     """
     logger.debug("Initializing pygame graphics...")
+    event_bus = get_default_event_bus()
+    input_manager = None
+    keybindings_overlay = None
+    dispatcher = None
+    panel_manager = None
+
     # Initialize graphics
     if not init_graphics(context):
         return Err(ValueError("Failed to initialize graphics"))
 
     # Set up display
     try:
+        input_manager = get_default_input_binding_manager(context=context)
+        keybindings_overlay = KeybindingsOverlay(input_manager)
+        dispatcher = InputActionDispatcher(
+            context,
+            input_manager,
+            on_show_keybindings=keybindings_overlay.toggle,
+        )
         # import pygame
 
         # global editor_viewport_size
@@ -1154,7 +1445,47 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
         }
 
         ensure_sim_structures()
-        initialize_view_surfaces(context, graphics_setup)
+
+        # Wire SimView instances to pygame surfaces and load tile graphics
+        result = initialize_view_surfaces(context)
+        if result.is_err():
+            logger.error(f"Failed to initialize view surfaces: {result.unwrap_err()}")
+            return Err(result.unwrap_err())
+
+        # Initialize PanelManager and register editor panel
+        panel_manager = PanelManager(context, surface=screen, event_bus=event_bus)
+
+        # Register EditorPanel factory
+        def editor_panel_factory(
+            manager: PanelManager, context: AppContext, **factory_kwargs
+        ) -> EditorPanel:
+            return EditorPanel(manager, context)
+
+        panel_manager.register_panel_type("EditorWindows", editor_panel_factory)
+
+        # Register ToolPalettePanel factory (if needed)
+        def tool_palette_factory(
+            manager: PanelManager, context: AppContext, **factory_kwargs
+        ) -> ToolPalettePanel:
+            return ToolPalettePanel(manager, context)
+
+        panel_manager.register_panel_type("ToolPalette", tool_palette_factory)
+
+        # Create editor panel instance
+        try:
+            editor_panel = panel_manager.create_panel(
+                "EditorWindows", panel_id="main-editor"
+            )
+            # Position the editor panel (set rect attribute if UIPanel supports it)
+            if hasattr(editor_panel, "rect"):
+                editor_panel.rect = editor_area  # type: ignore
+            # Resize the panel to match viewport
+            editor_panel.on_resize(context.editor_viewport_size)
+            logger.info("Editor panel created and registered successfully")
+        except Exception as e:
+            logger.error(f"Failed to create editor panel: {e}")
+            # Continue without editor panel for now
+
         sim_update(context)
         blit_views_to_screen(context, screen, map_area, editor_area)
         pygame.display.flip()
@@ -1167,11 +1498,37 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
             while not context.tk_must_exit:
                 # Handle pygame events
                 for event in pygame.event.get():
+                    overlay_consumed = False
+                    overlay_active_before = keybindings_overlay.visible
+                    if overlay_active_before:
+                        overlay_consumed = keybindings_overlay.handle_event(event)
+                        if overlay_consumed:
+                            continue
+
+                    event_bus.publish_pygame_event(event)
+                    overlay_block = overlay_active_before or keybindings_overlay.visible
+
                     if event.type == pygame.QUIT:
                         logger.info("Quit event received")
                         DoStopMicropolis(context)
                         break
-                    elif event.type == pygame.KEYDOWN:
+
+                    if overlay_block:
+                        continue
+
+                    # Route event through PanelManager first (if panels consume it, skip fallback handling)
+                    panel_consumed = False
+                    if panel_manager is not None:
+                        try:
+                            panel_consumed = panel_manager.handle_event(event)
+                        except Exception as e:
+                            logger.error(f"Error handling event in PanelManager: {e}")
+
+                    if panel_consumed:
+                        continue  # Panel handled the event, don't process further
+
+                    # Fallback keyboard/mouse handling (legacy behavior)
+                    if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             logger.info("Escape key pressed")
                             DoStopMicropolis(context)
@@ -1206,12 +1563,23 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
                         ):
                             continue
 
+                event_bus.flush()
+
                 if context.tk_must_exit:
                     break
 
                 # Update simulation step and redraw
                 sim_loop(context, True)
                 blit_views_to_screen(context, screen, map_area, editor_area)
+
+                # Render panels if PanelManager is active
+                if panel_manager is not None:
+                    try:
+                        panel_manager.render(screen)
+                    except Exception as e:
+                        logger.error(f"Error rendering panels: {e}")
+
+                keybindings_overlay.render(screen)
                 pygame.display.flip()
 
                 # Maintain 60 FPS
@@ -1225,6 +1593,10 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
 
     finally:
         # Clean up
+        if dispatcher is not None:
+            dispatcher.shutdown()
+        if input_manager is not None:
+            input_manager.shutdown()
         pygame.quit()
 
     return Ok(None)

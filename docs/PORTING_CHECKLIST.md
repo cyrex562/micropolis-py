@@ -184,6 +184,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Map Rendering Implementation
 
 ### Tile Graphics Loading
+
 - [x] Load tile graphics from `res/tiles.png` or equivalent
 - [ ] Implement `get_tile_surface()` function for extracting 16x16 editor tiles
 - [ ] Implement `get_small_tile_surface()` function for 3x3 map view tiles
@@ -191,6 +192,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Handle tile transparency and alpha blending
 
 ### Map Display System
+
 - [ ] Create `MapRenderer` class for managing map display
 - [ ] Implement editor view rendering (16x16 pixels per tile, 120x100 tiles)
 - [ ] Implement map view rendering (3x3 pixels per tile, scaled overview)
@@ -199,6 +201,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Add smooth scrolling animation
 
 ### Overlay Rendering
+
 - [ ] Implement population density overlay rendering
 - [ ] Implement crime rate overlay rendering
 - [ ] Implement pollution overlay rendering
@@ -209,6 +212,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Input Handling System
 
 ### Mouse Input
+
 - [ ] Implement mouse position tracking in world coordinates
 - [ ] Add mouse click detection for tool application
 - [ ] Implement drag selection for area tools
@@ -216,6 +220,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Handle mouse cursor changes based on selected tool
 
 ### Keyboard Input
+
 - [ ] Implement tool selection hotkeys (B=bull-dozer, R=road, etc.)
 - [ ] Add simulation speed controls (pause, slow, normal, fast)
 - [ ] Implement overlay toggle keys (P=population, C=crime, etc.)
@@ -223,6 +228,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Implement save/load keyboard shortcuts
 
 ### Tool System Integration
+
 - [ ] Connect tool selection to mouse input handling
 - [ ] Implement tool application logic (tile modification)
 - [ ] Add tool preview (ghost tiles showing placement)
@@ -232,6 +238,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Simulation Loop Integration
 
 ### Game Loop Architecture
+
 - [ ] Refactor `pygame_main_loop()` to use proper game loop structure
 - [ ] Implement fixed timestep for simulation updates (60 FPS target)
 - [ ] Add variable simulation speed controls
@@ -239,6 +246,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Add frame rate limiting and vsync support
 
 ### Simulation State Management
+
 - [ ] Connect simulation step calls to game loop
 - [ ] Implement pause/resume functionality
 - [ ] Add simulation speed controls (1x, 2x, 4x, paused)
@@ -246,6 +254,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Add simulation statistics tracking
 
 ### Event-Driven Updates
+
 - [ ] Implement event queue for simulation events
 - [ ] Add disaster event triggering and handling
 - [ ] Handle population growth notifications
@@ -255,6 +264,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## UI Panels Implementation
 
 ### Core UI Framework
+
 - [ ] Create `UIPanel` base class for all UI components
 - [ ] Implement panel positioning and layout system
 - [ ] Add panel show/hide toggle functionality
@@ -262,6 +272,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Implement button and control widgets
 
 ### Budget Panel
+
 - [ ] Create budget display panel with current funds
 - [ ] Implement tax rate sliders (residential, commercial, industrial)
 - [ ] Add budget allocation controls (police, fire, education)
@@ -269,6 +280,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Add budget help and tooltips
 
 ### Evaluation Panel
+
 - [ ] Implement city evaluation scoring display
 - [ ] Add population, pollution, and crime statistics
 - [ ] Create problem/solution recommendation system
@@ -276,6 +288,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Implement auto-evaluation toggle
 
 ### Graph Panels
+
 - [ ] Create population growth graph over time
 - [ ] Implement money/funds graph display
 - [ ] Add pollution trend graphs
@@ -283,6 +296,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Add graph time scale controls (1 year, 10 years, etc.)
 
 ### Date and Status Display
+
 - [ ] Implement game date display (year/month/day)
 - [ ] Add city name display and editing
 - [ ] Create population counter display
@@ -292,6 +306,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Sugar Protocol Integration
 
 ### Communication Protocol
+
 - [ ] Implement stdin/stdout message parsing in `Micropolis.py`
 - [ ] Add Sugar command handling (SugarStartUp, SugarActivate, etc.)
 - [ ] Implement sound playback via stdout messages
@@ -299,6 +314,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Handle Sugar quit and cleanup commands
 
 ### Activity Integration
+
 - [ ] Connect pygame window to Sugar activity embedding
 - [ ] Implement proper window focus handling
 - [ ] Add Sugar activity lifecycle management
@@ -306,6 +322,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Implement Sugar journaling integration
 
 ### Multiplayer Support (Optional)
+
 - [ ] Add network message handling for multiplayer
 - [ ] Implement buddy list integration
 - [ ] Add collaborative city editing
@@ -315,13 +332,15 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Asset Loading and Management
 
 ### Graphics Assets
+
 - [ ] Load and validate tile graphics from `res/` directory
 - [ ] Implement sprite loading for moving objects (cars, disasters)
 - [ ] Add font loading for UI text rendering
 - [ ] Create asset validation and error handling
-- [ ] Implement asset hot-reloading for development
+- [x] Implement asset hot-reloading for development (via `AssetHotReloadController` and the pygame `AssetService` cache listeners.)
 
 ### Audio Assets
+
 - [ ] Load sound effects from `res/sounds/` directory
 - [ ] Implement pygame mixer integration
 - [ ] Add sound playback queue system
@@ -329,6 +348,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Add volume controls and muting
 
 ### Scenario and City Assets
+
 - [ ] Load city files from `cities/` directory
 - [ ] Implement scenario loading and validation
 - [ ] Add city thumbnail generation
@@ -338,6 +358,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Performance Optimization
 
 ### Rendering Optimization
+
 - [ ] Implement dirty rectangle rendering updates
 - [ ] Add viewport culling for off-screen tiles
 - [ ] Create sprite batching for moving objects
@@ -345,6 +366,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Add level-of-detail rendering for distant areas
 
 ### Simulation Optimization
+
 - [ ] Profile and optimize simulation bottleneck functions
 - [ ] Implement multi-threading for simulation steps
 - [ ] Add spatial indexing for zone queries
@@ -352,6 +374,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Cache frequently accessed simulation data
 
 ### Memory Management
+
 - [ ] Implement texture atlas for tile graphics
 - [ ] Add memory usage monitoring and limits
 - [ ] Create object pooling for sprites
@@ -361,6 +384,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Testing and Validation
 
 ### UI Integration Tests
+
 - [ ] Create tests for map rendering accuracy
 - [ ] Add input handling validation tests
 - [ ] Implement UI panel interaction tests
@@ -368,6 +392,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Create performance benchmark tests
 
 ### End-to-End Testing
+
 - [ ] Test complete game launch sequence
 - [ ] Validate Sugar activity integration
 - [ ] Test city save/load round-trip compatibility
@@ -375,6 +400,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Create automated gameplay scenario tests
 
 ### Compatibility Testing
+
 - [ ] Test with original city files from `cities/` directory
 - [ ] Validate against C version behavior
 - [ ] Test on different screen resolutions
@@ -384,6 +410,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Documentation and Deployment
 
 ### User Documentation
+
 - [ ] Create gameplay tutorial and help system
 - [ ] Add keyboard shortcuts reference
 - [ ] Document configuration options
@@ -391,6 +418,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Add developer documentation
 
 ### Packaging and Distribution
+
 - [ ] Create standalone executable with PyInstaller
 - [ ] Package for Sugar activity distribution
 - [ ] Add Windows/macOS/Linux build scripts
@@ -398,6 +426,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Create installer packages
 
 ### Final Validation
+
 - [ ] Complete full test suite pass rate >95%
 - [ ] Validate 60 FPS performance on target hardware
 - [ ] Test Sugar activity full integration
@@ -407,6 +436,7 @@ This checklist outlines the sequence for porting C headers and source files from
 ## Launch & Test Readiness
 
 ### Runtime Bootstrapping
+
 - [ ] Instantiate the global `types.sim` via `types.MakeNewSim()` and create the default editor/map/graph/date `SimView` chains in `engine.sim_init()` so `sim_update_*` has real views to walk instead of immediately returning when `sim` is `None`.
 - [ ] Wire those `SimView` instances to pygame/window surfaces (tile caches, `view.surface`, `view.bigtiles`, etc.) by calling into `graphics_setup` during startup so editor/map rendering code can actually blit textures.
 - [ ] Replace the placeholder implementations of `setUpMapProcs()`, `ClearMap()`, `InitFundingLevel()`, `SetFunds()`, and `SetGameLevelFunds()` with the real logic for registering `map_view` overlay callbacks, clearing map arrays, seeding terrain, and applying difficulty-based budgets so starting a new city produces a playable state.
@@ -414,6 +444,7 @@ This checklist outlines the sequence for porting C headers and source files from
 - [ ] Implement `DoStopMicropolis()` teardown to stop the pygame loop, release mixer channels, and reset globals so the process exits cleanly when the user closes the window.
 
 ### Test Harness Stabilization
+
 - [ ] Add a single `tests/conftest.py` (or equivalent helper) that inserts `<repo>/src` into `sys.path`, then remove the per-file `sys.path.insert(..., 'src')` hacks in tests such as `tests/test_tools.py`, `tests/test_file_io.py`, `tests/test_editor_view.py`, etc.
 - [ ] Update `tests/test_map_view.py` to import `src.micropolis.map_view`, `types`, and `macros` from the actual package instead of `from . import ...`, which currently fails because `tests.map_view` does not exist.
 - [ ] Rewrite `tests/test_constants.py` into real pytest test functions that import `micropolis.constants`; today it executes assertions at import time and calls `sys.exit`, so pytest never records any test results.

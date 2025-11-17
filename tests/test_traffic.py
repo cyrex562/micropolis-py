@@ -6,9 +6,8 @@
 import sys
 import os
 
-import src.micropolis.types as types
-import src.micropolis.macros as macros
-import src.micropolis.traffic as traffic
+import micropolis.macros as macros
+import micropolis.traffic as traffic
 
 
 def test_traffic_constants():
@@ -35,16 +34,16 @@ def test_traffic_variables():
     """Test that traffic-related global variables are initialized."""
     print("Testing traffic variables...")
 
-    # Test position stack variables
-    assert hasattr(types, "PosStackN"), "PosStackN not found in types"
-    assert hasattr(types, "SMapXStack"), "SMapXStack not found in types"
-    assert hasattr(types, "SMapYStack"), "SMapYStack not found in types"
-    assert hasattr(types, "LDir"), "LDir not found in types"
-    assert hasattr(types, "Zsource"), "Zsource not found in types"
+    # Test position stack variables exposed on `context`
+    assert hasattr(context, "pos_stack_num"), "pos_stack_num not found on context"
+    assert hasattr(context, "s_map_x_stack"), "s_map_x_stack not found on context"
+    assert hasattr(context, "s_map_y_stack"), "s_map_y_stack not found on context"
+    assert hasattr(context, "l_dir"), "l_dir not found on context"
+    assert hasattr(context, "z_source"), "z_source not found on context"
 
     # Test traffic max variables
-    assert hasattr(types, "TrafMaxX"), "TrafMaxX not found in types"
-    assert hasattr(types, "TrafMaxY"), "TrafMaxY not found in types"
+    assert hasattr(context, "traf_max_x"), "traf_max_x not found on context"
+    assert hasattr(context, "traf_max_y"), "traf_max_y not found on context"
 
     print("✓ Traffic variables OK")
 
@@ -81,34 +80,38 @@ def test_position_stack():
     print("Testing position stack operations...")
 
     # Initialize stack
-    types.pos_stack_num = 0
-    types.s_map_x_stack = []
-    types.s_map_y_stack = []
+    context.pos_stack_num = 0
+    context.s_map_x_stack = []
+    context.s_map_y_stack = []
 
     # Test initial state
-    assert types.pos_stack_num == 0, "Initial PosStackN should be 0"
+    assert context.pos_stack_num == 0, "Initial pos_stack_num should be 0"
 
     # Set test position
-    types.s_map_x = 10
-    types.s_map_y = 20
+    context.s_map_x = 10
+    context.s_map_y = 20
 
     # Test PushPos
     traffic.PushPos(context)
-    assert types.pos_stack_num == 1, "PosStackN should be 1 after push"
-    assert len(types.s_map_x_stack) >= 1, "SMapXStack should have at least 1 element"
-    assert len(types.s_map_y_stack) >= 1, "SMapYStack should have at least 1 element"
-    assert types.s_map_x_stack[1] == 10, "SMapXStack[1] should be 10"
-    assert types.s_map_y_stack[1] == 20, "SMapYStack[1] should be 20"
+    assert context.pos_stack_num == 1, "pos_stack_num should be 1 after push"
+    assert len(context.s_map_x_stack) >= 1, (
+        "s_map_x_stack should have at least 1 element"
+    )
+    assert len(context.s_map_y_stack) >= 1, (
+        "s_map_y_stack should have at least 1 element"
+    )
+    assert context.s_map_x_stack[1] == 10, "s_map_x_stack[1] should be 10"
+    assert context.s_map_y_stack[1] == 20, "s_map_y_stack[1] should be 20"
 
     # Change position
-    types.s_map_x = 30
-    types.s_map_y = 40
+    context.s_map_x = 30
+    context.s_map_y = 40
 
     # Test PullPos
     traffic.PullPos(context)
-    assert types.pos_stack_num == 0, "PosStackN should be 0 after pull"
-    assert types.s_map_x == 10, "SMapX should be restored to 10"
-    assert types.s_map_y == 20, "SMapY should be restored to 20"
+    assert context.pos_stack_num == 0, "pos_stack_num should be 0 after pull"
+    assert context.s_map_x == 10, "s_map_x should be restored to 10"
+    assert context.s_map_y == 20, "s_map_y should be restored to 20"
 
     print("✓ Position stack operations OK")
 
@@ -118,31 +121,35 @@ def test_find_proad():
     print("Testing FindPRoad function...")
 
     # Initialize map with roads around a zone
-    types.map_data = [[0 for _ in range(macros.WORLD_Y)] for _ in range(macros.WORLD_X)]
+    context.map_data = [
+        [0 for _ in range(macros.WORLD_Y)] for _ in range(macros.WORLD_X)
+    ]
 
     # Set zone center
-    types.s_map_x = 50
-    types.s_map_y = 50
+    context.s_map_x = 50
+    context.s_map_y = 50
 
     # Add road tiles around the perimeter
-    types.map_data[49][48] = 64  # Road on perimeter (north-west-ish)
-    types.map_data[51][52] = 66  # Road on perimeter (south-east-ish)
+    context.map_data[49][48] = 64  # Road on perimeter (north-west-ish)
+    context.map_data[51][52] = 66  # Road on perimeter (south-east-ish)
 
     # Test finding road
-    original_x, original_y = types.s_map_x, types.s_map_y
+    original_x, original_y = context.s_map_x, context.s_map_y
     found = traffic.FindPRoad(context)
 
     assert found, "Should find road on perimeter"
     # Position should be updated to road location
-    assert types.s_map_x != original_x or types.s_map_y != original_y, (
+    assert context.s_map_x != original_x or context.s_map_y != original_y, (
         "Position should change when road found"
     )
 
     # Reset position
-    types.s_map_x, types.s_map_y = original_x, original_y
+    context.s_map_x, context.s_map_y = original_x, original_y
 
     # Test with no roads
-    types.map_data = [[0 for _ in range(macros.WORLD_Y)] for _ in range(macros.WORLD_X)]
+    context.map_data = [
+        [0 for _ in range(macros.WORLD_Y)] for _ in range(macros.WORLD_X)
+    ]
     found = traffic.FindPRoad(context)
     assert not found, "Should not find road when none exist"
 
@@ -154,27 +161,29 @@ def test_get_from_map():
     print("Testing GetFromMap function...")
 
     # Initialize small test map
-    types.map_data = [[0 for _ in range(10)] for _ in range(10)]
-    types.map_data[5][4] = 64  # Road tile north of (5,5)
-    types.map_data[6][5] = 66  # Road tile east of (5,5)
-    types.map_data[5][6] = 68  # Road tile south of (5,5)
-    types.map_data[4][5] = 70  # Road tile west of (5,5)
+    context.map_data = [[0 for _ in range(10)] for _ in range(10)]
+    context.map_data[5][4] = 64  # Road tile north of (5,5)
+    context.map_data[6][5] = 66  # Road tile east of (5,5)
+    context.map_data[5][6] = 68  # Road tile south of (5,5)
+    context.map_data[4][5] = 70  # Road tile west of (5,5)
 
     # Set position
-    types.s_map_x = 5
-    types.s_map_y = 5
+    context.s_map_x = 5
+    context.s_map_y = 5
 
     # Test all directions
-    assert traffic.GetFromMap(0) == 64, "North should return road tile 64"
-    assert traffic.GetFromMap(1) == 66, "East should return road tile 66"
-    assert traffic.GetFromMap(2) == 68, "South should return road tile 68"
-    assert traffic.GetFromMap(3) == 70, "West should return road tile 70"
+    assert traffic.GetFromMap(context, 0) == 64, "North should return road tile 64"
+    assert traffic.GetFromMap(context, 1) == 66, "East should return road tile 66"
+    assert traffic.GetFromMap(context, 2) == 68, "South should return road tile 68"
+    assert traffic.GetFromMap(context, 3) == 70, "West should return road tile 70"
 
     # Test out of bounds
-    types.s_map_x = 0
-    types.s_map_y = 0
-    assert traffic.GetFromMap(3) == 0, "West from (0,0) should return 0 (out of bounds)"
-    assert traffic.GetFromMap(0) == 0, (
+    context.s_map_x = 0
+    context.s_map_y = 0
+    assert traffic.GetFromMap(context, 3) == 0, (
+        "West from (0,0) should return 0 (out of bounds)"
+    )
+    assert traffic.GetFromMap(context, 0) == 0, (
         "North from (0,0) should return 0 (out of bounds)"
     )
 
@@ -187,23 +196,23 @@ def test_move_map_sim():
 
     # Test all directions
     for direction in range(4):
-        types.s_map_x = 10
-        types.s_map_y = 10
+        context.s_map_x = 10
+        context.s_map_y = 10
 
-        traffic.MoveMapSim(direction)
+        traffic.MoveMapSim(context, direction)
 
         if direction == 0:  # North
-            assert types.s_map_y == 9, "North move should decrease Y"
-            assert types.s_map_x == 10, "North move should not change X"
+            assert context.s_map_y == 9, "North move should decrease Y"
+            assert context.s_map_x == 10, "North move should not change X"
         elif direction == 1:  # East
-            assert types.s_map_x == 11, "East move should increase X"
-            assert types.s_map_y == 10, "East move should not change Y"
+            assert context.s_map_x == 11, "East move should increase X"
+            assert context.s_map_y == 10, "East move should not change Y"
         elif direction == 2:  # South
-            assert types.s_map_y == 11, "South move should increase Y"
-            assert types.s_map_x == 10, "South move should not change X"
+            assert context.s_map_y == 11, "South move should increase Y"
+            assert context.s_map_x == 10, "South move should not change X"
         elif direction == 3:  # West
-            assert types.s_map_x == 9, "West move should decrease X"
-            assert types.s_map_y == 10, "West move should not change Y"
+            assert context.s_map_x == 9, "West move should decrease X"
+            assert context.s_map_y == 10, "West move should not change Y"
 
     print("✓ MoveMapSim function OK")
 
@@ -213,35 +222,35 @@ def test_drive_done():
     print("Testing DriveDone function...")
 
     # Initialize map
-    types.map_data = [[0 for _ in range(10)] for _ in range(10)]
+    context.map_data = [[0 for _ in range(10)] for _ in range(10)]
 
     # Set position
-    types.s_map_x = 5
-    types.s_map_y = 5
+    context.s_map_x = 5
+    context.s_map_y = 5
 
     # Test residential zone (Zsource = 0) looking for commercial
-    types.z_source = 0  # Residential
-    types.map_data[5][4] = macros.COMBASE  # Commercial north
-    assert traffic.DriveDone(), "Residential should find commercial destination"
+    context.z_source = 0  # Residential
+    context.map_data[5][4] = macros.COMBASE  # Commercial north
+    assert traffic.DriveDone(context), "Residential should find commercial destination"
 
     # Test commercial zone (Zsource = 1) looking for residential/port/commercial
-    types.z_source = 1  # Commercial
-    types.map_data[5][4] = (
+    context.z_source = 1  # Commercial
+    context.map_data[5][4] = (
         macros.LHTHR
     )  # Residential north (valid destination for commercial)
-    assert traffic.DriveDone(), "Commercial should find residential destination"
+    assert traffic.DriveDone(context), "Commercial should find residential destination"
 
-    types.map_data[5][4] = macros.PORT  # Port north
-    assert traffic.DriveDone(), "Commercial should find port destination"
+    context.map_data[5][4] = macros.PORT  # Port north
+    assert traffic.DriveDone(context), "Commercial should find port destination"
 
     # Test industrial zone (Zsource = 2) looking for residential
-    types.z_source = 2  # Industrial
-    types.map_data[5][4] = macros.LHTHR  # Residential north (LHTHR is residential)
-    assert traffic.DriveDone(), "Industrial should find residential destination"
+    context.z_source = 2  # Industrial
+    context.map_data[5][4] = macros.LHTHR  # Residential north (LHTHR is residential)
+    assert traffic.DriveDone(context), "Industrial should find residential destination"
 
     # Test no destination
-    types.map_data[5][4] = 0  # Empty tile
-    assert not traffic.DriveDone(), "Should not find destination on empty tile"
+    context.map_data[5][4] = 0  # Empty tile
+    assert not traffic.DriveDone(context), "Should not find destination on empty tile"
 
     print("✓ DriveDone function OK")
 
@@ -251,27 +260,31 @@ def test_traffic_integration():
     print("Testing traffic integration...")
 
     # Initialize simulation state
-    types.map_data = [[0 for _ in range(macros.WORLD_Y)] for _ in range(macros.WORLD_X)]
-    types.trf_density = [[0 for _ in range(macros.HWLDY)] for _ in range(macros.HWLDX)]
-    types.pos_stack_num = 0
-    types.s_map_x_stack = []
-    types.s_map_y_stack = []
-    types.l_dir = 5
+    context.map_data = [
+        [0 for _ in range(macros.WORLD_Y)] for _ in range(macros.WORLD_X)
+    ]
+    context.trf_density = [
+        [0 for _ in range(macros.HWLDY)] for _ in range(macros.HWLDX)
+    ]
+    context.pos_stack_num = 0
+    context.s_map_x_stack = []
+    context.s_map_y_stack = []
+    context.l_dir = 5
 
     # Create a simple road network
     # Road from (10,10) to (15,10)
     for x in range(10, 16):
-        types.map_data[x][10] = 66  # Road tile
+        context.map_data[x][10] = 66  # Road tile
 
     # Add commercial zone at end as destination
-    types.map_data[15][10] = macros.COMBASE
+    context.map_data[15][10] = macros.COMBASE
 
     # Set starting position (residential zone center)
-    types.s_map_x = 10
-    types.s_map_y = 10
+    context.s_map_x = 10
+    context.s_map_y = 10
 
     # Test traffic generation from residential zone
-    result = traffic.MakeTraf(0)  # Residential zone
+    result = traffic.MakeTraf(context, 0)  # Residential zone
 
     # Should either succeed (1) or find no road (-1)
     assert result in [-1, 0, 1], f"MakeTraf should return -1, 0, or 1, got {result}"

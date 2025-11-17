@@ -4,9 +4,9 @@ random.py - Random number generation for Micropolis Python port
 This module contains the random number generation functions ported from rand.c and random.c,
 maintaining exact algorithmic compatibility with the original C implementation.
 """
-from src.micropolis.constants import SIM_RAND_MAX, TYPE_0, MAX_TYPES, BREAK_0, BREAK_1, DEG_0, SEP_0, BREAK_2, TYPE_1, \
+from micropolis.constants import SIM_RAND_MAX, TYPE_0, MAX_TYPES, BREAK_0, BREAK_1, DEG_0, SEP_0, BREAK_2, TYPE_1, \
     DEG_1, SEP_1, BREAK_3, TYPE_2, DEG_2, SEP_2, BREAK_4, TYPE_3, DEG_3, SEP_3, TYPE_4, DEG_4, SEP_4
-from src.micropolis.context import AppContext
+from micropolis.context import AppContext
 
 
 # ============================================================================

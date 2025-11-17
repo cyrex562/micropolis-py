@@ -5,7 +5,7 @@ This module contains the zone growth and management functions ported from s_zone
 implementing residential, commercial, and industrial zone development logic.
 """
 
-from src.micropolis.constants import (
+from micropolis.constants import (
     PORTBASE,
     HOSPITAL,
     COMBASE,
@@ -48,9 +48,9 @@ from src.micropolis.constants import (
 )
 from collections.abc import Callable
 
-from src.micropolis.context import AppContext
-from src.micropolis.macros import TestBounds
-from src.micropolis.power import powerword
+from micropolis.context import AppContext
+from micropolis.macros import TestBounds
+from micropolis.power import powerword
 
 _do_sp_zone_fn: Callable[[AppContext, int], None] | None = None
 _repair_zone_fn: Callable[[AppContext, int, int], None] | None = None
@@ -63,7 +63,7 @@ def _ensure_simulation_functions() -> None:
     global _do_sp_zone_fn, _repair_zone_fn, _rand_fn, _rand16_fn, _rand16_signed_fn
 
     if _do_sp_zone_fn is None:
-        from src.micropolis.simulation import (
+        from micropolis.simulation import (
             do_sp_zone as _do_sp_zone,
             repair_zone as _repair_zone,
             rand as _rand,

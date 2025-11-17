@@ -1,7 +1,174 @@
 # Legacy CamelCase functions report
 
 This report tracks the remaining CamelCase entry points that the port is still gradually migrating to snake_case.
-Most previously duplicated APIs are now centralized through `src/micropolis/legacy_compat.py`, so the sections below focus only on the modules that still expose CamelCase implementations or stubs internally.
+
+**Note (2025-11-15):** The `src/micropolis/legacy_compat.py` file has been removed as part of the pygame UI port cleanup (§8.2). It contained unused CamelCase wrapper functions that were never imported by any production code or tests. All active CamelCase APIs are now managed directly within their respective modules (e.g., `updates.py`, `sim_control.py`) where they serve as documented backward-compatibility interfaces.
+
+## Legacy Tcl/Tk Build Instructions (Deprecated)
+
+**WARNING: The Tcl/Tk UI is no longer maintained and has been fully replaced by the pygame-based interface. These instructions are preserved for historical reference only.**
+
+The original Micropolis C/Tcl/Tk implementation resides in `orig_src/` and is no longer part of the default build workflow. To build the legacy system:
+
+### Prerequisites
+
+- C compiler (gcc or clang)
+- Tcl 8.x development headers
+- Tk 8.x development headers
+- X11 libraries (for Unix/Linux)
+- Make
+
+### Build Steps
+
+```bash
+cd orig_src
+
+# Build Tcl, Tk, TclX, and sim binary
+make all
+
+# Copy binary to resource directory
+make install
+
+# Return to project root
+cd ..
+
+# Run legacy Tcl/Tk UI via GTK wrapper
+python orig_src/micropolisactivity.py
+```
+
+### Makefile Targets
+
+- `make all`: Builds all components (tcl, tk, tclx, sim)
+- `make clean`: Removes build artifacts
+- `make install`: Copies built binary to `../res/sim`
+
+### Legacy File Structure
+
+- `orig_src/sim/`: C simulation engine source
+- `orig_src/tcl/`: Tcl interpreter source
+- `orig_src/tk/`: Tk GUI toolkit source
+- `orig_src/tclx/`: Extended Tcl commands
+- `orig_src/micropolisactivity.py`: Sugar GTK wrapper (Python 2)
+- `assets/*.tcl`: Legacy UI scripts (micropolis.tcl, w*.tcl)
+
+### Known Issues
+
+- Requires Python 2.7 for Sugar wrapper
+- Not compatible with modern Sugar Desktop versions
+- Build process may fail on recent Linux distributions
+- No Windows or macOS support
+
+### Migration Path
+
+For access to archived Tcl/Tk versions:
+
+- **Branch**: `git checkout legacy-tk-ui`
+- **Tags**: `git checkout tcl-<scriptname>-final` (per-script retirement tags)
+- **Snapshots**: See `docs/manual/parity/` for screenshots
+
+All users should migrate to the pygame UI (`uv run micropolis`) for ongoing development and bug fixes.
+
+## Sugar Protocol Bridge Commands
+
+The new pygame-based UI implements a non-blocking bridge for Sugar activity stdin/stdout communication through `src/micropolis/ui/sugar_bridge.py`. This bridge maintains compatibility with the legacy Tcl/Tk interface protocol.
+
+### Incoming Commands (stdin → pygame)
+
+Commands received from the Sugar GTK wrapper via stdin, published to Event Bus under `sugar.*` namespace:
+
+- `SugarStartUp <uri>`: Initialize activity with given URI (e.g., city file path or config parameters)
+  - Event: `sugar.startup` with payload `{"uri": "..."}`
+  - Updates bridge state: `uri` property
+
+- `SugarNickName <nickname>`: Set player's display name from Sugar profile
+  - Event: `sugar.nickname` with payload `{"nickname": "..."}`
+  - Updates bridge state: `nickname` property
+
+- `SugarActivate`: Activity window gained focus
+  - Event: `sugar.activate` with payload `{"activated": True}`
+  - Updates bridge state: `activated = True`
+
+- `SugarDeactivate`: Activity window lost focus
+  - Event: `sugar.deactivate` with payload `{"activated": False}`
+  - Updates bridge state: `activated = False`
+
+- `SugarShare`: Activity was shared with other Sugar buddies
+  - Event: `sugar.share` with payload `{"shared": True}`
+  - Updates bridge state: `shared = True`
+
+- `SugarBuddyAdd <key> <nick> <color> <address>`: Buddy joined shared session
+  - Event: `sugar.buddy_add` with payload `{"key": "...", "nick": "...", "color": "...", "address": "..."}`
+  - Updates bridge state: appends to `buddies` list
+
+- `SugarBuddyDel <key> <nick> <color> <address>`: Buddy left shared session
+  - Event: `sugar.buddy_del` with payload `{"key": "...", "nick": "...", "color": "...", "address": "..."}`
+  - Updates bridge state: removes from `buddies` list
+
+- `SugarQuit`: Graceful shutdown request from GTK shell
+  - Event: `sugar.quit`
+  - Updates bridge state: `shutdown_requested = True`
+  - Application must call `bridge.send_quit_ack()` before exiting
+
+### Outgoing Notifications (pygame → stdout)
+
+Notifications sent from pygame UI to Sugar GTK wrapper via stdout:
+
+- `UIHeadPanelReady`: Signals head panel initialization complete
+- `UICitySaved <filename>`: City file saved successfully
+- `UISoundPlay:<channel>:<sound>`: Play sound effect (for hybrid audio setups)
+  - Channels: `mode`, `edit`, `fancy`, `warning`, `intercom`
+- `UICmd:<payload>`: Custom command for GTK shell extensions
+- `UIQuitAck`: Acknowledge quit request and confirm clean shutdown
+- `PYGAME:<message>`: pygame-specific messages (prefixed, safely ignored by older shells)
+
+### Bridge API Usage
+
+```python
+from micropolis.ui import get_default_sugar_bridge, get_default_event_bus
+
+# Initialize bridge with event bus
+bridge = get_default_sugar_bridge()
+bus = get_default_event_bus()
+
+# Subscribe to Sugar events
+bus.subscribe("sugar.quit", lambda e: handle_shutdown())
+bus.subscribe("sugar.buddy_add", lambda e: show_buddy_notification(e.payload))
+
+# Start reader thread
+bridge.start()
+
+# Main game loop
+while running:
+    # Process queued commands (call from main thread)
+    bridge.process_commands()
+    
+    # Check shutdown request
+    if bridge.shutdown_requested:
+        bridge.send_quit_ack()
+        running = False
+    
+    # Send notifications
+    bridge.send_ui_ready("EditorPanel")
+    bridge.send_city_saved("test.cty")
+
+# Clean shutdown
+bridge.stop()
+```
+
+### Testing Sugar Protocol
+
+The bridge is fully tested in `tests/ui/test_sugar_bridge.py` with:
+
+- Mock stdin/stdout streams for command injection
+- Event Bus verification for all published events
+- Full lifecycle simulation (startup → share → quit)
+- Thread safety and graceful shutdown handling
+
+For manual testing with actual Sugar wrapper:
+
+1. Ensure `micropolisactivity.py` sends commands via stdin
+2. Monitor pygame stdout for expected notifications
+3. Verify state synchronization through bridge properties
 
 ## Consolidated compatibility wrappers
 

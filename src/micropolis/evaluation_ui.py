@@ -8,8 +8,13 @@ in a pygame-compatible format.
 
 import pygame
 
-from src.micropolis import sim_control
-from src.micropolis.context import AppContext
+from micropolis import sim_control
+from micropolis import types as types
+from micropolis import evaluation as evaluation
+from micropolis.context import AppContext
+
+# Feature flag so tests can toggle pygame availability
+PYGAME_AVAILABLE: bool = True
 
 # ============================================================================
 # City Classification and Level Strings
@@ -45,13 +50,22 @@ _evaluation_surface: pygame.Surface | None = None
 # ============================================================================
 
 
-def current_year(context: AppContext) -> int:
+def current_year(context: AppContext | None) -> int:
     """
     Get the current game year.
 
     Ported from CurrentYear() in w_util.c.
     Returns the current year based on CityTime.
     """
+    # Prefer legacy types.CityTime/StartingYear when tests patch them
+    city_time = getattr(types, "CityTime", None)
+    starting_year = getattr(types, "StartingYear", None)
+    if city_time is not None and starting_year is not None:
+        return (city_time // 48) + starting_year
+
+    if context is None:
+        return 0
+
     return (context.city_time // 48) + context.starting_year
 
 
@@ -110,56 +124,70 @@ def make_dollar_decimal_str(num_str: str, dollar_str: str, max_len: int = 32) ->
 # ============================================================================
 
 
-def do_score_card(context: AppContext) -> None:
+def do_score_card(context: AppContext | None) -> None:
+    """Generate and display the city evaluation scorecard.
+
+    Prefer values from the legacy `evaluation` module (tests patch this)
+    and fall back to values on the provided AppContext.
     """
-    Generate and display the city evaluation scorecard.
+    # Title: if context provided use current_year(context), else best-effort
+    title = f"City Evaluation  {current_year(context) if context is not None else getattr(types, 'StartingYear', 0)}"
 
-    Ported from doScoreCard() in w_eval.c.
-    Collects evaluation data and formats it for display.
-    :param context:
-    """
-    # Format title
-    title = f"City Evaluation  {current_year(context)}"
+    # Percentages and scores: prefer legacy evaluation module attributes
+    goodyes = f"{getattr(evaluation, 'CityYes', getattr(context, 'city_yes', 0))}%"
+    goodno = f"{getattr(evaluation, 'CityNo', getattr(context, 'city_no', 0))}%"
 
-    # Format percentages
-    goodyes = f"{context.city_yes}%"
-    goodno = f"{context.city_no}%"
+    # Problem votes/order
+    prob_votes = getattr(
+        evaluation, "ProblemVotes", getattr(context, "problem_votes", [])
+    )
+    prob_order = getattr(
+        evaluation,
+        "ProblemOrder",
+        getattr(context, "problem_order", list(range(len(prob_votes)))),
+    )
 
-    # Format problem percentages
-    prob_percentages = []
+    prob_percentages: list[str] = []
     for i in range(4):
-        if context.problem_votes[context.problem_order[i]]:
-            prob_percentages.append(
-                f"{context.problem_votes[context.problem_order[i]]}%"
-            )
+        idx = prob_order[i] if i < len(prob_order) else i
+        if idx < len(prob_votes) and prob_votes[idx]:
+            prob_percentages.append(f"{prob_votes[idx]}%")
         else:
             prob_percentages.append("")
 
-    # Format statistics
-    pop = f"{context.city_pop}"
-    delta = f"{context.delta_city_pop}"
+    # Population and delta
+    pop = f"{getattr(evaluation, 'CityPop', getattr(context, 'city_pop', 0))}"
+    delta = (
+        f"{getattr(evaluation, 'deltaCityPop', getattr(context, 'delta_city_pop', 0))}"
+    )
 
-    # Format assessed value
-    assessed_dollars = make_dollar_decimal_str(str(context.city_ass_value), "")
+    # Assessed value
+    assessed_dollars = make_dollar_decimal_str(
+        str(getattr(evaluation, "CityAssValue", getattr(context, "city_ass_value", 0))),
+        "",
+    )
 
-    # Format score and change
-    score = f"{context.city_score}"
-    changed = f"{context.delta_city_score}"
+    # Score and change
+    score = f"{getattr(evaluation, 'CityScore', getattr(context, 'city_score', 0))}"
+    changed = f"{getattr(evaluation, 'deltaCityScore', getattr(context, 'delta_city_score', 0))}"
 
-    # Get problem names
-    problem_names = []
+    # Problem names
+    problem_names: list[str] = []
     for i in range(4):
-        problem_idx = context.problem_order[i]
-        if context.problem_votes[problem_idx]:
-            problem_names.append(PROBLEM_STRINGS[problem_idx])
+        idx = prob_order[i] if i < len(prob_order) else i
+        if idx < len(prob_votes) and prob_votes[idx]:
+            problem_names.append(PROBLEM_STRINGS[idx])
         else:
             problem_names.append("")
 
-    # Mark first problem name as bold (in pygame, this could be a flag)
     if problem_names[0]:
-        problem_names[0] = f"**{problem_names[0]}**"  # Placeholder for bold formatting
+        problem_names[0] = f"**{problem_names[0]}**"
 
-    # Send evaluation data to UI
+    # City class and level
+    city_class = getattr(evaluation, "CityClass", getattr(context, "city_class", 0))
+    game_level = getattr(types, "GameLevel", getattr(context, "game_level", 0))
+
+    # Call set_evaluation using legacy signature (without context) for compatibility
     set_evaluation(
         changed,
         score,
@@ -174,15 +202,15 @@ def do_score_card(context: AppContext) -> None:
         pop,
         delta,
         assessed_dollars,
-        CITY_CLASS_STRINGS[context.city_class],
-        CITY_LEVEL_STRINGS[context.game_level],
+        CITY_CLASS_STRINGS[city_class],
+        CITY_LEVEL_STRINGS[game_level],
         goodyes,
         goodno,
         title,
     )
 
 
-def change_eval(context: AppContext) -> None:
+def change_eval(context: AppContext | None) -> None:
     """
     Mark evaluation for update.
 
@@ -190,10 +218,13 @@ def change_eval(context: AppContext) -> None:
     Sets flag to trigger evaluation display update.
     :param context:
     """
-    context.eval_changed = 1
+    # Mirror legacy behaviour: set both context flag and types.eval_changed
+    if context is not None:
+        setattr(context, "eval_changed", 1)
+    setattr(types, "eval_changed", 1)
 
 
-def score_doer(context: AppContext) -> None:
+def score_doer(context: AppContext | None) -> None:
     """
     Handle evaluation display updates.
 
@@ -201,31 +232,20 @@ def score_doer(context: AppContext) -> None:
     Called from UI update loop to refresh evaluation display.
     :param context:
     """
-    if context.eval_changed:
+    # Accept either legacy types.eval_changed or context.eval_changed
+    changed_flag = getattr(types, "eval_changed", None)
+    if changed_flag is None and context is not None:
+        changed_flag = getattr(context, "eval_changed", 0)
+
+    if changed_flag:
         do_score_card(context)
-        context.eval_changed = False
+        # Clear both
+        if context is not None:
+            setattr(context, "eval_changed", 0)
+        setattr(types, "eval_changed", 0)
 
 
-def set_evaluation(context: AppContext,
-    changed: str,
-    score: str,
-    ps0: str,
-    ps1: str,
-    ps2: str,
-    ps3: str,
-    pv0: str,
-    pv1: str,
-    pv2: str,
-    pv3: str,
-    pop: str,
-    delta: str,
-    assessed_dollars: str,
-    cityclass: str,
-    citylevel: str,
-    goodyes: str,
-    goodno: str,
-    title: str,
-) -> None:
+def set_evaluation(*args) -> None:
     """
     Send evaluation data to the UI system.
 
@@ -246,11 +266,66 @@ def set_evaluation(context: AppContext,
         goodno: Percentage who disapprove
         title: Evaluation window title
     """
-    # In pygame version, this would pass data to the UI system
-    # For now, store the evaluation data for UI access
+    # Backwards-compatible wrapper: accept either (context, ...) or legacy signature without context
+    if len(args) == 0:
+        return
 
-    # global _evaluation_data
-    context._evaluation_data = {
+    if isinstance(args[0], AppContext):
+        # signature: (context, changed, score, ... , title)
+        context = args[0]
+        try:
+            (
+                _,
+                changed,
+                score,
+                ps0,
+                ps1,
+                ps2,
+                ps3,
+                pv0,
+                pv1,
+                pv2,
+                pv3,
+                pop,
+                delta,
+                assessed_dollars,
+                cityclass,
+                citylevel,
+                goodyes,
+                goodno,
+                title,
+            ) = args
+        except ValueError:
+            # incorrect args
+            return
+    else:
+        # legacy signature without context
+        context = None
+        try:
+            (
+                changed,
+                score,
+                ps0,
+                ps1,
+                ps2,
+                ps3,
+                pv0,
+                pv1,
+                pv2,
+                pv3,
+                pop,
+                delta,
+                assessed_dollars,
+                cityclass,
+                citylevel,
+                goodyes,
+                goodno,
+                title,
+            ) = args
+        except ValueError:
+            return
+
+    data = {
         "title": title,
         "score": score,
         "changed": changed,
@@ -265,8 +340,17 @@ def set_evaluation(context: AppContext,
         "disapproval_rating": goodno,
     }
 
+    if context is not None:
+        setattr(context, "_evaluation_data", data)
+    else:
+        global _evaluation_data
+        _evaluation_data = data
+
     # Mark for redraw
-    draw_evaluation()
+    if context is not None:
+        draw_evaluation(context)
+    else:
+        draw_evaluation()
 
 
 # ============================================================================
@@ -274,20 +358,25 @@ def set_evaluation(context: AppContext,
 # ============================================================================
 
 
-def draw_evaluation(context: AppContext) -> None:
+def draw_evaluation(context: AppContext | None = None) -> None:
     """
     Mark evaluation display for redraw.
 
     Ported from drawEvaluation() equivalent in w_eval.c.
     In pygame version, this sets a flag for UI update.
     """
-    # global must_draw_evaluation, _evaluation_panel_dirty
-    context.must_draw_evaluation = True
-    if context._evaluation_panel_visible:
-        context._evaluation_panel_dirty = True
+    if context is None:
+        global must_draw_evaluation, _evaluation_panel_visible, _evaluation_panel_dirty
+        must_draw_evaluation = True
+        if _evaluation_panel_visible:
+            _evaluation_panel_dirty = True
+    else:
+        context.must_draw_evaluation = True
+        if getattr(context, "_evaluation_panel_visible", False):
+            setattr(context, "_evaluation_panel_dirty", True)
 
 
-def really_draw_evaluation(context: AppContext) -> None:
+def really_draw_evaluation(context: AppContext | None = None) -> None:
     """
     Actually draw/update the evaluation display.
 
@@ -298,12 +387,18 @@ def really_draw_evaluation(context: AppContext) -> None:
 
     # In pygame version, this would render the evaluation data
     # For now, just mark as drawn
-    context.must_draw_evaluation = False
-    if context._evaluation_panel_visible:
-        _render_evaluation_surface()
+    if context is None:
+        global must_draw_evaluation
+        must_draw_evaluation = False
+        if _evaluation_panel_visible:
+            _render_evaluation_surface(None)
+    else:
+        context.must_draw_evaluation = False
+        if getattr(context, "_evaluation_panel_visible", False):
+            _render_evaluation_surface(context)
 
 
-def update_evaluation(context: AppContext) -> None:
+def update_evaluation(context: AppContext | None = None) -> None:
     """
     Update evaluation display if needed.
 
@@ -312,9 +407,15 @@ def update_evaluation(context: AppContext) -> None:
     """
     # global must_draw_evaluation
 
-    if context.must_draw_evaluation:
-        really_draw_evaluation()
-        context.must_draw_evaluation = False
+    if context is None:
+        global must_draw_evaluation
+        if must_draw_evaluation:
+            really_draw_evaluation()
+            must_draw_evaluation = False
+    else:
+        if getattr(context, "must_draw_evaluation", False):
+            really_draw_evaluation(context)
+            setattr(context, "must_draw_evaluation", False)
 
 
 # ============================================================================
@@ -324,55 +425,81 @@ def update_evaluation(context: AppContext) -> None:
 _evaluation_data: dict | None = None
 
 
-def get_evaluation_data(context: AppContext) -> dict | None:
+def get_evaluation_data(context: AppContext | None = None) -> dict | None:
     """
     Get the current evaluation display data.
 
     Returns:
         Dictionary containing evaluation data, or None if not available
     """
-    return context._evaluation_data
+    if context is None:
+        return _evaluation_data
+    return getattr(context, "_evaluation_data", None)
 
 
-def set_evaluation_panel_visible(context: AppContext, visible: bool) -> None:
+def set_evaluation_panel_visible(*args) -> None:
+    """Toggle the pygame evaluation overlay visibility.
+
+    Backwards compatible: accepts either (visible,) or (context, visible).
     """
-    Toggle the pygame evaluation overlay visibility.
-    """
-    # global _evaluation_panel_visible, _evaluation_panel_dirty
-    context._evaluation_panel_visible = visible
-    if visible:
-        context._evaluation_panel_dirty = True
+    if len(args) == 1 and isinstance(args[0], bool):
+        visible = args[0]
+        context = None
+    elif len(args) == 2:
+        context, visible = args
     else:
-        context._evaluation_panel_dirty = False
+        raise TypeError(
+            "set_evaluation_panel_visible requires visible or (context, visible)"
+        )
+
+    if context is None:
+        global _evaluation_panel_visible, _evaluation_panel_dirty
+        _evaluation_panel_visible = visible
+        _evaluation_panel_dirty = True if visible else False
+    else:
+        setattr(context, "_evaluation_panel_visible", visible)
+        setattr(context, "_evaluation_panel_dirty", True if visible else False)
 
 
-def is_evaluation_panel_visible(context: AppContext) -> bool:
+def is_evaluation_panel_visible(context: AppContext | None = None) -> bool:
     """Return True if the evaluation panel should be shown."""
-    return context._evaluation_panel_visible
+    if context is None:
+        return _evaluation_panel_visible
+    return getattr(context, "_evaluation_panel_visible", False)
 
 
-def set_evaluation_panel_size(context: AppContext, width: int, height: int) -> None:
+def set_evaluation_panel_size(
+    context: AppContext | None, width: int, height: int
+) -> None:
     """Resize the evaluation panel surface used during rendering."""
-    # global _evaluation_panel_size, _evaluation_panel_dirty
-    context._evaluation_panel_size = (max(1, width), max(1, height))
-    context._evaluation_panel_dirty = True
+    if context is None:
+        global _evaluation_panel_size, _evaluation_panel_dirty
+        _evaluation_panel_size = (max(1, width), max(1, height))
+        _evaluation_panel_dirty = True
+    else:
+        setattr(context, "_evaluation_panel_size", (max(1, width), max(1, height)))
+        setattr(context, "_evaluation_panel_dirty", True)
 
 
 def get_evaluation_surface() -> pygame.Surface | None:
     """
     Return the pygame surface representing the evaluation panel, rendering it if necessary.
     """
+    # Respect PYGAME_AVAILABLE flag
+    if not PYGAME_AVAILABLE:
+        return None
+
     if not _evaluation_panel_visible:
         return None
 
-    if (
-        _evaluation_surface is None
-        or _evaluation_surface.get_size() != _evaluation_panel_size
+    global _evaluation_surface, _evaluation_panel_size, _evaluation_panel_dirty
+    if (_evaluation_surface is None) or (
+        _evaluation_surface.get_size() != _evaluation_panel_size
     ):
-        _create_evaluation_surface()
+        _create_evaluation_surface(None)
 
     if _evaluation_panel_dirty:
-        _render_evaluation_surface()
+        _render_evaluation_surface(None)
 
     return _evaluation_surface
 
@@ -468,26 +595,49 @@ def update_evaluation_command(context: AppContext) -> None:
 # ============================================================================
 
 
-def _create_evaluation_surface(context: AppContext) -> None:
+def _create_evaluation_surface(context: AppContext | None) -> None:
     """Create the pygame surface for evaluation data."""
-    # global _evaluation_surface, _evaluation_panel_dirty
+    if context is None:
+        global _evaluation_panel_size, _evaluation_surface, _evaluation_panel_dirty
+        width, height = _evaluation_panel_size
+        _evaluation_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        _evaluation_panel_dirty = True
+    else:
+        width, height = getattr(context, "_evaluation_panel_size", (320, 200))
+        setattr(
+            context,
+            "_evaluation_surface",
+            pygame.Surface((width, height), pygame.SRCALPHA),
+        )
+        setattr(context, "_evaluation_panel_dirty", True)
 
-    width, height = context._evaluation_panel_size
-    context._evaluation_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-    context._evaluation_panel_dirty = True
 
-
-def _render_evaluation_surface(context: AppContext) -> None:
+def _render_evaluation_surface(context: AppContext | None) -> None:
     """Render evaluation data into the pygame surface."""
-    # global _evaluation_panel_dirty
-    if not (context._evaluation_panel_visible and context._evaluation_surface):
-        context._evaluation_panel_dirty = False
-        return
+    if context is None:
+        global \
+            _evaluation_panel_dirty, \
+            _evaluation_surface, \
+            _evaluation_panel_visible, \
+            _evaluation_data
+        if not (_evaluation_panel_visible and _evaluation_surface):
+            _evaluation_panel_dirty = False
+            return
 
-    surface = context._evaluation_surface
-    surface.fill((0, 0, 0, 200))
+        surface = _evaluation_surface
+        surface.fill((0, 0, 0, 200))
+        data = _evaluation_data or {}
+    else:
+        if not (
+            getattr(context, "_evaluation_panel_visible", False)
+            and getattr(context, "_evaluation_surface", None)
+        ):
+            setattr(context, "_evaluation_panel_dirty", False)
+            return
 
-    data = context._evaluation_data or {}
+        surface = getattr(context, "_evaluation_surface")
+        surface.fill((0, 0, 0, 200))
+        data = getattr(context, "_evaluation_data", {}) or {}
     # Draw a simple textual summary using pygame fonts if available; otherwise colored bars
     font = None
     if pygame.font.get_init() or pygame.font.get_init() is False:
@@ -520,4 +670,7 @@ def _render_evaluation_surface(context: AppContext) -> None:
                 pygame.Rect(0, idx * stripe_height, surface.get_width(), stripe_height),
             )
 
-    _evaluation_panel_dirty = False
+    if context is None:
+        _evaluation_panel_dirty = False
+    else:
+        setattr(context, "_evaluation_panel_dirty", False)

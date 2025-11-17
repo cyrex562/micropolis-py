@@ -11,7 +11,7 @@ from .context import AppContext
 
 
 def _kick() -> None:
-    from src.micropolis.sim_control import kick as _kick_fn
+    from micropolis.sim_control import kick as _kick_fn
 
     _kick_fn()
 

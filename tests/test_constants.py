@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from micropolis import constants
 
-import src.micropolis.mac_compat
+import micropolis.mac_compat
 
 
 def test_quad_type_definition():

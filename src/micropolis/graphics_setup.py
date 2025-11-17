@@ -5,15 +5,59 @@ This module handles loading of graphics assets and initialization of display
 structures, adapted from g_setup.c for pygame instead of X11/TCL-Tk.
 """
 
-import os
+from collections import OrderedDict
+from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any
 
 import pygame
 
-from src.micropolis.constants import SIM_GSMTILE, TILE_COUNT, STIPPLE_WIDTH, STIPPLE_HEIGHT, TRA, COP, AIR, SHI, GOD, \
-    TOR, EXP, BUS, GRAY25_BITS, GRAY50_BITS, GRAY75_BITS, VERT_BITS, HORIZ_BITS, DIAG_BITS, OBJN
-from src.micropolis.context import AppContext
-from src.micropolis.view_types import XDisplay, IsEditorView, IsMapView, X_Mem_View, X_Wire_View, MakeNewXDisplay
+from micropolis.asset_manager import get_asset_path
+from micropolis.constants import (
+    AIR,
+    BUS,
+    COP,
+    DIAG_BITS,
+    EXP,
+    GOD,
+    GRAY25_BITS,
+    GRAY50_BITS,
+    GRAY75_BITS,
+    HORIZ_BITS,
+    LIGHTNINGBOLT,
+    LOMASK,
+    OBJN,
+    PWRBIT,
+    SHI,
+    SIM_GSMTILE,
+    STIPPLE_HEIGHT,
+    STIPPLE_WIDTH,
+    TILE_COUNT,
+    TOR,
+    TRA,
+    VERT_BITS,
+    ZONEBIT,
+)
+from micropolis.context import AppContext
+from micropolis.view_types import (
+    IsEditorView,
+    IsMapView,
+    MakeNewXDisplay,
+    X_Mem_View,
+    X_Wire_View,
+    XDisplay,
+)
+
+OverlayFilter = Callable[[AppContext, int, int], bool]
+ColorLike = tuple[int, int, int] | tuple[int, int, int, int]
+ColorStop = tuple[int, tuple[int, int, int, int]]
+ColorRamp = tuple[ColorStop, ...]
+ColorRampInput = Sequence[tuple[int, ColorLike]]
+
+_TILE_VARIANT_CACHE: OrderedDict[
+    tuple[int, tuple[int, int, int, int], str], pygame.Surface
+] = OrderedDict()
+_VARIANT_CACHE_LIMIT = 256
 
 
 # ============================================================================
@@ -26,44 +70,45 @@ from src.micropolis.view_types import XDisplay, IsEditorView, IsMapView, X_Mem_V
 # ============================================================================
 
 
-def get_resource_path(filename: str) -> str:
-    """
-    Get the full path to a resource file.
+def get_resource_path(filename: str, *, category: str | None = None) -> str:
+    """Resolve legacy asset names through the generated manifest."""
+    import logging
 
-    Args:
-        filename: Name of the resource file
+    logger = logging.getLogger(__name__)
 
-    Returns:
-        Full path to the resource file
-    """
-    # Try multiple possible locations for resources based on new assets/ structure
-    possible_paths = [
-        # New assets/ directory structure
-        os.path.join(
-            os.path.dirname(__file__), "..", "..", "assets", filename
-        ),  # hexa.*, snro.*, stri.*, tcl files
-        os.path.join(
-            os.path.dirname(__file__), "..", "..", "assets", "images", filename
-        ),  # XPM and image files
-        os.path.join(
-            os.path.dirname(__file__), "..", "..", "assets", "sounds", filename
-        ),  # audio files
-        os.path.join(
-            os.path.dirname(__file__), "..", "..", "assets", "dejavu-lgc", filename
-        ),  # fonts
-        # Legacy paths for backward compatibility
-        os.path.join(os.path.dirname(__file__), "..", "..", "images", filename),
-        os.path.join(os.path.dirname(__file__), "..", "..", "assets", filename),
-        os.path.join(os.getcwd(), "images", filename),
-        os.path.join(os.getcwd(), "assets", filename),
-        filename,  # Try current directory as fallback
-    ]
+    normalized = filename.lstrip("@")
+    logger.debug(
+        f"[get_resource_path] Looking for asset: "
+        f"filename='{filename}', category={category}, "
+        f"normalized='{normalized}'"
+    )
 
-    for path in possible_paths:
-        if os.path.exists(path):
-            return path
+    potential = [normalized]
+    if category == "images" and not normalized.startswith("images/"):
+        potential.append(f"images/{normalized}")
+        logger.debug(f"[get_resource_path] Added image path variant: {potential[-1]}")
 
-    return filename  # Return as-is if not found
+    candidate_path = Path(normalized)
+    if candidate_path.is_absolute():
+        logger.debug(f"[get_resource_path] Using absolute path: {candidate_path}")
+        return str(candidate_path)
+
+    for candidate in potential:
+        logger.debug(f"[get_resource_path] Trying candidate: '{candidate}'")
+        resolved = get_asset_path(candidate, category=category)
+        if resolved is not None:
+            logger.info(f"[get_resource_path] ✓ Resolved '{filename}' → '{resolved}'")
+            return str(resolved)
+        else:
+            logger.debug(
+                f"[get_resource_path] ✗ Candidate '{candidate}' not found in manifest"
+            )
+
+    error_msg = (
+        f"Asset '{filename}' (category={category}) was not found in asset_manifest.json"
+    )
+    logger.error(f"[get_resource_path] {error_msg}")
+    raise FileNotFoundError(error_msg)
 
 
 def load_xpm_surface(filename: str) -> Any | None:
@@ -76,13 +121,28 @@ def load_xpm_surface(filename: str) -> Any | None:
     Returns:
         pygame Surface if successful, None if failed
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
 
     try:
-        filepath = get_resource_path(filename)
+        logger.debug(f"[load_xpm_surface] Attempting to load: {filename}")
+        filepath = get_resource_path(filename, category="images")
+        logger.debug(f"[load_xpm_surface] Resolved path: {filepath}")
+
+        # Verify file exists before loading
+        if not Path(filepath).exists():
+            logger.error(f"[load_xpm_surface] ✗ File not found: {filepath}")
+            return None
+
         surface = pygame.image.load(filepath)
+        logger.info(
+            f"[load_xpm_surface] ✓ Successfully loaded {filename} "
+            f"({surface.get_width()}x{surface.get_height()})"
+        )
         return surface
     except (pygame.error, FileNotFoundError) as e:
-        print(f"Warning: Failed to load XPM file {filename}: {e}")
+        logger.error(f"[load_xpm_surface] ✗ Failed to load XPM file {filename}: {e}")
         return None
 
 
@@ -99,12 +159,12 @@ def load_hexa_resource(resource_id: int) -> bytes | None:
         Raw bytes from the hexa file, or None if failed
     """
     filename = f"hexa.{resource_id}"
-    filepath = get_resource_path(filename)
+    filepath = get_resource_path(filename, category="raw")
 
     try:
         with open(filepath, "rb") as f:
             return f.read()
-    except (FileNotFoundError, IOError) as e:
+    except OSError as e:
         print(f"Warning: Failed to load hexa resource {resource_id}: {e}")
         return None
 
@@ -128,7 +188,8 @@ def create_small_tiles_surface() -> Any | None:
     expected_size = 4 * 3 * TILE_COUNT  # 11520
     if len(hexa_data) < expected_size:
         print(
-            f"Warning: Hexa data too small {len(hexa_data)}, expected at least {expected_size}"
+            "Warning: Hexa data too small "
+            f"{len(hexa_data)}, expected at least {expected_size}"
         )
         return None
 
@@ -136,11 +197,10 @@ def create_small_tiles_surface() -> Any | None:
     actual_data = hexa_data[:expected_size]
 
     try:
-        # Create surface for 4×4 tiles: TILE_COUNT tiles × 4×4 pixels × 4 bytes per pixel (RGBA)
+        # Create surface for 4×4 tiles: TILE_COUNT tiles × 4×4 pixels × 4 bytes per
+        # pixel (RGBA)
         surface_width = 4  # 4 pixels per tile
-        surface_height = (
-                4 * TILE_COUNT
-        )  # 4 pixels high per tile × TILE_COUNT tiles
+        surface_height = 4 * TILE_COUNT  # 4 pixels high per tile × TILE_COUNT tiles
 
         surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
 
@@ -181,6 +241,13 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
     Returns:
         pygame Surface for big tiles, or None if failed
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    logger.debug(
+        f"[load_big_tiles_surface] Creating placeholder surface, color={color}"
+    )
 
     try:
         # For now, create a placeholder surface
@@ -190,6 +257,12 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
 
         surface_width = tiles_per_row * 16
         surface_height = rows * 16
+
+        logger.debug(
+            f"[load_big_tiles_surface] Creating placeholder: "
+            f"{surface_width}x{surface_height} "
+            f"({tiles_per_row}x{rows} tiles)"
+        )
 
         surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
 
@@ -213,15 +286,21 @@ def load_big_tiles_surface(color: bool = True) -> Any | None:
                     surface, tile_color, (tile_x * 16, tile_y * 16, 16, 16)
                 )
 
+        logger.info(
+            f"[load_big_tiles_surface] ✓ Created placeholder surface "
+            f"with {TILE_COUNT} tiles"
+        )
         return surface
 
     except Exception as e:
-        print(f"Error creating big tiles surface: {e}")
+        logger.exception(
+            f"[load_big_tiles_surface] ✗ Error creating big tiles surface: {e}"
+        )
         return None
 
 
 def create_stipple_surface(
-        bits: bytes, width: int = STIPPLE_WIDTH, height: int = STIPPLE_HEIGHT
+    bits: bytes, width: int = STIPPLE_WIDTH, height: int = STIPPLE_HEIGHT
 ) -> Any | None:
     """
     Create a pygame surface from stipple pattern bits.
@@ -356,64 +435,124 @@ def get_view_tiles(view: Any) -> None:
     Args:
         view: View structure to initialize with tiles
     """
+    import logging
 
-    # Determine if this is an editor or map view
-    is_editor = IsEditorView(view)
-    is_map = IsMapView(view)
+    logger = logging.getLogger(__name__)
+
+    # Determine if this is an editor or map view by checking class_id directly
+    # Editor_Class = 0, Map_Class = 1
+    from .view_types import Editor_Class, Map_Class
+
+    is_editor = view.class_id == Editor_Class
+    is_map = view.class_id == Map_Class
+
+    logger.info(
+        f"[get_view_tiles] Loading tiles for view: "
+        f"class_id={view.class_id}, is_editor={is_editor}, "
+        f"is_map={is_map}, type={view.type}"
+    )
 
     if is_editor:
+        logger.debug("[get_view_tiles] Loading tiles for EDITOR view")
         # Load tiles for editor view (16x16 pixels per tile)
         if view.type == X_Mem_View:
+            logger.debug("[get_view_tiles] Editor view type: X_Mem_View")
             if view.x.big_tile_image is None:
                 # Try to load from XPM first, then fall back to generated surface
-                tiles_filename = "tiles.xpm" if view.x.color else "tilesbw.xpm"
+                tiles_filename = "tiles.png" if view.x.color else "tilesbw.png"
+                logger.info(
+                    f"[get_view_tiles] Loading big tile image: {tiles_filename}"
+                )
                 view.x.big_tile_image = load_xpm_surface(tiles_filename)
 
                 if view.x.big_tile_image is None:
+                    logger.warning(
+                        "[get_view_tiles] Failed to load tiles.png, using placeholder"
+                    )
                     # Fall back to generated placeholder surface
                     view.x.big_tile_image = load_big_tiles_surface(view.x.color)
 
                 if view.x.big_tile_image is None:
-                    print("Error: Failed to load big tile image")
+                    logger.error("[get_view_tiles] ✗ Failed to load big tile image")
                     return
+                else:
+                    logger.info(
+                        f"[get_view_tiles] ✓ Loaded big tile image: "
+                        f"{view.x.big_tile_image.get_width()}x"
+                        f"{view.x.big_tile_image.get_height()}"
+                    )
+            else:
+                logger.debug("[get_view_tiles] Big tile image already loaded")
 
             # Extract tile data from the surface
             view.bigtiles = view.x.big_tile_image
+            logger.debug("[get_view_tiles] Set view.bigtiles from big_tile_image")
 
         elif view.type == X_Wire_View:
+            logger.debug("[get_view_tiles] Editor view type: X_Wire_View")
             if view.x.big_tile_pixmap is None:
-                tiles_filename = "tiles.xpm" if view.x.color else "tilesbw.xpm"
+                tiles_filename = "tiles.png" if view.x.color else "tilesbw.png"
+                logger.info(
+                    f"[get_view_tiles] Loading big tile pixmap: {tiles_filename}"
+                )
                 view.x.big_tile_pixmap = load_xpm_surface(tiles_filename)
 
                 if view.x.big_tile_pixmap is None:
+                    logger.warning(
+                        "[get_view_tiles] Failed to load tiles.png, using placeholder"
+                    )
                     # Fall back to generated placeholder surface
                     view.x.big_tile_pixmap = load_big_tiles_surface(view.x.color)
 
                 if view.x.big_tile_pixmap is None:
-                    print("Error: Failed to load big tile pixmap")
+                    logger.error("[get_view_tiles] ✗ Failed to load big tile pixmap")
                     return
+                else:
+                    logger.info(
+                        f"[get_view_tiles] ✓ Loaded big tile pixmap: "
+                        f"{view.x.big_tile_pixmap.get_width()}x"
+                        f"{view.x.big_tile_pixmap.get_height()}"
+                    )
+            else:
+                logger.debug("[get_view_tiles] Big tile pixmap already loaded")
 
     elif is_map:
+        logger.debug("[get_view_tiles] Loading tiles for MAP view")
         # Load tiles for map view (3x3 pixels per tile, expanded to 4x4)
         if view.x.small_tile_image is None:
             if view.x.color:
                 # Try to load color tiles from XPM
-                tiles_filename = "tilessm.xpm"
+                tiles_filename = "tilessm.png"
+                logger.info(
+                    f"[get_view_tiles] Loading small tile image: {tiles_filename}"
+                )
                 view.x.small_tile_image = load_xpm_surface(tiles_filename)
 
                 if view.x.small_tile_image is None:
-                    print(
-                        f"Warning: Failed to load small tile image {tiles_filename}, using placeholder"
+                    logger.warning(
+                        f"[get_view_tiles] Failed to load small tile image "
+                        f"{tiles_filename}, using placeholder"
                     )
-                    # For now, create a placeholder - we don't have the actual small tile graphics
+                    # For now, create a placeholder - the converted asset is not
+                    # available yet.
                     view.x.small_tile_image = pygame.Surface(
                         (4, 3 * TILE_COUNT), pygame.SRCALPHA
+                    )
+                else:
+                    logger.info(
+                        f"[get_view_tiles] ✓ Loaded small tile image: "
+                        f"{view.x.small_tile_image.get_width()}x"
+                        f"{view.x.small_tile_image.get_height()}"
                     )
 
             else:
                 # For monochrome, load from hexa resource
+                logger.debug("[get_view_tiles] Loading monochrome tiles from hexa")
                 hexa_data = load_hexa_resource(SIM_GSMTILE)
                 if hexa_data is not None:
+                    logger.info(
+                        f"[get_view_tiles] ✓ Loaded hexa data: {len(hexa_data)} bytes"
+                    )
                     # Create XImage-like structure from hexa data
                     # This mimics the XCreateImage call in the C code
                     view.x.small_tile_image = pygame.Surface(
@@ -427,12 +566,20 @@ def get_view_tiles(view: Any) -> None:
                         if y < 3 * TILE_COUNT:
                             color = (pixel_value, pixel_value, pixel_value, 255)
                             view.x.small_tile_image.set_at((x, y), color)
+                    logger.debug(
+                        "[get_view_tiles] Filled small_tile_image with hexa data"
+                    )
                 else:
-                    print("Warning: Failed to load monochrome small tiles")
+                    logger.error(
+                        "[get_view_tiles] ✗ Failed to load monochrome small tiles"
+                    )
                     return
+        else:
+            logger.debug("[get_view_tiles] Small tile image already loaded")
 
         # Process the small tile data into 4x4 format
         if view.smalltiles is None:
+            logger.debug("[get_view_tiles] Converting small tiles to 4x4 format")
             # Convert 4x3 tiles to 4x4 tiles with padding (matching C code logic)
             pixel_bytes = 4  # RGBA
             source_surface = view.x.small_tile_image
@@ -461,6 +608,15 @@ def get_view_tiles(view: Any) -> None:
                     view.smalltiles[to_index + 2] = 0  # B
                     view.smalltiles[to_index + 3] = 0  # A
                     to_index += pixel_bytes
+
+            logger.info(
+                f"[get_view_tiles] ✓ Converted {TILE_COUNT} small tiles "
+                f"to 4x4 format ({len(view.smalltiles)} bytes)"
+            )
+        else:
+            logger.debug("[get_view_tiles] Small tiles already in 4x4 format")
+    else:
+        logger.warning(f"[get_view_tiles] Unknown view class_id: {view.class_id}")
 
 
 # ============================================================================
@@ -506,20 +662,46 @@ def init_view_graphics(view: Any) -> bool:
     Returns:
         True if successful, False otherwise
     """
+    import logging
+
+    logger = logging.getLogger(__name__)
 
     try:
+        logger.info(
+            f"[init_view_graphics] Initializing graphics for view: "
+            f"class_id={getattr(view, 'class_id', 'unknown')}, "
+            f"type={getattr(view, 'type', 'unknown')}"
+        )
+
         # Ensure the view has a display
         if not hasattr(view, "x") or view.x is None:
-            print("Error: View has no display")
+            logger.error("[init_view_graphics] ✗ View has no display")
             return False
 
+        logger.debug(
+            f"[init_view_graphics] View display attributes: "
+            f"color={getattr(view.x, 'color', 'unknown')}"
+        )
+
         # Load tiles for this view
+        logger.debug("[init_view_graphics] Calling get_view_tiles()...")
         get_view_tiles(view)
+
+        # Verify tiles were loaded
+        has_bigtiles = hasattr(view, "bigtiles") and view.bigtiles is not None
+        has_smalltiles = hasattr(view, "smalltiles") and view.smalltiles is not None
+
+        logger.info(
+            f"[init_view_graphics] ✓ Graphics initialized: "
+            f"bigtiles={has_bigtiles}, smalltiles={has_smalltiles}"
+        )
 
         return True
 
     except Exception as e:
-        print(f"Error initializing view graphics: {e}")
+        logger.exception(
+            f"[init_view_graphics] ✗ Error initializing view graphics: {e}"
+        )
         return False
 
 
@@ -537,48 +719,405 @@ def cleanup_graphics() -> None:
 # ============================================================================
 
 
-def get_tile_surface(tile_id: int, view: Any) -> Any | None:
-    """
-    Get the surface for a specific tile.
+def resolve_tile_for_render(
+    context: AppContext,
+    tile_value: int,
+    *,
+    coords: tuple[int, int] | None = None,
+    blink: bool | None = None,
+    overlay_filter: OverlayFilter | None = None,
+) -> int:
+    """Normalize a raw tile value for rendering with lightning/overlay gating."""
 
-    Args:
-        tile_id: ID of the tile to get
-        view: View containing the tile graphics
+    adjusted = tile_value
+    if (adjusted & LOMASK) >= TILE_COUNT:
+        adjusted -= TILE_COUNT
 
-    Returns:
-        pygame Surface for the tile, or None if not found
-    """
+    tile_index = adjusted & LOMASK
+    blink_state = context.flag_blink <= 0 if blink is None else blink
 
-    try:
-        if IsEditorView(view) and hasattr(view, "bigtiles"):
-            # Extract 16x16 tile from the big tiles image
-            tiles_per_row = view.bigtiles.get_width() // 16
-            tile_x = (tile_id % tiles_per_row) * 16
-            tile_y = (tile_id // tiles_per_row) * 16
+    if blink_state and (tile_value & ZONEBIT) and not (tile_value & PWRBIT):
+        lightning_tile = getattr(context, "LIGHTNINGBOLT", LIGHTNINGBOLT)
+        tile_index = lightning_tile
 
-            tile_surface = pygame.Surface((16, 16), pygame.SRCALPHA)
-            tile_surface.blit(view.bigtiles, (0, 0), (tile_x, tile_y, 16, 16))
-            return tile_surface
+    if overlay_filter and coords and tile_index > 63:
+        if not overlay_filter(context, coords[0], coords[1]):
+            tile_index = 0
 
-        elif IsMapView(view) and hasattr(view, "smalltiles"):
-            # Extract 4x4 tile from the small tiles image (3x3 pixels + 1 padding)
-            tiles_per_row = view.smalltiles.get_width() // 4
-            tile_x = (tile_id % tiles_per_row) * 4
-            tile_y = (tile_id // tiles_per_row) * 4
+    return _normalize_tile_index(tile_index)
 
-            tile_surface = pygame.Surface((4, 4), pygame.SRCALPHA)
-            tile_surface.blit(view.smalltiles, (0, 0), (tile_x, tile_y, 4, 4))
-            return tile_surface
 
-    except Exception as e:
-        print(f"Error getting tile surface for tile {tile_id}: {e}")
+def get_tile_surface(
+    tile_id: int,
+    view: Any,
+    *,
+    context: AppContext | None = None,
+    coords: tuple[int, int] | None = None,
+    blink: bool | None = None,
+    overlay_filter: OverlayFilter | None = None,
+    treat_input_as_raw: bool = False,
+    tint_color: tuple[int, int, int, int] | None = None,
+    variant: str | None = None,
+    return_tile_index: bool = False,
+) -> Any | tuple[Any | None, int]:
+    """Return a cached 16×16 tile surface for editor views."""
+
+    if treat_input_as_raw:
+        if context is None:
+            raise ValueError("context is required when treat_input_as_raw=True")
+        tile_index = resolve_tile_for_render(
+            context,
+            tile_id,
+            coords=coords,
+            blink=blink,
+            overlay_filter=overlay_filter,
+        )
+    else:
+        tile_index = _normalize_tile_index(tile_id)
+
+    sheet = _get_big_tile_sheet(view)
+    surface: pygame.Surface | None = None
+
+    if sheet is not None:
+        cache = _get_big_tile_cache(view)
+        surface = cache.get(tile_index)
+        if surface is None:
+            tiles_per_row = getattr(view, "_tiles_per_row", None)
+            if not tiles_per_row:
+                tiles_per_row = max(1, sheet.get_width() // 16)
+                setattr(view, "_tiles_per_row", tiles_per_row)
+
+            tile_x = (tile_index % tiles_per_row) * 16
+            tile_y = (tile_index // tiles_per_row) * 16
+            rect = pygame.Rect(tile_x, tile_y, 16, 16)
+
+            try:
+                surface = sheet.subsurface(rect)
+                cache[tile_index] = surface
+            except ValueError:
+                surface = None
+
+    if surface is not None and tint_color and variant:
+        surface = _get_tinted_variant_surface(surface, tint_color, variant)
+
+    if return_tile_index:
+        return surface, tile_index
+    return surface
+
+
+def get_small_tile_surface(
+    tile_id: int,
+    view: Any,
+    *,
+    context: AppContext | None = None,
+    coords: tuple[int, int] | None = None,
+    blink: bool | None = None,
+    overlay_filter: OverlayFilter | None = None,
+    treat_input_as_raw: bool = False,
+    tint_color: tuple[int, int, int, int] | None = None,
+    variant: str | None = None,
+    return_tile_index: bool = False,
+) -> Any | tuple[Any | None, int]:
+    """Return a cached 4×4 tile surface for map/minimap views."""
+
+    if treat_input_as_raw:
+        if context is None:
+            raise ValueError("context is required when treat_input_as_raw=True")
+        tile_index = resolve_tile_for_render(
+            context,
+            tile_id,
+            coords=coords,
+            blink=blink,
+            overlay_filter=overlay_filter,
+        )
+    else:
+        tile_index = _normalize_tile_index(tile_id)
+
+    sheet = _get_small_tile_sheet(view)
+    surface: pygame.Surface | None = None
+
+    if sheet is not None:
+        cache = _get_small_tile_cache(view)
+        surface = cache.get(tile_index)
+        if surface is None:
+            rect = pygame.Rect(0, tile_index * 4, 4, 4)
+            try:
+                surface = sheet.subsurface(rect)
+                cache[tile_index] = surface
+            except ValueError:
+                surface = None
+
+    if surface is not None and tint_color and variant:
+        surface = _get_tinted_variant_surface(surface, tint_color, variant)
+
+    if return_tile_index:
+        return surface, tile_index
+    return surface
+
+
+def get_small_tile_overlay_surface(
+    tile_id: int,
+    view: Any,
+    *,
+    overlay_key: str,
+    tint_color: tuple[int, int, int, int] | None = None,
+    color_ramp: ColorRampInput | None = None,
+    context: AppContext | None = None,
+    coords: tuple[int, int] | None = None,
+    blink: bool | None = None,
+    overlay_filter: OverlayFilter | None = None,
+    treat_input_as_raw: bool = False,
+    return_tile_index: bool = False,
+) -> Any | tuple[Any | None, int]:
+    """Return a tinted 4×4 tile surface for a named minimap overlay."""
+
+    if treat_input_as_raw:
+        if context is None:
+            raise ValueError("context is required when treat_input_as_raw=True")
+        tile_index = resolve_tile_for_render(
+            context,
+            tile_id,
+            coords=coords,
+            blink=blink,
+            overlay_filter=overlay_filter,
+        )
+    else:
+        tile_index = _normalize_tile_index(tile_id)
+
+    overlay_entry = _get_small_tile_overlay_sheet(
+        view,
+        overlay_key=overlay_key,
+        tint_color=tint_color,
+        color_ramp=color_ramp,
+    )
+
+    surface: pygame.Surface | None = None
+    if overlay_entry is not None:
+        sheet, cache = overlay_entry
+        surface = cache.get(tile_index)
+        if surface is None:
+            rect = pygame.Rect(0, tile_index * 4, 4, 4)
+            try:
+                surface = sheet.subsurface(rect)
+                cache[tile_index] = surface
+            except ValueError:
+                surface = None
+
+    if return_tile_index:
+        return surface, tile_index
+    return surface
+
+
+def _normalize_tile_index(tile_id: int) -> int:
+    if tile_id < 0:
+        return 0
+    return tile_id % TILE_COUNT
+
+
+def _get_big_tile_sheet(view: Any) -> pygame.Surface | None:
+    sheet = getattr(view, "bigtiles", None)
+    if isinstance(sheet, pygame.Surface):
+        return sheet
+
+    if hasattr(view, "x") and getattr(view.x, "big_tile_image", None):
+        sheet = view.x.big_tile_image
+        view.bigtiles = sheet
+        return sheet
 
     return None
 
 
-def get_object_surface(context: AppContext,
-                       object_id: int, frame: int = 0, display: XDisplay | None = None
-                       ) -> Any | None:
+def _get_small_tile_sheet(view: Any) -> pygame.Surface | None:
+    sheet = getattr(view, "_small_tile_sheet", None)
+    if isinstance(sheet, pygame.Surface):
+        return sheet
+
+    raw_tiles = getattr(view, "smalltiles", None)
+    if raw_tiles:
+        buffer = (
+            raw_tiles if isinstance(raw_tiles, (bytes, bytearray)) else bytes(raw_tiles)
+        )
+        sheet = pygame.image.frombuffer(buffer, (4, 4 * TILE_COUNT), "RGBA")
+        sheet = sheet.convert_alpha()
+        setattr(view, "_small_tile_sheet", sheet)
+        return sheet
+
+    image = None
+    if hasattr(view, "x") and getattr(view.x, "small_tile_image", None):
+        image = view.x.small_tile_image
+
+    if isinstance(image, pygame.Surface):
+        sheet = pygame.Surface((4, 4 * TILE_COUNT), pygame.SRCALPHA)
+        for tile in range(TILE_COUNT):
+            src_rect = pygame.Rect(0, tile * 3, 4, 3)
+            dest_rect = pygame.Rect(0, tile * 4, 4, 3)
+            sheet.blit(image, dest_rect, src_rect)
+        setattr(view, "_small_tile_sheet", sheet)
+        return sheet
+
+    return None
+
+
+def _get_big_tile_cache(view: Any) -> dict[int, pygame.Surface]:
+    cache = getattr(view, "_tile_surface_cache", None)
+    if cache is None:
+        cache = {}
+        setattr(view, "_tile_surface_cache", cache)
+    return cache
+
+
+def _get_small_tile_cache(view: Any) -> dict[int, pygame.Surface]:
+    cache = getattr(view, "_small_tile_surface_cache", None)
+    if cache is None:
+        cache = {}
+        setattr(view, "_small_tile_surface_cache", cache)
+    return cache
+
+
+def _get_small_tile_overlay_sheet(
+    view: Any,
+    *,
+    overlay_key: str,
+    tint_color: tuple[int, int, int, int] | None = None,
+    color_ramp: ColorRampInput | None = None,
+) -> tuple[pygame.Surface, dict[int, pygame.Surface]] | None:
+    sheet = _get_small_tile_sheet(view)
+    if sheet is None:
+        return None
+
+    overlay_cache = _get_small_tile_overlay_cache(view)
+    normalized_ramp = _normalize_color_ramp(color_ramp) if color_ramp else None
+    key = _build_overlay_cache_key(sheet, overlay_key, tint_color, normalized_ramp)
+    cached = overlay_cache.get(key)
+    if cached is not None:
+        return cached
+
+    tinted_sheet = sheet.copy()
+    if normalized_ramp:
+        _apply_color_ramp(tinted_sheet, normalized_ramp)
+    elif tint_color:
+        tinted_sheet.fill(
+            _normalize_tint_color(tint_color), special_flags=pygame.BLEND_RGBA_MULT
+        )
+
+    cache_entry = (tinted_sheet, {})
+    overlay_cache[key] = cache_entry
+    return cache_entry
+
+
+def _get_small_tile_overlay_cache(
+    view: Any,
+) -> dict[
+    tuple[int, str, tuple[int, int, int, int] | None, ColorRamp | None],
+    tuple[pygame.Surface, dict[int, pygame.Surface]],
+]:
+    cache = getattr(view, "_small_tile_overlay_cache", None)
+    if cache is None:
+        cache = {}
+        setattr(view, "_small_tile_overlay_cache", cache)
+    return cache
+
+
+def _build_overlay_cache_key(
+    sheet: pygame.Surface,
+    overlay_key: str,
+    tint_color: tuple[int, int, int, int] | None,
+    color_ramp: ColorRamp | None,
+) -> tuple[int, str, tuple[int, int, int, int] | None, ColorRamp | None]:
+    normalized_tint = _normalize_tint_color(tint_color) if tint_color else None
+    return (id(sheet), overlay_key, normalized_tint, color_ramp)
+
+
+def _get_tinted_variant_surface(
+    base_surface: pygame.Surface, tint_color: tuple[int, int, int, int], variant: str
+) -> pygame.Surface:
+    normalized = _normalize_tint_color(tint_color)
+    key = (id(base_surface), normalized, variant)
+    cached = _TILE_VARIANT_CACHE.get(key)
+    if cached is not None:
+        _TILE_VARIANT_CACHE.move_to_end(key)
+        return cached
+
+    tinted = base_surface.copy()
+    tinted.fill(normalized, special_flags=pygame.BLEND_RGBA_MULT)
+    _TILE_VARIANT_CACHE[key] = tinted
+    if len(_TILE_VARIANT_CACHE) > _VARIANT_CACHE_LIMIT:
+        _TILE_VARIANT_CACHE.popitem(last=False)
+
+    return tinted
+
+
+def _normalize_tint_color(color: ColorLike) -> tuple[int, int, int, int]:
+    if len(color) == 4:
+        return color
+    if len(color) == 3:
+        return (color[0], color[1], color[2], 255)
+    raise ValueError("tint_color must have 3 or 4 components")
+
+
+def _normalize_color_ramp(color_ramp: ColorRampInput | None) -> ColorRamp:
+    if not color_ramp:
+        raise ValueError("color_ramp must contain at least one stop")
+
+    normalized: list[ColorStop] = []
+    for stop, color in color_ramp:
+        clamped_stop = max(0, min(255, int(stop)))
+        normalized_color = _normalize_tint_color(color)
+        normalized.append((clamped_stop, normalized_color))
+
+    normalized.sort(key=lambda item: item[0])
+
+    if normalized[0][0] != 0:
+        normalized.insert(0, (0, normalized[0][1]))
+    if normalized[-1][0] != 255:
+        normalized.append((255, normalized[-1][1]))
+
+    return tuple(normalized)
+
+
+def _apply_color_ramp(surface: pygame.Surface, color_ramp: ColorRamp) -> None:
+    width, height = surface.get_size()
+    buffer = bytearray(pygame.image.tostring(surface, "RGBA"))
+
+    for index in range(0, len(buffer), 4):
+        alpha = buffer[index + 3]
+        if alpha == 0:
+            continue
+
+        intensity = buffer[index]
+        color = _sample_color_ramp(intensity, color_ramp)
+        buffer[index] = color[0]
+        buffer[index + 1] = color[1]
+        buffer[index + 2] = color[2]
+        buffer[index + 3] = min(255, (color[3] * alpha) // 255)
+
+    recolored = pygame.image.frombuffer(buffer, (width, height), "RGBA")
+    surface.blit(recolored, (0, 0))
+
+
+def _sample_color_ramp(value: int, color_ramp: ColorRamp) -> tuple[int, int, int, int]:
+    clamped_value = max(0, min(255, value))
+
+    for index in range(1, len(color_ramp)):
+        stop, color = color_ramp[index]
+        prev_stop, prev_color = color_ramp[index - 1]
+        if clamped_value <= stop:
+            span = stop - prev_stop
+            if span == 0:
+                return color
+            weight = clamped_value - prev_stop
+            return tuple(
+                prev_color[channel]
+                + ((color[channel] - prev_color[channel]) * weight) // span
+                for channel in range(4)
+            )
+
+    return color_ramp[-1][1]
+
+
+def get_object_surface(
+    context: AppContext, object_id: int, frame: int = 0, display: XDisplay | None = None
+) -> Any | None:
     """
     Get the surface for a specific object sprite.
 
@@ -599,8 +1138,8 @@ def get_object_surface(context: AppContext,
 
     try:
         if (
-                0 < object_id < len(display.objects)
-                and display.objects[object_id] is not None
+            0 < object_id < len(display.objects)
+            and display.objects[object_id] is not None
         ):
             frames = display.objects[object_id]
             if frames is not None and 0 <= frame < len(frames):

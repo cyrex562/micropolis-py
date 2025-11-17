@@ -6,7 +6,7 @@ Tests the pygame-based interval widget and related interactive components.
 
 import pygame
 from unittest.mock import Mock
-from src.micropolis.interactions import (
+from micropolis.interactions import (
     Interval, Orientation, IntervalState, Tk_IntervalCmd, create_interval_widget
 )
 

@@ -6,14 +6,51 @@ responsible for managing moving objects (cars, disasters, helicopters, etc.)
 in the game world.
 """
 
-from src.micropolis.constants import OBJN, TRA, SHI, WORLD_X, WORLD_Y, GOD, COP, AIR, TOR, EXP, BUS, RAILBASE, LASTRAIL, \
-    RAILVPOWERH, RAILHPOWERV, RIVER, CHANNEL, POWERBASE, BRWH, BRWV, LOMASK, ROADBASE, LASTROAD, HRAILROAD, VRAILROAD, \
-    DIRT, TRA_GROOVE_X, TRA_GROOVE_Y, BUS_GROOVE_X, BUS_GROOVE_Y, BULLBIT, TREEBASE, BURNBIT, ZONEBIT, RZB, SOMETINYEXP, \
-    ANIMBIT, FIRE
-from src.micropolis.context import AppContext
-from src.micropolis.random import Rand, Rand16
-from src.micropolis.sim_sprite import SimSprite
-from src.micropolis.sim_view import SimView
+from micropolis.constants import (
+    OBJN,
+    TRA,
+    SHI,
+    WORLD_X,
+    WORLD_Y,
+    GOD,
+    COP,
+    AIR,
+    TOR,
+    EXP,
+    BUS,
+    RAILBASE,
+    LASTRAIL,
+    RAILVPOWERH,
+    RAILHPOWERV,
+    RIVER,
+    CHANNEL,
+    POWERBASE,
+    BRWH,
+    BRWV,
+    LOMASK,
+    ROADBASE,
+    LASTROAD,
+    HRAILROAD,
+    VRAILROAD,
+    DIRT,
+    TRA_GROOVE_X,
+    TRA_GROOVE_Y,
+    BUS_GROOVE_X,
+    BUS_GROOVE_Y,
+    BULLBIT,
+    TREEBASE,
+    BURNBIT,
+    ZONEBIT,
+    RZB,
+    SOMETINYEXP,
+    ANIMBIT,
+    FIRE,
+)
+from micropolis.context import AppContext
+from micropolis.random import Rand, Rand16
+import micropolis.random as random
+from micropolis.sim_sprite import SimSprite
+from micropolis.sim_view import SimView
 
 
 # ============================================================================
@@ -21,16 +58,13 @@ from src.micropolis.sim_view import SimView
 # ============================================================================
 
 
-
-
-
 # ============================================================================
 # Sprite Lifecycle Management
 # ============================================================================
 
 
-def new_sprite(context: AppContext,
-    name: str, sprite_type: int, x: int = 0, y: int = 0
+def new_sprite(
+    context: AppContext, name: str, sprite_type: int, x: int = 0, y: int = 0
 ) -> SimSprite:
     """
     Create a new sprite.
@@ -43,7 +77,7 @@ def new_sprite(context: AppContext,
 
     Returns:
         New SimSprite instance
-        :param context: 
+        :param context:
     """
     # global FreeSprites
 
@@ -98,8 +132,8 @@ def init_sprite(context: AppContext, sprite: SimSprite, x: int, y: int) -> None:
     sprite.speed = 100
 
     # Set global sprite reference if none exists for this type
-    if global_sprites[sprite.type] is None:
-        global_sprites[sprite.type] = sprite
+    if context.global_sprites[sprite.type] is None:
+        context.global_sprites[sprite.type] = sprite
 
     # Type-specific initialization
     if sprite.type == TRA:  # Train
@@ -305,9 +339,7 @@ def make_sprite(context: AppContext, sprite_type: int, x: int, y: int) -> SimSpr
     return sprite
 
 
-def make_new_sprite(context: AppContext,
-    sprite_type: int, x: int, y: int
-) -> SimSprite:
+def make_new_sprite(context: AppContext, sprite_type: int, x: int, y: int) -> SimSprite:
     """
     Create a new sprite instance (not reusing global).
 
@@ -401,7 +433,7 @@ def do_train_sprite(context: AppContext, sprite: SimSprite) -> None:
     sprite.x += Dx[sprite.dir]
     sprite.y += Dy[sprite.dir]
 
-    if not (cycle & 3):
+    if not (context.cycle & 3):
         dir_choice = Rand16(context) & 3
         for z in range(dir_choice, dir_choice + 4):
             dir2 = z & 3
@@ -409,11 +441,7 @@ def do_train_sprite(context: AppContext, sprite: SimSprite) -> None:
                 if dir2 == ((sprite.dir + 2) & 3):
                     continue
             c = get_char(context, sprite.x + Cx[dir2] + 48, sprite.y + Cy[dir2])
-            if (
-                (RAILBASE <= c <= LASTRAIL)
-                or (c == RAILVPOWERH)
-                or (c == RAILHPOWERV)
-            ):
+            if (RAILBASE <= c <= LASTRAIL) or (c == RAILVPOWERH) or (c == RAILHPOWERV):
                 if (sprite.dir != dir2) and (sprite.dir != 4):
                     if (sprite.dir + dir2) == 3:
                         sprite.frame = 3
@@ -478,10 +506,7 @@ def do_copter_sprite(context: AppContext, sprite: SimSprite) -> None:
     if not sprite.sound_count:  # send report
         x = (sprite.x + 48) >> 5
         y = sprite.y >> 5
-        if (
-                0 <= x < (WORLD_X >> 1)
-                    and 0 <= y < (WORLD_Y >> 1)
-        ):
+        if 0 <= x < (WORLD_X >> 1) and 0 <= y < (WORLD_Y >> 1):
             z = context.trf_density[x][y] >> 6
             if z > 1:
                 z -= 1
@@ -491,7 +516,7 @@ def do_copter_sprite(context: AppContext, sprite: SimSprite) -> None:
             sprite.sound_count = 200
 
     z = sprite.frame
-    if not (cycle & 3):
+    if not (context.cycle & 3):
         d = get_dir(sprite.x, sprite.y, sprite.dest_x, sprite.dest_y)
         z = turn_to(z, d)
         sprite.frame = z
@@ -514,7 +539,7 @@ def do_airplane_sprite(context: AppContext, sprite: SimSprite) -> None:
 
     z = sprite.frame
 
-    if not (cycle % 5):
+    if not (context.cycle % 5):
         if z > 8:  # TakeOff
             z -= 1
             if z < 9:
@@ -567,7 +592,6 @@ def do_ship_sprite(context: AppContext, sprite: SimSprite) -> None:
     BtClrTab = [
         RIVER,
         CHANNEL,
-
         POWERBASE,
         POWERBASE + 1,
         RAILBASE,
@@ -766,9 +790,7 @@ def do_monster_sprite(context: AppContext, sprite: SimSprite) -> None:
     if sprite.count > 0:
         sprite.count -= 1
     c = get_char(context, sprite.x + sprite.x_hot, sprite.y + sprite.y_hot)
-    if (c == -1) or (
-        (c == RIVER) and (sprite.count != 0) and (sprite.control == -1)
-    ):
+    if (c == -1) or ((c == RIVER) and (sprite.count != 0) and (sprite.control == -1)):
         sprite.frame = 0  # kill zilla
 
     # Check collisions with other sprites
@@ -777,10 +799,7 @@ def do_monster_sprite(context: AppContext, sprite: SimSprite) -> None:
         if (
             s.frame != 0
             and (
-                (s.type == AIR)
-                or (s.type == COP)
-                or (s.type == SHI)
-                or (s.type == TRA)
+                (s.type == AIR) or (s.type == COP) or (s.type == SHI) or (s.type == TRA)
             )
             and check_sprite_collision(sprite, s)
         ):
@@ -826,10 +845,7 @@ def do_tornado_sprite(context: AppContext, sprite: SimSprite) -> None:
         if (
             s.frame != 0
             and (
-                (s.type == AIR)
-                or (s.type == COP)
-                or (s.type == SHI)
-                or (s.type == TRA)
+                (s.type == AIR) or (s.type == COP) or (s.type == SHI) or (s.type == TRA)
             )
             and check_sprite_collision(sprite, s)
         ):
@@ -856,7 +872,7 @@ def do_explosion_sprite(context: AppContext, sprite: SimSprite) -> None:
         sprite: Explosion sprite to update
         :param context:
     """
-    if not (cycle & 1):
+    if not (context.cycle & 1):
         if sprite.frame == 1:
             # MakeSound("city", "Explosion-High")
             pass
@@ -915,10 +931,7 @@ def do_bus_sprite(context: AppContext, sprite: SimSprite) -> None:
     else:  # cruise at traffic speed
         tx = (sprite.x + sprite.x_hot) >> 5
         ty = (sprite.y + sprite.y_hot) >> 5
-        if (
-                0 <= tx < (WORLD_X >> 1)
-                    and 0 <= ty < (WORLD_Y >> 1)
-        ):
+        if 0 <= tx < (WORLD_X >> 1) and 0 <= ty < (WORLD_Y >> 1):
             z = context.trf_density[tx][ty] >> 6
             if z > 1:
                 z -= 1
@@ -1039,9 +1052,7 @@ def do_bus_sprite(context: AppContext, sprite: SimSprite) -> None:
             if (
                 sprite != s
                 and s.frame != 0
-                and (
-                    (s.type == BUS) or ((s.type == TRA) and (s.frame != 5))
-                )
+                and ((s.type == BUS) or ((s.type == TRA) and (s.frame != 5)))
                 and check_sprite_collision(sprite, s)
             ):
                 explode_sprite(context, s)
@@ -1146,12 +1157,7 @@ def sprite_not_in_bounds(sprite: SimSprite) -> int:
     x = sprite.x + sprite.x_hot
     y = sprite.y + sprite.y_hot
 
-    if (
-        (x < 0)
-        or (y < 0)
-        or (x >= (WORLD_X << 4))
-        or (y >= (WORLD_Y << 4))
-    ):
+    if (x < 0) or (y < 0) or (x >= (WORLD_X << 4)) or (y >= (WORLD_Y << 4)):
         return 1
     return 0
 
@@ -1225,9 +1231,7 @@ def get_dis(x1: int, y1: int, x2: int, y2: int) -> int:
     return disp_x + disp_y
 
 
-def check_sprite_collision(
-    s1: SimSprite, s2: SimSprite
-) -> int:
+def check_sprite_collision(s1: SimSprite, s2: SimSprite) -> int:
     """
     Check if two sprites are colliding.
 
@@ -1294,9 +1298,7 @@ def test_bounds(x: int, y: int) -> bool:
     Returns:
         True if in bounds, False otherwise
     """
-    return (
-        0 <= x < WORLD_X and 0 <= y < WORLD_Y
-    )
+    return 0 <= x < WORLD_X and 0 <= y < WORLD_Y
 
 
 def tally(tile: int) -> bool:
@@ -1327,7 +1329,11 @@ def generate_train(context: AppContext, x: int, y: int) -> None:
         y: Y coordinate
         :param context:
     """
-    if context.total_pop > 20 and get_sprite(context, TRA) is None and not Rand(context, 25):
+    if (
+        context.total_pop > 20
+        and get_sprite(context, TRA) is None
+        and not Rand(context, 25)
+    ):
         make_sprite(context, TRA, (x << 4) + TRA_GROOVE_X, (y << 4) + TRA_GROOVE_Y)
 
 
@@ -1517,10 +1523,7 @@ def make_explosion(context: AppContext, x: int, y: int) -> None:
         y: Y coordinate
         :param context:
     """
-    if (
-            0 <= x < WORLD_X
-                and 0 <= y < WORLD_Y
-    ):
+    if 0 <= x < WORLD_X and 0 <= y < WORLD_Y:
         make_explosion_at(context, (x << 4) + 8, (y << 4) + 8)
 
 
@@ -1612,9 +1615,7 @@ def destroy(context: AppContext, x: int, y: int) -> None:
         if check_wet(t):
             context.map_data[tile_x][tile_y] = RIVER
         else:
-            context.map_data[tile_x][tile_y] = (
-                (SOMETINYEXP - 3) | BULLBIT | ANIMBIT
-            )
+            context.map_data[tile_x][tile_y] = (SOMETINYEXP - 3) | BULLBIT | ANIMBIT
 
 
 def check_wet(x: int) -> int:
@@ -1651,12 +1652,7 @@ def start_fire(context: AppContext, x: int, y: int) -> None:
     """
     tile_x = x >> 4
     tile_y = y >> 4
-    if (
-        (tile_x >= WORLD_X)
-        or (tile_y >= WORLD_Y)
-        or (tile_x < 0)
-        or (tile_y < 0)
-    ):
+    if (tile_x >= WORLD_X) or (tile_y >= WORLD_Y) or (tile_x < 0) or (tile_y < 0):
         return
     z = context.map_data[tile_x][tile_y]
     t = z & LOMASK
@@ -1689,9 +1685,7 @@ def draw_objects(context: AppContext, view: SimView) -> None:
         sprite = sprite.next
 
 
-def draw_sprite(
-    view: SimView, sprite: SimSprite
-) -> None:
+def draw_sprite(view: SimView, sprite: SimSprite) -> None:
     """
     Draw a single sprite in the view.
 

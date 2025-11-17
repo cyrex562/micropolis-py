@@ -9,12 +9,12 @@ It handles the binary city file format with proper endianness conversion and dat
 import os
 import struct
 
-from src.micropolis.constants import HISTLEN, MISCHISTLEN, WORLD_X, WORLD_Y
-from src.micropolis.context import AppContext
-from src.micropolis.engine import InitFundingLevel, invalidate_errors, invalidate_maps
-from src.micropolis.initialization import InitWillStuff
-from src.micropolis.simulation import do_sim_init
-from src.micropolis.ui_utilities import eval_cmd_str
+from micropolis.constants import HISTLEN, MISCHISTLEN, WORLD_X, WORLD_Y
+from micropolis.context import AppContext
+from micropolis.engine import InitFundingLevel, invalidate_errors, invalidate_maps
+from micropolis.initialization import InitWillStuff
+from micropolis.simulation import do_sim_init
+from micropolis.ui_utilities import eval_cmd_str
 
 
 # ============================================================================

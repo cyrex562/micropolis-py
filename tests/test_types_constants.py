@@ -53,7 +53,7 @@ from micropolis.constants import (
     WORLD_Y,
 )
 import pytest
-from src.micropolis.types import (
+from micropolis.types import (
     # World dimensions
     PWRMAPSIZE,
     POWERMAPLEN,

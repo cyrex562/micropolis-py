@@ -1,9 +1,10 @@
-"""
-pie_menu.py - Pie Menu widget for Micropolis
+"""pie_menu.py - Pie Menu widget for Micropolis
 
 Port of w_piem.c from C/Tk to Python/pygame.
 Implements circular pie menus with configurable slices and TCL command interface.
 """
+
+from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
@@ -11,12 +12,27 @@ from enum import Enum
 
 import pygame
 
-from src.micropolis.constants import TWO_PI, PIE_INACTIVE_RADIUS, PIE_MIN_RADIUS, PIE_EXTRA_RADIUS, PIE_BG_COLOR, \
-    PIE_FG, PIE_ACTIVE_BG_COLOR, PIE_ACTIVE_FG_COLOR, PIE_BORDER_WIDTH, PIE_ACTIVE_BORDER_WIDTH, PIE_POPUP_DELAY, \
-    PIE_SPOKE_INSET
-from src.micropolis.pie_menu_entry import PieMenuEntry
+from micropolis.constants import (
+    TWO_PI,
+    PIE_INACTIVE_RADIUS,
+    PIE_MIN_RADIUS,
+    PIE_EXTRA_RADIUS,
+    PIE_BG_COLOR,
+    PIE_FG,
+    PIE_ACTIVE_BG_COLOR,
+    PIE_ACTIVE_FG_COLOR,
+    PIE_BORDER_WIDTH,
+    PIE_ACTIVE_BORDER_WIDTH,
+    PIE_POPUP_DELAY,
+    PIE_SPOKE_INSET,
+)
 
+from typing import TYPE_CHECKING
 
+# Note: avoid importing PieMenuEntry at module import time to prevent circular
+# imports with pie_menu_entry. Import for type checking only.
+if TYPE_CHECKING:
+    from micropolis.pie_menu_entry import PieMenuEntry
 
 
 def deg_to_rad(deg: float) -> float:
@@ -31,6 +47,7 @@ def rad_to_deg(rad: float) -> float:
 
 class EntryType(Enum):
     """Types of pie menu entries."""
+
     COMMAND = 0
     PIEMENU = 1
 
@@ -97,14 +114,11 @@ class PieMenu:
         if self.title_font is None:
             self.title_font = pygame.font.SysFont("helvetica", 12, bold=True)
 
-    def add_entry(self, entry_type: EntryType, label: str = "", **kwargs) -> PieMenuEntry:
+    def add_entry(
+        self, entry_type: EntryType, label: str = "", **kwargs
+    ) -> PieMenuEntry:
         """Add a new entry to the pie menu."""
-        entry = PieMenuEntry(
-            type=entry_type,
-            piemenu=self,
-            label=label,
-            **kwargs
-        )
+        entry = PieMenuEntry(type=entry_type, piemenu=self, label=label, **kwargs)
         self.entries.append(entry)
         self._recalculate_geometry()
         return entry
@@ -124,8 +138,9 @@ class PieMenu:
         self.last_cursor_dy = rel_y
 
         # Check if within inactive center region
-        if len(self.entries) == 0 or (rel_x * rel_x + rel_y * rel_y <
-                                      self.inactive_radius * self.inactive_radius):
+        if len(self.entries) == 0 or (
+            rel_x * rel_x + rel_y * rel_y < self.inactive_radius * self.inactive_radius
+        ):
             return -1
 
         # Single entry case
@@ -183,8 +198,13 @@ class PieMenu:
 
         return quadrant, numerator, denominator
 
-    def _calc_order(self, cursor_quadrant: int, numerator: int, denominator: int,
-                    entry: PieMenuEntry) -> int:
+    def _calc_order(
+        self,
+        cursor_quadrant: int,
+        numerator: int,
+        denominator: int,
+        entry: PieMenuEntry,
+    ) -> int:
         """Calculate if cursor is clockwise or counter-clockwise of entry edge."""
         quad_diff = (cursor_quadrant - entry.quadrant) & 3
 
@@ -240,7 +260,9 @@ class PieMenu:
             # Calculate edge quadrant and slope
             edge_dx = math.cos(angle - twist)
             edge_dy = math.sin(angle - twist)
-            quadrant, numerator, denominator = self._calc_quadrant_slope(edge_dx, edge_dy)
+            quadrant, numerator, denominator = self._calc_quadrant_slope(
+                edge_dx, edge_dy
+            )
             entry.quadrant = quadrant
             entry.slope = numerator / denominator if denominator != 0 else 0
 
@@ -285,7 +307,9 @@ class PieMenu:
                 break
             radius += 1
 
-    def _entries_overlap(self, entry1: PieMenuEntry, entry2: PieMenuEntry, radius: int) -> bool:
+    def _entries_overlap(
+        self, entry1: PieMenuEntry, entry2: PieMenuEntry, radius: int
+    ) -> bool:
         """Check if two entries overlap at given radius."""
         x1 = entry1.dx * radius + entry1.x_offset
         y1 = entry1.dy * radius + entry1.y_offset
@@ -312,8 +336,12 @@ class PieMenu:
             y2 -= entry2.height / 2
 
         # Check rectangle overlap
-        return not (x1 + entry1.width <= x2 or x2 + entry2.width <= x1 or
-                   y1 + entry1.height <= y2 or y2 + entry2.height <= y1)
+        return not (
+            x1 + entry1.width <= x2
+            or x2 + entry2.width <= x1
+            or y1 + entry1.height <= y2
+            or y2 + entry2.height <= y1
+        )
 
     def _position_labels(self):
         """Position all menu labels at the calculated radius."""
@@ -412,23 +440,31 @@ class PieMenu:
             angle = deg_to_rad(self.initial_angle) - (self.entries[0].subtend / 2.0)
 
             for entry in self.entries:
-                end_x = self.center_x + math.cos(angle) * (self.label_radius - PIE_SPOKE_INSET)
-                end_y = self.center_y - math.sin(angle) * (self.label_radius - PIE_SPOKE_INSET)
-                pygame.draw.line(self.surface, self.fg_color,
-                               center, (end_x, end_y), 1)
+                end_x = self.center_x + math.cos(angle) * (
+                    self.label_radius - PIE_SPOKE_INSET
+                )
+                end_y = self.center_y - math.sin(angle) * (
+                    self.label_radius - PIE_SPOKE_INSET
+                )
+                pygame.draw.line(self.surface, self.fg_color, center, (end_x, end_y), 1)
                 angle += entry.subtend
 
         # Draw entries
         for i, entry in enumerate(self.entries):
             # Draw entry background
             color = self.active_bg_color if i == self.active else self.bg_color
-            pygame.draw.rect(self.surface, color,
-                           (entry.x, entry.y, entry.width, entry.height))
+            pygame.draw.rect(
+                self.surface, color, (entry.x, entry.y, entry.width, entry.height)
+            )
 
             # Draw entry border
             border_color = self.active_fg_color if i == self.active else self.fg_color
-            pygame.draw.rect(self.surface, border_color,
-                           (entry.x, entry.y, entry.width, entry.height), 1)
+            pygame.draw.rect(
+                self.surface,
+                border_color,
+                (entry.x, entry.y, entry.width, entry.height),
+                1,
+            )
 
             # Draw label or bitmap
             if entry.bitmap:
@@ -438,8 +474,12 @@ class PieMenu:
                 self.surface.blit(text_surface, (entry.label_x, entry.label_y))
 
         # Draw outer border
-        pygame.draw.rect(self.surface, self.fg_color,
-                        (0, 0, self.width, self.height), self.border_width)
+        pygame.draw.rect(
+            self.surface,
+            self.fg_color,
+            (0, 0, self.width, self.height),
+            self.border_width,
+        )
 
         # Blit to target surface
         surface.blit(self.surface, (x - self.center_x, y - self.center_y))
@@ -475,12 +515,19 @@ class PieMenu:
 
     def get_distance(self) -> int:
         """Get distance from cursor to menu center."""
-        return int(math.sqrt(self.last_cursor_dx * self.last_cursor_dx + 
-                           self.last_cursor_dy * self.last_cursor_dy) + 0.5)
+        return int(
+            math.sqrt(
+                self.last_cursor_dx * self.last_cursor_dx
+                + self.last_cursor_dy * self.last_cursor_dy
+            )
+            + 0.5
+        )
 
     def get_direction(self) -> int:
         """Get direction from menu center to cursor in degrees."""
-        direction = int(rad_to_deg(math.atan2(self.last_cursor_dy, self.last_cursor_dx)) + 0.5)
+        direction = int(
+            rad_to_deg(math.atan2(self.last_cursor_dy, self.last_cursor_dx)) + 0.5
+        )
         if direction < 0:
             direction += 360
         return direction
@@ -498,8 +545,10 @@ class PieMenuCommand:
         if command == "add":
             if len(args) < 1:
                 raise ValueError("Usage: add <type> ?options?")
-            entry_type = EntryType.COMMAND if args[0] == "command" else EntryType.PIEMENU
-            
+            entry_type = (
+                EntryType.COMMAND if args[0] == "command" else EntryType.PIEMENU
+            )
+
             # Parse options
             label = ""
             command_str = ""
@@ -517,7 +566,7 @@ class PieMenuCommand:
                     i += 2
                 else:
                     i += 1
-            
+
             self.menu.add_entry(entry_type, label=label, command=command_str, name=name)
             return ""
 

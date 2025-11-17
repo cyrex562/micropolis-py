@@ -2,6 +2,7 @@
 ui_utilities.py - UI utility functions for Micropolis Python port
 """
 
+from functools import lru_cache
 import re
 from typing import Any
 
@@ -21,12 +22,6 @@ from .constants import (
     DYMAP,
 )
 from .context import AppContext
-from .evaluation_ui import (
-    set_evaluation_panel_visible,
-    do_score_card,
-    draw_evaluation,
-    update_evaluation,
-)
 from .graphs import set_graph_panel_visible, request_graph_panel_redraw
 from .initialization import InitializeSimulation
 from .sim_view import SimView
@@ -319,6 +314,25 @@ _graph_display_enabled: bool = False
 _evaluation_display_enabled: bool = False
 
 
+@lru_cache(maxsize=1)
+def _get_evaluation_helpers():
+    """Import evaluation helpers lazily to avoid circular imports."""
+
+    from .evaluation_ui import (
+        set_evaluation_panel_visible as _set_evaluation_panel_visible,
+        do_score_card as _do_score_card,
+        draw_evaluation as _draw_evaluation,
+        update_evaluation as _update_evaluation,
+    )
+
+    return (
+        _set_evaluation_panel_visible,
+        _do_score_card,
+        _draw_evaluation,
+        _update_evaluation,
+    )
+
+
 def toggle_pause(context: AppContext) -> None:
     """Toggle between paused and running simulation states.
     :param context:
@@ -417,6 +431,13 @@ def toggle_evaluation_display(context: AppContext) -> None:
     """
     # global _evaluation_display_enabled
     context._evaluation_display_enabled = not context._evaluation_display_enabled
+    (
+        set_evaluation_panel_visible,
+        do_score_card,
+        draw_evaluation,
+        update_evaluation,
+    ) = _get_evaluation_helpers()
+
     set_evaluation_panel_visible(context._evaluation_display_enabled)
 
     if context._evaluation_display_enabled:

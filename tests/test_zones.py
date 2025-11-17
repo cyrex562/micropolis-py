@@ -8,7 +8,7 @@ to ensure outputs match the original C version behavior.
 import unittest.mock
 
 import micropolis.constants
-from src.micropolis.zones import (
+from micropolis.zones import (
     DoZone,
     DoHospChur,
     DoResidential,

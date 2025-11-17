@@ -8,7 +8,7 @@ adapted for pygame graphics instead of X11/TCL-Tk.
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from src.micropolis.context import AppContext
+from micropolis.context import AppContext
 
 # Re-export context-defined view constants so other modules can import them here.
 Editor_Class = AppContext.Editor_Class

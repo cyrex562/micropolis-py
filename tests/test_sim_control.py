@@ -8,13 +8,11 @@ import inspect
 from functools import wraps
 from unittest.mock import Mock, patch
 
-from src.micropolis.app_config import AppConfig
-from src.micropolis.context import AppContext
-from tests.assertions import Assertions
-
-# Add the src directory to the path
-
 from micropolis import sim_control
+from micropolis.app_config import AppConfig
+from micropolis.context import AppContext
+from micropolis.state_contract import LegacyStateContract, LegacyTypes
+from tests.assertions import Assertions
 
 
 # Provide a shared AppContext that mirrors the legacy tests' expectation of a
@@ -54,73 +52,74 @@ class TestSimControl(Assertions):
 
     def setUp(self):
         """Set up test fixtures"""
-        # Reset module state
+        sim_control.types = LegacyTypes()
+        sim_control.state_contract = LegacyStateContract()
         sim_control.initialize_sim_control(context)
 
-        # Mock the types module
-        self.types_patcher = patch("micropolis.sim_control.types")
-        self.mock_types = self.types_patcher.start()
+        self.legacy_types = sim_control.types
+        self.mock_types = self.legacy_types
 
         # Set up common mock values
-        self.mock_types.WORLD_X = 120
-        self.mock_types.WORLD_Y = 100
-        self.mock_types.SimSpeed = 3
-        self.mock_types.sim_delay = 10
-        self.mock_types.sim_skips = 0
-        self.mock_types.sim_skip = 0
-        self.mock_types.heat_steps = 0
-        self.mock_types.heat_flow = 0
-        self.mock_types.heat_rule = 0
-        self.mock_types.TotalFunds = 10000
-        self.mock_types.CityTax = 7
-        self.mock_types.firePercent = 0.5
-        self.mock_types.policePercent = 0.5
-        self.mock_types.roadPercent = 0.5
-        self.mock_types.fireMaxValue = 1000
-        self.mock_types.policeMaxValue = 1000
-        self.mock_types.roadMaxValue = 1000
-        self.mock_types.GameLevel = 1
-        self.mock_types.LVAverage = 50
-        self.mock_types.CrimeAverage = 25
-        self.mock_types.PolluteAverage = 30
-        self.mock_types.CCx = 60
-        self.mock_types.CCy = 50
-        self.mock_types.PolMaxX = 70
-        self.mock_types.PolMaxY = 45
-        self.mock_types.CrimeMaxX = 65
-        self.mock_types.CrimeMaxY = 55
-        self.mock_types.TrafMaxX = 75
-        self.mock_types.TrafMaxY = 40
-        self.mock_types.FloodX = 80
-        self.mock_types.FloodY = 35
-        self.mock_types.CrashX = 85
-        self.mock_types.CrashY = 30
-        self.mock_types.MeltX = 90
-        self.mock_types.MeltY = 25
-        self.mock_types.OverRide = 0
-        self.mock_types.Expensive = 0
-        self.mock_types.Players = 1
-        self.mock_types.Votes = 0
-        self.mock_types.BobHeight = 8
-        self.mock_types.PendingTool = -1
-        self.mock_types.PendingX = 0
-        self.mock_types.PendingY = 0
-        self.mock_types.Displays = "test"
-        self.mock_types.MicropolisVersion = "1.0"
-        self.mock_types.LakeLevel = 2
-        self.mock_types.TreeLevel = 3
-        self.mock_types.CurveLevel = 1
-        self.mock_types.CreateIsland = 0
-        self.mock_types.DoOverlay = 2
-        self.mock_types.DonDither = 0
-        self.mock_types.FlushStyle = 0
-        self.mock_types.tkCollapseMotion = 0
-        self.mock_types.NeedRest = False
-        self.mock_types.Kick = Mock()
-
-    def tearDown(self):
-        """Clean up test fixtures"""
-        self.types_patcher.stop()
+        self.legacy_types.WORLD_X = 120
+        self.legacy_types.WORLD_Y = 100
+        self.legacy_types.SimSpeed = 3
+        self.legacy_types.sim_delay = 10
+        self.legacy_types.sim_skips = 0
+        self.legacy_types.sim_skip = 0
+        self.legacy_types.heat_steps = 0
+        self.legacy_types.heat_flow = 0
+        self.legacy_types.heat_rule = 0
+        self.legacy_types.TotalFunds = 10000
+        self.legacy_types.CityTax = 7
+        self.legacy_types.firePercent = 0.5
+        self.legacy_types.policePercent = 0.5
+        self.legacy_types.roadPercent = 0.5
+        self.legacy_types.fireMaxValue = 1000
+        self.legacy_types.policeMaxValue = 1000
+        self.legacy_types.roadMaxValue = 1000
+        self.legacy_types.GameLevel = 1
+        self.legacy_types.LVAverage = 50
+        self.legacy_types.CrimeAverage = 25
+        self.legacy_types.PolluteAverage = 30
+        self.legacy_types.CCx = 60
+        self.legacy_types.CCy = 50
+        self.legacy_types.PolMaxX = 70
+        self.legacy_types.PolMaxY = 45
+        self.legacy_types.CrimeMaxX = 65
+        self.legacy_types.CrimeMaxY = 55
+        self.legacy_types.TrafMaxX = 75
+        self.legacy_types.TrafMaxY = 40
+        self.legacy_types.FloodX = 80
+        self.legacy_types.FloodY = 35
+        self.legacy_types.CrashX = 85
+        self.legacy_types.CrashY = 30
+        self.legacy_types.MeltX = 90
+        self.legacy_types.MeltY = 25
+        self.legacy_types.OverRide = 0
+        self.legacy_types.Expensive = 0
+        self.legacy_types.Players = 1
+        self.legacy_types.Votes = 0
+        self.legacy_types.BobHeight = 8
+        self.legacy_types.PendingTool = -1
+        self.legacy_types.PendingX = 0
+        self.legacy_types.PendingY = 0
+        self.legacy_types.Displays = "test"
+        self.legacy_types.MicropolisVersion = "1.0"
+        self.legacy_types.LakeLevel = 2
+        self.legacy_types.TreeLevel = 3
+        self.legacy_types.CurveLevel = 1
+        self.legacy_types.CreateIsland = 0
+        self.legacy_types.DoOverlay = 2
+        self.legacy_types.DonDither = 0
+        self.legacy_types.FlushStyle = 0
+        self.legacy_types.tkCollapseMotion = 0
+        self.legacy_types.NeedRest = False
+        self.legacy_types.Kick = Mock()
+        self.mock_types.setCityName = Mock()
+        self.mock_types.UpdateFundEffects = Mock()
+        self.mock_types.SetGameLevelFunds = Mock()
+        self.mock_types.StartBulldozer = Mock()
+        self.mock_types.StopBulldozer = Mock()
 
     def test_sim_speed_control(self):
         """Test simulation speed control"""
@@ -365,6 +364,78 @@ class TestSimControl(Assertions):
         # Test notices
         sim_control.set_do_notices(context, False)
         self.assertFalse(sim_control.get_do_notices(context))
+
+    def test_state_contract_updates_legacy_from_context(self):
+        """Context writes should update the CamelCase legacy namespace."""
+
+        updates = [
+            ("city_name", "CityName", "Contract City", "Contract City"),
+            ("game_level", "GameLevel", 2, 2),
+            ("city_time", "CityTime", 1234, 1234),
+            ("scenario_id", "ScenarioID", 3, 3),
+            ("city_pop", "CityPop", 4321, 4321),
+            ("total_funds", "TotalFunds", 98765, 98765),
+            ("auto_goto", "AutoGoto", False, 0),
+            ("auto_budget", "AutoBudget", False, 0),
+            ("auto_bulldoze", "AutoBulldoze", False, 0),
+            ("no_disasters", "noDisasters", True, 1),
+            ("user_sound_on", "UserSoundOn", False, 0),
+            ("do_animation", "doAnimation", False, 0),
+            ("do_messages", "doMessages", False, 0),
+            ("do_notices", "doNotices", False, 0),
+            ("do_overlay", "DoOverlay", 4, 4),
+            ("road_fund", "BudgetRoadFund", 111, 111),
+            ("fire_fund", "BudgetFireFund", 222, 222),
+            ("police_fund", "BudgetPoliceFund", 333, 333),
+            ("city_tax", "BudgetTaxRate", 9, 9),
+            ("budget_timer", "BudgetTimer", 42, 42),
+            ("budget_timeout", "BudgetTimeout", 84, 84),
+        ]
+
+        for field_name, legacy_name, new_value, expected in updates:
+            with self.subTest(field=field_name, legacy=legacy_name):
+                setattr(context, field_name, new_value)
+                self.assertEqual(
+                    getattr(self.mock_types, legacy_name),
+                    expected,
+                    f"{field_name} should sync to {legacy_name}",
+                )
+
+    def test_state_contract_updates_context_from_legacy(self):
+        """Legacy CamelCase globals should update AppContext fields."""
+
+        updates = [
+            ("CityName", "city_name", "Legacy City", "Legacy City"),
+            ("GameLevel", "game_level", 2, 2),
+            ("CityTime", "city_time", 2048, 2048),
+            ("ScenarioID", "scenario_id", 5, 5),
+            ("CityPop", "city_pop", 11111, 11111),
+            ("TotalFunds", "total_funds", 33333, 33333),
+            ("AutoGoto", "auto_goto", 0, False),
+            ("AutoBudget", "auto_budget", 0, False),
+            ("AutoBulldoze", "auto_bulldoze", 0, False),
+            ("noDisasters", "no_disasters", 1, True),
+            ("UserSoundOn", "user_sound_on", 0, False),
+            ("doAnimation", "do_animation", 0, False),
+            ("doMessages", "do_messages", 0, False),
+            ("doNotices", "do_notices", 0, False),
+            ("DoOverlay", "do_overlay", 9, 9),
+            ("BudgetRoadFund", "road_fund", 444, 444),
+            ("BudgetFireFund", "fire_fund", 555, 555),
+            ("BudgetPoliceFund", "police_fund", 666, 666),
+            ("BudgetTaxRate", "city_tax", 12, 12),
+            ("BudgetTimer", "budget_timer", 64, 64),
+            ("BudgetTimeout", "budget_timeout", 128, 128),
+        ]
+
+        for legacy_name, field_name, new_value, expected in updates:
+            with self.subTest(field=field_name, legacy=legacy_name):
+                setattr(self.mock_types, legacy_name, new_value)
+                self.assertEqual(
+                    getattr(context, field_name),
+                    expected,
+                    f"{legacy_name} should sync to {field_name}",
+                )
 
     def test_bulldozer_control(self):
         """Test bulldozer control"""

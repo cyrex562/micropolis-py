@@ -21,8 +21,8 @@ Adapted from w_print.c for the Python/pygame port.
 
 import pygame
 
-from src.micropolis.constants import TILE_COUNT
-from src.micropolis.context import AppContext
+from micropolis.constants import TILE_COUNT
+from micropolis.context import AppContext
 
 
 # ============================================================================

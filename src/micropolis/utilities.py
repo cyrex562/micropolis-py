@@ -283,7 +283,7 @@ def MakeSprite(*args):
     """
     if len(args) == 0:
         # Lazy import to avoid import-time cycles
-        from src.micropolis.sim_sprite import SimSprite
+        from micropolis.sim_sprite import SimSprite
 
         return SimSprite()
     elif len(args) >= 2:
@@ -307,7 +307,7 @@ def MakeNewSprite(*args):
     """
     if len(args) == 0:
         # Lazy import to avoid import-time cycles
-        from src.micropolis.sim_sprite import SimSprite
+        from micropolis.sim_sprite import SimSprite
 
         return SimSprite()
     elif len(args) >= 2:

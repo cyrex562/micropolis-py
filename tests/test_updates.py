@@ -5,7 +5,7 @@ Tests the UI update management system that handles funds, date, valves, and opti
 """
 
 from unittest.mock import Mock
-from src.micropolis.updates import (
+from micropolis.updates import (
     UIUpdateManager, update_manager,
     DoUpdateHeads, UpdateEditors, UpdateMaps, UpdateGraphs, UpdateEvaluation,
     UpdateHeads, UpdateFunds, ReallyUpdateFunds, doTimeStuff, updateDate,

@@ -10,7 +10,7 @@ import pygame
 import logging
 
 
-from src.micropolis.context import AppContext
+from micropolis.context import AppContext
 
 logger = logging.getLogger()
 

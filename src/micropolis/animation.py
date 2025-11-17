@@ -6,7 +6,7 @@
 #
 # Original C header: headers/animtab.h
 # Ported to maintain compatibility with Micropolis animation system
-from src.micropolis.constants import ani_tile, ani_synch
+from micropolis.constants import ani_tile, ani_synch
 
 
 # ============================================================================

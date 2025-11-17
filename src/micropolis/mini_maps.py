@@ -16,10 +16,10 @@ Key features:
 from collections.abc import Callable
 from typing import Any
 
-from src.micropolis.constants import WORLD_X, WORLD_Y, POWERED, UNPOWERED, \
+from micropolis.constants import WORLD_X, WORLD_Y, POWERED, UNPOWERED, \
     CONDUCTIVE, LOMASK, ZONEBIT, PWRBIT, CONDBIT, TILE_COUNT
-from src.micropolis.context import AppContext
-from src.micropolis.sim_view import SimView
+from micropolis.context import AppContext
+from micropolis.sim_view import SimView
 
 
 # ============================================================================
