@@ -2,11 +2,9 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
+from micropolis.context import AppContext
 from micropolis.sim_sprite import SimSprite
 from micropolis.sim_view import SimView
-
-if TYPE_CHECKING:
-    from micropolis.context import AppContext
 
 
 class Sim(BaseModel):
@@ -23,6 +21,10 @@ class Sim(BaseModel):
     sprites: int = 0
     sprite: SimSprite | None = None
     overlay: list[Any] = Field(default_factory=list[Any])  # Ink overlays
+    context: "AppContext | None" = None
+
+
+SimView.model_rebuild()
 
 
 def MakeNewSim(context: "AppContext") -> Sim:  # noqa: N802 - legacy name
@@ -38,14 +40,17 @@ def MakeNewSim(context: "AppContext") -> Sim:  # noqa: N802 - legacy name
     from micropolis.view_types import MakeNewSimDate, MakeNewSimGraph
 
     sim = Sim()
+    sim.context = context
 
     # Create and initialize editor view
     sim.editor = create_editor_view(context)
     sim.editors = 1
+    sim.editor.sim = sim
 
     # Create and initialize map view
     sim.map = create_map_view(context)
     sim.maps = 1
+    sim.map.sim = sim
 
     # Create graph view
     sim.graph = MakeNewSimGraph()

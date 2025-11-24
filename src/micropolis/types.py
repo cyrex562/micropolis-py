@@ -101,6 +101,7 @@ heat_flow = 0
 heat_rule = 0
 TotalFunds = 20000
 CityTax = 7
+city_tax = CityTax
 firePercent = 0.0
 policePercent = 0.0
 roadPercent = 0.0

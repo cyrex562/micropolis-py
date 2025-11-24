@@ -9,7 +9,8 @@ from unittest.mock import Mock, patch
 from queue import Queue
 
 from src.micropolis import tkinter_bridge
-from src.micropolis import types
+from src.micropolis.sim_view import SimView
+from src.micropolis.sim import Sim
 
 
 class TestTkinterBridge:
@@ -42,7 +43,7 @@ class TestTkinterBridge:
     def test_do_earthquake(self, mock_make_sound):
         """Test earthquake triggering."""
         # Reset global state
-        types.shake_now = 0
+        context.shake_now = 0
 
         tkinter_bridge.do_earthquake(context)
 
@@ -50,18 +51,18 @@ class TestTkinterBridge:
         mock_make_sound.assert_called_once_with("city", "Explosion-Low")
 
         # Check that ShakeNow was set
-        assert types.shake_now == 1
+        assert context.shake_now == 1
 
     def test_stop_earthquake(self):
         """Test earthquake stopping."""
         # Set up earthquake state
-        types.shake_now = 1
+        context.shake_now = 1
         tkinter_bridge.earthquake_timer_set = True
 
         tkinter_bridge.stop_earthquake(context)
 
         # Check that ShakeNow was reset
-        assert types.shake_now == 0
+        assert context.shake_now == 0
         assert not tkinter_bridge.earthquake_timer_set
 
     def test_eval_command_registered(self):
@@ -105,9 +106,11 @@ class TestTkinterBridge:
     @patch("src.micropolis.tkinter_bridge.start_micropolis_timer")
     def test_sim_timer_callback_with_speed(self, mock_start_timer, mock_sim_loop):
         """Test simulation timer callback when speed is set."""
-        types.sim_speed = 1
-        types.need_rest = 0
+        context.sim_speed = 1
+        context.need_rest = 0
 
+        context.sim_speed = 1
+        context.need_rest = 0
         tkinter_bridge._sim_timer_callback(context)
 
         mock_sim_loop.assert_called_once_with(True)
@@ -116,7 +119,7 @@ class TestTkinterBridge:
     @patch("src.micropolis.tkinter_bridge.stop_micropolis_timer")
     def test_sim_timer_callback_no_speed(self, mock_stop_timer):
         """Test simulation timer callback when speed is zero."""
-        types.sim_speed = 0
+        context.sim_speed = 0
 
         tkinter_bridge._sim_timer_callback(context)
 
@@ -126,7 +129,7 @@ class TestTkinterBridge:
         """Test starting the simulation timer."""
         tkinter_bridge.sim_timer_idle = True
 
-        tkinter_bridge.start_micropolis_timer()
+        tkinter_bridge.start_micropolis_timer(context)
 
         assert not tkinter_bridge.sim_timer_idle
 
@@ -144,74 +147,104 @@ class TestTkinterBridge:
         """Test kick function."""
         tkinter_bridge.update_delayed = False
 
-        tkinter_bridge.kick()
+        tkinter_bridge.kick(context)
 
         assert tkinter_bridge.update_delayed
 
-    def test_invalidate_maps(self):
+    def test_invalidate_maps(self, request):
         """Test invalidating map views."""
-        # Create a mock Sim with map views
-        mock_view = Mock()
-        mock_view.next = None
+        # Get the test context from the fixture
+        ctx = request.getfixturevalue("test_context")
 
-        mock_sim = Mock()
-        mock_sim.map = mock_view
+        # Create a real SimView with map views
+        view = SimView()
+        view.next = None
+        view.invalid = False
+        view.skip = 5
+        view.needs_redraw = False
 
-        with patch("src.micropolis.tkinter_bridge.Sim", mock_sim):
-            tkinter_bridge.invalidate_maps()
+        # Create a Sim and attach the view
+        sim_obj = Sim()
+        sim_obj.map = view
+        ctx.sim = sim_obj
 
-        assert mock_view.invalid
-        assert mock_view.skip == 0
+        tkinter_bridge.invalidate_maps(ctx)
 
-    def test_invalidate_editors(self):
+        assert view.invalid is True
+        assert view.skip == 0
+        assert view.needs_redraw is True
+
+    def test_invalidate_editors(self, request):
         """Test invalidating editor views."""
-        # Create a mock Sim with editor views
-        mock_view = Mock()
-        mock_view.next = None
+        # Get the test context from the fixture
+        ctx = request.getfixturevalue("test_context")
 
-        mock_sim = Mock()
-        mock_sim.editor = mock_view
+        # Create a real SimView with editor views
+        view = SimView()
+        view.next = None
+        view.invalid = False
+        view.skip = 5
+        view.needs_redraw = False
 
-        with patch("src.micropolis.tkinter_bridge.Sim", mock_sim):
-            tkinter_bridge.invalidate_editors()
+        # Create a Sim and attach the view
+        sim_obj = Sim()
+        sim_obj.editor = view
+        ctx.sim = sim_obj
 
-        assert mock_view.invalid
-        assert mock_view.skip == 0
+        tkinter_bridge.invalidate_editors(ctx)
 
-    def test_redraw_maps(self):
+        assert view.invalid is True
+        assert view.skip == 0
+        assert view.needs_redraw is True
+
+    def test_redraw_maps(self, request):
         """Test redrawing map views."""
-        # Create a mock Sim with map views
-        mock_view = Mock()
-        mock_view.next = None
+        # Get the test context from the fixture
+        ctx = request.getfixturevalue("test_context")
 
-        mock_sim = Mock()
-        mock_sim.map = mock_view
+        # Create a real SimView with map views
+        view = SimView()
+        view.next = None
+        view.skip = 5
+        view.needs_redraw = False
 
-        with patch("src.micropolis.tkinter_bridge.Sim", mock_sim):
-            tkinter_bridge.redraw_maps()
+        # Create a Sim and attach the view
+        sim_obj = Sim()
+        sim_obj.map = view
+        ctx.sim = sim_obj
 
-        assert mock_view.skip == 0
+        tkinter_bridge.redraw_maps(ctx)
 
-    def test_redraw_editors(self):
+        assert view.skip == 0
+        assert view.needs_redraw is True
+
+    def test_redraw_editors(self, request):
         """Test redrawing editor views."""
-        # Create a mock Sim with editor views
-        mock_view = Mock()
-        mock_view.next = None
+        # Get the test context from the fixture
+        ctx = request.getfixturevalue("test_context")
 
-        mock_sim = Mock()
-        mock_sim.editor = mock_view
+        # Create a real SimView with editor views
+        view = SimView()
+        view.next = None
+        view.skip = 5
+        view.needs_redraw = False
 
-        with patch("src.micropolis.tkinter_bridge.Sim", mock_sim):
-            tkinter_bridge.redraw_editors()
+        # Create a Sim and attach the view
+        sim_obj = Sim()
+        sim_obj.editor = view
+        ctx.sim = sim_obj
 
-        assert mock_view.skip == 0
+        tkinter_bridge.redraw_editors(ctx)
+
+        assert view.skip == 0
+        assert view.needs_redraw is True
 
     def test_start_auto_scroll_tool_mode_zero(self):
         """Test auto-scroll with tool_mode = 0 (should do nothing)."""
         mock_view = Mock()
         mock_view.tool_mode = 0
 
-        tkinter_bridge.start_auto_scroll(mock_view, 100, 100)
+        tkinter_bridge.start_auto_scroll(context, mock_view, 100, 100)
 
         # Should not modify view since tool_mode is 0
         assert mock_view.tool_mode == 0
@@ -224,7 +257,8 @@ class TestTkinterBridge:
         mock_view.w_height = 600
 
         # Cursor at left edge
-        tkinter_bridge.start_auto_scroll(mock_view, 5, 300)
+        context.auto_scroll_edge = 10
+        tkinter_bridge.start_auto_scroll(context, mock_view, 5, 300)
 
         # Should trigger auto-scroll (implementation is simplified)
 
@@ -240,7 +274,7 @@ class TestTkinterBridge:
         """Test starting stdin processing."""
         tkinter_bridge.stdin_thread = None
 
-        tkinter_bridge.start_stdin_processing()
+        tkinter_bridge.start_stdin_processing(context)
 
         mock_thread.assert_called_once()
         assert tkinter_bridge.stdin_thread is not None
@@ -250,14 +284,14 @@ class TestTkinterBridge:
         mock_thread = Mock()
         tkinter_bridge.stdin_thread = mock_thread
 
-        tkinter_bridge.stop_stdin_processing()
+        tkinter_bridge.stop_stdin_processing(context)
 
         mock_thread.join.assert_called_once_with(timeout=1.0)
         assert tkinter_bridge.stdin_thread is None
 
     def test_process_stdin_commands_empty(self):
         """Test processing empty stdin queue."""
-        tkinter_bridge._process_stdin_commands()
+        tkinter_bridge._process_stdin_commands(context)
 
         # Should not raise any exceptions
 
@@ -267,7 +301,7 @@ class TestTkinterBridge:
         tkinter_bridge.register_command(context, "test_cmd", callback_mock)
         tkinter_bridge.stdin_queue.put("test_cmd arg")
 
-        tkinter_bridge._process_stdin_commands()
+        tkinter_bridge._process_stdin_commands(context)
 
         callback_mock.assert_called_once_with("arg")
 
@@ -311,7 +345,7 @@ class TestTkinterBridge:
         """Test actually starting the simulation timer."""
         tkinter_bridge.sim_timer_idle = True
 
-        tkinter_bridge.really_start_micropolis_timer()
+        tkinter_bridge.really_start_micropolis_timer(context)
 
         assert not tkinter_bridge.sim_timer_idle
         assert tkinter_bridge.sim_timer_set
@@ -324,7 +358,7 @@ class TestTkinterBridge:
         with patch(
             "src.micropolis.tkinter_bridge.start_micropolis_timer"
         ) as mock_start:
-            tkinter_bridge.fix_micropolis_timer()
+            tkinter_bridge.fix_micropolis_timer(context)
 
             mock_start.assert_called_once()
 
@@ -333,7 +367,7 @@ class TestTkinterBridge:
         tkinter_bridge.update_delayed = True
 
         with patch("src.micropolis.tkinter_bridge.sim_update") as mock_update:
-            tkinter_bridge._do_delayed_update()
+            tkinter_bridge._do_delayed_update(context)
 
             assert not tkinter_bridge.update_delayed
             mock_update.assert_called_once()

@@ -16,8 +16,18 @@ Key features:
 from collections.abc import Callable
 from typing import Any
 
-from micropolis.constants import WORLD_X, WORLD_Y, POWERED, UNPOWERED, \
-    CONDUCTIVE, LOMASK, ZONEBIT, PWRBIT, CONDBIT, TILE_COUNT
+from micropolis.constants import (
+    WORLD_X,
+    WORLD_Y,
+    POWERED,
+    UNPOWERED,
+    CONDUCTIVE,
+    LOMASK,
+    ZONEBIT,
+    PWRBIT,
+    CONDBIT,
+    TILE_COUNT,
+)
 from micropolis.context import AppContext
 from micropolis.sim_view import SimView
 
@@ -25,6 +35,21 @@ from micropolis.sim_view import SimView
 # ============================================================================
 # Small Map Rendering Functions
 # ============================================================================
+
+
+def _get_view_attr(view: Any, name: str, default: Any | None = None) -> Any:
+    return getattr(view, name, default)
+
+
+def _normalize_index(value: Any) -> int:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, AppContext):
+        return 0
+    try:
+        return int(value)
+    except Exception:
+        return 0
 
 
 def drawAll(context: AppContext, view: SimView) -> None:
@@ -78,7 +103,7 @@ def drawCom(context: AppContext, view: SimView) -> None:
     _draw_filtered_map(context, view, filter_func)
 
 
-def drawInd(context: AppContext,view: SimView) -> None:
+def drawInd(context: AppContext, view: SimView) -> None:
     """
     Draw only industrial zones in the small overview map.
 
@@ -134,24 +159,26 @@ def drawPower(context: AppContext, view: SimView) -> None:
     """
 
     # Get pixel values for current color mode
-    if view.x and view.x.color:
-        powered = view.pixels[POWERED] if view.pixels else 0
-        unpowered = view.pixels[UNPOWERED] if view.pixels else 0
-        conductive = view.pixels[CONDUCTIVE] if view.pixels else 0
+    view_x = _get_view_attr(view, "x", None)
+    pixels = _get_view_attr(view, "pixels", None)
+    if view_x and getattr(view_x, "color", None) and pixels:
+        powered = pixels[POWERED] if pixels else 0
+        unpowered = pixels[UNPOWERED] if pixels else 0
+        conductive = pixels[CONDUCTIVE] if pixels else 0
     else:
         powered = 255
         unpowered = 0
         conductive = 127
 
-    line_bytes = view.line_bytes8
-    pixel_bytes = view.pixel_bytes
+    line_bytes = _get_view_attr(view, "line_bytes8", 0)
+    pixel_bytes = _get_view_attr(view, "pixel_bytes", 0)
 
     # Get image buffer
-    image_base = view.x.color if view.x else False
+    image_base = view_x.color if view_x and getattr(view_x, "color", None) else False
     if image_base:
-        image_base = view.data  # type: ignore
+        image_base = _get_view_attr(view, "data", None)  # type: ignore
     else:
-        image_base = view.data8  # type: ignore
+        image_base = _get_view_attr(view, "data8", None)  # type: ignore
 
     # Process each tile
     for col in range(WORLD_X):
@@ -229,7 +256,8 @@ def drawDynamic(context: AppContext, view: SimView) -> None:
 # ============================================================================
 
 
-def _draw_filtered_map(context: AppContext,
+def _draw_filtered_map(
+    context: AppContext,
     view: SimView,
     filter_func: Callable[[int, int, int], int] | None = None,
 ) -> None:
@@ -241,15 +269,16 @@ def _draw_filtered_map(context: AppContext,
         filter_func: Optional filter function that takes (col, row, tile) and returns filtered tile
         :param context:
     """
-    line_bytes = view.line_bytes8
-    pixel_bytes = view.pixel_bytes
+    line_bytes = _get_view_attr(view, "line_bytes8", 0)
+    pixel_bytes = _get_view_attr(view, "pixel_bytes", 0)
 
     # Get image buffer
-    image_base = view.x.color if view.x else False
+    view_x = _get_view_attr(view, "x", None)
+    image_base = view_x.color if view_x and getattr(view_x, "color", None) else False
     if image_base:
-        image_base = view.data  # type: ignore
+        image_base = _get_view_attr(view, "data", None)  # type: ignore
     else:
-        image_base = view.data8  # type: ignore
+        image_base = _get_view_attr(view, "data8", None)  # type: ignore
 
     # Process each tile
     for col in range(WORLD_X):
@@ -358,86 +387,71 @@ def dynamicFilter(context: AppContext, col: int, row: int) -> int:
         1 if tile should be shown, 0 if filtered out
         :param context:
     """
-    r = row >> 1
-    c = col >> 1
+    r = _normalize_index(row) >> 1
+    c = _normalize_index(col) >> 1
+    dynamic_data = context.dynamic_data
+    pop_density = context.pop_density
+    rate_og_mem = context.rate_og_mem
+    trf_density = context.trf_density
+    pollution_mem = context.pollution_mem
+    crime_mem = context.crime_mem
+    land_value_mem = context.land_value_mem
+    police_map_effect = context.police_map_effect
+    fire_rate = context.fire_rate
 
-    # Population density filter
     if not (
-        (context.dynamic_data[0] > context.dynamic_data[1])
+        (dynamic_data[0] > dynamic_data[1])
+        or ((x := pop_density[c][r]) >= dynamic_data[0] and x <= dynamic_data[1])
+    ):
+        return 0
+
+    if not (
+        (dynamic_data[2] > dynamic_data[3])
         or (
-            (x := context.pop_density[c][r]) >= context.dynamic_data[0]
-            and x <= context.dynamic_data[1]
+            (x := rate_og_mem[c >> 2][r >> 2]) >= ((2 * dynamic_data[2]) - 256)
+            and x <= ((2 * dynamic_data[3]) - 256)
         )
     ):
         return 0
 
-    # Rate of growth filter
     if not (
-        (context.dynamic_data[2] > context.dynamic_data[3])
+        (dynamic_data[4] > dynamic_data[5])
+        or ((x := trf_density[c][r]) >= dynamic_data[4] and x <= dynamic_data[5])
+    ):
+        return 0
+
+    if not (
+        (dynamic_data[6] > dynamic_data[7])
+        or ((x := pollution_mem[c][r]) >= dynamic_data[6] and x <= dynamic_data[7])
+    ):
+        return 0
+
+    if not (
+        (dynamic_data[8] > dynamic_data[9])
+        or ((x := crime_mem[c][r]) >= dynamic_data[8] and x <= dynamic_data[9])
+    ):
+        return 0
+
+    if not (
+        (dynamic_data[10] > dynamic_data[11])
+        or ((x := land_value_mem[c][r]) >= dynamic_data[10] and x <= dynamic_data[11])
+    ):
+        return 0
+
+    if not (
+        (dynamic_data[12] > dynamic_data[13])
         or (
-            (x := context.rate_og_mem[c >> 2][r >> 2])
-            >= ((2 * context.dynamic_data[2]) - 256)
-            and x <= ((2 * context.dynamic_data[3]) - 256)
+            (x := police_map_effect[c >> 2][r >> 2]) >= dynamic_data[12]
+            and x <= dynamic_data[13]
         )
     ):
         return 0
 
-    # Traffic density filter
     if not (
-        (context.dynamic_data[4] > context.dynamic_data[5])
+        (dynamic_data[14] > dynamic_data[15])
         or (
-            (x := context.trf_density[c][r]) >= context.dynamic_data[4]
-            and x <= context.dynamic_data[5]
-        )
-    ):
-        return 0
-
-    # Pollution filter
-    if not (
-        (context.dynamic_data[6] > context.dynamic_data[7])
-        or (
-            (x := context.pollution_mem[c][r]) >= context.dynamic_data[6]
-            and x <= context.dynamic_data[7]
-        )
-    ):
-        return 0
-
-    # Crime filter
-    if not (
-        (context.dynamic_data[8] > context.dynamic_data[9])
-        or (
-            (x := context.crime_mem[c][r]) >= context.dynamic_data[8]
-            and x <= context.dynamic_data[9]
-        )
-    ):
-        return 0
-
-    # Land value filter
-    if not (
-        (context.dynamic_data[10] > context.dynamic_data[11])
-        or (
-            (x := context.land_value_mem[c][r]) >= context.dynamic_data[10]
-            and x <= context.dynamic_data[11]
-        )
-    ):
-        return 0
-
-    # Police effect filter
-    if not (
-        (context.dynamic_data[12] > context.dynamic_data[13])
-        or (
-            (x := context.police_map_effect[c >> 2][r >> 2]) >= context.dynamic_data[12]
-            and x <= context.dynamic_data[13]
-        )
-    ):
-        return 0
-
-    # Fire rate filter
-    if not (
-        (context.dynamic_data[14] > context.dynamic_data[15])
-        or (
-            (x := context.fire_rate[c >> 2][r >> 2]) >= context.dynamic_data[14]
-            and x <= context.dynamic_data[15]
+            (x := fire_rate[c >> 2][r >> 2]) >= dynamic_data[14]
+            and x <= dynamic_data[15]
         )
     ):
         return 0

@@ -3,6 +3,7 @@ import time
 from collections.abc import Callable
 from queue import Queue
 
+from . import constants as _constants
 from .constants import (
     HWLDX,
     HWLDY,
@@ -65,6 +66,7 @@ from .constants import (
     airportState,
     networkState,
 )
+from .legacy_state import LEGACY_ATTRIBUTE_ALIASES, LEGACY_MIRROR_ATTRS
 
 
 class AppContext(BaseModel):
@@ -84,27 +86,77 @@ class AppContext(BaseModel):
     _evaluation_panel_size: tuple[int, int] = PrivateAttr(default=(320, 200))
     _evaluation_panel_surface: Any | None = PrivateAttr(default=None)
 
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        object.__setattr__(self, "_state_contract", None)
+        object.__setattr__(self, "_suspend_state_contract", False)
+        object.__setattr__(self, "_tick_base", time.perf_counter())
+        try:
+            from . import types as _legacy_types
+        except Exception:
+            _legacy_types = None
+        if _legacy_types is not None:
+            for attr in LEGACY_MIRROR_ATTRS:
+                try:
+                    value = getattr(self, attr, None)
+                except Exception:
+                    continue
+                try:
+                    if value is not None:
+                        setattr(_legacy_types, attr, value)
+                        for alias in LEGACY_ATTRIBUTE_ALIASES.get(attr, ()):
+                            setattr(_legacy_types, alias, value)
+                except Exception:
+                    continue
+
     def attach_state_contract(self, contract: "LegacyStateContract | None") -> None:
-        self._state_contract = contract
+        object.__setattr__(self, "_state_contract", contract)
 
     def detach_state_contract(self) -> None:
-        self._state_contract = None
+        object.__setattr__(self, "_state_contract", None)
 
     def _suspend_contract_notifications(self) -> None:
-        self._suspend_state_contract = True
+        object.__setattr__(self, "_suspend_state_contract", True)
 
     def _resume_contract_notifications(self) -> None:
-        self._suspend_state_contract = False
+        object.__setattr__(self, "_suspend_state_contract", False)
 
     def __setattr__(self, name: str, value: Any) -> None:  # type: ignore[override]
         super().__setattr__(name, value)
-        if (
-            name.startswith("_")
-            or self._state_contract is None
-            or self._suspend_state_contract
-        ):
+        if name.startswith("_"):
             return
-        self._state_contract.on_context_update(self, name, value)
+
+        try:
+            state_contract = object.__getattribute__(self, "_state_contract")
+            suspend = object.__getattribute__(self, "_suspend_state_contract")
+        except AttributeError:
+            state_contract = None
+            suspend = False
+        else:
+            if state_contract is not None and not suspend:
+                state_contract.on_context_update(self, name, value)
+
+        if name in LEGACY_MIRROR_ATTRS:
+            try:
+                from . import types as _legacy_types
+
+                setattr(_legacy_types, name, value)
+                for alias in LEGACY_ATTRIBUTE_ALIASES.get(name, ()):
+                    setattr(_legacy_types, alias, value)
+            except Exception:
+                pass
+
+    def __getattr__(self, name: str) -> Any:
+        """Expose constant values as legacy attributes when needed."""
+        if name.startswith("_"):
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {name!r}"
+            )
+        if hasattr(_constants, name):
+            return getattr(_constants, name)
+        raise AttributeError(
+            f"{type(self).__name__!r} object has no attribute {name!r}"
+        )
 
     last_now_time: float = Field(default_factory=time.time)
     config: AppConfig
@@ -126,6 +178,7 @@ class AppContext(BaseModel):
     )  # DynamicFilter - apply filtering to overlays
     city_tax: int = Field(default=7)  # CityTax
     city_time: int = Field(default=50)  # CityTime
+    total_pop: int = Field(default=0)  # TotalPop
     no_disasters: bool = Field(default=False)  # NoDisasters
     punish_cnt: int = Field(default=0)  # PunishCnt
     last_keys: str = Field(default="    ")  # Legacy keyboard last-keys buffer
@@ -435,7 +488,7 @@ class AppContext(BaseModel):
     sim_tty: int = Field(default=0)
     update_delayed: int = Field(default=0)
 
-    dynamic_data: list[int] = Field(default_factory=list)
+    dynamic_data: list[int] = Field(default_factory=lambda: [0] * 32)
 
     players: int = Field(default=0)
     votes: int = Field(default=0)
@@ -813,7 +866,7 @@ class AppContext(BaseModel):
     print_output: str | None = None
     print_file: str | None = None
     # Static variable from rand.c
-    next: int = 1
+    next: int = 0
     # Global state variables
     fptr_idx: int = SEP_3 + 1  # Front pointer index
     rptr_idx: int = 1  # Rear pointer index
@@ -888,7 +941,7 @@ class AppContext(BaseModel):
 
     # Timing variables
     # start_time: float | None = None
-    _tick_base: float = time.perf_counter()
+    _tick_base: float = PrivateAttr(default=0.0)
 
     # Simulation control variables
     # sim_skips: int = 0
@@ -960,4 +1013,4 @@ class AppContext(BaseModel):
 # ``micropolis.context.next``. Keeping a module-level variable avoids
 # AttributeError when older call-sites pass the module rather than an
 # AppContext instance.
-next = 1
+next = 0

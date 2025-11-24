@@ -14,20 +14,66 @@ from __future__ import annotations
 import os
 import sys
 import time
-from typing import TYPE_CHECKING
+from types import ModuleType
 
+from . import compat_shims
+from . import types as legacy_types
+from .asset_manager import get_asset_path
 from .context import AppContext
 from .ui_utilities import eval_cmd_str
-from .asset_manager import get_asset_path
-from . import compat_shims
-from . import types
 
-if TYPE_CHECKING:
-    from .simulation import rand  # pragma: no cover - typing only
+types = legacy_types
 
+
+def _active_types_object():
+    return getattr(sys.modules.get(__name__), "types", legacy_types)
 
 # Module-level legacy message strings kept for backwards compatibility
 MESSAGE_STRINGS: list[str] = []
+
+_LEGACY_ATTRIBUTE_MAPPING: tuple[tuple[str, str], ...] = (
+    ("message_port", "message_port"),
+    ("mes_x", "mes_x"),
+    ("mes_y", "mes_y"),
+    ("mes_num", "mes_num"),
+    ("last_mes_time", "last_mes_time"),
+    ("last_pic_num", "last_pic_num"),
+    ("last_city_pop", "last_city_pop"),
+    ("last_category", "last_category"),
+    ("last_message", "last_message"),
+    ("LastMessage", "last_message"),
+    ("have_last_message", "have_last_message"),
+    ("HaveLastMessage", "have_last_message"),
+    ("sound", "sound"),
+    ("Sound", "sound"),
+    ("auto_go", "auto_go"),
+    ("AutoGo", "auto_go"),
+    ("res_pop", "res_pop"),
+    ("com_pop", "com_pop"),
+    ("ind_pop", "ind_pop"),
+    ("city_time", "city_time"),
+    ("city_class", "city_class"),
+    ("score_type", "score_type"),
+    ("score_wait", "score_wait"),
+    ("traffic_average", "traffic_average"),
+    ("city_score", "city_score"),
+    ("crime_average", "crime_average"),
+)
+
+_CONTEXT_TO_LEGACY_ATTRS: dict[str, tuple[str, ...]] = {
+    "message_port": ("message_port",),
+    "mes_x": ("mes_x",),
+    "mes_y": ("mes_y",),
+    "mes_num": ("mes_num",),
+    "last_mes_time": ("last_mes_time",),
+    "last_pic_num": ("last_pic_num",),
+    "last_city_pop": ("last_city_pop",),
+    "last_category": ("last_category",),
+    "last_message": ("last_message", "LastMessage"),
+    "have_last_message": ("have_last_message", "HaveLastMessage"),
+    "sound": ("sound", "Sound"),
+    "auto_go": ("auto_go", "AutoGo"),
+}
 
 
 def load_message_strings(context: AppContext) -> None:
@@ -39,7 +85,7 @@ def load_message_strings(context: AppContext) -> None:
     try:
         manifest_path = get_asset_path("stri.301", category="raw")
         if manifest_path is not None and manifest_path.exists():
-            with open(manifest_path, "r", encoding="utf-8") as f:
+            with open(manifest_path, encoding="utf-8") as f:
                 context.MESSAGE_STRINGS = [line.rstrip("\n") for line in f.readlines()]
             globals()["MESSAGE_STRINGS"] = context.MESSAGE_STRINGS
             return
@@ -51,7 +97,7 @@ def load_message_strings(context: AppContext) -> None:
         os.path.dirname(__file__), "..", "..", "assets", "stri.301"
     )
     try:
-        with open(stri_file, "r", encoding="utf-8") as f:
+        with open(stri_file, encoding="utf-8") as f:
             context.MESSAGE_STRINGS = [line.rstrip("\n") for line in f.readlines()]
         globals()["MESSAGE_STRINGS"] = context.MESSAGE_STRINGS
     except Exception:
@@ -83,73 +129,40 @@ def make_sound(context: AppContext, channel: str, sound_name: str) -> None:
 
 
 def _mirror_message_state_to_types(context: AppContext) -> None:
-    """Mirror selected message fields from AppContext into module `types`.
-
-    Conservative - silently ignores exceptions.
-    """
-    try:
-        attrs = (
-            "message_port",
-            "mes_x",
-            "mes_y",
-            "mes_num",
-            "last_mes_time",
-            "last_city_pop",
-            "last_category",
-            "last_pic_num",
-            "last_message",
-            "have_last_message",
-        )
-        for a in attrs:
+    """Copy relevant AppContext values into the legacy `types` module."""
+    current_types = _active_types_object()
+    for context_attr, legacy_attr_names in _CONTEXT_TO_LEGACY_ATTRS.items():
+        value = getattr(context, context_attr, None)
+        for legacy_name in legacy_attr_names:
             try:
-                setattr(types, a, getattr(context, a))
+                setattr(current_types, legacy_name, value)
             except Exception:
-                # Some patched `types` objects (e.g., MagicMock) may not
-                # accept attribute assignments; ignore those cases.
-                pass
-    except Exception:
-        pass
+                continue
 
 
 def _mirror_types_into_context(context: AppContext) -> None:
-    """Mirror a conservative set of legacy `types` fields into context.
+    """Copy legacy `types` values into the AppContext (only for the real module)."""
+    if not isinstance(legacy_types, ModuleType):
+        return
+    legacy_namespace = getattr(legacy_types, "__dict__", {})
+    for legacy_attr, context_attr in _LEGACY_ATTRIBUTE_MAPPING:
+        if legacy_attr not in legacy_namespace:
+            continue
+        try:
+            setattr(context, context_attr, legacy_namespace[legacy_attr])
+        except Exception:
+            continue
 
-    This allows tests that set module-level globals on `types` to affect
-    the AppContext-based functions during the incremental migration.
-    """
-    try:
-        attrs = (
-            "message_port",
-            "mes_x",
-            "mes_y",
-            "mes_num",
-            "last_mes_time",
-            "last_city_pop",
-            "last_category",
-            "last_pic_num",
-            "last_message",
-            "have_last_message",
-            # city/population fields used by some message logic
-            "res_pop",
-            "com_pop",
-            "ind_pop",
-            "city_time",
-            "city_class",
-            "score_type",
-            "score_wait",
-            "city_score",
-            "traffic_average",
-            "pollute_average",
-            "crime_average",
-        )
-        for a in attrs:
-            if hasattr(types, a):
-                try:
-                    setattr(context, a, getattr(types, a))
-                except Exception:
-                    pass
-    except Exception:
-        pass
+
+def _run_ui_command(context: AppContext, command: str) -> None:
+    """Execute a UI command and mirror to legacy `types.Eval` when available."""
+    eval_cmd_str(context, command)
+    eval_fn = getattr(_active_types_object(), "Eval", None)
+    if callable(eval_fn):
+        try:
+            eval_fn(command)
+        except Exception:
+            pass
 
 
 def clear_mes(context: AppContext) -> None:
@@ -337,13 +350,7 @@ def do_message(context: AppContext) -> None:
 def do_auto_goto(context: AppContext, x: int, y: int, msg: str) -> None:
     set_message_field(context, msg)
     cmd = f"UIAutoGoto {x} {y}"
-    try:
-        if hasattr(types, "Eval"):
-            types.Eval(cmd)
-        else:
-            eval_cmd_str(context, cmd)
-    except Exception:
-        eval_cmd_str(context, cmd)
+    _run_ui_command(context, cmd)
 
 
 def set_message_field(context: AppContext, msg: str) -> None:
@@ -354,51 +361,21 @@ def set_message_field(context: AppContext, msg: str) -> None:
         context.last_message = msg
         context.have_last_message = True
         cmd = f"UISetMessage {{{msg}}}"
-        try:
-            if hasattr(types, "Eval"):
-                try:
-                    types.LastMessage = msg
-                    types.HaveLastMessage = 1
-                except Exception:
-                    pass
-                types.Eval(cmd)
-            else:
-                eval_cmd_str(context, cmd)
-        except Exception:
-            eval_cmd_str(context, cmd)
-
+        _run_ui_command(context, cmd)
         _mirror_message_state_to_types(context)
 
 
 def do_show_picture(context: AppContext, pict_id: int) -> None:
     cmd = f"UIShowPicture {pict_id}"
-    try:
-        if hasattr(types, "Eval"):
-            types.Eval(cmd)
-        else:
-            eval_cmd_str(context, cmd)
-    except Exception:
-        eval_cmd_str(context, cmd)
+    _run_ui_command(context, cmd)
 
 
 def do_lose_game(context: AppContext) -> None:
-    try:
-        if hasattr(types, "Eval"):
-            types.Eval("UILoseGame")
-        else:
-            eval_cmd_str(context, "UILoseGame")
-    except Exception:
-        eval_cmd_str(context, "UILoseGame")
+    _run_ui_command(context, "UILoseGame")
 
 
 def do_win_game(context: AppContext) -> None:
-    try:
-        if hasattr(types, "Eval"):
-            types.Eval("UIWinGame")
-        else:
-            eval_cmd_str(context, "UIWinGame")
-    except Exception:
-        eval_cmd_str(context, "UIWinGame")
+    _run_ui_command(context, "UIWinGame")
 
 
 def monster_speed(context: AppContext) -> int:
@@ -422,6 +399,7 @@ try:
             "do_message",
             "do_show_picture",
             "clear_mes",
+            "monster_speed",
         ],
     )
 except Exception:

@@ -341,8 +341,10 @@ class EditorOptionsPanel(UIPanel):
         """Load current values from context into widgets."""
         # AutoGoto
         if self._auto_goto_checkbox:
-            auto_goto = get_auto_goto(self.context)
-            self._auto_goto_checkbox.set_toggled(auto_goto, fire=False)
+            auto_goto = getattr(self.context, "auto_goto", None)
+            if auto_goto is None:
+                auto_goto = get_auto_goto(self.context)
+            self._auto_goto_checkbox.set_toggled(bool(auto_goto), fire=False)
 
         # Chalk Overlay
         if self._chalk_overlay_checkbox:
@@ -356,7 +358,9 @@ class EditorOptionsPanel(UIPanel):
 
         # Skip Frequency
         if self._skip_frequency_slider:
-            skip_value = get_sim_skips(self.context)
+            skip_value = getattr(self.context, "sim_skips", None)
+            if skip_value is None:
+                skip_value = get_sim_skips(self.context)
             self._skip_frequency_slider.set_value(float(skip_value), fire=False)
 
             if self._skip_value_label:

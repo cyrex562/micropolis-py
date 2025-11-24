@@ -179,25 +179,27 @@ def drawAll(context: AppContext, view: Any) -> None:
     # For pygame implementation, we'll render tiles directly
     # This is a simplified version - full implementation would need tile graphics
     if hasattr(view, "surface") and view.surface:
-        # Clear surface with black
-        view.surface.fill((0, 0, 0))
+        surface = view.surface
+        surface.fill((50, 92, 50))
 
-        # Draw a simple representation - in full implementation this would
-        # render actual tile graphics from view.smalltiles
-        for x in range(min(WORLD_X, view.m_width // 3)):
-            for y in range(min(WORLD_Y, view.m_height // 3)):
+        max_x = min(WORLD_X, view.m_width // 3)
+        max_y = min(WORLD_Y, view.m_height // 3)
+        for x in range(max_x):
+            for y in range(max_y):
                 tile = context.map_data[x][y] & LOMASK
-                if tile > 0:
-                    # Simple tile representation - color based on tile type
-                    color = (100, 100, 100)  # Default gray
-                    if RESBASE <= tile < COMBASE:
-                        color = (0, 255, 0)  # Residential - green
-                    elif COMBASE <= tile < INDBASE:
-                        color = (0, 0, 255)  # Commercial - blue
-                    elif tile >= INDBASE:
-                        color = (255, 255, 0)  # Industrial - yellow
+                if tile <= 0:
+                    # Default terrain checkerboard to visualize empty land
+                    color = (70, 110, 70) if (x + y) % 2 == 0 else (60, 100, 60)
+                elif RESBASE <= tile < COMBASE:
+                    color = (30, 200, 30)  # Residential - green
+                elif COMBASE <= tile < INDBASE:
+                    color = (40, 80, 200)  # Commercial - blue
+                elif tile >= INDBASE:
+                    color = (230, 190, 50)  # Industrial - yellow
+                else:
+                    color = (110, 110, 110)
 
-                    pygame.draw.rect(view.surface, color, (x * 3, y * 3, 3, 3))
+                pygame.draw.rect(surface, color, (x * 3, y * 3, 3, 3))
 
 
 def drawRes(context: AppContext, view: Any) -> None:

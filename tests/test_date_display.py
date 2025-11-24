@@ -103,8 +103,8 @@ class TestDateUpdate:
         """Setup for each test"""
         self.display = date_display.create_date_display()
         # Reset CityTime for consistent testing
-        types.city_time = 0
-        types.starting_year = 1900
+        context.city_time = 0
+        context.starting_year = 1900
 
     def teardown_method(self):
         """Cleanup after each test"""
@@ -125,7 +125,7 @@ class TestDateUpdate:
         self.display.last_year = 1900
 
         # Advance CityTime by 4 ticks (1 month)
-        types.city_time = 4
+        context.city_time = 4
 
         self.display.update_date()
         assert self.display.month == 1  # February
@@ -138,7 +138,7 @@ class TestDateUpdate:
         self.display.last_year = 1900
 
         # Advance CityTime by 48 ticks (1 year)
-        types.city_time = 48
+        context.city_time = 48
 
         self.display.update_date()
         assert self.display.month == 0  # January
@@ -153,7 +153,7 @@ class TestDateUpdate:
         self.display.year = 1900
 
         # Advance CityTime by only 1 tick (not enough for month change)
-        types.city_time = 1
+        context.city_time = 1
 
         self.display.update_date()
         # Should not change
@@ -329,8 +329,8 @@ class TestUtilityFunctions:
 
     def setup_method(self):
         """Setup for each test"""
-        types.city_time = 0
-        types.starting_year = 1900
+        context.city_time = 0
+        context.starting_year = 1900
 
     def test_get_current_month_name(self):
         """Test getting current month name"""
@@ -338,7 +338,7 @@ class TestUtilityFunctions:
         assert month_name == "Jan"
 
         # Advance to June (5 months * 4 ticks = 20 ticks)
-        types.city_time = 20
+        context.city_time = 20
         month_name = date_display.get_current_month_name(context)
         assert month_name == "Jun"
 
@@ -348,7 +348,7 @@ class TestUtilityFunctions:
         assert year == 1900
 
         # Advance by 1 year (48 ticks)
-        types.city_time = 48
+        context.city_time = 48
         year = date_display.get_current_year(context)
         assert year == 1901
 
@@ -358,7 +358,7 @@ class TestUtilityFunctions:
         assert date_str == "Jan 1900"
 
         # Advance to June 1901
-        types.city_time = 48 + 20  # 1 year + 5 months
+        context.city_time = 48 + 20  # 1 year + 5 months
         date_str = date_display.format_date_string(context)
         assert date_str == "Jun 1901"
 

@@ -9,7 +9,6 @@ in a pygame-compatible format.
 import pygame
 
 from micropolis import sim_control
-from micropolis import types as types
 from micropolis import evaluation as evaluation
 from micropolis.context import AppContext
 
@@ -57,12 +56,6 @@ def current_year(context: AppContext | None) -> int:
     Ported from CurrentYear() in w_util.c.
     Returns the current year based on CityTime.
     """
-    # Prefer legacy types.CityTime/StartingYear when tests patch them
-    city_time = getattr(types, "CityTime", None)
-    starting_year = getattr(types, "StartingYear", None)
-    if city_time is not None and starting_year is not None:
-        return (city_time // 48) + starting_year
-
     if context is None:
         return 0
 
@@ -131,7 +124,7 @@ def do_score_card(context: AppContext | None) -> None:
     and fall back to values on the provided AppContext.
     """
     # Title: if context provided use current_year(context), else best-effort
-    title = f"City Evaluation  {current_year(context) if context is not None else getattr(types, 'StartingYear', 0)}"
+    title = f"City Evaluation  {current_year(context)}"
 
     # Percentages and scores: prefer legacy evaluation module attributes
     goodyes = f"{getattr(evaluation, 'CityYes', getattr(context, 'city_yes', 0))}%"
@@ -185,7 +178,7 @@ def do_score_card(context: AppContext | None) -> None:
 
     # City class and level
     city_class = getattr(evaluation, "CityClass", getattr(context, "city_class", 0))
-    game_level = getattr(types, "GameLevel", getattr(context, "game_level", 0))
+    game_level = getattr(context, "game_level", 0) if context else 0
 
     # Call set_evaluation using legacy signature (without context) for compatibility
     set_evaluation(
@@ -218,10 +211,8 @@ def change_eval(context: AppContext | None) -> None:
     Sets flag to trigger evaluation display update.
     :param context:
     """
-    # Mirror legacy behaviour: set both context flag and types.eval_changed
     if context is not None:
-        setattr(context, "eval_changed", 1)
-    setattr(types, "eval_changed", 1)
+        context.eval_changed = 1
 
 
 def score_doer(context: AppContext | None) -> None:
@@ -232,17 +223,14 @@ def score_doer(context: AppContext | None) -> None:
     Called from UI update loop to refresh evaluation display.
     :param context:
     """
-    # Accept either legacy types.eval_changed or context.eval_changed
-    changed_flag = getattr(types, "eval_changed", None)
-    if changed_flag is None and context is not None:
-        changed_flag = getattr(context, "eval_changed", 0)
+    if context is None:
+        return
+
+    changed_flag = getattr(context, "eval_changed", 0)
 
     if changed_flag:
         do_score_card(context)
-        # Clear both
-        if context is not None:
-            setattr(context, "eval_changed", 0)
-        setattr(types, "eval_changed", 0)
+        context.eval_changed = 0
 
 
 def set_evaluation(*args) -> None:

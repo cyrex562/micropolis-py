@@ -1,0 +1,480 @@
+2025-11-23 10:24:48,393 DEBUG micropolis.main: Logging initialized. Console -> rich, File -> C:\Users\cyrex\files\projects\micropolis\logs\micropolis-20251123-102448.log
+2025-11-23 10:24:48,398 INFO micropolis.engine: Welcome to Python Micropolis version 2025.11.11
+2025-11-23 10:24:48,400 INFO micropolis.engine: Copyright (C) 2002 by Electronic Arts, Maxis. All rights reserved.
+2025-11-23 10:24:48,435 DEBUG micropolis.engine: Map view surface not yet initialized (will be set during graphics setup)
+2025-11-23 10:24:49,352 INFO micropolis.audio: Sound system initialized with 7 logical channels
+2025-11-23 10:24:49,355 DEBUG root: Funds set to: $20000
+2025-11-23 10:24:49,359 DEBUG root: Funds set to: $20000
+2025-11-23 10:24:49,360 INFO root: Game level set to 0 (Easy) - Starting funds: $20000
+2025-11-23 10:24:49,363 INFO root: Map cleared - all tiles set to DIRT
+2025-11-23 10:24:49,368 DEBUG root: Funds set to: $0
+2025-11-23 10:24:49,370 DEBUG root: Funds set to: $20000
+2025-11-23 10:24:49,373 INFO root: Game level set to 0 (Easy) - Starting funds: $20000
+2025-11-23 10:24:49,375 DEBUG micropolis.engine: Initializing pygame graphics...
+2025-11-23 10:24:49,612 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj1-0.xpm
+2025-11-23 10:24:49,614 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj1-0.xpm', category=images, normalized='obj1-0.xpm'
+2025-11-23 10:24:49,617 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj1-0.xpm
+2025-11-23 10:24:49,618 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj1-0.xpm'
+2025-11-23 10:24:49,621 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj1-0.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-0.png'
+2025-11-23 10:24:49,624 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-0.png
+2025-11-23 10:24:49,631 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj1-0.xpm (32x32)
+2025-11-23 10:24:49,634 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj1-1.xpm
+2025-11-23 10:24:49,636 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj1-1.xpm', category=images, normalized='obj1-1.xpm'
+2025-11-23 10:24:49,638 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj1-1.xpm
+2025-11-23 10:24:49,639 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj1-1.xpm'
+2025-11-23 10:24:49,642 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj1-1.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-1.png'
+2025-11-23 10:24:49,645 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-1.png
+2025-11-23 10:24:49,648 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj1-1.xpm (32x32)
+2025-11-23 10:24:49,653 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj1-2.xpm
+2025-11-23 10:24:49,656 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj1-2.xpm', category=images, normalized='obj1-2.xpm'
+2025-11-23 10:24:49,659 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj1-2.xpm
+2025-11-23 10:24:49,661 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj1-2.xpm'
+2025-11-23 10:24:49,663 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj1-2.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-2.png'
+2025-11-23 10:24:49,666 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-2.png
+2025-11-23 10:24:49,669 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj1-2.xpm (32x32)
+2025-11-23 10:24:49,671 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj1-3.xpm
+2025-11-23 10:24:49,674 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj1-3.xpm', category=images, normalized='obj1-3.xpm'
+2025-11-23 10:24:49,677 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj1-3.xpm
+2025-11-23 10:24:49,680 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj1-3.xpm'
+2025-11-23 10:24:49,682 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj1-3.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-3.png'
+2025-11-23 10:24:49,686 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-3.png
+2025-11-23 10:24:49,691 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj1-3.xpm (32x32)
+2025-11-23 10:24:49,694 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj1-4.xpm
+2025-11-23 10:24:49,696 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj1-4.xpm', category=images, normalized='obj1-4.xpm'
+2025-11-23 10:24:49,698 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj1-4.xpm
+2025-11-23 10:24:49,700 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj1-4.xpm'
+2025-11-23 10:24:49,703 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj1-4.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-4.png'
+2025-11-23 10:24:49,705 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj1-4.png
+2025-11-23 10:24:49,708 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj1-4.xpm (32x32)
+2025-11-23 10:24:49,710 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj2-0.xpm
+2025-11-23 10:24:49,711 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj2-0.xpm', category=images, normalized='obj2-0.xpm'
+2025-11-23 10:24:49,714 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj2-0.xpm
+2025-11-23 10:24:49,717 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj2-0.xpm'
+2025-11-23 10:24:49,720 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj2-0.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-0.png'
+2025-11-23 10:24:49,722 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-0.png
+2025-11-23 10:24:49,724 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj2-0.xpm (32x32)
+2025-11-23 10:24:49,726 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj2-1.xpm
+2025-11-23 10:24:49,727 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj2-1.xpm', category=images, normalized='obj2-1.xpm'
+2025-11-23 10:24:49,728 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj2-1.xpm
+2025-11-23 10:24:49,730 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj2-1.xpm'
+2025-11-23 10:24:49,731 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj2-1.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-1.png'
+2025-11-23 10:24:49,732 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-1.png
+2025-11-23 10:24:49,734 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj2-1.xpm (32x32)
+2025-11-23 10:24:49,736 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj2-2.xpm
+2025-11-23 10:24:49,737 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj2-2.xpm', category=images, normalized='obj2-2.xpm'
+2025-11-23 10:24:49,738 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj2-2.xpm
+2025-11-23 10:24:49,740 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj2-2.xpm'
+2025-11-23 10:24:49,741 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj2-2.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-2.png'
+2025-11-23 10:24:49,742 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-2.png
+2025-11-23 10:24:49,744 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj2-2.xpm (32x32)
+2025-11-23 10:24:49,745 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj2-3.xpm
+2025-11-23 10:24:49,746 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj2-3.xpm', category=images, normalized='obj2-3.xpm'
+2025-11-23 10:24:49,748 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj2-3.xpm
+2025-11-23 10:24:49,748 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj2-3.xpm'
+2025-11-23 10:24:49,750 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj2-3.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-3.png'
+2025-11-23 10:24:49,751 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-3.png
+2025-11-23 10:24:49,753 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj2-3.xpm (32x32)
+2025-11-23 10:24:49,754 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj2-4.xpm
+2025-11-23 10:24:49,755 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj2-4.xpm', category=images, normalized='obj2-4.xpm'
+2025-11-23 10:24:49,756 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj2-4.xpm
+2025-11-23 10:24:49,757 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj2-4.xpm'
+2025-11-23 10:24:49,759 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj2-4.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-4.png'
+2025-11-23 10:24:49,760 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-4.png
+2025-11-23 10:24:49,761 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj2-4.xpm (32x32)
+2025-11-23 10:24:49,762 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj2-5.xpm
+2025-11-23 10:24:49,764 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj2-5.xpm', category=images, normalized='obj2-5.xpm'
+2025-11-23 10:24:49,765 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj2-5.xpm
+2025-11-23 10:24:49,766 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj2-5.xpm'
+2025-11-23 10:24:49,768 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj2-5.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-5.png'
+2025-11-23 10:24:49,769 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-5.png
+2025-11-23 10:24:49,771 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj2-5.xpm (32x32)
+2025-11-23 10:24:49,772 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj2-6.xpm
+2025-11-23 10:24:49,773 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj2-6.xpm', category=images, normalized='obj2-6.xpm'
+2025-11-23 10:24:49,774 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj2-6.xpm
+2025-11-23 10:24:49,775 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj2-6.xpm'
+2025-11-23 10:24:49,777 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj2-6.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-6.png'
+2025-11-23 10:24:49,778 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-6.png
+2025-11-23 10:24:49,780 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj2-6.xpm (32x32)
+2025-11-23 10:24:49,781 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj2-7.xpm
+2025-11-23 10:24:49,782 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj2-7.xpm', category=images, normalized='obj2-7.xpm'
+2025-11-23 10:24:49,784 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj2-7.xpm
+2025-11-23 10:24:49,785 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj2-7.xpm'
+2025-11-23 10:24:49,787 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj2-7.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-7.png'
+2025-11-23 10:24:49,788 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj2-7.png
+2025-11-23 10:24:49,790 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj2-7.xpm (32x32)
+2025-11-23 10:24:49,791 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-0.xpm
+2025-11-23 10:24:49,792 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-0.xpm', category=images, normalized='obj3-0.xpm'
+2025-11-23 10:24:49,793 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-0.xpm
+2025-11-23 10:24:49,794 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-0.xpm'
+2025-11-23 10:24:49,796 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-0.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-0.png'
+2025-11-23 10:24:49,798 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-0.png
+2025-11-23 10:24:49,799 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-0.xpm (48x48)
+2025-11-23 10:24:49,801 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-1.xpm
+2025-11-23 10:24:49,802 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-1.xpm', category=images, normalized='obj3-1.xpm'
+2025-11-23 10:24:49,804 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-1.xpm
+2025-11-23 10:24:49,805 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-1.xpm'
+2025-11-23 10:24:49,806 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-1.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-1.png'
+2025-11-23 10:24:49,807 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-1.png
+2025-11-23 10:24:49,810 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-1.xpm (48x48)
+2025-11-23 10:24:49,811 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-2.xpm
+2025-11-23 10:24:49,812 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-2.xpm', category=images, normalized='obj3-2.xpm'
+2025-11-23 10:24:49,814 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-2.xpm
+2025-11-23 10:24:49,815 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-2.xpm'
+2025-11-23 10:24:49,816 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-2.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-2.png'
+2025-11-23 10:24:49,817 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-2.png
+2025-11-23 10:24:49,819 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-2.xpm (48x48)
+2025-11-23 10:24:49,820 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-3.xpm
+2025-11-23 10:24:49,822 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-3.xpm', category=images, normalized='obj3-3.xpm'
+2025-11-23 10:24:49,823 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-3.xpm
+2025-11-23 10:24:49,825 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-3.xpm'
+2025-11-23 10:24:49,827 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-3.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-3.png'
+2025-11-23 10:24:49,829 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-3.png
+2025-11-23 10:24:49,831 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-3.xpm (48x48)
+2025-11-23 10:24:49,833 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-4.xpm
+2025-11-23 10:24:49,835 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-4.xpm', category=images, normalized='obj3-4.xpm'
+2025-11-23 10:24:49,837 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-4.xpm
+2025-11-23 10:24:49,838 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-4.xpm'
+2025-11-23 10:24:49,840 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-4.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-4.png'
+2025-11-23 10:24:49,842 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-4.png
+2025-11-23 10:24:49,844 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-4.xpm (48x48)
+2025-11-23 10:24:49,846 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-5.xpm
+2025-11-23 10:24:49,847 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-5.xpm', category=images, normalized='obj3-5.xpm'
+2025-11-23 10:24:49,849 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-5.xpm
+2025-11-23 10:24:49,850 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-5.xpm'
+2025-11-23 10:24:49,852 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-5.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-5.png'
+2025-11-23 10:24:49,853 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-5.png
+2025-11-23 10:24:49,856 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-5.xpm (48x48)
+2025-11-23 10:24:49,859 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-6.xpm
+2025-11-23 10:24:49,861 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-6.xpm', category=images, normalized='obj3-6.xpm'
+2025-11-23 10:24:49,862 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-6.xpm
+2025-11-23 10:24:49,864 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-6.xpm'
+2025-11-23 10:24:49,865 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-6.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-6.png'
+2025-11-23 10:24:49,867 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-6.png
+2025-11-23 10:24:49,869 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-6.xpm (48x48)
+2025-11-23 10:24:49,872 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-7.xpm
+2025-11-23 10:24:49,873 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-7.xpm', category=images, normalized='obj3-7.xpm'
+2025-11-23 10:24:49,874 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-7.xpm
+2025-11-23 10:24:49,876 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-7.xpm'
+2025-11-23 10:24:49,877 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-7.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-7.png'
+2025-11-23 10:24:49,878 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-7.png
+2025-11-23 10:24:49,881 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-7.xpm (48x48)
+2025-11-23 10:24:49,882 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-8.xpm
+2025-11-23 10:24:49,883 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-8.xpm', category=images, normalized='obj3-8.xpm'
+2025-11-23 10:24:49,885 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-8.xpm
+2025-11-23 10:24:49,886 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-8.xpm'
+2025-11-23 10:24:49,888 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-8.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-8.png'
+2025-11-23 10:24:49,889 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-8.png
+2025-11-23 10:24:49,891 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-8.xpm (48x48)
+2025-11-23 10:24:49,892 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-9.xpm
+2025-11-23 10:24:49,894 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-9.xpm', category=images, normalized='obj3-9.xpm'
+2025-11-23 10:24:49,895 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-9.xpm
+2025-11-23 10:24:49,896 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-9.xpm'
+2025-11-23 10:24:49,897 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-9.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-9.png'
+2025-11-23 10:24:49,898 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-9.png
+2025-11-23 10:24:49,900 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-9.xpm (48x48)
+2025-11-23 10:24:49,902 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj3-10.xpm
+2025-11-23 10:24:49,903 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj3-10.xpm', category=images, normalized='obj3-10.xpm'
+2025-11-23 10:24:49,904 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj3-10.xpm
+2025-11-23 10:24:49,905 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj3-10.xpm'
+2025-11-23 10:24:49,907 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj3-10.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-10.png'
+2025-11-23 10:24:49,908 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj3-10.png
+2025-11-23 10:24:49,909 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj3-10.xpm (48x48)
+2025-11-23 10:24:49,910 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj4-0.xpm
+2025-11-23 10:24:49,912 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj4-0.xpm', category=images, normalized='obj4-0.xpm'
+2025-11-23 10:24:49,913 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj4-0.xpm
+2025-11-23 10:24:49,914 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj4-0.xpm'
+2025-11-23 10:24:49,916 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj4-0.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-0.png'
+2025-11-23 10:24:49,917 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-0.png
+2025-11-23 10:24:49,919 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj4-0.xpm (48x48)
+2025-11-23 10:24:49,920 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj4-1.xpm
+2025-11-23 10:24:49,921 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj4-1.xpm', category=images, normalized='obj4-1.xpm'
+2025-11-23 10:24:49,922 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj4-1.xpm
+2025-11-23 10:24:49,924 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj4-1.xpm'
+2025-11-23 10:24:49,925 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj4-1.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-1.png'
+2025-11-23 10:24:49,926 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-1.png
+2025-11-23 10:24:49,928 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj4-1.xpm (48x48)
+2025-11-23 10:24:49,929 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj4-2.xpm
+2025-11-23 10:24:49,931 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj4-2.xpm', category=images, normalized='obj4-2.xpm'
+2025-11-23 10:24:49,932 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj4-2.xpm
+2025-11-23 10:24:49,933 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj4-2.xpm'
+2025-11-23 10:24:49,935 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj4-2.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-2.png'
+2025-11-23 10:24:49,936 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-2.png
+2025-11-23 10:24:49,938 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj4-2.xpm (48x48)
+2025-11-23 10:24:49,939 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj4-3.xpm
+2025-11-23 10:24:49,940 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj4-3.xpm', category=images, normalized='obj4-3.xpm'
+2025-11-23 10:24:49,941 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj4-3.xpm
+2025-11-23 10:24:49,943 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj4-3.xpm'
+2025-11-23 10:24:49,944 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj4-3.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-3.png'
+2025-11-23 10:24:49,946 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-3.png
+2025-11-23 10:24:49,947 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj4-3.xpm (48x48)
+2025-11-23 10:24:49,948 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj4-4.xpm
+2025-11-23 10:24:49,949 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj4-4.xpm', category=images, normalized='obj4-4.xpm'
+2025-11-23 10:24:49,951 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj4-4.xpm
+2025-11-23 10:24:49,952 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj4-4.xpm'
+2025-11-23 10:24:49,953 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj4-4.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-4.png'
+2025-11-23 10:24:49,955 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-4.png
+2025-11-23 10:24:49,957 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj4-4.xpm (48x48)
+2025-11-23 10:24:49,958 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj4-5.xpm
+2025-11-23 10:24:49,959 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj4-5.xpm', category=images, normalized='obj4-5.xpm'
+2025-11-23 10:24:49,960 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj4-5.xpm
+2025-11-23 10:24:49,962 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj4-5.xpm'
+2025-11-23 10:24:49,963 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj4-5.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-5.png'
+2025-11-23 10:24:49,965 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-5.png
+2025-11-23 10:24:49,967 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj4-5.xpm (48x48)
+2025-11-23 10:24:49,969 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj4-6.xpm
+2025-11-23 10:24:49,970 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj4-6.xpm', category=images, normalized='obj4-6.xpm'
+2025-11-23 10:24:49,972 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj4-6.xpm
+2025-11-23 10:24:49,973 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj4-6.xpm'
+2025-11-23 10:24:49,975 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj4-6.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-6.png'
+2025-11-23 10:24:49,977 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-6.png
+2025-11-23 10:24:49,979 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj4-6.xpm (48x48)
+2025-11-23 10:24:49,981 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj4-7.xpm
+2025-11-23 10:24:49,982 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj4-7.xpm', category=images, normalized='obj4-7.xpm'
+2025-11-23 10:24:49,983 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj4-7.xpm
+2025-11-23 10:24:49,984 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj4-7.xpm'
+2025-11-23 10:24:49,986 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj4-7.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-7.png'
+2025-11-23 10:24:49,987 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj4-7.png
+2025-11-23 10:24:49,989 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj4-7.xpm (48x48)
+2025-11-23 10:24:49,990 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-0.xpm
+2025-11-23 10:24:49,991 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-0.xpm', category=images, normalized='obj5-0.xpm'
+2025-11-23 10:24:49,992 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-0.xpm
+2025-11-23 10:24:49,994 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-0.xpm'
+2025-11-23 10:24:49,996 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-0.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-0.png'
+2025-11-23 10:24:49,997 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-0.png
+2025-11-23 10:24:49,999 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-0.xpm (48x48)
+2025-11-23 10:24:50,001 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-1.xpm
+2025-11-23 10:24:50,003 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-1.xpm', category=images, normalized='obj5-1.xpm'
+2025-11-23 10:24:50,004 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-1.xpm
+2025-11-23 10:24:50,005 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-1.xpm'
+2025-11-23 10:24:50,007 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-1.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-1.png'
+2025-11-23 10:24:50,009 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-1.png
+2025-11-23 10:24:50,010 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-1.xpm (48x48)
+2025-11-23 10:24:50,012 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-2.xpm
+2025-11-23 10:24:50,014 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-2.xpm', category=images, normalized='obj5-2.xpm'
+2025-11-23 10:24:50,016 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-2.xpm
+2025-11-23 10:24:50,017 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-2.xpm'
+2025-11-23 10:24:50,019 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-2.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-2.png'
+2025-11-23 10:24:50,020 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-2.png
+2025-11-23 10:24:50,022 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-2.xpm (48x48)
+2025-11-23 10:24:50,023 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-3.xpm
+2025-11-23 10:24:50,024 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-3.xpm', category=images, normalized='obj5-3.xpm'
+2025-11-23 10:24:50,026 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-3.xpm
+2025-11-23 10:24:50,027 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-3.xpm'
+2025-11-23 10:24:50,029 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-3.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-3.png'
+2025-11-23 10:24:50,030 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-3.png
+2025-11-23 10:24:50,033 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-3.xpm (48x48)
+2025-11-23 10:24:50,035 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-4.xpm
+2025-11-23 10:24:50,036 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-4.xpm', category=images, normalized='obj5-4.xpm'
+2025-11-23 10:24:50,037 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-4.xpm
+2025-11-23 10:24:50,038 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-4.xpm'
+2025-11-23 10:24:50,039 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-4.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-4.png'
+2025-11-23 10:24:50,041 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-4.png
+2025-11-23 10:24:50,043 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-4.xpm (48x48)
+2025-11-23 10:24:50,044 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-5.xpm
+2025-11-23 10:24:50,045 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-5.xpm', category=images, normalized='obj5-5.xpm'
+2025-11-23 10:24:50,047 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-5.xpm
+2025-11-23 10:24:50,049 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-5.xpm'
+2025-11-23 10:24:50,051 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-5.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-5.png'
+2025-11-23 10:24:50,052 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-5.png
+2025-11-23 10:24:50,054 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-5.xpm (48x48)
+2025-11-23 10:24:50,056 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-6.xpm
+2025-11-23 10:24:50,057 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-6.xpm', category=images, normalized='obj5-6.xpm'
+2025-11-23 10:24:50,059 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-6.xpm
+2025-11-23 10:24:50,060 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-6.xpm'
+2025-11-23 10:24:50,061 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-6.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-6.png'
+2025-11-23 10:24:50,063 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-6.png
+2025-11-23 10:24:50,065 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-6.xpm (48x48)
+2025-11-23 10:24:50,066 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-7.xpm
+2025-11-23 10:24:50,069 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-7.xpm', category=images, normalized='obj5-7.xpm'
+2025-11-23 10:24:50,070 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-7.xpm
+2025-11-23 10:24:50,072 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-7.xpm'
+2025-11-23 10:24:50,075 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-7.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-7.png'
+2025-11-23 10:24:50,076 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-7.png
+2025-11-23 10:24:50,078 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-7.xpm (48x48)
+2025-11-23 10:24:50,080 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-8.xpm
+2025-11-23 10:24:50,082 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-8.xpm', category=images, normalized='obj5-8.xpm'
+2025-11-23 10:24:50,083 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-8.xpm
+2025-11-23 10:24:50,085 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-8.xpm'
+2025-11-23 10:24:50,086 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-8.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-8.png'
+2025-11-23 10:24:50,088 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-8.png
+2025-11-23 10:24:50,090 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-8.xpm (48x48)
+2025-11-23 10:24:50,092 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-9.xpm
+2025-11-23 10:24:50,093 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-9.xpm', category=images, normalized='obj5-9.xpm'
+2025-11-23 10:24:50,095 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-9.xpm
+2025-11-23 10:24:50,096 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-9.xpm'
+2025-11-23 10:24:50,098 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-9.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-9.png'
+2025-11-23 10:24:50,099 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-9.png
+2025-11-23 10:24:50,102 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-9.xpm (48x48)
+2025-11-23 10:24:50,103 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-10.xpm
+2025-11-23 10:24:50,105 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-10.xpm', category=images, normalized='obj5-10.xpm'
+2025-11-23 10:24:50,107 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-10.xpm
+2025-11-23 10:24:50,108 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-10.xpm'
+2025-11-23 10:24:50,109 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-10.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-10.png'
+2025-11-23 10:24:50,111 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-10.png
+2025-11-23 10:24:50,113 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-10.xpm (48x48)
+2025-11-23 10:24:50,114 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-11.xpm
+2025-11-23 10:24:50,115 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-11.xpm', category=images, normalized='obj5-11.xpm'
+2025-11-23 10:24:50,116 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-11.xpm
+2025-11-23 10:24:50,117 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-11.xpm'
+2025-11-23 10:24:50,118 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-11.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-11.png'
+2025-11-23 10:24:50,119 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-11.png
+2025-11-23 10:24:50,121 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-11.xpm (48x48)
+2025-11-23 10:24:50,122 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-12.xpm
+2025-11-23 10:24:50,123 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-12.xpm', category=images, normalized='obj5-12.xpm'
+2025-11-23 10:24:50,124 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-12.xpm
+2025-11-23 10:24:50,125 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-12.xpm'
+2025-11-23 10:24:50,127 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-12.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-12.png'
+2025-11-23 10:24:50,128 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-12.png
+2025-11-23 10:24:50,129 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-12.xpm (48x48)
+2025-11-23 10:24:50,131 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-13.xpm
+2025-11-23 10:24:50,131 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-13.xpm', category=images, normalized='obj5-13.xpm'
+2025-11-23 10:24:50,132 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-13.xpm
+2025-11-23 10:24:50,133 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-13.xpm'
+2025-11-23 10:24:50,135 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-13.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-13.png'
+2025-11-23 10:24:50,136 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-13.png
+2025-11-23 10:24:50,137 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-13.xpm (48x48)
+2025-11-23 10:24:50,138 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-14.xpm
+2025-11-23 10:24:50,139 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-14.xpm', category=images, normalized='obj5-14.xpm'
+2025-11-23 10:24:50,141 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-14.xpm
+2025-11-23 10:24:50,143 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-14.xpm'
+2025-11-23 10:24:50,144 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-14.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-14.png'
+2025-11-23 10:24:50,145 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-14.png
+2025-11-23 10:24:50,147 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-14.xpm (48x48)
+2025-11-23 10:24:50,148 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj5-15.xpm
+2025-11-23 10:24:50,149 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj5-15.xpm', category=images, normalized='obj5-15.xpm'
+2025-11-23 10:24:50,150 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj5-15.xpm
+2025-11-23 10:24:50,151 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj5-15.xpm'
+2025-11-23 10:24:50,152 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj5-15.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-15.png'
+2025-11-23 10:24:50,153 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj5-15.png
+2025-11-23 10:24:50,155 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj5-15.xpm (48x48)
+2025-11-23 10:24:50,156 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj6-0.xpm
+2025-11-23 10:24:50,157 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj6-0.xpm', category=images, normalized='obj6-0.xpm'
+2025-11-23 10:24:50,158 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj6-0.xpm
+2025-11-23 10:24:50,159 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj6-0.xpm'
+2025-11-23 10:24:50,161 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj6-0.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj6-0.png'
+2025-11-23 10:24:50,162 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj6-0.png
+2025-11-23 10:24:50,163 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj6-0.xpm (48x48)
+2025-11-23 10:24:50,164 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj6-1.xpm
+2025-11-23 10:24:50,165 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj6-1.xpm', category=images, normalized='obj6-1.xpm'
+2025-11-23 10:24:50,167 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj6-1.xpm
+2025-11-23 10:24:50,168 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj6-1.xpm'
+2025-11-23 10:24:50,169 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj6-1.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj6-1.png'
+2025-11-23 10:24:50,170 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj6-1.png
+2025-11-23 10:24:50,172 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj6-1.xpm (48x48)
+2025-11-23 10:24:50,174 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj6-2.xpm
+2025-11-23 10:24:50,175 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj6-2.xpm', category=images, normalized='obj6-2.xpm'
+2025-11-23 10:24:50,176 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj6-2.xpm
+2025-11-23 10:24:50,177 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj6-2.xpm'
+2025-11-23 10:24:50,179 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj6-2.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj6-2.png'
+2025-11-23 10:24:50,180 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj6-2.png
+2025-11-23 10:24:50,181 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj6-2.xpm (48x48)
+2025-11-23 10:24:50,182 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj7-0.xpm
+2025-11-23 10:24:50,184 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj7-0.xpm', category=images, normalized='obj7-0.xpm'
+2025-11-23 10:24:50,185 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj7-0.xpm
+2025-11-23 10:24:50,186 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj7-0.xpm'
+2025-11-23 10:24:50,187 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj7-0.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-0.png'
+2025-11-23 10:24:50,188 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-0.png
+2025-11-23 10:24:50,190 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj7-0.xpm (48x48)
+2025-11-23 10:24:50,191 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj7-1.xpm
+2025-11-23 10:24:50,192 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj7-1.xpm', category=images, normalized='obj7-1.xpm'
+2025-11-23 10:24:50,193 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj7-1.xpm
+2025-11-23 10:24:50,194 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj7-1.xpm'
+2025-11-23 10:24:50,195 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj7-1.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-1.png'
+2025-11-23 10:24:50,196 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-1.png
+2025-11-23 10:24:50,198 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj7-1.xpm (48x48)
+2025-11-23 10:24:50,199 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj7-2.xpm
+2025-11-23 10:24:50,200 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj7-2.xpm', category=images, normalized='obj7-2.xpm'
+2025-11-23 10:24:50,201 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj7-2.xpm
+2025-11-23 10:24:50,202 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj7-2.xpm'
+2025-11-23 10:24:50,203 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj7-2.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-2.png'
+2025-11-23 10:24:50,204 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-2.png
+2025-11-23 10:24:50,206 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj7-2.xpm (48x48)
+2025-11-23 10:24:50,207 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj7-3.xpm
+2025-11-23 10:24:50,208 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj7-3.xpm', category=images, normalized='obj7-3.xpm'
+2025-11-23 10:24:50,210 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj7-3.xpm
+2025-11-23 10:24:50,211 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj7-3.xpm'
+2025-11-23 10:24:50,212 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj7-3.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-3.png'
+2025-11-23 10:24:50,213 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-3.png
+2025-11-23 10:24:50,215 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj7-3.xpm (48x48)
+2025-11-23 10:24:50,216 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj7-4.xpm
+2025-11-23 10:24:50,217 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj7-4.xpm', category=images, normalized='obj7-4.xpm'
+2025-11-23 10:24:50,218 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj7-4.xpm
+2025-11-23 10:24:50,220 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj7-4.xpm'
+2025-11-23 10:24:50,222 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj7-4.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-4.png'
+2025-11-23 10:24:50,223 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-4.png
+2025-11-23 10:24:50,226 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj7-4.xpm (48x48)
+2025-11-23 10:24:50,228 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj7-5.xpm
+2025-11-23 10:24:50,229 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj7-5.xpm', category=images, normalized='obj7-5.xpm'
+2025-11-23 10:24:50,230 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj7-5.xpm
+2025-11-23 10:24:50,231 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj7-5.xpm'
+2025-11-23 10:24:50,232 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj7-5.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-5.png'
+2025-11-23 10:24:50,234 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj7-5.png
+2025-11-23 10:24:50,236 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj7-5.xpm (48x48)
+2025-11-23 10:24:50,237 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj8-0.xpm
+2025-11-23 10:24:50,238 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj8-0.xpm', category=images, normalized='obj8-0.xpm'
+2025-11-23 10:24:50,239 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj8-0.xpm
+2025-11-23 10:24:50,240 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj8-0.xpm'
+2025-11-23 10:24:50,241 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj8-0.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj8-0.png'
+2025-11-23 10:24:50,243 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj8-0.png
+2025-11-23 10:24:50,245 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj8-0.xpm (32x32)
+2025-11-23 10:24:50,246 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj8-1.xpm
+2025-11-23 10:24:50,247 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj8-1.xpm', category=images, normalized='obj8-1.xpm'
+2025-11-23 10:24:50,248 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj8-1.xpm
+2025-11-23 10:24:50,250 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj8-1.xpm'
+2025-11-23 10:24:50,251 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj8-1.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj8-1.png'
+2025-11-23 10:24:50,252 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj8-1.png
+2025-11-23 10:24:50,254 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj8-1.xpm (32x32)
+2025-11-23 10:24:50,255 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj8-2.xpm
+2025-11-23 10:24:50,256 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj8-2.xpm', category=images, normalized='obj8-2.xpm'
+2025-11-23 10:24:50,257 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj8-2.xpm
+2025-11-23 10:24:50,258 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj8-2.xpm'
+2025-11-23 10:24:50,260 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj8-2.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj8-2.png'
+2025-11-23 10:24:50,261 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj8-2.png
+2025-11-23 10:24:50,263 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj8-2.xpm (32x32)
+2025-11-23 10:24:50,264 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: obj8-3.xpm
+2025-11-23 10:24:50,265 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='obj8-3.xpm', category=images, normalized='obj8-3.xpm'
+2025-11-23 10:24:50,266 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/obj8-3.xpm
+2025-11-23 10:24:50,267 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'obj8-3.xpm'
+2025-11-23 10:24:50,269 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'obj8-3.xpm' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\obj8-3.png'
+2025-11-23 10:24:50,270 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\obj8-3.png
+2025-11-23 10:24:50,272 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded obj8-3.xpm (32x32)
+2025-11-23 10:24:50,374 INFO micropolis.graphics_setup: [init_view_graphics] Initializing graphics for view: class_id=0, type=1
+2025-11-23 10:24:50,377 DEBUG micropolis.graphics_setup: [init_view_graphics] View display attributes: color=1
+2025-11-23 10:24:50,378 DEBUG micropolis.graphics_setup: [init_view_graphics] Calling get_view_tiles()...
+2025-11-23 10:24:50,380 INFO micropolis.graphics_setup: [get_view_tiles] Loading tiles for view: class_id=0, is_editor=True, is_map=False, type=1
+2025-11-23 10:24:50,382 DEBUG micropolis.graphics_setup: [get_view_tiles] Loading tiles for EDITOR view
+2025-11-23 10:24:50,384 DEBUG micropolis.graphics_setup: [get_view_tiles] Editor view type: X_Mem_View
+2025-11-23 10:24:50,385 INFO micropolis.graphics_setup: [get_view_tiles] Loading big tile image: tiles.png
+2025-11-23 10:24:50,386 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: tiles.png
+2025-11-23 10:24:50,387 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='tiles.png', category=images, normalized='tiles.png'
+2025-11-23 10:24:50,389 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/tiles.png
+2025-11-23 10:24:50,390 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'tiles.png'
+2025-11-23 10:24:50,392 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'tiles.png' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\tiles.png'
+2025-11-23 10:24:50,394 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\tiles.png
+2025-11-23 10:24:50,400 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded tiles.png (16x15360)
+2025-11-23 10:24:50,402 INFO micropolis.graphics_setup: [get_view_tiles] ✓ Loaded big tile image: 16x15360
+2025-11-23 10:24:50,403 DEBUG micropolis.graphics_setup: [get_view_tiles] Set view.bigtiles from big_tile_image
+2025-11-23 10:24:50,404 INFO micropolis.graphics_setup: [init_view_graphics] ✓ Graphics initialized: bigtiles=True, smalltiles=False
+2025-11-23 10:24:50,406 DEBUG micropolis.engine: Editor view tile cache initialized: bigtiles=present
+2025-11-23 10:24:50,407 DEBUG micropolis.engine: Created surface for view: 360x300 (class_id=1)
+2025-11-23 10:24:50,408 INFO micropolis.graphics_setup: [init_view_graphics] Initializing graphics for view: class_id=1, type=1
+2025-11-23 10:24:50,409 DEBUG micropolis.graphics_setup: [init_view_graphics] View display attributes: color=1
+2025-11-23 10:24:50,411 DEBUG micropolis.graphics_setup: [init_view_graphics] Calling get_view_tiles()...
+2025-11-23 10:24:50,412 INFO micropolis.graphics_setup: [get_view_tiles] Loading tiles for view: class_id=1, is_editor=False, is_map=True, type=1
+2025-11-23 10:24:50,413 DEBUG micropolis.graphics_setup: [get_view_tiles] Loading tiles for MAP view
+2025-11-23 10:24:50,415 INFO micropolis.graphics_setup: [get_view_tiles] Loading small tile image: tilessm.png
+2025-11-23 10:24:50,416 DEBUG micropolis.graphics_setup: [load_xpm_surface] Attempting to load: tilessm.png
+2025-11-23 10:24:50,418 DEBUG micropolis.graphics_setup: [get_resource_path] Looking for asset: filename='tilessm.png', category=images, normalized='tilessm.png'
+2025-11-23 10:24:50,419 DEBUG micropolis.graphics_setup: [get_resource_path] Added image path variant: images/tilessm.png
+2025-11-23 10:24:50,420 DEBUG micropolis.graphics_setup: [get_resource_path] Trying candidate: 'tilessm.png'
+2025-11-23 10:24:50,422 INFO micropolis.graphics_setup: [get_resource_path] ✓ Resolved 'tilessm.png' → 'C:\Users\cyrex\files\projects\micropolis\assets\images\tilessm.png'
+2025-11-23 10:24:50,423 DEBUG micropolis.graphics_setup: [load_xpm_surface] Resolved path: C:\Users\cyrex\files\projects\micropolis\assets\images\tilessm.png
+2025-11-23 10:24:50,426 INFO micropolis.graphics_setup: [load_xpm_surface] ✓ Successfully loaded tilessm.png (4x2880)
+2025-11-23 10:24:50,428 INFO micropolis.graphics_setup: [get_view_tiles] ✓ Loaded small tile image: 4x2880
+2025-11-23 10:24:50,429 DEBUG micropolis.graphics_setup: [get_view_tiles] Converting small tiles to 4x4 format
+2025-11-23 10:24:50,436 INFO micropolis.graphics_setup: [get_view_tiles] ✓ Converted 960 small tiles to 4x4 format (61440 bytes)
+2025-11-23 10:24:50,437 INFO micropolis.graphics_setup: [init_view_graphics] ✓ Graphics initialized: bigtiles=False, smalltiles=True
+2025-11-23 10:24:50,439 DEBUG micropolis.engine: Map view tile cache initialized: smalltiles=present
+2025-11-23 10:24:50,441 INFO micropolis.engine: All view surfaces initialized successfully
+2025-11-23 10:24:50,444 INFO micropolis.engine: Editor panel created and registered successfully
+2025-11-23 10:24:50,671 ERROR micropolis.engine: Simulation error: Error in pygame main loop: 'SimView' object has no attribute 'shake_now'

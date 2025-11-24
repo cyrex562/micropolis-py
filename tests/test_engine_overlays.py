@@ -7,6 +7,11 @@ from __future__ import annotations
 from unittest import mock
 
 from src.micropolis import engine
+from micropolis.context import AppContext
+from micropolis.app_config import AppConfig
+
+# Create a test context
+context = AppContext(config=AppConfig())
 
 
 def _mock_surface(size: tuple[int, int]) -> mock.Mock:
@@ -26,7 +31,7 @@ def test_blit_overlay_panels_draws_graph_and_evaluation(monkeypatch):
     monkeypatch.setattr(engine.graphs, "render_graph_panel", lambda: graph_surface)
     monkeypatch.setattr(engine.evaluation_ui, "get_evaluation_surface", lambda: evaluation_surface)
 
-    engine._blit_overlay_panels(screen)
+    engine._blit_overlay_panels(context, screen)
 
     assert screen.blit.call_count == 2
     assert screen.blit.call_args_list[0] == mock.call(graph_surface, (800 - 16 - 200, 16))
@@ -41,7 +46,7 @@ def test_blit_overlay_panels_no_surfaces(monkeypatch):
     monkeypatch.setattr(engine.graphs, "render_graph_panel", lambda: None)
     monkeypatch.setattr(engine.evaluation_ui, "get_evaluation_surface", lambda: None)
 
-    engine._blit_overlay_panels(screen)
+    engine._blit_overlay_panels(context, screen)
 
     screen.blit.assert_not_called()
 

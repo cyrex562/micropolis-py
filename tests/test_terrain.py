@@ -11,13 +11,29 @@ Tests the terrain generation algorithms to ensure they match the original C impl
 - Map clearing and bounds checking
 """
 
+from micropolis.app_config import AppConfig
+from micropolis.context import AppContext
 from micropolis.terrain import (
-    TerrainGenerator, generate_terrain, clear_terrain,
-    WORLD_X, WORLD_Y, RIVER, REDGE, CHANNEL, WOODS, BLN
+    TerrainGenerator,
+    generate_terrain,
+    clear_terrain,
+    test_bounds as terrain_test_bounds,
+    clear_map,
+    smooth_trees,
+    WORLD_X,
+    WORLD_Y,
+    RIVER,
+    REDGE,
+    CHANNEL,
+    WOODS,
+    BLN,
 )
 
 
 from tests.assertions import Assertions
+
+
+terrain_context = AppContext(config=AppConfig())
 
 class TestTerrainGenerator(Assertions):
     """Test the TerrainGenerator class and its methods."""
@@ -80,15 +96,15 @@ class TestTerrainGenerator(Assertions):
         gen = TerrainGenerator()
 
         # Valid coordinates
-        assert test_bounds(0, 0)
-        assert test_bounds(60, 50)
-        assert test_bounds(WORLD_X-1, WORLD_Y-1)
+        assert terrain_test_bounds(0, 0)
+        assert terrain_test_bounds(60, 50)
+        assert terrain_test_bounds(WORLD_X-1, WORLD_Y-1)
 
         # Invalid coordinates
-        assert not test_bounds(-1, 0)
-        assert not test_bounds(0, -1)
-        assert not test_bounds(WORLD_X, 0)
-        assert not test_bounds(0, WORLD_Y)
+        assert not terrain_test_bounds(-1, 0)
+        assert not terrain_test_bounds(0, -1)
+        assert not terrain_test_bounds(WORLD_X, 0)
+        assert not terrain_test_bounds(0, WORLD_Y)
 
     def test_move_map(self):
         """Test map position movement."""
@@ -325,7 +341,7 @@ class TestTerrainGenerator(Assertions):
         map_data = [[1 for _ in range(WORLD_Y)] for _ in range(WORLD_X)]
 
         # Test clear_terrain
-        clear_terrain(map_data)
+        clear_terrain(terrain_context, map_data)
         assert all(all(cell == 0 for cell in row) for row in map_data)
 
         # Test generate_terrain

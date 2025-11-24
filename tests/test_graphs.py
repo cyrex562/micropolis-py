@@ -8,7 +8,8 @@ import pytest
 import pygame
 from unittest.mock import MagicMock, patch
 
-from src.micropolis import graphs, types
+from micropolis import constants as const
+from src.micropolis import graphs
 
 
 class TestGraphCreation:
@@ -21,7 +22,7 @@ class TestGraphCreation:
 
         assert isinstance(graph, graphs.SimGraph)
         assert graph.range == 10
-        assert graph.mask == types.ALL_HISTORIES
+        assert graph.mask == const.ALL_HISTORIES
         assert not graph.visible
         assert len(graphs.get_graphs()) == initial_count + 1
 
@@ -76,8 +77,8 @@ class TestGraphConfiguration:
 
     def test_set_mask(self):
         """Test setting graph mask"""
-        self.graph.set_mask(types.RES_HIST | types.COM_HIST)
-        assert self.graph.mask == (types.RES_HIST | types.COM_HIST)
+        self.graph.set_mask(const.RES_HIST | const.COM_HIST)
+        assert self.graph.mask == (const.RES_HIST | const.COM_HIST)
         assert self.graph.needs_redraw
 
     def test_set_visible(self):
@@ -97,8 +98,8 @@ class TestHistoryData:
     def test_init_history_data(self):
         """Test history data initialization"""
         assert graphs.history_initialized
-        assert len(graphs.history_10) == types.HISTORIES
-        assert len(graphs.history_120) == types.HISTORIES
+        assert len(graphs.history_10) == const.HISTORIES
+        assert len(graphs.history_120) == const.HISTORIES
 
         for hist in graphs.history_10:
             assert len(hist) == 120
@@ -111,15 +112,15 @@ class TestHistoryData:
     def test_init_graph_maxima(self):
         """Test graph maxima initialization"""
         # Setup some test data
-        types.res_his = [100, 200, 150, 300] + [0] * 236
-        types.com_his = [50, 100, 75, 250] + [0] * 236
-        types.ind_his = [25, 50, 40, 150] + [0] * 236
+        context.res_his = [100, 200, 150, 300] + [0] * 236
+        context.com_his = [50, 100, 75, 250] + [0] * 236
+        context.ind_his = [25, 50, 40, 150] + [0] * 236
 
         graphs.init_graph_maxima(context)
 
-        assert types.res_his_max == 300
-        assert types.com_his__max == 250
-        assert types.ind_his_max == 150
+        assert context.res_his_max == 300
+        assert context.com_his__max == 250
+        assert context.ind_his_max == 150
         assert graphs.graph_10_max == 300
 
     def test_draw_month(self):
@@ -139,20 +140,20 @@ class TestHistoryData:
     def test_do_all_graphs(self):
         """Test do_all_graphs data processing"""
         # Setup test history data
-        types.res_his = [100, 200, 300] + [0] * 237
-        types.com_his = [50, 100, 150] + [0] * 237
-        types.ind_his = [25, 50, 75] + [0] * 237
-        types.money_his = [1000, 2000, 3000] + [0] * 237
-        types.crime_his = [10, 20, 30] + [0] * 237
-        types.pollution_his = [5, 10, 15] + [0] * 237
+        context.res_his = [100, 200, 300] + [0] * 237
+        context.com_his = [50, 100, 150] + [0] * 237
+        context.ind_his = [25, 50, 75] + [0] * 237
+        context.money_his = [1000, 2000, 3000] + [0] * 237
+        context.crime_his = [10, 20, 30] + [0] * 237
+        context.pollution_his = [5, 10, 15] + [0] * 237
 
         graphs.init_graph_maxima(context)
         graphs.do_all_graphs(context)
 
         # Check that data was processed
-        assert len(graphs.history_10[types.RES_HIST]) == 120
-        assert len(graphs.history_10[types.COM_HIST]) == 120
-        assert len(graphs.history_10[types.MONEY_HIST]) == 120
+        assert len(graphs.history_10[const.RES_HIST]) == 120
+        assert len(graphs.history_10[const.COM_HIST]) == 120
+        assert len(graphs.history_10[const.MONEY_HIST]) == 120
 
 
 class TestGraphRendering:
@@ -188,8 +189,8 @@ class TestGraphRendering:
         self.graph.set_size(400, 300)
 
         # Setup some test data
-        graphs.history_10[types.RES_HIST] = [i * 2 for i in range(120)]
-        graphs.history_10[types.COM_HIST] = [i for i in range(120)]
+        graphs.history_10[const.RES_HIST] = [i * 2 for i in range(120)]
+        graphs.history_10[const.COM_HIST] = [i for i in range(120)]
 
         graphs.update_graph(context, self.graph)
 
@@ -203,12 +204,12 @@ class TestGraphRendering:
         graph.set_size(400, 300)
 
         # Setup census changed flag
-        types.census_changed = 1
+        context.census_changed = 1
 
         graphs.update_all_graphs(context)
 
         # CensusChanged should be reset
-        assert types.census_changed == 0
+        assert context.census_changed == 0
 
         # Graph should be marked for redraw
         assert graph.needs_redraw
@@ -284,17 +285,17 @@ class TestDataAccess:
         graphs.init_history_data(context)
 
         # Test 10-year data
-        data = graphs.get_history_data(context, 10, types.RES_HIST)
+        data = graphs.get_history_data(context, 10, const.RES_HIST)
         assert len(data) == 120
         assert all(x == 0 for x in data)
 
         # Test 120-year data
-        data = graphs.get_history_data(context, 120, types.COM_HIST)
+        data = graphs.get_history_data(context, 120, const.COM_HIST)
         assert len(data) == 120
         assert all(x == 0 for x in data)
 
         # Test invalid range
-        data = graphs.get_history_data(context, 50, types.IND_HIST)
+        data = graphs.get_history_data(context, 50, const.IND_HIST)
         assert data == []
 
     def test_get_history_names(self):
@@ -324,20 +325,20 @@ class TestInitialization:
 
         # Set some non-default values
         graph.range = 120
-        graph.mask = types.RES_HIST
+        graph.mask = const.RES_HIST
 
         graphs.initialize_graphs(context)
 
         # Should reset to defaults
         assert graph.range == 10
-        assert graph.mask == types.ALL_HISTORIES
+        assert graph.mask == const.ALL_HISTORIES
 
         graphs.remove_graph(graph)
 
         # Check history initialization
         assert graphs.history_initialized
-        assert len(graphs.history_10) == types.HISTORIES
-        assert len(graphs.history_120) == types.HISTORIES
+        assert len(graphs.history_10) == const.HISTORIES
+        assert len(graphs.history_120) == const.HISTORIES
 
 
 class TestIntegration:
@@ -359,22 +360,22 @@ class TestIntegration:
         graph.set_size(400, 300)
         graph.set_visible(True)
         graph.set_range(10)
-        graph.set_mask(types.RES_HIST | types.COM_HIST)
+        graph.set_mask(const.RES_HIST | const.COM_HIST)
 
         # Setup history data
-        types.res_his = [i * 10 for i in range(240)]
-        types.com_his = [i * 5 for i in range(240)]
-        types.ind_his = [i * 2 for i in range(240)]
-        types.money_his = [1000 + i * 100 for i in range(240)]
-        types.crime_his = [i for i in range(240)]
-        types.pollution_his = [i // 2 for i in range(240)]
+        context.res_his = [i * 10 for i in range(240)]
+        context.com_his = [i * 5 for i in range(240)]
+        context.ind_his = [i * 2 for i in range(240)]
+        context.money_his = [1000 + i * 100 for i in range(240)]
+        context.crime_his = [i for i in range(240)]
+        context.pollution_his = [i // 2 for i in range(240)]
 
         # Process data
         graphs.init_graph_maxima(context)
         graphs.do_all_graphs(context)
 
         # Update graphs
-        types.census_changed = 1
+        context.census_changed = 1
         graphs.update_all_graphs(context)
 
         # Render graph

@@ -23,7 +23,6 @@ from .constants import (
     SOUND_EXTENSIONS,
 )
 from .context import AppContext
-import micropolis.types as legacy_types
 
 import pygame.mixer
 from micropolis.asset_manager import get_asset_path
@@ -130,41 +129,29 @@ active_channels: dict[int, SoundInfo] = {}
 
 
 def _legacy_context() -> AppContext:
-    """Create a lightweight compatibility context that maps legacy global
-    values (in micropolis.types and module-level globals) to attributes.
+    """Create a lightweight compatibility context that maps module-level globals
+    to attributes.
 
     This lets the audio APIs remain callable without an explicit AppContext
     when older tests or code invoke them the legacy way.
     """
+    # First check if there's a test context available
+    try:
+        import micropolis as _pkg
+        ctx = getattr(_pkg, "_AUTO_TEST_CONTEXT", None)
+        if ctx is not None:
+            return ctx
+    except Exception:
+        pass
 
-    class _LegacyCtx:
-        @property
-        def user_sound_on(self):
-            return getattr(legacy_types, "user_sound_on", True)
+    from .app_config import AppConfig
 
-        @user_sound_on.setter
-        def user_sound_on(self, value):
-            setattr(legacy_types, "user_sound_on", value)
-
-        @property
-        def sound_initialized(self):
-            return SoundInitialized
-
-        @sound_initialized.setter
-        def sound_initialized(self, value):
-            global SoundInitialized
-            SoundInitialized = bool(value)
-
-        @property
-        def dozing(self):
-            return Dozing
-
-        @dozing.setter
-        def dozing(self, value):
-            global Dozing
-            Dozing = bool(value)
-
-    return _LegacyCtx()
+    # Create a real AppContext with defaults
+    ctx = AppContext(config=AppConfig())
+    ctx.user_sound_on = True
+    ctx.sound_initialized = SoundInitialized
+    ctx.dozing = Dozing
+    return ctx
 
 
 def _ensure_context(context: AppContext | None) -> AppContext:
@@ -317,10 +304,11 @@ def play_sound(
 
     # Respect AppContext.sound_initialized first, but accept the legacy
     # module-level SoundInitialized as a fallback for backwards compatibility
-    sound_ready = bool(getattr(context, "sound_initialized", False)) or bool(
-        SoundInitialized
-    )
-    if not getattr(context, "user_sound_on", True) or not sound_ready:
+    context_sound_initialized = bool(getattr(context, "sound_initialized", False))
+    sound_ready = bool(SoundInitialized) or context_sound_initialized
+    # Honor the AppContext flag for user sound
+    user_sound_on = bool(getattr(context, "user_sound_on", True))
+    if not user_sound_on or not sound_ready:
         return Err("sound_not_ready")
 
     # If channel_states hasn't been initialized (initialize_sound not called),

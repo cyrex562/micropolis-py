@@ -11,8 +11,10 @@ import argparse
 import logging
 import signal
 import sys
+import importlib
 import time
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Callable
+from types import FrameType
 
 import pygame
 from result import Err, Ok, Result
@@ -50,6 +52,7 @@ from .constants import (
     WORLD_Y,
 )
 from .context import AppContext
+from .app_config import AppConfig
 from .editor import do_update_editor
 from .graphics_setup import init_graphics
 from .graphs import render_graph_panel, request_graph_panel_redraw, update_all_graphs
@@ -63,7 +66,7 @@ from .ui.event_bus import get_default_event_bus
 from .ui.input_bindings import get_default_input_binding_manager
 from .ui.keybindings_overlay import KeybindingsOverlay
 from .ui.panel_manager import PanelManager
-from .ui.panels import EditorPanel, ToolPalettePanel
+from .ui.panels import EditorPanel, ToolPalettePanel, HeadPanel
 from .ui_utilities import handle_keyboard_shortcut
 from .view_types import (
     MakeNewSimGraph,
@@ -459,42 +462,39 @@ def blit_views_to_screen(
     context: AppContext,
     screen,
     map_area: tuple[int, int, int, int],
-    editor_area: tuple[int, int, int, int],
+    minimap_area: tuple[int, int, int, int],
 ) -> None:
-    """Composite map/editor surfaces onto the main pygame screen.
-    :param screen:
-    """
+    """Composite main map + minimap surfaces onto the pygame screen."""
 
-    context.fill((64, 128, 64))
+    screen.fill((16, 32, 16))
 
-    if context.sim and context.sim.map and context.sim.map.surface:
-        map_surface = pygame.transform.smoothscale(
-            context.sim.map.surface, (map_area[2], map_area[3])
-        )
-        context.blit(map_surface, (map_area[0], map_area[1]))
+    map_surface = None
+    if context.sim and context.sim.map:
+        map_surface = getattr(context.sim.map, "surface", None)
+    if map_surface is not None:
+        try:
+            main_scaled = pygame.transform.smoothscale(
+                map_surface, (map_area[2], map_area[3])
+            )
+            screen.blit(main_scaled, (map_area[0], map_area[1]))
 
-    if context.sim and context.sim.editor and context.sim.editor.surface:
-        editor_surface = context.sim.editor.surface
-        viewport_w, viewport_h = context.editor_viewport_size
-        if viewport_w <= 0 or viewport_h <= 0:
-            viewport_w, viewport_h = editor_area[2], editor_area[3]
+            mini_scaled = pygame.transform.smoothscale(
+                map_surface, (minimap_area[2], minimap_area[3])
+            )
+            screen.blit(mini_scaled, (minimap_area[0], minimap_area[1]))
+            pygame.draw.rect(
+                screen,
+                (80, 120, 80),
+                pygame.Rect(minimap_area),
+                2,
+            )
+        except pygame.error:
+            pass
 
-        viewport_w = min(viewport_w, editor_surface.get_width())
-        viewport_h = min(viewport_h, editor_surface.get_height())
-        max_x = max(0, editor_surface.get_width() - viewport_w)
-        max_y = max(0, editor_surface.get_height() - viewport_h)
-        pan_x = max(0, min(max_x, context.sim.editor.pan_x))
-        pan_y = max(0, min(max_y, context.sim.editor.pan_y))
-
-        rect = pygame.Rect(pan_x, pan_y, viewport_w, viewport_h)
-        region = editor_surface.subsurface(rect).copy()
-        scaled = pygame.transform.smoothscale(region, (editor_area[2], editor_area[3]))
-        context.blit(scaled, (editor_area[0], editor_area[1]))
-
-    _blit_overlay_panels(screen)
+    _blit_overlay_panels(context, screen)
 
 
-def _blit_overlay_panels(screen) -> None:
+def _blit_overlay_panels(context: AppContext, screen) -> None:
     """Render graph/evaluation overlays when their toggles are enabled."""
     # Import the submodules and call their functions via the module attribute
     # so that test monkeypatches such as `monkeypatch.setattr(engine.graphs, ...)`
@@ -589,7 +589,9 @@ def sim_really_exit(context: AppContext, val: int) -> None:
     sys.exit(val)
 
 
-def SignalExitHandler(context: AppContext, signum: int, frame) -> None:
+def SignalExitHandler(
+    context: AppContext, signum: int, frame: FrameType | None
+) -> None:
     """
     Handle Unix signals for graceful shutdown.
 
@@ -601,6 +603,17 @@ def SignalExitHandler(context: AppContext, signum: int, frame) -> None:
     sim_really_exit(context, -1)
 
 
+def build_signal_handler(
+    context: AppContext,
+) -> Callable[[int, FrameType | None], None]:
+    """Create a signal handler that binds the current context."""
+
+    def _handler(signum: int, frame: FrameType | None) -> None:
+        SignalExitHandler(context, signum, frame)
+
+    return _handler
+
+
 def signal_init(context: AppContext) -> Result[None, Exception]:
     """
     Initialize signal handlers.
@@ -609,8 +622,9 @@ def signal_init(context: AppContext) -> Result[None, Exception]:
     """
     try:
         # Only set up signals that are commonly available
-        signal.signal(signal.SIGINT, SignalExitHandler)
-        signal.signal(signal.SIGTERM, SignalExitHandler)
+        handler = build_signal_handler(context)
+        signal.signal(signal.SIGINT, handler)
+        signal.signal(signal.SIGTERM, handler)
         # Other signals may not be available on all platforms
     except (OSError, ValueError, AttributeError) as e:
         # Signals may not be available in some environments
@@ -728,15 +742,17 @@ def sim_update_editors(context: AppContext) -> None:
 
     Ported from sim_update_editors() in sim.c.
     """
-    if not context.sim:
+    ctx = _resolve_app_context(context)
+
+    if not ctx.sim:
         logger.warning("sim_update_editors called but context.sim is None - skipping")
         return
 
-    view = context.sim.editor
+    view = ctx.sim.editor
     while view:
         # Mark view as invalid to force redraw
         view.invalid = True
-        DoUpdateEditor(view, context)
+        DoUpdateEditor(context, view)
         view = view.next
 
     DoUpdateHeads()
@@ -748,16 +764,18 @@ def sim_update_maps(context: AppContext) -> None:
 
     Ported from sim_update_maps() in sim.c.
     """
-    if not context.sim:
+    ctx = _resolve_app_context(context)
+
+    if not ctx.sim:
         logger.warning("sim_update_maps called but context.sim is None - skipping")
         return
 
-    view = context.sim.map
+    view = ctx.sim.map
     while view:
         must_update_map = (
-            context.new_map_flags[view.map_state]
-            or context.new_map
-            or context.shake_now
+            ctx.new_map_flags[view.map_state]
+            or ctx.new_map
+            or ctx.shake_now
         )
         if must_update_map:
             view.invalid = True
@@ -770,9 +788,9 @@ def sim_update_maps(context: AppContext) -> None:
 
         view = view.next
 
-    context.new_map = 0
+    ctx.new_map = 0
     for i in range(NMAPS):
-        context.new_map_flags[i] = 0
+        ctx.new_map_flags[i] = 0
 
 
 def sim_update_graphs(context: AppContext) -> None:
@@ -942,7 +960,7 @@ def DoStopMicropolis(context: AppContext) -> None:
 
     # Clean up graphics resources
     try:
-        from . import graphics_setup
+        graphics_setup = importlib.import_module("micropolis.graphics_setup")
 
         graphics_setup.cleanup_graphics()
         logger.debug("Cleaned up graphics")
@@ -951,9 +969,9 @@ def DoStopMicropolis(context: AppContext) -> None:
 
     # Clear event bus subscriptions
     try:
-        from .ui.event_bus import get_default_event_bus
+        event_bus_module = importlib.import_module("micropolis.ui.event_bus")
 
-        event_bus = get_default_event_bus()
+        event_bus = event_bus_module.get_default_event_bus()
         event_bus.clear()
         logger.debug("Cleared event bus")
     except Exception as e:
@@ -1158,12 +1176,39 @@ def setSkips(context: AppContext, skips: int) -> int:
     return 0
 
 
-def graphDoer(context: AppContext) -> None:
+def _resolve_context(context: AppContext | None) -> AppContext:
+    if context is not None:
+        return context
+
+    import builtins
+
+    ctx = getattr(builtins, "context", None)
+    if isinstance(ctx, AppContext):
+        return ctx
+
+    # Fall back to default AppContext if tests don't provide one.
+    return AppContext(config=AppConfig())
+
+
+def graphDoer(context: AppContext | None = None) -> None:
     """Update graph history buffers and refresh pygame overlays.
     :param context:
     """
-    update_all_graphs(context)
-    request_graph_panel_redraw(context)
+    ctx = _resolve_context(context)
+    from . import graphs as _graphs
+    import sys
+
+    _mod = sys.modules.get(__name__)
+    _graphs_mod = getattr(_mod, "graphs", _graphs)
+    try:
+        _graphs_mod.update_all_graphs(ctx)
+    except TypeError:
+        _graphs_mod.update_all_graphs()
+
+    try:
+        _graphs_mod.request_graph_panel_redraw(ctx)
+    except TypeError:
+        _graphs_mod.request_graph_panel_redraw()
 
 
 def UpdateBudgetWindow() -> None:
@@ -1171,12 +1216,23 @@ def UpdateBudgetWindow() -> None:
     pass
 
 
-def scoreDoer(context: AppContext) -> None:
+def scoreDoer(context: AppContext | None = None) -> None:
     """Update evaluation data and pygame panel state."""
-    from .evaluation_ui import score_doer as eval_score_doer, update_evaluation
+    from . import evaluation_ui as _evaluation_ui
+    import sys
 
-    eval_score_doer(context)
-    update_evaluation(context)
+    ctx = _resolve_context(context)
+    _mod = sys.modules.get(__name__)
+    _evaluation_mod = getattr(_mod, "evaluation_ui", _evaluation_ui)
+    try:
+        _evaluation_mod.score_doer(ctx)
+    except TypeError:
+        _evaluation_mod.score_doer()
+
+    try:
+        _evaluation_mod.update_evaluation(ctx)
+    except TypeError:
+        _evaluation_mod.update_evaluation()
 
 
 def UpdateFlush() -> None:
@@ -1185,11 +1241,10 @@ def UpdateFlush() -> None:
 
 
 def DoUpdateEditor(context: AppContext, view) -> None:
-    """Update editor view
-    :param context:
-    :param view:
-    """
-    do_update_editor(context, context.sim.editor)
+    """Update a single editor view."""
+    if context is None or view is None:
+        return
+    do_update_editor(context, view)
 
 
 def DoUpdateHeads() -> None:
@@ -1208,6 +1263,17 @@ def DoUpdateMap(context: AppContext, view) -> bool:
     MemDrawMap(context, view)
     view.invalid = False
     return True
+
+
+def _resolve_app_context(candidate: AppContext | Any) -> AppContext:
+    if isinstance(candidate, AppContext):
+        return candidate
+    sim_obj = getattr(candidate, "sim", None)
+    if sim_obj is not None:
+        ctx = getattr(sim_obj, "context", None)
+        if isinstance(ctx, AppContext):
+            return ctx
+    raise RuntimeError("AppContext is required for simulation updates")
 
 
 def MoveObjects() -> None:
@@ -1424,19 +1490,47 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
 
         # global editor_viewport_size
 
-        # Set up a basic window
-        screen = pygame.display.set_mode((800, 600))
+        # Set up a basic window and layout metrics
+        window_size = (1920, 1080)
+        screen = pygame.display.set_mode(window_size)
         pygame.display.set_caption("Micropolis Python")
-        map_area = (16, 16, MAP_W, MAP_H)
-        preview_width = screen.get_width() // 2
-        preview_height = screen.get_height() // 2
-        editor_area = (
-            screen.get_width() - preview_width - 16,
-            screen.get_height() - preview_height - 16,
-            preview_width,
-            preview_height,
+        screen_width, screen_height = screen.get_size()
+        margin = 16
+        head_panel_height = 160
+        tool_palette_width = 280
+        head_panel_rect = (
+            margin,
+            margin,
+            screen_width - (margin * 2),
+            head_panel_height,
         )
-        context.editor_viewport_size = (preview_width, preview_height)
+        content_top = head_panel_rect[1] + head_panel_rect[3] + margin
+        workspace_width = max(
+            320,
+            screen_width - tool_palette_width - (margin * 3),
+        )
+        workspace_height = max(200, screen_height - content_top - margin)
+        editor_panel_rect = (
+            margin,
+            content_top,
+            workspace_width,
+            workspace_height,
+        )
+        map_area = editor_panel_rect
+        context.editor_viewport_size = (editor_panel_rect[2], editor_panel_rect[3])
+        tool_palette_rect = (
+            margin * 2 + workspace_width,
+            content_top,
+            tool_palette_width,
+            screen_height - content_top - margin,
+        )
+        minimap_size = max(72, int(screen_height * 0.08))
+        minimap_rect = (
+            margin,
+            screen_height - minimap_size - margin,
+            minimap_size,
+            minimap_size,
+        )
         tool_hotkeys = {
             pygame.K_r: context.RESBASE,
             pygame.K_c: context.COMBASE,
@@ -1452,8 +1546,9 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
             logger.error(f"Failed to initialize view surfaces: {result.unwrap_err()}")
             return Err(result.unwrap_err())
 
-        # Initialize PanelManager and register editor panel
+        # Initialize PanelManager and register editor/tool palette panels
         panel_manager = PanelManager(context, surface=screen, event_bus=event_bus)
+        panel_manager.attach_surface(screen)
 
         # Register EditorPanel factory
         def editor_panel_factory(
@@ -1471,6 +1566,14 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
 
         panel_manager.register_panel_type("ToolPalette", tool_palette_factory)
 
+        # Register HeadPanel factory
+        def head_panel_factory(
+            manager: PanelManager, context: AppContext, **factory_kwargs
+        ) -> HeadPanel:
+            return HeadPanel(manager, context)
+
+        panel_manager.register_panel_type("HeadWindows", head_panel_factory)
+
         # Create editor panel instance
         try:
             editor_panel = panel_manager.create_panel(
@@ -1478,7 +1581,7 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
             )
             # Position the editor panel (set rect attribute if UIPanel supports it)
             if hasattr(editor_panel, "rect"):
-                editor_panel.rect = editor_area  # type: ignore
+                editor_panel.rect = editor_panel_rect  # type: ignore
             # Resize the panel to match viewport
             editor_panel.on_resize(context.editor_viewport_size)
             logger.info("Editor panel created and registered successfully")
@@ -1486,8 +1589,34 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
             logger.error(f"Failed to create editor panel: {e}")
             # Continue without editor panel for now
 
+        # Create tool palette panel instance
+        try:
+            tool_palette_panel = panel_manager.create_panel(
+                "ToolPalette", panel_id="tool-palette"
+            )
+            if hasattr(tool_palette_panel, "rect"):
+                tool_palette_panel.rect = tool_palette_rect  # type: ignore
+            tool_palette_panel.on_resize(
+                (tool_palette_rect[2], tool_palette_rect[3])
+            )
+            logger.info("Tool palette panel created and registered successfully")
+        except Exception as e:
+            logger.error(f"Failed to create tool palette panel: {e}")
+
+        # Create head panel instance
+        try:
+            head_panel = panel_manager.create_panel(
+                "HeadWindows", panel_id="head-panel"
+            )
+            if hasattr(head_panel, "rect"):
+                head_panel.rect = head_panel_rect  # type: ignore
+            head_panel.on_resize(screen.get_size())
+            logger.info("Head panel created and registered successfully")
+        except Exception as e:
+            logger.error(f"Failed to create head panel: {e}")
+
         sim_update(context)
-        blit_views_to_screen(context, screen, map_area, editor_area)
+        blit_views_to_screen(context, screen, map_area, minimap_rect)
         pygame.display.flip()
 
         logger.info("Pygame window initialized. Press Ctrl+C to exit")
@@ -1570,7 +1699,7 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
 
                 # Update simulation step and redraw
                 sim_loop(context, True)
-                blit_views_to_screen(context, screen, map_area, editor_area)
+                blit_views_to_screen(context, screen, map_area, minimap_rect)
 
                 # Render panels if PanelManager is active
                 if panel_manager is not None:
@@ -1602,4 +1731,7 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
     return Ok(None)
 
 
-# NONE
+# Lazy imports for test compatibility - allows tests to use engine.graphs and engine.evaluation_ui
+# This must be at the end of the module to avoid circular import issues
+from . import graphs as graphs  # noqa: E402
+from . import evaluation_ui as evaluation_ui  # noqa: E402

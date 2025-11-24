@@ -8,13 +8,21 @@ It handles the binary city file format with proper endianness conversion and dat
 
 import os
 import struct
+import sys
 
 from micropolis.constants import HISTLEN, MISCHISTLEN, WORLD_X, WORLD_Y
 from micropolis.context import AppContext
-from micropolis.engine import InitFundingLevel, invalidate_errors, invalidate_maps
+from micropolis.engine import (
+    InitFundingLevel,
+    invalidate_errors,
+    invalidate_maps,
+    setSkips,
+    setSpeed,
+)
 from micropolis.initialization import InitWillStuff
 from micropolis.simulation import do_sim_init
-from micropolis.ui_utilities import eval_cmd_str
+from micropolis.ui_utilities import eval_cmd_str, set_city_name, set_funds, set_game_level
+from micropolis.updates import UpdateFunds
 
 
 # ============================================================================
@@ -321,12 +329,12 @@ def loadFile(context: AppContext, filename: str) -> int:
         context.sim_speed = 3
 
     # Update simulation state
-    context.setSpeed(context, context.sim_speed)
-    context.setSkips(0)
+    setSpeed(context, context.sim_speed)
+    setSkips(context, 0)
 
     # Initialize funding and evaluation
     InitFundingLevel(context)
-    InitWillStuff()
+    InitWillStuff(context)
     context.scenario_id = 0
     context.init_sim_load = 1
     context.do_initial_eval = 0
@@ -440,7 +448,7 @@ def LoadScenario(context: AppContext, scenario_id: int) -> None:
         context.city_file_name = ""
 
     # Set game level to 0 (scenarios override difficulty)
-    context.SetGameLevel(0)
+    set_game_level(context, 0)
 
     # Validate scenario ID
     if scenario_id < 1 or scenario_id > 8:
@@ -463,25 +471,25 @@ def LoadScenario(context: AppContext, scenario_id: int) -> None:
     # Set scenario parameters
     context.scenario_id = scenario_id
     context.city_time = ((year - 1900) * 48) + month
-    context.SetFunds(context, funds)
+    set_funds(context, funds)
 
     # Set city name
-    context.setCityName(name)
+    set_city_name(context, name)
 
     # Reset simulation state
-    context.setSkips(0)
+    setSkips(context, 0)
     invalidate_maps(context.sim)
     invalidate_errors(context.sim)
-    context.setSpeed(context, 3)
+    setSpeed(context, 3)
     context.city_tax = 7
 
     # Load scenario file
     _load_file(context, fname, context.resource_dir)
 
     # Initialize simulation
-    InitWillStuff()
+    InitWillStuff(context)
     InitFundingLevel(context)
-    context.UpdateFunds()
+    UpdateFunds()
     invalidate_errors(context.sim)
     invalidate_maps(context.sim)
     context.init_sim_load = 1
@@ -524,7 +532,7 @@ def LoadCity(context: AppContext, filename: str) -> int:
         elif "/" in base_name:
             base_name = base_name.rsplit("/", 1)[1]
 
-        context.setCityName(base_name)
+        set_city_name(context, base_name)
 
         # Update UI and simulation state
         invalidate_maps(context.sim)
@@ -586,8 +594,8 @@ def SaveCityAs(context: AppContext, filename: str) -> None:
     elif "/" in base_name:
         base_name = base_name.rsplit("/", 1)[1]
 
-    if saveFile(context, context.city_file_name):
-        context.setCityName(base_name)
+        if saveFile(context, context.city_file_name):
+            set_city_name(context, base_name)
         context.DidSaveCity()
     else:
         msg = f"Unable to save city to file: {context.city_file_name}"
@@ -746,3 +754,15 @@ def getCityFileInfo(filename: str) -> dict | None:
 
     except (OSError, IOError, struct.error):
         return None
+
+
+try:
+    from micropolis import compat_shims
+except ImportError:
+    compat_shims = None
+
+if compat_shims is not None:
+    compat_shims.inject_legacy_wrappers(
+        sys.modules[__name__],
+        ["loadFile", "saveFile", "LoadCity", "SaveCity", "DoSaveCityAs"],
+    )

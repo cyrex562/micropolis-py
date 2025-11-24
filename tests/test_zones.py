@@ -7,7 +7,7 @@ to ensure outputs match the original C version behavior.
 
 import unittest.mock
 
-import micropolis.constants
+from micropolis import constants as const
 from micropolis.zones import (
     DoZone,
     DoHospChur,
@@ -29,7 +29,7 @@ from micropolis.zones import (
     DoFreePop,
     EvalLot,
 )
-from src.micropolis import types, macros
+from src.micropolis import macros
 
 
 from tests.assertions import Assertions
@@ -41,53 +41,53 @@ class TestZoneIntegration(Assertions):
     def setUp(self):
         """Set up test fixtures with mock simulation state."""
         # Initialize basic simulation state
-        types.map_data = [
-            [0 for _ in range(micropolis.constants.WORLD_Y)]
-            for _ in range(micropolis.constants.WORLD_X)
+        context.map_data = [
+            [0 for _ in range(const.WORLD_Y)]
+            for _ in range(const.WORLD_X)
         ]
-        types.power_map = bytearray(types.PWRMAPSIZE)
-        types.land_value_mem = [
-            [100 for _ in range(micropolis.constants.WORLD_Y // 2)]
-            for _ in range(micropolis.constants.WORLD_X // 2)
+        context.power_map = bytearray(const.PWRMAPSIZE)
+        context.land_value_mem = [
+            [100 for _ in range(const.WORLD_Y // 2)]
+            for _ in range(const.WORLD_X // 2)
         ]
-        types.pollution_mem = [
-            [10 for _ in range(micropolis.constants.WORLD_Y // 2)]
-            for _ in range(micropolis.constants.WORLD_X // 2)
+        context.pollution_mem = [
+            [10 for _ in range(const.WORLD_Y // 2)]
+            for _ in range(const.WORLD_X // 2)
         ]
-        types.pop_density = [
-            [32 for _ in range(micropolis.constants.WORLD_Y // 2)]
-            for _ in range(micropolis.constants.WORLD_X // 2)
+        context.pop_density = [
+            [32 for _ in range(const.WORLD_Y // 2)]
+            for _ in range(const.WORLD_X // 2)
         ]
-        types.com_rate = [
-            [1000 for _ in range(micropolis.constants.WORLD_Y // 8)]
-            for _ in range(micropolis.constants.WORLD_X // 8)
+        context.com_rate = [
+            [1000 for _ in range(const.WORLD_Y // 8)]
+            for _ in range(const.WORLD_X // 8)
         ]
-        types.rate_og_mem = [
-            [0 for _ in range(micropolis.constants.WORLD_Y // 8)]
-            for _ in range(micropolis.constants.WORLD_X // 8)
+        context.rate_og_mem = [
+            [0 for _ in range(const.WORLD_Y // 8)]
+            for _ in range(const.WORLD_X // 8)
         ]
 
         # Reset counters
-        types.res_pop = 0
-        types.com_pop = 0
-        types.ind_pop = 0
-        types.hosp_pop = 0
-        types.church_pop = 0
-        types.pwrd_z_cnt = 0
-        types.un_pwrd_z_cnt = 0
-        types.need_hosp = 0
-        types.need_church = 0
+        context.res_pop = 0
+        context.com_pop = 0
+        context.ind_pop = 0
+        context.hosp_pop = 0
+        context.church_pop = 0
+        context.pwrd_z_cnt = 0
+        context.un_pwrd_z_cnt = 0
+        context.need_hosp = 0
+        context.need_church = 0
 
         # Set valve values
-        types.r_value = 0
-        types.c_value = 0
-        types.i_value = 0
+        context.r_value = 0
+        context.c_value = 0
+        context.i_value = 0
 
         # Set current position
-        types.s_map_x = 60
-        types.s_map_y = 50
-        types.cchr9 = types.RZB  # Default to residential zone base
-        types.cchr = types.cchr9
+        context.s_map_x = 60
+        context.s_map_y = 50
+        context.cchr9 = const.RZB  # Default to residential zone base
+        context.cchr = context.cchr9
 
         # Mock random functions to return predictable values
         self.rand_patcher = unittest.mock.patch(
@@ -113,11 +113,11 @@ class TestZoneIntegration(Assertions):
         """Test residential zone population calculations match C version."""
         # Test various residential zone densities
         test_cases = [
-            (types.RZB, 16),  # Empty residential zone
-            (types.RZB + 9, 24),  # Low density
-            (types.RZB + 18, 32),  # Medium density
-            (types.RZB + 27, 40),  # High density
-            (types.RZB + 36, 16),  # Wraps around (density % 4 = 0)
+            (const.RZB, 16),  # Empty residential zone
+            (const.RZB + 9, 24),  # Low density
+            (const.RZB + 18, 32),  # Medium density
+            (const.RZB + 27, 40),  # High density
+            (const.RZB + 36, 16),  # Wraps around (density % 4 = 0)
         ]
 
         for tile_value, expected_pop in test_cases:
@@ -132,13 +132,13 @@ class TestZoneIntegration(Assertions):
     def test_population_calculations_commercial(self):
         """Test commercial zone population calculations match C version."""
         test_cases = [
-            (types.COMCLR, 0),  # Commercial clear
-            (types.CZB, 1),  # Base commercial
-            (types.CZB + 9, 2),  # Low density
-            (types.CZB + 18, 3),  # Medium density
-            (types.CZB + 27, 4),  # High density
-            (types.CZB + 36, 5),  # Max density
-            (types.CZB + 45, 1),  # Wraps around (density % 5 = 0)
+            (const.COMCLR, 0),  # Commercial clear
+            (const.CZB, 1),  # Base commercial
+            (const.CZB + 9, 2),  # Low density
+            (const.CZB + 18, 3),  # Medium density
+            (const.CZB + 27, 4),  # High density
+            (const.CZB + 36, 5),  # Max density
+            (const.CZB + 45, 1),  # Wraps around (density % 5 = 0)
         ]
 
         for tile_value, expected_pop in test_cases:
@@ -153,12 +153,12 @@ class TestZoneIntegration(Assertions):
     def test_population_calculations_industrial(self):
         """Test industrial zone population calculations match C version."""
         test_cases = [
-            (types.INDCLR, 0),  # Industrial clear
-            (types.IZB, 1),  # Base industrial
-            (types.IZB + 9, 2),  # Low density
-            (types.IZB + 18, 3),  # Medium density
-            (types.IZB + 27, 4),  # High density
-            (types.IZB + 36, 1),  # Wraps around (density % 4 = 0)
+            (const.INDCLR, 0),  # Industrial clear
+            (const.IZB, 1),  # Base industrial
+            (const.IZB + 9, 2),  # Low density
+            (const.IZB + 18, 3),  # Medium density
+            (const.IZB + 27, 4),  # High density
+            (const.IZB + 36, 1),  # Wraps around (density % 4 = 0)
         ]
 
         for tile_value, expected_pop in test_cases:
@@ -184,8 +184,8 @@ class TestZoneIntegration(Assertions):
 
         for land_val, pollution, expected in test_cases:
             with self.subTest(land_val=land_val, pollution=pollution):
-                types.land_value_mem[types.s_map_x >> 1][types.s_map_y >> 1] = land_val
-                types.pollution_mem[types.s_map_x >> 1][types.s_map_y >> 1] = pollution
+                context.land_value_mem[context.s_map_x >> 1][context.s_map_y >> 1] = land_val
+                context.pollution_mem[context.s_map_x >> 1][context.s_map_y >> 1] = pollution
                 result = GetCRVal()
                 self.assertEqual(
                     result,
@@ -196,48 +196,48 @@ class TestZoneIntegration(Assertions):
     def test_zone_power_detection(self):
         """Test SetZPower correctly detects powered zones."""
         # Test nuclear power plant (always powered)
-        types.cchr9 = types.NUCLEAR
-        types.cchr = types.NUCLEAR
+        context.cchr9 = const.NUCLEAR
+        context.cchr = const.NUCLEAR
         result = SetZPower()
         self.assertEqual(result, 1)
-        self.assertTrue(types.map_data[types.s_map_x][types.s_map_y] & types.PWRBIT)
+        self.assertTrue(context.map_data[context.s_map_x][context.s_map_y] & const.PWRBIT)
 
         # Test power plant (always powered)
-        types.cchr9 = types.POWERPLANT
-        types.cchr = types.POWERPLANT
+        context.cchr9 = const.POWERPLANT
+        context.cchr = const.POWERPLANT
         result = SetZPower()
         self.assertEqual(result, 1)
-        self.assertTrue(types.map_data[types.s_map_x][types.s_map_y] & types.PWRBIT)
+        self.assertTrue(context.map_data[context.s_map_x][context.s_map_y] & const.PWRBIT)
 
         # Test regular zone without power
-        types.cchr9 = types.RZB
-        types.cchr = types.RZB
+        context.cchr9 = const.RZB
+        context.cchr = const.RZB
         result = SetZPower()
         self.assertEqual(result, 0)
-        self.assertFalse(types.map_data[types.s_map_x][types.s_map_y] & types.PWRBIT)
+        self.assertFalse(context.map_data[context.s_map_x][context.s_map_y] & const.PWRBIT)
 
     def test_zone_type_routing(self):
         """Test DoZone routes to correct processing function based on tile type."""
         # Test residential zone routing
-        types.cchr9 = types.RZB
+        context.cchr9 = const.RZB
         with unittest.mock.patch("src.micropolis.zones.DoResidential") as mock_res:
             DoZone()
             mock_res.assert_called_once()
 
         # Test commercial zone routing
-        types.cchr9 = types.CZB
+        context.cchr9 = const.CZB
         with unittest.mock.patch("src.micropolis.zones.DoCommercial") as mock_com:
             DoZone()
             mock_com.assert_called_once()
 
         # Test industrial zone routing
-        types.cchr9 = types.IZB
+        context.cchr9 = const.IZB
         with unittest.mock.patch("src.micropolis.zones.DoIndustrial") as mock_ind:
             DoZone()
             mock_ind.assert_called_once()
 
         # Test hospital routing
-        types.cchr9 = types.HOSPITAL
+        context.cchr9 = const.HOSPITAL
         with unittest.mock.patch("src.micropolis.zones.DoHospChur") as mock_hosp:
             DoZone()
             mock_hosp.assert_called_once()
@@ -245,24 +245,24 @@ class TestZoneIntegration(Assertions):
     def test_hospital_church_processing(self):
         """Test hospital and church zone processing."""
         # Test hospital processing
-        types.cchr9 = types.HOSPITAL
-        types.city_time = 0  # Will trigger repair
-        initial_hosp_pop = types.hosp_pop
+        context.cchr9 = const.HOSPITAL
+        context.city_time = 0  # Will trigger repair
+        initial_hosp_pop = context.hosp_pop
 
         with unittest.mock.patch("src.micropolis.simulation.RepairZone") as mock_repair:
             DoHospChur()
-            self.assertEqual(types.hosp_pop, initial_hosp_pop + 1)
-            mock_repair.assert_called_once_with(types.HOSPITAL, 3)
+            self.assertEqual(context.hosp_pop, initial_hosp_pop + 1)
+            mock_repair.assert_called_once_with(const.HOSPITAL, 3)
 
         # Test church processing
-        types.cchr9 = types.CHURCH
-        types.city_time = 0  # Will trigger repair
-        initial_church_pop = types.church_pop
+        context.cchr9 = const.CHURCH
+        context.city_time = 0  # Will trigger repair
+        initial_church_pop = context.church_pop
 
         with unittest.mock.patch("src.micropolis.simulation.RepairZone") as mock_repair:
             DoHospChur()
-            self.assertEqual(types.church_pop, initial_church_pop + 1)
-            mock_repair.assert_called_once_with(types.CHURCH, 3)
+            self.assertEqual(context.church_pop, initial_church_pop + 1)
+            mock_repair.assert_called_once_with(const.CHURCH, 3)
 
     def test_evaluation_functions(self):
         """Test zone evaluation functions produce correct desirability scores."""
@@ -291,9 +291,9 @@ class TestZoneIntegration(Assertions):
         """Test residential zone placement calculations."""
         test_cases = [
             # (density, value, expected_base)
-            (0, 0, ((0 * 4 + 0) * 9) + types.RZB - 4),  # Empty zone
-            (1, 1, ((1 * 4 + 1) * 9) + types.RZB - 4),  # Low density, low value
-            (2, 2, ((2 * 4 + 2) * 9) + types.RZB - 4),  # Medium density, medium value
+            (0, 0, ((0 * 4 + 0) * 9) + const.RZB - 4),  # Empty zone
+            (1, 1, ((1 * 4 + 1) * 9) + const.RZB - 4),  # Low density, low value
+            (2, 2, ((2 * 4 + 2) * 9) + const.RZB - 4),  # Medium density, medium value
         ]
 
         for density, value, expected_base in test_cases:
@@ -306,9 +306,9 @@ class TestZoneIntegration(Assertions):
         """Test commercial zone placement calculations."""
         test_cases = [
             # (density, value, expected_base)
-            (0, 0, ((0 * 5 + 0) * 9) + types.CZB - 4),  # Empty zone
-            (1, 1, ((1 * 5 + 1) * 9) + types.CZB - 4),  # Low density, low value
-            (2, 2, ((2 * 5 + 2) * 9) + types.CZB - 4),  # Medium density, medium value
+            (0, 0, ((0 * 5 + 0) * 9) + const.CZB - 4),  # Empty zone
+            (1, 1, ((1 * 5 + 1) * 9) + const.CZB - 4),  # Low density, low value
+            (2, 2, ((2 * 5 + 2) * 9) + const.CZB - 4),  # Medium density, medium value
         ]
 
         for density, value, expected_base in test_cases:
@@ -321,9 +321,9 @@ class TestZoneIntegration(Assertions):
         """Test industrial zone placement calculations."""
         test_cases = [
             # (density, value, expected_base)
-            (0, 0, ((0 * 4 + 0) * 9) + types.IZB - 4),  # Empty zone
-            (1, 1, ((1 * 4 + 1) * 9) + types.IZB - 4),  # Low density, low value
-            (2, 2, ((2 * 4 + 2) * 9) + types.IZB - 4),  # Medium density, medium value
+            (0, 0, ((0 * 4 + 0) * 9) + const.IZB - 4),  # Empty zone
+            (1, 1, ((1 * 4 + 1) * 9) + const.IZB - 4),  # Low density, low value
+            (2, 2, ((2 * 4 + 2) * 9) + const.IZB - 4),  # Medium density, medium value
         ]
 
         for density, value, expected_base in test_cases:
@@ -335,15 +335,15 @@ class TestZoneIntegration(Assertions):
     def test_free_zone_population_counting(self):
         """Test DoFreePop counts houses in free zone area."""
         # Clear the area first
-        for x in range(types.s_map_x - 1, types.s_map_x + 2):
-            for y in range(types.s_map_y - 1, types.s_map_y + 2):
+        for x in range(context.s_map_x - 1, context.s_map_x + 2):
+            for y in range(context.s_map_y - 1, context.s_map_y + 2):
                 if macros.TestBounds(x, y):
-                    types.map_data[x][y] = 0
+                    context.map_data[x][y] = 0
 
         # Add some houses (LHTHR to HHTHR range)
-        types.map_data[types.s_map_x - 1][types.s_map_y - 1] = types.LHTHR
-        types.map_data[types.s_map_x][types.s_map_y] = types.HHTHR
-        types.map_data[types.s_map_x + 1][types.s_map_y + 1] = types.LHTHR + 5
+        context.map_data[context.s_map_x - 1][context.s_map_y - 1] = const.LHTHR
+        context.map_data[context.s_map_x][context.s_map_y] = const.HHTHR
+        context.map_data[context.s_map_x + 1][context.s_map_y + 1] = const.LHTHR + 5
 
         result = DoFreePop(context)
         self.assertEqual(result, 3)  # Should count 3 houses
@@ -354,15 +354,15 @@ class TestZoneIntegration(Assertions):
         for i in range(9):
             zx = [-1, 0, 1, -1, 0, 1, -1, 0, 1][i]
             zy = [-1, -1, -1, 0, 0, 0, 1, 1, 1][i]
-            xx, yy = types.s_map_x + zx, types.s_map_y + zy
+            xx, yy = context.s_map_x + zx, context.s_map_y + zy
             if macros.TestBounds(xx, yy):
-                types.map_data[xx][yy] = 0
+                context.map_data[xx][yy] = 0
 
         # Add fire to one tile (between FLOOD and ROADBASE)
-        fire_tile = types.FLOOD + 10  # Some fire tile
-        types.map_data[types.s_map_x][types.s_map_y] = fire_tile
+        fire_tile = const.FLOOD + 10  # Some fire tile
+        context.map_data[context.s_map_x][context.s_map_y] = fire_tile
 
-        result = ZonePlop(context, types.RZB)
+        result = ZonePlop(context, const.RZB)
         self.assertFalse(result)  # Should fail due to fire
 
     def test_zone_plop_success(self):
@@ -371,38 +371,38 @@ class TestZoneIntegration(Assertions):
         for i in range(9):
             zx = [-1, 0, 1, -1, 0, 1, -1, 0, 1][i]
             zy = [-1, -1, -1, 0, 0, 0, 1, 1, 1][i]
-            xx, yy = types.s_map_x + zx, types.s_map_y + zy
+            xx, yy = context.s_map_x + zx, context.s_map_y + zy
             if macros.TestBounds(xx, yy):
-                types.map_data[xx][yy] = 0
+                context.map_data[xx][yy] = 0
 
-        result = ZonePlop(context, types.RZB)
+        result = ZonePlop(context, const.RZB)
         self.assertTrue(result)  # Should succeed
 
         # Check center tile has ZONEBIT and BULLBIT set
-        center_tile = types.map_data[types.s_map_x][types.s_map_y]
-        self.assertTrue(center_tile & types.ZONEBIT)
-        self.assertTrue(center_tile & types.BULLBIT)
+        center_tile = context.map_data[context.s_map_x][context.s_map_y]
+        self.assertTrue(center_tile & const.ZONEBIT)
+        self.assertTrue(center_tile & const.BULLBIT)
 
     def test_eval_lot_scoring(self):
         """Test EvalLot produces correct lot desirability scores."""
         x, y = (
-            types.s_map_x + 2,
-            types.s_map_y + 2,
+            context.s_map_x + 2,
+            context.s_map_y + 2,
         )  # Use offset to avoid boundary issues
 
         # Test invalid lot (occupied by non-residential)
-        types.map_data[x][y] = types.ROADBASE + 10
+        context.map_data[x][y] = const.ROADBASE + 10
         result = EvalLot(context, x, y)
         self.assertEqual(result, -1)
 
         # Test clear lot with no roads
-        types.map_data[x][y] = 0
+        context.map_data[x][y] = 0
         result = EvalLot(context, x, y)
         self.assertEqual(result, 1)  # Base score
 
         # Add roads around the lot
-        types.map_data[x][y - 1] = types.ROADBASE  # North
-        types.map_data[x + 1][y] = types.ROADBASE  # East
+        context.map_data[x][y - 1] = const.ROADBASE  # North
+        context.map_data[x + 1][y] = const.ROADBASE  # East
         result = EvalLot(context, x, y)
         self.assertEqual(result, 3)  # Base + 2 roads
 
@@ -411,8 +411,8 @@ class TestZoneIntegration(Assertions):
         # Mock traffic to be good
         with unittest.mock.patch("src.micropolis.zones.MakeTraf", return_value=1):
             # Set up conditions for growth
-            types.r_value = 1000  # High residential valve
-            types.cchr9 = types.RZB
+            context.r_value = 1000  # High residential valve
+            context.cchr9 = const.RZB
 
             # Mock Rand16Signed to return a value that allows growth
             # For zscore=1000: need Rand16Signed < (1000 - 26380) = -25380
@@ -429,8 +429,8 @@ class TestZoneIntegration(Assertions):
         # Mock traffic to be good
         with unittest.mock.patch("src.micropolis.zones.MakeTraf", return_value=1):
             # Set up conditions for growth
-            types.c_value = 1000  # High commercial valve
-            types.cchr9 = types.CZB
+            context.c_value = 1000  # High commercial valve
+            context.cchr9 = const.CZB
 
             # Mock Rand16Signed to return a value that allows growth
             with unittest.mock.patch(
@@ -446,8 +446,8 @@ class TestZoneIntegration(Assertions):
         # Mock traffic to be good
         with unittest.mock.patch("src.micropolis.zones.MakeTraf", return_value=1):
             # Set up conditions for growth
-            types.i_value = 1000  # High industrial valve
-            types.cchr9 = types.IZB
+            context.i_value = 1000  # High industrial valve
+            context.cchr9 = const.IZB
 
             # Mock Rand16Signed to return a value that allows growth
             with unittest.mock.patch(
@@ -463,8 +463,8 @@ class TestZoneIntegration(Assertions):
         # Mock traffic to be good but valves low
         with unittest.mock.patch("src.micropolis.zones.MakeTraf", return_value=1):
             # Set up conditions for shrinkage
-            types.r_value = -1000  # Low residential valve
-            types.cchr9 = types.RZB + 27  # High density residential
+            context.r_value = -1000  # Low residential valve
+            context.cchr9 = const.RZB + 27  # High density residential
 
             # Mock Rand16Signed to return a value that allows shrinkage
             # For zscore=-1000: need Rand16Signed > (-1000 + 26380) = 25380

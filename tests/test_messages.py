@@ -5,12 +5,13 @@ Tests the message system functions including message sending,
 scenario scoring, and message string loading.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from src.micropolis import messages, types
-
-
+from src.micropolis import messages
+from src.micropolis.context import AppContext
 from tests.assertions import Assertions
+
+context: AppContext | None = None
 
 
 class TestMessages(Assertions):
@@ -19,51 +20,51 @@ class TestMessages(Assertions):
     def setUp(self):
         """Set up test fixtures."""
         # Reset message state
-        types.message_port = 0
-        types.mes_x = 0
-        types.mes_y = 0
-        types.mes_num = 0
-        types.last_mes_time = 0
-        types.last_city_pop = 0
-        types.last_category = 0
-        types.last_pic_num = 0
-        types.last_message = ""
-        types.have_last_message = 0
-        types.sound = 1
-        types.auto_go = 0
+        context.message_port = 0
+        context.mes_x = 0
+        context.mes_y = 0
+        context.mes_num = 0
+        context.last_mes_time = 0
+        context.last_city_pop = 0
+        context.last_category = 0
+        context.last_pic_num = 0
+        context.last_message = ""
+        context.have_last_message = False
+        context.sound = 1
+        context.auto_go = False
 
         # Reset city state for testing
-        types.TotalZPop = 0
-        types.res_z_pop = 0
-        types.ComZPop = 0
-        types.IndZPop = 0
-        types.nuclear_pop = 0
-        types.coal_pop = 0
-        types.road_total = 0
-        types.rail_total = 0
-        types.res_pop = 0
-        types.com_pop = 0
-        types.ind_pop = 0
-        types.stadium_pop = 0
-        types.port_pop = 0
-        types.airport_pop = 0
-        types.total_pop = 0
-        types.fire_st_pop = 0
-        types.police_pop = 0
-        types.city_tax = 0
-        types.road_effect = 0
-        types.fire_effect = 0
-        types.police_effect = 0
-        types.pollute_average = 0
-        types.crime_average = 0
-        types.traffic_average = 0
-        types.un_pwrd_z_cnt = 0
-        types.pwrd_z_cnt = 0
-        types.scenario_id = 0
-        types.score_type = 0
-        types.score_wait = 0
-        types.city_class = 0
-        types.city_score = 0
+        context.total_z_pop = 0
+        context.res_z_pop = 0
+        context.com_z_pop = 0
+        context.ind_z_pop = 0
+        context.nuclear_pop = 0
+        context.coal_pop = 0
+        context.road_total = 0
+        context.rail_total = 0
+        context.res_pop = 0
+        context.com_pop = 0
+        context.ind_pop = 0
+        context.stadium_pop = 0
+        context.port_pop = 0
+        context.airport_pop = 0
+        context.total_pop = 0
+        context.fire_st_pop = 0
+        context.police_pop = 0
+        context.city_tax = 0
+        context.road_effect = 0
+        context.fire_effect = 0
+        context.police_effect = 0
+        context.pollute_average = 0
+        context.crime_average = 0
+        context.traffic_average = 0
+        context.un_pwrd_z_cnt = 0
+        context.pwrd_z_cnt = 0
+        context.scenario_id = 0
+        context.score_type = 0
+        context.score_wait = 0
+        context.city_class = 0
+        context.city_score = 0
 
     def test_load_message_strings(self):
         """Test loading message strings from file."""
@@ -102,41 +103,41 @@ class TestMessages(Assertions):
 
     def test_clear_mes(self):
         """Test clearing message state."""
-        types.message_port = 5
-        types.mes_x = 10
-        types.mes_y = 20
-        types.last_pic_num = 3
+        context.message_port = 5
+        context.mes_x = 10
+        context.mes_y = 20
+        context.last_pic_num = 3
 
         messages.clear_mes(context)
 
-        self.assertEqual(types.message_port, 0)
-        self.assertEqual(types.mes_x, 0)
-        self.assertEqual(types.mes_y, 0)
-        self.assertEqual(types.last_pic_num, 0)
+        self.assertEqual(context.message_port, 0)
+        self.assertEqual(context.mes_x, 0)
+        self.assertEqual(context.mes_y, 0)
+        self.assertEqual(context.last_pic_num, 0)
 
     def test_send_mes(self):
         """Test sending messages."""
         # Clear message port first
-        types.message_port = 0
+        context.message_port = 0
 
         # Should send positive message
         result = messages.send_mes(context, 1)
         self.assertEqual(result, 1)
-        self.assertEqual(types.message_port, 1)
-        self.assertEqual(types.mes_x, 0)
-        self.assertEqual(types.mes_y, 0)
+        self.assertEqual(context.message_port, 1)
+        self.assertEqual(context.mes_x, 0)
+        self.assertEqual(context.mes_y, 0)
 
         # Should not send duplicate positive message
         result = messages.send_mes(context, 1)
         self.assertEqual(result, 0)
 
         # Clear and test negative message
-        types.message_port = 0
-        types.last_pic_num = 0
+        context.message_port = 0
+        context.last_pic_num = 0
         result = messages.send_mes(context, -10)
         self.assertEqual(result, 1)
-        self.assertEqual(types.message_port, -10)
-        self.assertEqual(types.last_pic_num, -10)
+        self.assertEqual(context.message_port, -10)
+        self.assertEqual(context.last_pic_num, -10)
 
         # Should not send duplicate negative message
         result = messages.send_mes(context, -10)
@@ -144,47 +145,47 @@ class TestMessages(Assertions):
 
     def test_send_mes_at(self):
         """Test sending messages at specific locations."""
-        types.message_port = 0
+        context.message_port = 0
 
         messages.send_mes_at(context, 5, 100, 200)
 
-        self.assertEqual(types.message_port, 5)
-        self.assertEqual(types.mes_x, 100)
-        self.assertEqual(types.mes_y, 200)
+        self.assertEqual(context.message_port, 5)
+        self.assertEqual(context.mes_x, 100)
+        self.assertEqual(context.mes_y, 200)
 
     def test_check_growth(self):
         """Test population growth milestone checking."""
         # Test initial state
-        types.last_city_pop = 0
-        types.last_category = 0
+        context.last_city_pop = 0
+        context.last_category = 0
 
         # Set up city with small population
-        types.res_pop = 10
-        types.com_pop = 0
-        types.ind_pop = 0
-        types.city_time = 4  # Multiple of 4 to trigger check
+        context.res_pop = 10
+        context.com_pop = 0
+        context.ind_pop = 0
+        context.city_time = 4  # Multiple of 4 to trigger check
 
         messages.check_growth(context)
 
         # Should not trigger any messages yet
-        self.assertEqual(types.last_city_pop, 200)  # (10+0+0)*20 = 200
+        self.assertEqual(context.last_city_pop, 200)  # (10+0+0)*20 = 200
         # Actually: ((ResPop) + (ComPop * 8L) + (IndPop * 8L)) * 20L
         # = (10 + 0 + 0) * 20 = 200
 
         # Test town milestone
-        types.last_city_pop = 1999
-        types.res_pop = 100  # Should give population of 2000
+        context.last_city_pop = 1999
+        context.res_pop = 100  # Should give population of 2000
         messages.check_growth(context)
 
         # Should have sent message -35 (town)
-        self.assertEqual(types.message_port, -35)
-        self.assertEqual(types.last_category, 35)
+        self.assertEqual(context.message_port, -35)
+        self.assertEqual(context.last_category, 35)
 
     @patch("src.micropolis.messages.do_lose_game")
     def test_do_scenario_score_lose(self, mock_lose_game):
         """Test scenario scoring for loss conditions."""
-        types.score_type = 1  # Dullsville
-        types.city_class = 3  # Less than required 4
+        context.score_type = 1  # Dullsville
+        context.city_class = 3  # Less than required 4
 
         messages.do_scenario_score(context, 1)
 
@@ -194,13 +195,13 @@ class TestMessages(Assertions):
     @patch("src.micropolis.messages.do_lose_game")
     def test_do_scenario_score_win(self, mock_lose_game):
         """Test scenario scoring for win conditions."""
-        types.score_type = 1  # Dullsville
-        types.city_class = 4  # Meets requirement
+        context.score_type = 1  # Dullsville
+        context.city_class = 4  # Meets requirement
 
         messages.do_scenario_score(context, 1)
 
         # Should send win message (-100)
-        self.assertEqual(types.message_port, -100)
+        self.assertEqual(context.message_port, -100)
         # Should not call lose game
         mock_lose_game.assert_not_called()
 

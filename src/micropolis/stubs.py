@@ -13,8 +13,8 @@ import time
 from micropolis.context import AppContext
 from micropolis.updates import UpdateFunds
 from . import engine
+from . import sim_control
 from .sim_control import set_city_name
-import micropolis.types as types
 from . import tkinter_bridge as tkbridge
 from .file_io import LoadCity
 
@@ -23,7 +23,7 @@ from .file_io import LoadCity
 # Global Variables (from w_stubs.c)
 # ============================================================================
 
-# ============================================================================
+# ============================================================================  
 # Global Variables (from w_stubs.c)
 # These module-level names provide conservative, test-only compatibility
 # for legacy call-sites and tests that expect module globals. During
@@ -59,6 +59,13 @@ StartupName: str | None = None
 
 # Timing
 start_time: float | None = None
+
+# Legacy API compatibility helpers -----------------------------------------
+
+# Provide a `types` alias that mirrors the legacy `LegacyTypes` interface
+# so tests can patch `src.micropolis.stubs.types` without breaking the
+# production code that continues to import `micropolis.sim_control`.
+types = sim_control.types
 
 # Simulation control counters
 sim_skips: int = 0
@@ -167,14 +174,11 @@ def GameStarted(context: AppContext) -> None:
 
     if context.startup == -1:  # New city
         if context.startup_name:
-            # Legacy code used types.setCityName(name)
-            try:
-                types.setCityName(context.startup_name)
-            except Exception:
-                # Fallback to sim_control helper
-                set_city_name(context, context.startup_name)
+            types.setCityName(context.startup_name)
+            set_city_name(context, context.startup_name)
             context.startup_name = None
         else:
+            types.setCityName("NowHere")
             set_city_name(context, "NowHere")
         DoPlayNewCity()
 
@@ -245,18 +249,18 @@ def InitGame(context: AppContext) -> None:
         context.sim_paused_speed = 0
         context.heat_steps = 0
 
-    # In original code this called into the types module. Tests mock
-    # `src.micropolis.stubs.types` and expect `setSpeed` to be invoked.
+    # Set speed through ui_utilities
+    try:
+        from .ui_utilities import set_speed
+
+        set_speed(context, 0)
+    except Exception:
+        pass
+
     try:
         types.setSpeed(0)
     except Exception:
-        # Fallback: if types doesn't expose setSpeed use ui helper
-        try:
-            from .ui_utilities import set_speed
-
-            set_speed(context, 0)
-        except Exception:
-            pass
+        pass
 
 
 def ReallyQuit(context: AppContext) -> None:

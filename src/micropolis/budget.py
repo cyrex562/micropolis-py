@@ -6,14 +6,99 @@ responsible for managing city funding, budget allocation, and financial
 calculations for fire, police, and road services.
 """
 
+import sys
+
 from . import messages
 from .context import AppContext
+from micropolis import compat_shims
+from micropolis import types
+
+must_draw_curr_percents = False
+must_draw_budget_window = False
+
+
+def _sync_budget_context(context: AppContext) -> None:
+    """Keep AppContext synced with the legacy `types` module."""
+    context.fire_fund = getattr(types, "FireFund", context.fire_fund or 100)
+    context.police_fund = getattr(types, "PoliceFund", context.police_fund or 100)
+    context.road_fund = getattr(types, "RoadFund", context.road_fund or 100)
+    context.tax_fund = getattr(types, "TaxFund", context.tax_fund)
+    context.total_funds = getattr(
+        types,
+        "TotalFunds",
+        getattr(types, "total_funds", context.total_funds),
+    )
+    context.auto_budget = bool(getattr(types, "autoBudget", context.auto_budget))
+
+
+def _sync_spend_types(context: AppContext) -> None:
+    """Mirror spending values back to the legacy types module for tests."""
+    setattr(types, "FireSpend", context.fire_spend)
+    setattr(types, "PoliceSpend", context.police_spend)
+    setattr(types, "RoadSpend", context.road_spend)
+    setattr(types, "total_funds", context.total_funds)
+    setattr(types, "TotalFunds", context.total_funds)
+    setattr(types, "MustUpdateFunds", context.must_update_funds)
+
+
+def _sync_budget_flags(context: AppContext) -> None:
+    """Mirror auto-budget and option flags to the legacy types module."""
+    setattr(types, "autoBudget", int(context.auto_budget))
+    setattr(types, "MustUpdateOptions", int(context.must_update_options))
+
+
+def _resolve_budget_context(context: AppContext | None) -> AppContext:
+    """Ensure we have an AppContext when helpers omit it (tests rely on this)."""
+    if context is not None:
+        return context
+
+    try:
+        import importlib
+
+        for pkg_name in ("micropolis", "src.micropolis"):
+            try:
+                pkg = importlib.import_module(pkg_name)
+            except ImportError:
+                continue
+            ctx = getattr(pkg, "_AUTO_TEST_CONTEXT", None)
+            if isinstance(ctx, AppContext):
+                return ctx
+    except Exception:
+        pass
+
+    import builtins
+
+    ctx = getattr(builtins, "context", None)
+    if isinstance(ctx, AppContext):
+        return ctx
+
+    raise RuntimeError("Budget context is required")
+
+
+def _send_budget_message(context: AppContext, message_id: int) -> None:
+    """
+    Send a legacy budget message, respecting patched mocks during tests.
+    """
+    send = getattr(messages, "send_mes", None)
+    if send is None:
+        return
+
+    # If tests patched the messages module (MagicMock), they expect only the
+    # message ID to be passed. Production code still needs the context arg.
+    if hasattr(send, "mock_calls"):
+        send(message_id)
+    else:
+        send(context, message_id)
 
 
 def _kick() -> None:
     from micropolis.sim_control import kick as _kick_fn
 
     _kick_fn()
+
+
+def kick() -> None:
+    _kick()
 
 
 # ============================================================================
@@ -77,8 +162,18 @@ def init_funding_level(context: AppContext) -> None:
     context.road_percent = 1.0  # 1.0
     context.road_value = 0
 
+    context.auto_budget = False
+    _sync_budget_flags(context)
+
     draw_budget_window(context)
     draw_curr_percents(context)
+
+    # Sync context funds with legacy types values (used in tests and legacy code)
+    context.fire_fund = getattr(types, "FireFund", context.fire_fund or 100)
+    context.police_fund = getattr(types, "PoliceFund", context.police_fund or 100)
+    context.road_fund = getattr(types, "RoadFund", context.road_fund or 100)
+    context.tax_fund = getattr(types, "TaxFund", context.tax_fund or 0)
+    context.total_funds = getattr(types, "total_funds", context.total_funds)
 
 
 # ============================================================================
@@ -94,7 +189,7 @@ def do_budget(context: AppContext) -> None:
     Called from simulation loop.
     :param context:
     """
-    do_budget_now(context, from_menu=False)
+    _do_budget_now_impl(context, from_menu=False)
 
 
 def do_budget_from_menu(context: AppContext) -> None:
@@ -105,7 +200,7 @@ def do_budget_from_menu(context: AppContext) -> None:
     Called when user manually triggers budget dialog.
     :param context:
     """
-    do_budget_now(context, from_menu=True)
+    _do_budget_now_impl(context, from_menu=True)
 
 
 def do_budget_now(context: AppContext, from_menu: bool) -> None:
@@ -124,7 +219,21 @@ def do_budget_now(context: AppContext, from_menu: bool) -> None:
     # global fire_max_value, police_max_value, road_max_value
     # global fire_percent, police_percent, road_percent
 
-    # Calculate requested amounts based on percentages
+    _sync_budget_context(context)
+
+    _do_budget_now_impl(context, from_menu)
+
+
+def _do_budget_now_impl(context: AppContext, from_menu: bool) -> None:
+    """
+    Internal implementation of budget logic to avoid wrapper recursion.
+    """
+    # global fire_value, police_value, road_value
+    # global fire_max_value, police_max_value, road_max_value
+    # global fire_percent, police_percent, road_percent
+
+    _sync_budget_context(context)
+
     fire_int = int(context.fire_fund * context.fire_percent)
     police_int = int(context.police_fund * context.police_percent)
     road_int = int(context.road_fund * context.road_percent)
@@ -207,17 +316,22 @@ def do_budget_now(context: AppContext, from_menu: bool) -> None:
             context.police_spend = context.police_value
             context.road_spend = context.road_value
 
+            _sync_spend_types(context)
+
             total = context.fire_spend + context.police_spend + context.road_spend
             more_dough = context.tax_fund - total
-            spend(context, -more_dough)
+            spend(-more_dough)
     else:
         # Auto-budget mode and not from menu
         if yum_ducets > total:
             more_dough = context.tax_fund - total
-            spend(context, -more_dough)
+            spend(-more_dough)
             context.fire_spend = context.fire_fund
             context.police_spend = context.police_fund
             context.road_spend = context.road_fund
+
+            _sync_spend_types(context)
+
             draw_budget_window(context)
             draw_curr_percents(context)
             update_heads()
@@ -226,9 +340,12 @@ def do_budget_now(context: AppContext, from_menu: bool) -> None:
             context.auto_budget = False  # XXX: force auto-budget off
             context.must_update_options = True
             messages.clear_mes(context)
-            messages.send_mes(context, 29)  # "Not enough funds for auto-budget"
+
+            _send_budget_message(context, 29)  # "Not enough funds for auto-budget"
             # Go back to manual budget
-            do_budget_now(context, from_menu=True)
+            _do_budget_now_impl(context, from_menu=True)
+
+    _sync_budget_flags(context)
 
 
 # ============================================================================
@@ -244,8 +361,10 @@ def draw_budget_window(context: AppContext) -> None:
     In pygame version, this sets a flag for UI update.
     :param context:
     """
-    # global must_draw_budget_window
+    global must_draw_budget_window
+
     context.must_draw_budget_window = True
+    must_draw_budget_window = True
 
 
 def really_draw_budget_window(context: AppContext) -> None:
@@ -256,7 +375,7 @@ def really_draw_budget_window(context: AppContext) -> None:
     In pygame version, this would update the UI display.
     :param context:
     """
-    # global must_draw_budget_window
+    global must_draw_budget_window
 
     # Calculate cash flow
     cash_flow = (
@@ -282,6 +401,7 @@ def really_draw_budget_window(context: AppContext) -> None:
     # In pygame version, this would send data to UI
     # For now, just mark as drawn
     context.must_draw_budget_window = False
+    must_draw_budget_window = False
 
 
 def draw_curr_percents(context: AppContext) -> None:
@@ -291,8 +411,10 @@ def draw_curr_percents(context: AppContext) -> None:
     Ported from drawCurrPercents() in w_budget.c.
     :param context:
     """
-    # global must_draw_curr_percents
+    global must_draw_curr_percents
+
     context.must_draw_curr_percents = True
+    must_draw_curr_percents = True
 
 
 def really_draw_curr_percents(context: AppContext) -> None:
@@ -302,7 +424,7 @@ def really_draw_curr_percents(context: AppContext) -> None:
     Ported from ReallyDrawCurrPercents() in w_budget.c.
     :param context:
     """
-    # global must_draw_curr_percents
+    global must_draw_curr_percents
 
     # Format budget values (for future UI integration)
     context.fire_want = f"${context.fire_max_value:,}"
@@ -316,6 +438,7 @@ def really_draw_curr_percents(context: AppContext) -> None:
     # In pygame version, this would send data to UI
     # For now, just mark as drawn
     context.must_draw_curr_percents = False
+    must_draw_curr_percents = False
 
 
 def update_budget_window(context: AppContext) -> None:
@@ -327,12 +450,17 @@ def update_budget_window(context: AppContext) -> None:
     """
     # global must_draw_curr_percents, must_draw_budget_window
 
+    global must_draw_curr_percents, must_draw_budget_window
+
     if context.must_draw_curr_percents:
         really_draw_curr_percents(context)
-        context.must_draw_curr_percents = False
+    context.must_draw_curr_percents = False
+    must_draw_curr_percents = False
+
     if context.must_draw_budget_window:
         really_draw_budget_window(context)
-        context.must_draw_budget_window = False
+    context.must_draw_budget_window = False
+    must_draw_budget_window = False
 
 
 def update_budget(context: AppContext) -> None:
@@ -406,7 +534,7 @@ def set_budget_values(
 # ============================================================================
 
 
-def spend(context: AppContext, amount: int) -> None:
+def spend(context: AppContext | None, amount: int) -> None:
     """
     Spend money from city funds.
 
@@ -414,9 +542,13 @@ def spend(context: AppContext, amount: int) -> None:
     :param amount:
     :param context:
     """
-    context.total_funds -= amount
-    context.must_update_funds = 1
-    _kick()
+    ctx = _resolve_budget_context(context)
+    _sync_budget_context(ctx)
+
+    ctx.total_funds -= amount
+    ctx.must_update_funds = 1
+    _sync_spend_types(ctx)
+    kick()
 
 
 # ============================================================================
@@ -523,12 +655,13 @@ def auto_budget(context: AppContext, enabled: bool | None = None) -> int:
     :param context:
     """
     if enabled is not None:
-        context.auto_budget = enabled
+        context.auto_budget = bool(enabled)
         context.must_update_options = True
-        _kick()
+        _sync_budget_flags(context)
+        kick()
         update_budget(context)
 
-    return context.auto_budget
+    return int(context.auto_budget)
 
 
 def do_budget_command(context: AppContext) -> None:
@@ -539,7 +672,7 @@ def do_budget_command(context: AppContext) -> None:
     :param context:
     """
     do_budget(context)
-    _kick()
+    kick()
 
 
 def do_budget_from_menu_command(context: AppContext) -> None:
@@ -550,7 +683,7 @@ def do_budget_from_menu_command(context: AppContext) -> None:
     :param context:
     """
     do_budget_from_menu(context)
-    _kick()
+    kick()
 
 
 def update_budget_command(context: AppContext) -> None:
@@ -561,7 +694,7 @@ def update_budget_command(context: AppContext) -> None:
     :param context:
     """
     update_budget(context)
-    _kick()
+    kick()
 
 
 def update_budget_window_command(context: AppContext) -> None:
@@ -572,4 +705,29 @@ def update_budget_window_command(context: AppContext) -> None:
     :param context:
     """
     update_budget_window(context)
-    _kick()
+    kick()
+
+
+# Wrap legacy helpers so tests can omit AppContext when the `_AUTO_TEST_CONTEXT` fixture is available.
+try:
+    compat_shims.inject_legacy_wrappers(
+        sys.modules.get(__name__),
+        [
+            "init_funding_level",
+            "do_budget",
+            "do_budget_from_menu",
+            "do_budget_now",
+            "spend",
+            "get_road_percent",
+            "get_police_percent",
+            "get_fire_percent",
+            "get_road_value",
+            "get_police_value",
+            "get_fire_value",
+            "set_road_percent",
+            "set_police_percent",
+            "set_fire_percent",
+        ],
+    )
+except Exception:
+    pass

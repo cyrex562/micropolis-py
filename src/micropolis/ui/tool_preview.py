@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from micropolis.context import AppContext
-    from micropolis.types import SimView
+    from micropolis.sim_view import SimView
 
 try:
     import pygame

@@ -88,7 +88,7 @@ def mem_draw_beeg_map_rect(
     # Check if we have color display
     if view.x and view.x.color:
         # Color rendering mode
-        _draw_color_editor_rect(view, x, y, w, h, line_bytes, pixel_bytes)
+        _draw_color_editor_rect(context, view, x, y, w, h, line_bytes, pixel_bytes)
     else:
         # Monochrome rendering mode
         _draw_mono_editor_rect(context, view, x, y, w, h, line_bytes)
@@ -330,7 +330,7 @@ def do_update_editor(context: AppContext, view: SimView) -> None:
     h = view.tile_height
 
     # Draw the visible rectangle
-    mem_draw_beeg_map_rect(context, view, x, y, w, h)
+    MemDrawBeegMapRect(context, view, x, y, w, h)
 
     # Update pygame display (placeholder for pygame integration)
     # pygame.display.update() or similar
@@ -365,8 +365,10 @@ def cleanup_editor_tiles(view: SimView) -> None:
     Args:
         view: The editor view to clean up
     """
-    if view and view.tiles:
-        view.tiles.clear()
+    if view:
+        if view.tiles:
+            view.tiles.clear()
+        view.tiles = None
 
 
 def invalidate_editor_view(view: SimView) -> None:
@@ -399,3 +401,8 @@ def ensure_view_surface(view: SimView) -> pygame.Surface:
 
     view.surface = pygame.Surface((width, height), pygame.SRCALPHA)
     return view.surface
+
+
+# Legacy compatibility aliases expected by older modules/tests
+MemDrawBeegMapRect = mem_draw_beeg_map_rect
+DoUpdateEditor = do_update_editor

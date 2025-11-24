@@ -12,6 +12,7 @@ from collections.abc import Callable
 import select
 import socket
 import threading
+from typing import Any
 
 
 class NetworkManager:
@@ -29,6 +30,7 @@ class NetworkManager:
         self.receive_thread: threading.Thread | None = None
         self.packet_callback: Callable[[int, str, bytes], None] | None = None
         self.running = False
+        self._lock = threading.RLock()
 
     def start_listening(self, port: int) -> bool:
         """
@@ -40,42 +42,52 @@ class NetworkManager:
         Returns:
             True if listening started successfully, False otherwise
         """
-        if self.is_listening:
-            self.stop_listening()
+        with self._lock:
+            if self.is_listening:
+                self._stop_listening()
 
-        try:
-            self.listen_port = port
-            self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                self.listen_port = port
+                self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-            # Set socket options for reuse and non-blocking
-            self.listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                # Set socket options for reuse and non-blocking
+                self.listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-            # Bind to the port
-            self.listen_socket.bind(('', port))
+                # Bind to the port
+                self.listen_socket.bind(('', port))
 
-            # Set non-blocking mode
-            self.listen_socket.setblocking(False)
+                # Set non-blocking mode
+                self.listen_socket.setblocking(False)
 
-            self.is_listening = True
-            self.running = True
+                self.is_listening = True
+                self.running = True
 
-            # Start receive thread
-            self.receive_thread = threading.Thread(target=self._receive_loop, daemon=True)
-            self.receive_thread.start()
+                # Start receive thread
+                self.receive_thread = threading.Thread(
+                    target=self._receive_loop, daemon=True
+                )
+                self.receive_thread.start()
 
-            return True
+                return True
 
-        except OSError as e:
-            print(f"Failed to start UDP listening on port {port}: {e}")
-            self.listen_socket = None
-            return False
+            except OSError as e:
+                print(f"Failed to start UDP listening on port {port}: {e}")
+                self.listen_socket = None
+                self.is_listening = False
+                self.running = False
+                return False
 
     def stop_listening(self):
         """Stop listening for UDP packets."""
+        with self._lock:
+            self._stop_listening()
+
+    def _stop_listening(self):
         self.running = False
 
         if self.receive_thread and self.receive_thread.is_alive():
             self.receive_thread.join(timeout=1.0)
+            self.receive_thread = None
 
         if self.listen_socket:
             try:
@@ -151,7 +163,6 @@ class NetworkManager:
         """Check if networking is active."""
         return self.is_listening and self.running
 
-
 # Global network manager instance
 _network_manager = NetworkManager()
 
@@ -213,6 +224,22 @@ def get_network_status() -> dict:
     }
 
 
+def handle_command(interp: Any, context: Any, command: str, *args: str) -> str:
+    """
+    Legacy Tcl-compatible handle_command wrapper.
+
+    Args:
+        interp: Tcl interpreter placeholder (unused)
+        context: Application context (unused)
+        command: Command name
+        args: Additional arguments for the command
+
+    Returns:
+        Result string from the command handler.
+    """
+    return _network_command.handle_command(command, *args)
+
+
 # TCL Command Interface (for compatibility)
 class NetworkCommand:
     """TCL command interface for network operations."""
@@ -255,6 +282,9 @@ class NetworkCommand:
 
 
 # Default packet handler (for compatibility with original TCL interface)
+# Network command handler instance
+_network_command = NetworkCommand()
+
 def default_packet_handler(socket_id: int, address: str, data: bytes):
     """
     Default packet handler that formats packets similar to original TCL code.

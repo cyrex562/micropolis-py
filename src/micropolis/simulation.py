@@ -5,6 +5,7 @@ This module contains the main simulation loop and supporting functions
 ported from s_sim.c, implementing the city simulation mechanics.
 """
 
+import sys
 import time
 
 from .constants import WORLD_X, CENSUSRATE, TAXFREQ, TDMAP, RDMAP, ALMAP, REMAP, COMAP, INMAP, DYMAP, HWLDX, HWLDY, \
@@ -13,10 +14,25 @@ from .context import AppContext
 from .macros import TestBounds
 from .messages import clear_mes, send_mes_at
 from .power import DoPowerScan, PushPowerStack
-from .random import sim_rand, sim_srand
+from importlib import import_module
+
+import sys
+
+_SIM_MODULE_NAME = __name__
+if _SIM_MODULE_NAME.startswith("src."):
+    _SIM_ALIAS = _SIM_MODULE_NAME[len("src."): ]
+    if _SIM_ALIAS not in sys.modules:
+        sys.modules[_SIM_ALIAS] = sys.modules[_SIM_MODULE_NAME]
+elif _SIM_MODULE_NAME.startswith("micropolis."):
+    _SIM_ALIAS = "src." + _SIM_MODULE_NAME
+    if _SIM_ALIAS not in sys.modules:
+        sys.modules[_SIM_ALIAS] = sys.modules[_SIM_MODULE_NAME]
+
+from .random import Rand as RandFn, Rand16 as Rand16Fn, RandInt as RandIntFn, sim_rand, sim_srand
 from .sprite_manager import GenerateTrain, GenerateBus, MakeExplosionAt, GeneratePlane, GenerateCopter, GetSprite, \
     GenerateShip, MakeExplosion
 from .zones import SetZPower
+from . import compat_shims
 
 
 # ============================================================================
@@ -60,6 +76,9 @@ from .zones import SetZPower
 # scycle: int = 0
 # fcycle: int = 0
 # spdcycle: int = 0
+scycle: int = 0
+fcycle: int = 0
+spdcycle: int = 0
 
 # Initial evaluation flag
 # do_initial_eval: int = 0
@@ -93,12 +112,13 @@ def sim_frame(context: AppContext) -> None:
     Called each frame to advance the simulation based on speed settings.
     Ported from SimFrame() in s_sim.c.
     """
-    # global spdcycle, fcycle
+    global spdcycle, fcycle
 
     if context.sim_speed == 0:
         return
 
     context.spdcycle = (context.spdcycle + 1) % 1024
+    spdcycle = context.spdcycle
 
     if context.sim_speed == 1 and (context.spdcycle % 5) != 0:
         return
@@ -107,6 +127,7 @@ def sim_frame(context: AppContext) -> None:
         return
 
     context.fcycle = (context.fcycle + 1) % 1024
+    fcycle = context.fcycle
     # if InitSimLoad: Fcycle = 0;  # XXX: commented out in original
 
     simulate(context, context.fcycle & 15)
@@ -125,7 +146,7 @@ def simulate(context: AppContext, mod16: int) -> None:
         :param mod16:
         :param context:
     """
-    # global scycle, do_initial_eval, av_city_tax
+    global scycle
 
     # Speed control tables (from original C code)
     spd_pwr = [1, 2, 4, 5]
@@ -140,6 +161,7 @@ def simulate(context: AppContext, mod16: int) -> None:
 
     if mod16 == 0:
         context.scycle = (context.scycle + 1) % 1024  # This is cosmic
+        scycle = context.scycle
         if context.do_initial_eval:
             context.do_initial_eval = 0
             city_evaluation()
@@ -224,10 +246,12 @@ def do_sim_init(context: AppContext) -> None:
     Ported from DoSimInit() in s_sim.c.
     :param context:
     """
-    # global fcycle, scycle
+    global fcycle, scycle
 
     context.fcycle = 0
+    fcycle = context.fcycle
     context.scycle = 0
+    scycle = context.scycle
 
     if context.init_sim_load == 2:  # if new city
         init_sim_memory(context)
@@ -299,8 +323,6 @@ def dec_rog_mem(context: AppContext) -> None:
                 context.rate_og_mem[x][y] += 1
                 if z < -200:
                     context.rate_og_mem[x][y] = -200
-
-
 def init_sim_memory(context: AppContext) -> None:
     """
     ported from InitSimMemory
@@ -444,7 +466,7 @@ def do_nil_power(context: AppContext) -> None:
                 context.s_map_x = x
                 context.s_map_y = y
                 context.cchr = z
-                SetZPower()
+                SetZPower(context)
 
 
 # ============================================================================
@@ -901,7 +923,7 @@ def map_scan(context: AppContext, x1: int, x2: int) -> None:
                         continue
 
                     if context.new_power and (context.cchr & context.CONDBIT):
-                        SetZPower()
+                        SetZPower(context)
 
                     if (context.cchr9 >= context.ROADBASE) and (
                         context.cchr9 < context.POWERBASE
@@ -1559,6 +1581,30 @@ def rand16_signed(context: AppContext) -> int:
     return i
 
 
+# Legacy RNG compatibility exports (used by tests/tools expecting these symbols on simulation)
+Rand = RandFn
+Rand16 = Rand16Fn
+Rand16Signed = rand16_signed
+RandInt = RandIntFn
+DoSpZone = do_sp_zone
+
+def RepairZone(*args: int | AppContext) -> None:
+    """
+    Legacy compatibility wrapper for RepairZone.
+    Supports the old signature RepairZone(tile, amount) as well as the newer
+    context-aware signature RepairZone(context, tile, amount).
+    """
+    if len(args) == 3:
+        return repair_zone(args[0], args[1], args[2])
+    if len(args) == 2:
+        pkg = import_module("micropolis")
+        ctx = getattr(pkg, "_AUTO_TEST_CONTEXT", None)
+        if ctx is None:
+            raise RuntimeError("AppContext is required when calling RepairZone without context")
+        return repair_zone(ctx, args[0], args[1])
+    raise TypeError("RepairZone expected 2 or 3 arguments")
+
+
 def randomly_seed_rand() -> None:
     """
     ported from RandomlySeedRand
@@ -1646,3 +1692,11 @@ def set_common_inits(context: AppContext) -> None:
     context.fire_effect = 1000
     context.tax_flag = 0
     context.tax_fund = 0
+
+
+try:
+    compat_shims.inject_legacy_wrappers(
+        sys.modules[__name__], ("simulate", "clear_census", "dec_traffic_mem")
+    )
+except Exception:
+    pass

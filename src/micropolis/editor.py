@@ -12,10 +12,12 @@ import time
 from typing import Any, TYPE_CHECKING
 
 import pygame
+import logging
 
 from . import tools, view_types
 from .context import AppContext
 
+PYGAME_AVAILABLE = hasattr(pygame, "Surface")
 
 if TYPE_CHECKING:
     from .sim_view import SimView
@@ -25,6 +27,13 @@ def _rand(context: AppContext, modulo: int) -> int:
     from .simulation import rand as _rand_fn
 
     return _rand_fn(context, modulo)
+
+
+def _get_sim(context: AppContext) -> Any:
+    sim = getattr(context, "sim", None)
+    if sim is None:
+        raise RuntimeError("Simulation context is required")
+    return sim
 
 
 # Tool state placeholders (values chosen sequentially for compatibility)
@@ -719,9 +728,10 @@ def do_new_editor(context: AppContext, view: SimView) -> None:
         view: The view to initialize
         :param context:
     """
-    context.sim.editors += 1
-    view.next = context.sim.editor
-    context.sim.editor = view
+    sim = _get_sim(context)
+    sim.editors += 1
+    view.next = sim.editor
+    sim.editor = view
     view.invalid = True
 
 
@@ -761,40 +771,46 @@ def do_update_editor(context: AppContext, view: SimView) -> None:
     view.skips = 0
     view.update = False
 
-    # Handle auto-goto
-    handle_auto_goto(context, view)
+    # Track context for legacy wrappers
+    global _CURRENT_EDITOR_CONTEXT
+    prev_context = _CURRENT_EDITOR_CONTEXT
+    _CURRENT_EDITOR_CONTEXT = context
+    try:
+        # Handle auto-goto
+        HandleAutoGoto(view)
 
-    # Handle tile animation
-    if (
-        context.do_animation
-        and context.sim_speed
-        and not context.heat_steps
-        and not context.tiles_animated
-    ):
-        context.tiles_animated = True
-        # animateTiles() - placeholder
+        # Handle tile animation
+        if (
+            context.do_animation
+            and context.sim_speed
+            and not context.heat_steps
+            and not context.tiles_animated
+        ):
+            context.tiles_animated = True
+            # animateTiles() - placeholder
 
-    if view.invalid:
-        if view.type == view_types.X_Mem_View:
-            # MemDrawBeegMapRect - placeholder for map rendering
-            pass
-        elif view.type == view_types.X_Wire_View:
-            # WireDrawBeegMapRect - placeholder for wire view rendering
-            pass
+        if view.invalid:
+            if view.type == view_types.X_Mem_View:
+                # MemDrawBeegMapRect - placeholder for map rendering
+                pass
+            elif view.type == view_types.X_Wire_View:
+                # WireDrawBeegMapRect - placeholder for wire view rendering
+                pass
 
-        # Draw borders outside map
-        draw_outside(view)
+            # Draw borders outside map
+            DrawOutside(view)
 
-        # Draw pending tool if any
-        if context.pending_tool != -1:
-            draw_pending(context, view)
+            # Draw pending tool if any
+            DrawPending(view)
 
-        # Draw sprites/objects
-        # DrawObjects(view) - placeholder
+            # Draw sprites/objects
+            # DrawObjects(view) - placeholder
 
-        # Draw overlay if enabled
-        if view.show_overlay:
-            draw_overlay(context, view)
+            # Draw overlay if enabled
+            if view.show_overlay:
+                DrawOverlay(view)
+    finally:
+        _CURRENT_EDITOR_CONTEXT = prev_context
 
     # Apply shake effect
     for i in range(context.shake_now):
@@ -858,11 +874,44 @@ def handle_auto_goto(context: AppContext, view: SimView) -> None:
             vx += 0.5
             vy += 0.5
 
-            do_pan_by(context, view, int(vx), int(vy))
-            view.auto_going += 1
+        do_pan_by(context, view, int(vx), int(vy))
+        view.auto_going += 1
 
 
-# ============================================================================
+# Convenience aliases matching legacy names for tests/tools that patch them
+_CURRENT_EDITOR_CONTEXT: AppContext | None = None
+
+
+def DrawOutside(view: SimView) -> None:
+    """Legacy alias - drawing outside area."""
+    draw_outside(view)
+
+
+def DrawPending(view: SimView) -> None:
+    """Legacy alias for drawing pending tool (requires context)."""
+    ctx = _CURRENT_EDITOR_CONTEXT
+    if ctx is None:
+        return
+    draw_pending(ctx, view)
+
+
+def DrawOverlay(view: SimView) -> None:
+    """Legacy alias for drawing overlay (requires context)."""
+    ctx = _CURRENT_EDITOR_CONTEXT
+    if ctx is None:
+        return
+    draw_overlay(ctx, view)
+
+
+def HandleAutoGoto(view: SimView) -> None:
+    """Legacy alias for auto-goto logic inside do_update."""
+    ctx = _CURRENT_EDITOR_CONTEXT
+    if ctx is None:
+        return
+    handle_auto_goto(ctx, view)
+
+
+# ============================================================================ 
 # Drawing Tool Functions
 # ============================================================================
 
@@ -884,7 +933,7 @@ def chalk_start(view: SimView, x: int, y: int, color: int) -> None:
     view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Start drawing operation
-    tools.ChalkStart(view, tile_x[0], tile_y[0], color)
+    tools.chalk_start(view, tile_x[0], tile_y[0], color)
 
 
 def chalk_to(view: SimView, x: int, y: int) -> None:
@@ -903,7 +952,7 @@ def chalk_to(view: SimView, x: int, y: int) -> None:
     view_to_tile_coords(view, x, y, tile_x, tile_y)
 
     # Continue drawing
-    tools.ChalkTo(view, tile_x[0], tile_y[0])
+    tools.chalk_to(view, tile_x[0], tile_y[0])
 
 
 # ============================================================================

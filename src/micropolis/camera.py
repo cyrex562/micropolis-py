@@ -483,14 +483,19 @@ def cam_command(command: str, *args) -> str:
 # Initialization and Cleanup
 # ============================================================================
 
-def initialize_camera_system(context: AppContext) -> None:
+def initialize_camera_system(context: AppContext | None = None) -> None:
     """
     Initialize the camera system.
     Called during program startup.
     """
-    # global _simcam_list, _next_cam_id
-    context.simcam_list = []
-    context.next_cam_id = 1
+    global _simcam_list, _next_cam_id
+
+    _simcam_list.clear()
+    _next_cam_id = 1
+
+    if context is not None:
+        context.simcam_list = []
+        context.next_cam_id = 1
 
 
 def cleanup_camera_system() -> None:

@@ -8,13 +8,16 @@ from unittest.mock import patch
 import sys
 import os
 
-import micropolis.constants
+from micropolis import constants as const
+from micropolis import view_types
 
 from tests.assertions import Assertions
 
 # Add the src directory to the path
 
-from micropolis import types, macros, editor_view
+from micropolis import macros, editor_view
+from micropolis.view_types import MakeNewXDisplay
+from micropolis.sim_view import create_map_view
 
 
 class TestEditorView(Assertions):
@@ -23,7 +26,7 @@ class TestEditorView(Assertions):
     def setUp(self):
         """Set up test fixtures"""
         # Create a mock view
-        self.view = types.MakeNewView()
+        self.view = create_map_view(context)
         self.view.tile_x = 10
         self.view.tile_y = 10
         self.view.tile_width = 20
@@ -35,23 +38,23 @@ class TestEditorView(Assertions):
         self.view.invalid = True
 
         # Create mock display
-        self.view.x = types.view_types.MakeNewXDisplay()
+        self.view.x = MakeNewXDisplay()
         self.view.x.color = 1  # Color mode
 
         # Initialize tile data
-        self.view.bigtiles = b"\x00" * (types.TILE_COUNT * 256 * 4)  # Mock tile data
+        self.view.bigtiles = b"\x00" * (const.TILE_COUNT * 256 * 4)  # Mock tile data
 
         # Initialize tile cache
         editor_view.initialize_editor_tiles(self.view)
 
         # Set up some test map data
-        types.map_data = [
-            [0 for _ in range(micropolis.constants.WORLD_Y)]
-            for _ in range(micropolis.constants.WORLD_X)
-        ]
+        # Reset context map data directly
+        for x in range(const.WORLD_X):
+            for y in range(const.WORLD_Y):
+                context.map_data[x][y] = 0
         for x in range(20):
             for y in range(20):
-                types.map_data[x][y] = macros.RESBASE  # Residential zone
+                context.map_data[x][y] = macros.RESBASE  # Residential zone
 
     def tearDown(self):
         """Clean up test fixtures"""
@@ -60,7 +63,7 @@ class TestEditorView(Assertions):
     def test_drawBeegMaps(self):
         """Test drawBeegMaps function"""
         with patch("micropolis.engine.sim_update_editors") as mock_update:
-            editor_view.draw_beeg_maps()
+            editor_view.draw_beeg_maps(context)
             mock_update.assert_called_once()
 
     def test_MemDrawBeegMapRect_clipping(self):
@@ -101,7 +104,7 @@ class TestEditorView(Assertions):
 
     def test_initialize_editor_tiles(self):
         """Test tile cache initialization"""
-        view = types.MakeNewView()
+        view = create_map_view(context)
         view.tile_width = 10
         view.tile_height = 10
 
@@ -117,7 +120,7 @@ class TestEditorView(Assertions):
 
     def test_cleanup_editor_tiles(self):
         """Test tile cache cleanup"""
-        view = types.MakeNewView()
+        view = create_map_view(context)
         view.tiles = [[1, 2], [3, 4]]
 
         editor_view.cleanup_editor_tiles(view)
@@ -125,7 +128,7 @@ class TestEditorView(Assertions):
 
     def test_invalidate_editor_view(self):
         """Test view invalidation"""
-        view = types.MakeNewView()
+        view = create_map_view(context)
         view.tiles = [[1, 2], [3, 4]]
         view.invalid = False
 
@@ -140,12 +143,12 @@ class TestEditorView(Assertions):
     def test_lightning_bolt_animation(self):
         """Test lightning bolt animation for unpowered zones"""
         # Set up unpowered residential zone
-        types.map_data[15][15] = (
+        context.map_data[15][15] = (
             macros.RESBASE | macros.ZONEBIT
         )  # Residential zone, unpowered
 
         # Test with blinking on
-        types.flag_blink = -1  # Negative means blinking
+        context.flag_blink = -1  # Negative means blinking
         editor_view.mem_draw_beeg_map_rect(context, self.view, 15, 15, 1, 1)
         # Should be called with lightning bolt tile
 
@@ -155,12 +158,12 @@ class TestEditorView(Assertions):
         self.view.dynamic_filter = 1
 
         # Set up dynamic data for filtering
-        types.dynamic_data = [0] * 32
-        types.dynamic_data[0] = 0  # Pop min
-        types.dynamic_data[1] = 100  # Pop max
+        context.dynamic_data = [0] * 32
+        context.dynamic_data[0] = 0  # Pop min
+        context.dynamic_data[1] = 100  # Pop max
 
         # Set up population density
-        types.pop_density[15][15] = 50  # Within range
+        context.pop_density[15][15] = 50  # Within range
 
         editor_view.mem_draw_beeg_map_rect(context, self.view, 15, 15, 1, 1)
         # Should apply filtering
@@ -172,7 +175,7 @@ class TestEditorView(Assertions):
             self.view.tiles[0][0] = macros.RESBASE
 
         # Draw the same tile again
-        types.map_data[10][10] = macros.RESBASE
+        context.map_data[10][10] = macros.RESBASE
 
         # Just test that the function doesn't crash
         editor_view.mem_draw_beeg_map_rect(context, self.view, 10, 10, 1, 1)

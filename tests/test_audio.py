@@ -11,7 +11,8 @@ from tests.assertions import Assertions
 # Import the module to test
 import sys
 import os
-from micropolis import audio, types
+import micropolis
+from micropolis import audio
 from micropolis.context import AppContext
 from micropolis.app_config import AppConfig
 
@@ -31,9 +32,15 @@ class TestAudio(Assertions):
         audio.sound_cache.clear()
         audio.active_channels.clear()
 
-        # Set up sound enabled
-        types.user_sound_on = 1
-        types.sound = 1
+        # Reset the test context's sound_initialized
+        ctx = getattr(micropolis, "_AUTO_TEST_CONTEXT", None)
+        if ctx is not None:
+            ctx.sound_initialized = False
+            ctx.user_sound_on = True
+
+        # Set up sound enabled (legacy)
+        context.user_sound_on = True
+        context.sound = 1
 
         # Mock pygame mixer to avoid actual audio initialization
         self.pygame_mixer_patcher = patch("pygame.mixer")
@@ -53,8 +60,8 @@ class TestAudio(Assertions):
         audio.sound_cache.clear()
         audio.active_channels.clear()
 
-        types.user_sound_on = 0
-        types.sound = 0
+        context.user_sound_on = False
+        context.sound = 0
 
     def test_initialize_sound_success(self):
         """Test successful sound initialization."""
@@ -70,7 +77,9 @@ class TestAudio(Assertions):
 
     def test_initialize_sound_disabled(self):
         """Test sound initialization when sound is disabled."""
-        types.user_sound_on = 0
+        # Get the test context and set user_sound_on to False
+        ctx = getattr(micropolis, "_AUTO_TEST_CONTEXT", None)
+        context.user_sound_on = False
 
         audio.initialize_sound()
 
@@ -80,6 +89,9 @@ class TestAudio(Assertions):
     def test_initialize_sound_already_initialized(self):
         """Test sound initialization when already initialized."""
         audio.SoundInitialized = True
+        # Also set on test context
+        ctx = getattr(micropolis, "_AUTO_TEST_CONTEXT", None)
+        context.sound_initialized = True
 
         audio.initialize_sound()
 
@@ -98,6 +110,9 @@ class TestAudio(Assertions):
         """Test sound shutdown."""
         audio.SoundInitialized = True
         audio.Dozing = True
+        # Also set on test context
+        ctx = getattr(micropolis, "_AUTO_TEST_CONTEXT", None)
+        context.sound_initialized = True
 
         audio.shutdown_sound()
 
@@ -127,7 +142,7 @@ class TestAudio(Assertions):
 
     def test_make_sound_disabled(self):
         """Test sound playback when sound is disabled."""
-        types.user_sound_on = 0
+        context.user_sound_on = False
 
         with patch.object(audio, "get_sound") as mock_get_sound:
             audio.make_sound(context, "city", "test")
@@ -198,6 +213,10 @@ class TestAudio(Assertions):
         """Test bulldozer sound stop."""
         audio.SoundInitialized = True
         audio.Dozing = True
+        # Also set on test context
+        ctx = getattr(micropolis, "_AUTO_TEST_CONTEXT", None)
+        if ctx is not None:
+            ctx.sound_initialized = True
 
         with patch("micropolis.audio.pygame.mixer.Channel") as mock_channel_class:
             mock_channel = MagicMock()
@@ -292,16 +311,19 @@ class TestAudio(Assertions):
 
     def test_is_sound_enabled(self):
         """Test is_sound_enabled function."""
+        ctx = getattr(micropolis, "_AUTO_TEST_CONTEXT", None)
+
         # Not initialized
         self.assertFalse(audio.is_sound_enabled())
 
         # Initialized but disabled
         audio.SoundInitialized = True
-        types.user_sound_on = 0
+        context.sound_initialized = True
+        context.user_sound_on = False
         self.assertFalse(audio.is_sound_enabled())
 
         # Enabled
-        types.user_sound_on = 1
+        context.user_sound_on = True
         self.assertTrue(audio.is_sound_enabled())
 
     def test_get_channel_count(self):

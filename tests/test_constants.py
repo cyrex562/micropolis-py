@@ -8,6 +8,7 @@ from __future__ import annotations
 from micropolis import constants
 
 import micropolis.mac_compat
+import src  # Ensure legacy `src` package namespace is available for tests
 
 
 def test_quad_type_definition():

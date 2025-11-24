@@ -10,8 +10,20 @@ Based on s_power.c from the original C codebase.
 
 import array
 
-from micropolis.constants import PWRSTKSIZE, PWRMAPSIZE, WORLD_X, WORLD_Y, PWRBIT, CONDBIT
+from micropolis.constants import (
+    CONDBIT,
+    PWRBIT,
+    PWRMAPSIZE,
+    PWRSTKSIZE,
+    POWERMAPROW,
+    WORLD_X,
+    WORLD_Y,
+)
 from micropolis.context import AppContext
+
+power_stack_num = 0
+max_power = 0
+num_power = 0
 
 
 def DoPowerScan(context: AppContext) -> None:
@@ -21,9 +33,9 @@ def DoPowerScan(context: AppContext) -> None:
     This function implements a flood-fill algorithm to determine which areas
     of the city receive power from power plants. It starts from all power
     plants and spreads power to connected conductive tiles.
-    :param context: 
+    :param context:
     """
-    # global power_stack_num, max_power, num_power
+    # AppContext is now the authoritative source for all state
 
     # Clear the power map
     # context.power_map = array.array("H", [0] * PWRMAPSIZE)
@@ -32,7 +44,6 @@ def DoPowerScan(context: AppContext) -> None:
     # Reset power statistics
     context.max_power = context.coal_pop * 700 + context.nuclear_pop * 2000
     context.num_power = 0
-
     # Find all power plants and add them to the stack
     context.power_stack_num = 0
     for x in range(WORLD_X):
@@ -70,7 +81,10 @@ def DoPowerScan(context: AppContext) -> None:
                             context.power_stack_y[context.power_stack_num] = ny
                             context.power_stack_num += 1
 
-
+    global power_stack_num, max_power, num_power
+    power_stack_num = context.power_stack_num
+    max_power = context.max_power
+    num_power = context.num_power
 def MoveMapSim(x: int, y: int, dir: int) -> tuple[int, int]:
     """
     Move to adjacent tile in specified direction.
@@ -103,12 +117,12 @@ def TestForCond(context: AppContext, x: int, y: int) -> bool:
     part of the conductive infrastructure (power lines, etc.).
 
     Args:
+        context: Application context
         x: X coordinate of tile to test
         y: Y coordinate of tile to test
 
     Returns:
         True if the tile conducts power, False otherwise
-        :param context:
     """
     tile = context.map_data[x][y]
     return (tile & CONDBIT) != 0

@@ -152,6 +152,10 @@ class UIPanel:
 
     def set_rect(self, rect: Rect) -> None:
         self._rect = tuple(int(v) for v in rect)  # type: ignore[assignment]
+
+    @rect.setter
+    def rect(self, rect: Rect) -> None:
+        self.set_rect(rect)
         self.invalidate()
 
     def move(self, x: int, y: int) -> None:

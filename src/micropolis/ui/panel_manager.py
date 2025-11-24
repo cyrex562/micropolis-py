@@ -84,9 +84,15 @@ class PanelManager:
         resolved_bus = event_bus or getattr(context, "event_bus", None)
         if resolved_bus is None:
             resolved_bus = get_default_event_bus()
+        elif not isinstance(resolved_bus, EventBus):
+            import types
+
+            if isinstance(resolved_bus, types.ModuleType):
+                resolved_bus = get_default_event_bus()
         self._event_bus = resolved_bus
         # Attempt to expose the resolved bus on the context for other systems.
-        if getattr(context, "event_bus", None) is None:
+        existing_bus = getattr(context, "event_bus", None)
+        if not isinstance(existing_bus, EventBus):
             try:
                 object.__setattr__(context, "event_bus", resolved_bus)
             except Exception:
@@ -94,8 +100,14 @@ class PanelManager:
         resolved_timer = timer_service or getattr(context, "timer_service", None)
         if resolved_timer is None:
             resolved_timer = get_default_timer_service()
+        elif not isinstance(resolved_timer, TimerService):
+            import types
+
+            if isinstance(resolved_timer, types.ModuleType):
+                resolved_timer = get_default_timer_service()
         self._timer_service = resolved_timer
-        if getattr(context, "timer_service", None) is None:
+        existing_timer = getattr(context, "timer_service", None)
+        if not isinstance(existing_timer, TimerService):
             try:
                 object.__setattr__(context, "timer_service", resolved_timer)
             except Exception:
@@ -130,6 +142,120 @@ class PanelManager:
                 f"Cannot unregister '{legacy_name}' while panels are active"
             )
         self._registry.pop(legacy_name, None)
+
+    # ------------------------------------------------------------------
+    # Panel lifecycle
+    # ------------------------------------------------------------------
+    def create_panel(
+        self,
+        legacy_name: str,
+        *,
+        panel_id: str | None = None,
+        factory: PanelFactory | None = None,
+        **factory_kwargs: Any,
+    ) -> PanelProtocol:
+        """Instantiate a panel for the specified legacy collection."""
+
+        factory_fn = factory or self._registry.get(legacy_name)
+        if factory_fn is None:
+            raise PanelRegistrationError(f"No panel factory registered for {legacy_name}")
+
+        resolved_panel_id = panel_id or self._generate_panel_id(legacy_name)
+        if resolved_panel_id in self._panels:
+            raise PanelRegistrationError(f"Panel id '{resolved_panel_id}' already exists")
+
+        panel = factory_fn(self, self.context, **factory_kwargs)
+        self._initialize_panel_metadata(panel, resolved_panel_id, legacy_name)
+        self._panels[resolved_panel_id] = panel
+        legacy_panels = self._panels_by_type.setdefault(legacy_name, {})
+        legacy_panels[resolved_panel_id] = panel
+        self._relocate_z_order(resolved_panel_id, to_front=True)
+
+        try:
+            panel.on_mount()
+        except Exception as exc:  # pragma: no cover - defensive
+            raise PanelRegistrationError(f"Panel mount failed: {exc}") from exc
+
+        if self._size != (0, 0):
+            try:
+                panel.on_resize(self._size)
+            except Exception:  # pragma: no cover - defensive
+                pass
+
+        return panel
+
+    def destroy_panel(self, panel_id: str) -> None:
+        """Remove an existing panel and tear it down."""
+
+        panel = self._panels.pop(panel_id, None)
+        if panel is None:
+            raise PanelLookupError(panel_id)
+
+        legacy = getattr(panel, "legacy_name", None)
+        if legacy and legacy in self._panels_by_type:
+            self._panels_by_type[legacy].pop(panel_id, None)
+            if not self._panels_by_type[legacy]:
+                self._panels_by_type.pop(legacy, None)
+
+        try:
+            self._z_order.remove(panel_id)
+        except ValueError:
+            pass
+
+        if self._modal_stack and self._modal_stack[-1] == panel_id:
+            self._modal_stack.pop()
+
+        try:
+            panel.on_unmount()
+        except Exception:  # pragma: no cover - defensive
+            pass
+
+    def _iter_render_order(self):
+        if self._modal_stack:
+            modal_id = self._modal_stack[-1]
+            panel = self._panels.get(modal_id)
+            if panel is not None:
+                yield modal_id, panel
+            return
+
+        for panel_id in self._z_order:
+            panel = self._panels.get(panel_id)
+            if panel is not None:
+                yield panel_id, panel
+
+    def handle_event(self, event: Any) -> bool:
+        """Dispatch an input event to panels in z-order (top-first)."""
+
+        for panel_id, panel in reversed(list(self._iter_render_order())):
+            if not self._panel_accepts_input(panel):
+                continue
+            try:
+                if panel.handle_event(event):
+                    self._relocate_z_order(panel_id, to_front=True)
+                    return True
+            except Exception:  # pragma: no cover - defensive
+                pass
+        return False
+
+    def render(self, surface: Any | None = None) -> None:
+        """Ask every visible panel to draw itself."""
+
+        if surface is not None:
+            self._surface = surface
+        target = surface or self._surface
+        if target is None:
+            return
+
+        if self._size == (0, 0):
+            self._size = self._infer_surface_size(target)
+
+        for panel_id, panel in self._iter_render_order():
+            if not self._panel_is_visible(panel):
+                continue
+            try:
+                panel.render(target)
+            except Exception:  # pragma: no cover - defensive
+                continue
 
     # ------------------------------------------------------------------
     # Panel lifecycle

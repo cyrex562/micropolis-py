@@ -9,7 +9,8 @@ from micropolis.updates import (
     UIUpdateManager, update_manager,
     DoUpdateHeads, UpdateEditors, UpdateMaps, UpdateGraphs, UpdateEvaluation,
     UpdateHeads, UpdateFunds, ReallyUpdateFunds, doTimeStuff, updateDate,
-    showValves, drawValve, SetDemand, updateOptions, UpdateOptionsMenu
+    showValves, drawValve, SetDemand, updateOptions, UpdateOptionsMenu,
+    make_dollar_decimal_str
 )
 
 

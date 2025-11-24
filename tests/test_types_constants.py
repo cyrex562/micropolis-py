@@ -10,6 +10,8 @@ validating all constants used in simulation logic.
 from micropolis.constants import (
     ALMAP,
     CENSUSRATE,
+    VALVERATE,
+    TAXFREQ,
     COLOR_BLACK,
     COLOR_BROWN,
     COLOR_DARKBLUE,
@@ -44,17 +46,36 @@ from micropolis.constants import (
     RDMAP,
     REMAP,
     RGMAP,
+    TDMAP,
     SM_X,
     SM_Y,
-    TAXFREQ,
-    TDMAP,
-    VALVERATE,
+    industrialState,
+    commercialState,
+    residentialState,
+    fireState,
+    queryState,
+    policeState,
+    wireState,
+    DOZE_STATE,
+    rrState,
+    roadState,
+    chalkState,
+    eraserState,
+    stadiumState,
+    parkState,
+    seaportState,
+    powerState,
+    nuclearState,
+    airportState,
+    networkState,
+    # State categories
+    STATE_CMD,
+    STATE_TILES,
+    STATE_OVERLAYS,
+    STATE_GRAPHS,
+    # World dimensions
     WORLD_X,
     WORLD_Y,
-)
-import pytest
-from micropolis.types import (
-    # World dimensions
     PWRMAPSIZE,
     POWERMAPLEN,
     # Colors
@@ -81,6 +102,7 @@ from micropolis.types import (
     EXP,
     BUS,
     OBJN,
+    PROBNUM,
     # Graph histories
     RES_HIST,
     COM_HIST,
@@ -240,35 +262,8 @@ from micropolis.types import (
     VBRDG3,
     # Total tile count
     TILE_COUNT,
-    # Tool states
-    residentialState,
-    commercialState,
-    industrialState,
-    fireState,
-    queryState,
-    policeState,
-    wireState,
-    DOZE_STATE,
-    rrState,
-    roadState,
-    chalkState,
-    eraserState,
-    stadiumState,
-    parkState,
-    seaportState,
-    powerState,
-    nuclearState,
-    airportState,
-    networkState,
     firstState,
     lastState,
-    # State categories
-    STATE_CMD,
-    STATE_TILES,
-    STATE_OVERLAYS,
-    STATE_GRAPHS,
-    # Map types
-    PROBNUM,
 )
 
 

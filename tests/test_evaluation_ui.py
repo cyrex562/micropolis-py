@@ -12,7 +12,12 @@ from tests.assertions import Assertions
 
 # Add the src directory to the path
 
-from micropolis import evaluation_ui, types
+from micropolis import evaluation_ui
+from micropolis.context import AppContext
+from micropolis.app_config import AppConfig
+
+# Create a test context
+context = AppContext(config=AppConfig())
 
 
 class TestEvaluationUIConstants(Assertions):
@@ -98,31 +103,23 @@ class TestDollarFormatting(Assertions):
 class TestCurrentYear(Assertions):
     """Test current year calculation"""
 
-    def setUp(self):
-        """Set up test fixtures"""
-        self.types_patcher = patch("micropolis.evaluation_ui.types")
-        self.mock_types = self.types_patcher.start()
-        self.mock_types.StartingYear = 1900
-
-    def tearDown(self):
-        """Clean up patches"""
-        self.types_patcher.stop()
-
     def test_current_year_calculation(self):
         """Test current year calculation"""
         # CityTime = 48 * years_elapsed + remainder
         # CurrentYear = (CityTime // 48) + StartingYear
 
-        self.mock_types.CityTime = 0
+        context.starting_year = 1900
+
+        context.city_time = 0
         self.assertEqual(evaluation_ui.current_year(context), 1900)
 
-        self.mock_types.CityTime = 48  # 1 year
+        context.city_time = 48  # 1 year
         self.assertEqual(evaluation_ui.current_year(context), 1901)
 
-        self.mock_types.CityTime = 480  # 10 years
+        context.city_time = 480  # 10 years
         self.assertEqual(evaluation_ui.current_year(context), 1910)
 
-        self.mock_types.CityTime = 47  # Less than 1 year (47/48)
+        context.city_time = 47  # Less than 1 year (47/48)
         self.assertEqual(evaluation_ui.current_year(context), 1900)
 
 
@@ -134,10 +131,6 @@ class TestEvaluationDisplay(Assertions):
         # Mock evaluation module
         self.eval_patcher = patch("micropolis.evaluation_ui.evaluation")
         self.mock_eval = self.eval_patcher.start()
-
-        # Mock types module
-        self.types_patcher = patch("micropolis.evaluation_ui.types")
-        self.mock_types = self.types_patcher.start()
 
         # Set up mock data
         self.mock_eval.CityYes = 75
@@ -155,12 +148,13 @@ class TestEvaluationDisplay(Assertions):
         self.mock_eval.CityScore = 750
         self.mock_eval.deltaCityScore = 25
         self.mock_eval.CityClass = 2  # CITY
-        self.mock_types.GameLevel = 1  # Medium
+
+        # Set game level on context (legacy GameLevel attribute)
+        context.game_level = 1  # Medium
 
     def tearDown(self):
         """Clean up patches"""
         self.eval_patcher.stop()
-        self.types_patcher.stop()
 
     @patch("micropolis.evaluation_ui.current_year")
     @patch("micropolis.evaluation_ui.set_evaluation")
@@ -261,27 +255,27 @@ class TestEvaluationUIState(Assertions):
 
     def test_change_eval(self):
         """Test change_eval function"""
-        # Reset EvalChanged
-        types.eval_changed = 0
+        # Reset eval_changed on context
+        context.eval_changed = 0
 
         evaluation_ui.change_eval(context)
 
-        self.assertEqual(types.eval_changed, 1)
+        self.assertEqual(context.eval_changed, 1)
 
     @patch("micropolis.evaluation_ui.do_score_card")
     def test_score_doer_with_change(self, mock_do_score):
         """Test score_doer when evaluation has changed"""
-        types.eval_changed = 1
+        context.eval_changed = 1
 
         evaluation_ui.score_doer(context)
 
         mock_do_score.assert_called_once()
-        self.assertEqual(types.eval_changed, 0)
+        self.assertEqual(context.eval_changed, 0)
 
     @patch("micropolis.evaluation_ui.do_score_card")
     def test_score_doer_without_change(self, mock_do_score):
         """Test score_doer when evaluation has not changed"""
-        types.eval_changed = 0
+        context.eval_changed = 0
 
         evaluation_ui.score_doer(context)
 
@@ -341,9 +335,10 @@ class TestCommandInterface(Assertions):
     @patch("micropolis.sim_control.kick")
     def test_change_eval_command(self, mock_kick):
         """Test change_eval_command"""
+        context.eval_changed = 0
         evaluation_ui.change_eval_command(context)
 
-        self.assertEqual(types.eval_changed, 1)
+        self.assertEqual(context.eval_changed, 1)
         mock_kick.assert_called_once()
 
     @patch("micropolis.evaluation_ui.update_evaluation")
@@ -423,7 +418,7 @@ class TestEvaluationPanel(Assertions):
             }
 
             evaluation_ui.set_evaluation_panel_visible(True)
-            evaluation_ui.set_evaluation_panel_size(250, 150)
+            evaluation_ui.set_evaluation_panel_size(context, 250, 150)
             evaluation_ui.draw_evaluation()
 
             surface = evaluation_ui.get_evaluation_surface()

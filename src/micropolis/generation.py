@@ -394,6 +394,26 @@ def GenerateNewCity(context: AppContext) -> None:
     kick(context)
 
 
+def GenerateSomeCity(context: AppContext, r: int) -> None:
+    """Generate a city using the caller-provided seed."""
+    # Keep the city file name in sync with legacy tests.
+    context.city_file_name = ""
+    GenerateMap(context, r)
+
+    # Reset simulation context state similar to GenerateNewCity
+    context.scenario_id = 0
+    context.city_time = 0
+    context.init_sim_load = 2
+    context.do_initial_eval = 0
+
+    update_funds(context)
+    kick(context)
+    context.do_initial_eval = 0
+
+    update_funds(context)
+    kick(context)
+
+
 def ERand(limit: int) -> int:
     """
     Generate a random number with extra randomness.

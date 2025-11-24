@@ -557,6 +557,7 @@ def check3x3(
         mapH = holdMapH
         for columnNum in range(3):
             tileValue = context.map_data[mapH][mapV] & LOMASK
+            # print(f"DEBUG: check3x3: x={mapH}, y={mapV}, tile={tileValue}, auto={context.auto_bulldoze}")
 
             if context.auto_bulldoze:
                 if tileValue != 0:
@@ -926,34 +927,21 @@ def getDensityStr(context: AppContext, catNo: int, mapH: int, mapV: int) -> int:
     Get density string index for zone status display.
 
     Args:
+        context: Application context
         catNo: Category number (0=population, 1=land value, 2=crime, 3=pollution, 4=growth)
         mapH: X coordinate
         mapV: Y coordinate
 
     Returns:
         String index for the density display
-        :param context:
     """
-    # Prefer legacy module-level buffers when present (tests mutate
-    # micropolis.types.*). Fall back to the AppContext buffers.
-    try:
-        from micropolis import types as _types_mod  # type: ignore
-    except Exception:
-        _types_mod = None
-
     if catNo == 0:  # Population density
-        if _types_mod is not None and hasattr(_types_mod, "pop_density"):
-            z = _types_mod.pop_density[mapH >> 1][mapV >> 1]
-        else:
-            z = context.pop_density[mapH >> 1][mapV >> 1]
+        z = context.pop_density[mapH >> 1][mapV >> 1]
         z = z >> 6
         z = z & 3
         return z
     elif catNo == 1:  # Land value
-        if _types_mod is not None and hasattr(_types_mod, "land_value_mem"):
-            z = _types_mod.land_value_mem[mapH >> 1][mapV >> 1]
-        else:
-            z = context.land_value_mem[mapH >> 1][mapV >> 1]
+        z = context.land_value_mem[mapH >> 1][mapV >> 1]
         if z < 30:
             return 4
         elif z < 80:
@@ -963,28 +951,19 @@ def getDensityStr(context: AppContext, catNo: int, mapH: int, mapV: int) -> int:
         else:
             return 7
     elif catNo == 2:  # Crime
-        if _types_mod is not None and hasattr(_types_mod, "crime_mem"):
-            z = _types_mod.crime_mem[mapH >> 1][mapV >> 1]
-        else:
-            z = context.crime_mem[mapH >> 1][mapV >> 1]
+        z = context.crime_mem[mapH >> 1][mapV >> 1]
         z = z >> 6
         z = z & 3
         return z + 8
     elif catNo == 3:  # Pollution
-        if _types_mod is not None and hasattr(_types_mod, "pollution_mem"):
-            z = _types_mod.pollution_mem[mapH >> 1][mapV >> 1]
-        else:
-            z = context.pollution_mem[mapH >> 1][mapV >> 1]
+        z = context.pollution_mem[mapH >> 1][mapV >> 1]
         if (z < 64) and (z > 0):
             return 13
         z = z >> 6
         z = z & 3
         return z + 12
     elif catNo == 4:  # Rate of growth
-        if _types_mod is not None and hasattr(_types_mod, "rate_og_mem"):
-            z = _types_mod.rate_og_mem[mapH >> 3][mapV >> 3]
-        else:
-            z = context.rate_og_mem[mapH >> 3][mapV >> 3]
+        z = context.rate_og_mem[mapH >> 3][mapV >> 3]
         if z < 0:
             return 16
         elif z == 0:

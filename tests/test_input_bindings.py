@@ -10,6 +10,7 @@ import pytest
 from src.micropolis import input_actions as input_actions_module
 from micropolis.app_config import AppConfig
 from micropolis.context import AppContext
+import micropolis.input_actions as canonical_input_actions
 from micropolis.input_actions import InputActionDispatcher
 from micropolis.ui.event_bus import EventBus
 from micropolis.ui.input_bindings import InputBindingManager, InputChord
@@ -175,6 +176,7 @@ def test_input_action_dispatcher_routes_actions(monkeypatch) -> None:
 
     stub_ui = _StubUI()
     monkeypatch.setattr(input_actions_module, "_UI_UTILITIES", stub_ui)
+    monkeypatch.setattr(canonical_input_actions, "_UI_UTILITIES", stub_ui)
 
     dispatcher = InputActionDispatcher(
         context,

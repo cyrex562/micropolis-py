@@ -14,11 +14,51 @@ raises a TypeError to preserve explicitness in production code.
 from __future__ import annotations
 
 import functools
+import importlib
+import inspect
 import sys
-from typing import Callable, Iterable
+import types
+from typing import Any, Callable, Iterable
 
 from micropolis.context import AppContext
-import inspect
+from .legacy_state import LEGACY_MIRROR_ATTRS
+
+
+_MIRROR_DEPTHS: dict[int, int] = {}
+
+
+def _enter_mirror(ctx: AppContext) -> int:
+    key = id(ctx)
+    depth = _MIRROR_DEPTHS.get(key, 0) + 1
+    _MIRROR_DEPTHS[key] = depth
+    return depth
+
+
+def _exit_mirror(ctx: AppContext) -> None:
+    key = id(ctx)
+    depth = _MIRROR_DEPTHS.get(key, 1) - 1
+    if depth <= 0:
+        _MIRROR_DEPTHS.pop(key, None)
+    else:
+        _MIRROR_DEPTHS[key] = depth
+
+
+def _copy_from_types(ctx: AppContext, types_module: types.ModuleType) -> None:
+    for attr in LEGACY_MIRROR_ATTRS:
+        if hasattr(types_module, attr):
+            try:
+                setattr(ctx, attr, getattr(types_module, attr))
+            except Exception:
+                pass
+
+
+def _copy_to_types(ctx: AppContext, types_module: types.ModuleType) -> None:
+    for attr in LEGACY_MIRROR_ATTRS:
+        if hasattr(ctx, attr):
+            try:
+                setattr(types_module, attr, getattr(ctx, attr))
+            except Exception:
+                pass
 
 
 def _find_auto_context() -> AppContext | None:
@@ -68,124 +108,34 @@ def inject_legacy_wrappers(module, names: Iterable[str]) -> None:
 
         @functools.wraps(orig)
         def _wrapper(*args, __orig=orig, **kwargs):
-            # If first arg looks like an AppContext, normally call directly.
-            # However, during tests we want to keep module-level legacy
-            # buffers (micropolis.types) and the test AppContext in sync so
-            # assertions that inspect either location observe the same
-            # side-effects. If the provided context matches the auto-injected
-            # test context, mirror module-level state into the context before
-            # calling and mirror it back afterwards.
+            def _mirror_call(
+                target_ctx: AppContext, call_args: tuple, call_kwargs: dict
+            ) -> Any:
+                try:
+                    _types_mod = importlib.import_module("micropolis.types")
+                except Exception:
+                    _types_mod = None
+                depth = _enter_mirror(target_ctx)
+                try:
+                    if depth == 1 and _types_mod is not None:
+                        _copy_from_types(target_ctx, _types_mod)
+                    return __orig(*call_args, **call_kwargs)
+                finally:
+                    if _types_mod is not None:
+                        _copy_to_types(target_ctx, _types_mod)
+                    _exit_mirror(target_ctx)
+
             if args and isinstance(args[0], AppContext):
                 ctx_arg = args[0]
                 auto_ctx = _find_auto_context()
-                # If a test auto-context exists, perform mirroring even if
-                # the passed AppContext instance is not the exact same
-                # object. Tests may construct or patch context objects in
-                # different places; when a test-run is active prefer to
-                # mirror legacy module-level state into whatever
-                # AppContext instance the test is using so wrapped calls
-                # observe the same buffers. This is conservative and
-                # confined to test scenarios since auto-context is only
-                # present during testing.
                 if auto_ctx is not None:
-                    # Mirror from micropolis.types into ctx_arg, call, then
-                    # mirror back any changes so tests see side-effects.
-                    try:
-                        import micropolis.types as _types
-
-                        # Attributes commonly mutated by legacy code/tests that
-                        # should be mirrored between the legacy `micropolis.types`
-                        # module and the modern AppContext during wrapped calls.
-                        mirror_attrs = (
-                            "map_data",
-                            "pop_density",
-                            "land_value_mem",
-                            "crime_mem",
-                            "pollution_mem",
-                            "rate_og_mem",
-                            "total_funds",
-                            "TotalFunds",
-                            # Message-related fields
-                            "message_port",
-                            "mes_x",
-                            "mes_y",
-                            "last_pic_num",
-                            "last_city_pop",
-                            "last_category",
-                            "last_message",
-                            "have_last_message",
-                            "mes_num",
-                            "last_mes_time",
-                        )
-                        for attr in mirror_attrs:
-                            if hasattr(_types, attr):
-                                try:
-                                    setattr(ctx_arg, attr, getattr(_types, attr))
-                                except Exception:
-                                    pass
-                    except Exception:
-                        _types = None
-
-                    result = __orig(*args, **kwargs)
-
-                    if "_types" in locals() and _types is not None:
-                        try:
-                            for attr in mirror_attrs:
-                                if hasattr(ctx_arg, attr):
-                                    try:
-                                        setattr(_types, attr, getattr(ctx_arg, attr))
-                                    except Exception:
-                                        pass
-                        except Exception:
-                            pass
-
-                    return result
-
-                # Not the auto test context — call directly without mirroring.
+                    return _mirror_call(ctx_arg, args, kwargs)
                 return __orig(*args, **kwargs)
 
-            # Try to find an autoinjected test context
             ctx = _find_auto_context()
             if ctx is not None:
-                # Mirror commonly-mutated legacy module state into the
-                # AppContext so wrapped calls observe the same buffers that
-                # tests often set directly on the legacy `micropolis.types`
-                # module. After the call, mirror mutated state back so
-                # assertions that inspect `micropolis.types` see the
-                # side-effects.
-                try:
-                    import micropolis.types as _types
+                return _mirror_call(ctx, (ctx,) + args, kwargs)
 
-                    for attr in mirror_attrs:
-                        if hasattr(_types, attr):
-                            try:
-                                setattr(ctx, attr, getattr(_types, attr))
-                            except Exception:
-                                # be conservative; ignore attributes we
-                                # can't copy
-                                pass
-                except Exception:
-                    _types = None
-
-                result = __orig(ctx, *args, **kwargs)
-
-                # Mirror back changed state to micropolis.types so tests that
-                # inspect module-level globals continue to pass.
-                if "_types" in locals() and _types is not None:
-                    try:
-                        for attr in mirror_attrs:
-                            if hasattr(ctx, attr):
-                                try:
-                                    setattr(_types, attr, getattr(ctx, attr))
-                                except Exception:
-                                    pass
-                    except Exception:
-                        pass
-
-                return result
-
-            # No context available — raise a clear error so callers must
-            # be explicit in production code.
             raise TypeError(
                 f"{name}() missing required AppContext argument and no test context was found"
             )

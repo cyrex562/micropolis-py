@@ -20,9 +20,9 @@ from .audio import make_sound
 from .constants import SIM_TIMER_EVENT, EARTHQUAKE_TIMER_EVENT, UPDATE_EVENT
 from .context import AppContext
 from .disasters import do_earth_quake
-from . import types as _types
 from .engine import sim_loop, sim_update
 from .sim_view import SimView
+from . import types as legacy_types
 from queue import Queue
 import importlib
 
@@ -82,18 +82,10 @@ def _current_sim(context: AppContext):
 
 
 def _ctx_get(context: AppContext, name: str, default=None):
-    """Get a field from the AppContext falling back to the legacy
-    micropolis.types module when the context does not provide it.
+    """Get a field from the AppContext.
 
-    This keeps legacy tests that mutate `micropolis.types` working while
-    we migrate callers to the AppContext.
+    AppContext is now the authoritative source for all state.
     """
-    # For legacy-test compatibility prefer values set on the micropolis.types
-    # module when present (many tests mutate module-level globals). If the
-    # legacy module defines the attribute, return that; otherwise fall back
-    # to the AppContext field or the provided default.
-    if hasattr(_types, name):
-        return getattr(_types, name)
     val = getattr(context, name, None)
     if val is None:
         return default
@@ -367,15 +359,10 @@ def _sim_timer_callback(context: AppContext) -> None:
     context.sim_timer_token = None
     context.sim_timer_set = False
 
-    # Decrement need_rest preferring context, fall back to legacy types
+    # Decrement need_rest
     need_rest = _ctx_get(context, "need_rest", 0)
     if need_rest > 0:
-        # Prefer updating the context value if present, otherwise update the
-        # legacy types module value so tests see the change.
-        if getattr(context, "need_rest", None) is not None:
-            context.need_rest -= 1
-        else:
-            _types.need_rest = max(0, need_rest - 1)
+        context.need_rest -= 1
 
     sim_speed = _ctx_get(context, "sim_speed", 0)
     if sim_speed:
@@ -426,12 +413,8 @@ def do_earthquake(context: AppContext) -> None:
     # patch the module-level make_sound observe the call correctly.
     make_sound("city", "Explosion-Low")
     eval_command(context, "UIEarthQuake")
-    # Keep both the AppContext and legacy types.shake_now in sync for tests
     context.shake_now = 1
-    try:
-        _types.shake_now = 1
-    except Exception:
-        pass
+    legacy_types.shake_now = 1
 
     # Start earthquake timer
     pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, context.earthquake_delay)
@@ -451,10 +434,7 @@ def stop_earthquake(context: AppContext) -> None:
     context = _resolve_context(context)
 
     context.shake_now = 0
-    try:
-        _types.shake_now = 0
-    except Exception:
-        pass
+    legacy_types.shake_now = 0
     pygame.time.set_timer(EARTHQUAKE_TIMER_EVENT, 0)
     context.earthquake_timer_set = False
     context.earthquake_timer_token = None

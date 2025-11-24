@@ -4,13 +4,32 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from importlib import import_module
+from types import ModuleType
 from typing import Any
 
 from micropolis import ui_utilities, updates
 from micropolis.context import AppContext
 
+import sys
+
 # Avoid importing sim_control at module import time to prevent circular imports.
-# Import functions locally inside methods that need them.
+def get_sim_speed(context: AppContext) -> int:
+    from micropolis.sim_control import get_sim_speed as _impl
+
+    return _impl(context)
+
+
+def is_sim_paused(context: AppContext) -> bool:
+    from micropolis.sim_control import is_sim_paused as _impl
+
+    return _impl(context)
+
+
+def _get_ui_utilities() -> ModuleType:
+    return sys.modules.get(
+        "src.micropolis.ui_utilities"
+    ) or sys.modules.get("micropolis.ui_utilities") or ui_utilities
 from micropolis.ui.event_bus import EventBus, get_default_event_bus
 from micropolis.ui.timer_service import TimerEvent
 from micropolis.ui.uipanel import UIPanel
@@ -458,9 +477,6 @@ class HeadPanel(UIPanel):
     # Data + timer ---------------------------------------------------------
     def refresh_from_context(self) -> None:
         ctx = self.context
-        # Import here to avoid circular imports at module import time.
-        from micropolis.sim_control import get_sim_speed, is_sim_paused
-
         snapshot_changes = {
             "city_name": ctx.city_name,
             "funds": ctx.total_funds,
@@ -563,18 +579,15 @@ class HeadPanel(UIPanel):
 
     # Speed controls -------------------------------------------------------
     def _handle_speed_request(self, speed: int) -> None:
-        ui_utilities.set_speed(self.context, speed)
+        _get_ui_utilities().set_speed(self.context, speed)
         self._publish_speed_event(paused=False, speed=speed)
         self.refresh_from_context()
 
     def _handle_pause_request(self, paused: bool) -> None:
         if paused:
-            ui_utilities.pause(self.context)
+            _get_ui_utilities().pause(self.context)
         else:
-            ui_utilities.resume(self.context)
-        # Import here to avoid circular import at module import time.
-        from micropolis.sim_control import get_sim_speed
-
+            _get_ui_utilities().resume(self.context)
         self._publish_speed_event(paused=paused, speed=get_sim_speed(self.context))
         self.refresh_from_context()
 

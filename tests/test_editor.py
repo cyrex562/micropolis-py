@@ -6,12 +6,17 @@ This module contains comprehensive tests for the map editor interface functional
 
 from unittest.mock import Mock, patch
 
+import micropolis
 import micropolis.editor as editor
-import micropolis.sim_view as types
+from micropolis.sim_view import SimView
 import micropolis.view_types as view_types
-
+from micropolis.context import AppContext
+from micropolis.app_config import AppConfig
 
 from tests.assertions import Assertions
+
+# Module-level context for tests
+context = AppContext(config=AppConfig())
 
 
 class TestEditor(Assertions):
@@ -42,6 +47,7 @@ class TestEditor(Assertions):
         self.mock_view.overlay_time = 0.0
         self.mock_view.i_width = 1920  # WORLD_X * 16
         self.mock_view.i_height = 1600  # WORLD_Y * 16
+        self.mock_view.follow = None
 
         # Mock the display
         self.mock_display = Mock()
@@ -77,7 +83,7 @@ class TestEditor(Assertions):
 
     def test_do_pan_to(self):
         """Test panning to a specific location"""
-        editor.do_pan_to(self.mock_view, 500, 400)
+        editor.do_pan_to(context, self.mock_view, 500, 400)
 
         self.assertEqual(self.mock_view.pan_x, 500)
         self.assertEqual(self.mock_view.pan_y, 400)
@@ -89,7 +95,7 @@ class TestEditor(Assertions):
         original_pan_x = self.mock_view.pan_x
         original_pan_y = self.mock_view.pan_y
 
-        editor.do_pan_by(self.mock_view, 50, -25)
+        editor.do_pan_by(context, self.mock_view, 50, -25)
 
         self.assertEqual(self.mock_view.pan_x, original_pan_x + 50)
         self.assertEqual(self.mock_view.pan_y, original_pan_y - 25)
@@ -153,20 +159,19 @@ class TestEditor(Assertions):
 
     def test_do_new_editor(self):
         """Test initializing a new editor view"""
-        # Mock sim
+        # Mock sim on the context
         mock_sim = Mock()
         mock_sim.editors = 0
         mock_sim.editor = None
+        context.sim = mock_sim
 
-        with patch("micropolis.editor.types.sim", mock_sim):
-            editor.do_new_editor(context, self.mock_view)
+        editor.do_new_editor(context, self.mock_view)
 
-            self.assertEqual(mock_sim.editors, 1)
-            self.assertEqual(mock_sim.editor, self.mock_view)
-            self.assertTrue(self.mock_view.invalid)
+        self.assertEqual(mock_sim.editors, 1)
+        self.assertEqual(mock_sim.editor, self.mock_view)
+        self.assertTrue(self.mock_view.invalid)
 
-    @patch("micropolis.editor.types")
-    def test_do_update_editor_invisible(self, mock_types):
+    def test_do_update_editor_invisible(self):
         """Test updating an invisible editor view"""
         self.mock_view.visible = False
 
@@ -175,11 +180,10 @@ class TestEditor(Assertions):
         # Should return early without doing anything
         self.assertEqual(self.mock_view.updates, 0)
 
-    @patch("micropolis.editor.types")
     @patch("micropolis.editor.HandleAutoGoto")
     @patch("micropolis.editor.pygame")
     def test_do_update_editor_visible(
-        self, mock_pygame, mock_handle_autogoto, mock_types
+        self, mock_pygame, mock_handle_autogoto
     ):
         """Test updating a visible editor view"""
         self.mock_view.visible = True
@@ -190,12 +194,12 @@ class TestEditor(Assertions):
         mock_pygame.Surface.return_value = mock_surface
         setattr(self.mock_view, "surface", mock_surface)
 
-        # Mock the types module
-        mock_types.ShakeNow = 0
-        mock_types.sim_skips = 0
-        mock_types.do_animation = 0
-        mock_types.tiles_animated = 0
-        mock_types.pending_tool = -1  # No pending tool
+        # Set context values instead of types module
+        context.shake_now = 0
+        context.sim_skips = 0
+        context.do_animation = False
+        context.tiles_animated = 0
+        context.pending_tool = -1  # No pending tool
 
         editor.do_update_editor(context, self.mock_view)
 
@@ -278,7 +282,7 @@ class TestEditorIntegration(Assertions):
     def setUp(self):
         """Set up integration test fixtures"""
         # Create a more complete mock setup
-        self.view = Mock(spec=types.SimView)
+        self.view = Mock(spec=SimView)
         self.view.w_width = 800
         self.view.w_height = 600
         self.view.pan_x = 400
@@ -301,23 +305,24 @@ class TestEditorIntegration(Assertions):
         self.view.i_width = 1920
         self.view.i_height = 1600
         self.view.type = view_types.X_Mem_View
+        self.view.follow = None
 
         # Mock display
         self.display = Mock()
         self.display.color = True
         self.view.x = self.display
 
-    @patch("micropolis.editor.types")
-    def test_full_update_cycle(self, mock_types):
+    def test_full_update_cycle(self):
         """Test a full editor update cycle"""
-        # Mock global state
-        mock_types.ShakeNow = 0
-        mock_types.sim_skips = 0
-        mock_types.do_animation = 0
-        mock_types.tiles_animated = 0
-        mock_types.sim = Mock()
-        mock_types.sim.editors = 1
-        mock_types.sim.editor = self.view
+        # Set context state instead of mocking types
+        context.shake_now = 0
+        context.sim_skips = 0
+        context.do_animation = False
+        context.tiles_animated = 0
+        mock_sim = Mock()
+        mock_sim.editors = 1
+        mock_sim.editor = self.view
+        context.sim = mock_sim
 
         with (
             patch("micropolis.editor.HandleAutoGoto") as mock_autogoto,

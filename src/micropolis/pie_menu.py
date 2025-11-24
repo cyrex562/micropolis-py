@@ -13,6 +13,7 @@ from enum import Enum
 import pygame
 
 from micropolis.constants import (
+    PI,
     TWO_PI,
     PIE_INACTIVE_RADIUS,
     PIE_MIN_RADIUS,
@@ -27,7 +28,7 @@ from micropolis.constants import (
     PIE_SPOKE_INSET,
 )
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 # Note: avoid importing PieMenuEntry at module import time to prevent circular
 # imports with pie_menu_entry. Import for type checking only.
@@ -533,11 +534,18 @@ class PieMenu:
         return direction
 
 
+from micropolis.pie_menu_entry import PieMenuEntry as _PieMenuEntry
+
+PIE_MENU_ENTRY = _PieMenuEntry
+
+
 # TCL Command Interface (stub for now)
 class PieMenuCommand:
     """TCL command interface for pie menus."""
 
     def __init__(self, menu: PieMenu):
+        global _DEFAULT_PIE_MENU_COMMAND
+        _DEFAULT_PIE_MENU_COMMAND = self
         self.menu = menu
 
     def handle_command(self, command: str, *args) -> str:
@@ -597,3 +605,63 @@ class PieMenuCommand:
 def create_pie_menu(title: str = "", **kwargs) -> PieMenu:
     """Create a new pie menu."""
     return PieMenu(title=title, **kwargs)
+
+
+PieMenuEntry = _PieMenuEntry
+
+
+_DEFAULT_PIE_MENU_COMMAND: PieMenuCommand | None = None
+
+
+def _coerce_context_menu(context: AppContext | None) -> PieMenuCommand:
+    """Return or create a PieMenuCommand attached to the given context."""
+    if context is None:
+        if _DEFAULT_PIE_MENU_COMMAND is not None:
+            return _DEFAULT_PIE_MENU_COMMAND
+        return PieMenuCommand(PieMenu())
+
+    menu = getattr(context, "_pie_menu", None)
+    if not isinstance(menu, PieMenu):
+        if _DEFAULT_PIE_MENU_COMMAND is not None:
+            menu = _DEFAULT_PIE_MENU_COMMAND.menu
+        else:
+            menu = PieMenu()
+        try:
+            setattr(context, "_pie_menu", menu)
+        except Exception:
+            pass
+
+    command = getattr(context, "_pie_menu_command", None)
+    if not isinstance(command, PieMenuCommand) or command.menu is not menu:
+        if _DEFAULT_PIE_MENU_COMMAND is not None and _DEFAULT_PIE_MENU_COMMAND.menu is menu:
+            command = _DEFAULT_PIE_MENU_COMMAND
+        else:
+            command = PieMenuCommand(menu)
+        try:
+            setattr(context, "_pie_menu_command", command)
+        except Exception:
+            pass
+
+    return command
+
+
+def handle_command(
+    interp: Any,
+    context: AppContext | None,
+    command: str,
+    *args: str,
+) -> str:
+    """Legacy Tcl-style command entry point for pie menus."""
+    cmd = _coerce_context_menu(context)
+    return cmd.handle_command(command, *args)
+
+
+__all__ = [
+    "PieMenu",
+    "PieMenuEntry",
+    "EntryType",
+    "PieMenuCommand",
+    "create_pie_menu",
+    "PI",
+    "handle_command",
+]

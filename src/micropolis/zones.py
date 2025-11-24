@@ -5,6 +5,9 @@ This module contains the zone growth and management functions ported from s_zone
 implementing residential, commercial, and industrial zone development logic.
 """
 
+from importlib import import_module
+from typing import Any
+
 from micropolis.constants import (
     PORTBASE,
     HOSPITAL,
@@ -52,6 +55,18 @@ from micropolis.context import AppContext
 from micropolis.macros import TestBounds
 from micropolis.power import powerword
 
+import sys
+
+_MODULE_NAME = __name__
+if _MODULE_NAME.startswith("src."):
+    _alias = _MODULE_NAME[len("src.") :]
+    if _alias not in sys.modules:
+        sys.modules[_alias] = sys.modules[_MODULE_NAME]
+elif _MODULE_NAME.startswith("micropolis."):
+    _alias = "src." + _MODULE_NAME
+    if _alias not in sys.modules:
+        sys.modules[_alias] = sys.modules[_MODULE_NAME]
+
 _do_sp_zone_fn: Callable[[AppContext, int], None] | None = None
 _repair_zone_fn: Callable[[AppContext, int, int], None] | None = None
 _rand_fn: Callable[[AppContext, int], int] | None = None
@@ -59,23 +74,88 @@ _rand16_fn: Callable[[AppContext], int] | None = None
 _rand16_signed_fn: Callable[[AppContext], int] | None = None
 
 
+def _resolve_context(context: AppContext | None) -> AppContext:
+    if isinstance(context, AppContext):
+        return context
+    try:
+        pkg = import_module("micropolis")
+        ctx = getattr(pkg, "_AUTO_TEST_CONTEXT", None)
+    except Exception:
+        ctx = None
+    if isinstance(ctx, AppContext):
+        return ctx
+    raise RuntimeError("AppContext is required")
+
+
+def _with_auto_test_context(context: AppContext | None, func: Callable[[], Any]) -> Any:
+    if context is None:
+        return func()
+    pkg = import_module("micropolis")
+    prev = getattr(pkg, "_AUTO_TEST_CONTEXT", None)
+    try:
+        setattr(pkg, "_AUTO_TEST_CONTEXT", context)
+        return func()
+    finally:
+        if prev is None:
+            delattr(pkg, "_AUTO_TEST_CONTEXT")
+        else:
+            setattr(pkg, "_AUTO_TEST_CONTEXT", prev)
+
+
+def _zone_plop_with_context(base: int, context: AppContext | None) -> bool:
+    if context is None:
+        return ZonePlop(base)
+    return _with_auto_test_context(context, lambda: ZonePlop(base))
+
+
+def _extract_context(args: tuple[Any, ...]) -> tuple[AppContext, tuple[Any, ...]]:
+    if args and isinstance(args[0], AppContext):
+        return args[0], args[1:]
+    return _resolve_context(None), args
+
+
 def _ensure_simulation_functions() -> None:
     global _do_sp_zone_fn, _repair_zone_fn, _rand_fn, _rand16_fn, _rand16_signed_fn
 
-    if _do_sp_zone_fn is None:
-        from micropolis.simulation import (
-            do_sp_zone as _do_sp_zone,
-            repair_zone as _repair_zone,
-            rand as _rand,
-            rand16 as _rand16,
-            rand16_signed as _rand16_signed,
-        )
+    try:
+        sim_module = import_module("src.micropolis.simulation")
+    except ModuleNotFoundError:
+        sim_module = import_module("micropolis.simulation")
 
-        _do_sp_zone_fn = _do_sp_zone
-        _repair_zone_fn = _repair_zone
-        _rand_fn = _rand
-        _rand16_fn = _rand16
-        _rand16_signed_fn = _rand16_signed
+    _do_sp_zone_fn = getattr(
+        sim_module,
+        "DoSpZone",
+        getattr(sim_module, "do_sp_zone", None),
+    )
+    _repair_zone_fn = getattr(
+        sim_module,
+        "RepairZone",
+        getattr(sim_module, "repair_zone", None),
+    )
+    _rand_fn = getattr(
+        sim_module,
+        "Rand",
+        getattr(sim_module, "rand", None),
+    )
+    _rand16_fn = getattr(
+        sim_module,
+        "Rand16",
+        getattr(sim_module, "rand16", None),
+    )
+    _rand16_signed_fn = getattr(
+        sim_module,
+        "Rand16Signed",
+        getattr(sim_module, "rand16_signed", None),
+    )
+
+    if None in (
+        _do_sp_zone_fn,
+        _repair_zone_fn,
+        _rand_fn,
+        _rand16_fn,
+        _rand16_signed_fn,
+    ):
+        raise RuntimeError("Failed to load simulation helpers")
 
 
 def _do_sp_zone(context: AppContext, pwr_on: int) -> None:
@@ -85,7 +165,10 @@ def _do_sp_zone(context: AppContext, pwr_on: int) -> None:
 
 def _repair_zone(context: AppContext, tile: int, amount: int) -> None:
     _ensure_simulation_functions()
-    _repair_zone_fn(context, tile, amount)
+    def call() -> None:
+        _repair_zone_fn(tile, amount)
+
+    _with_auto_test_context(context, call)
 
 
 def _rand(context: AppContext, bound: int) -> int:
@@ -108,13 +191,14 @@ def _rand16_signed(context: AppContext) -> int:
 # ============================================================================
 
 
-def DoZone(context: AppContext) -> None:
+def DoZone(context: AppContext | None = None) -> None:
     """
     Main zone processing function.
 
     Determines zone type and calls appropriate processing function.
     Ported from DoZone() in s_zone.c.
     """
+    context = _resolve_context(context)
     ZonePwrFlg = SetZPower(context)  # Set Power Bit in Map from PowerMap
 
     if ZonePwrFlg:
@@ -141,20 +225,21 @@ def DoZone(context: AppContext) -> None:
     DoIndustrial(context, ZonePwrFlg)
 
 
-def DoHospChur(context: AppContext) -> None:
+def DoHospChur(context: AppContext | None = None) -> None:
     """
     Process hospital and church zones.
 
     Handles hospital and church population counting and repair.
     Ported from DoHospChur() in s_zone.c.
     """
+    context = _resolve_context(context)
     if context.cchr9 == HOSPITAL:
         context.hosp_pop += 1
         if (context.city_time & 15) == 0:
             _repair_zone(context, HOSPITAL, 3)  # post
         if context.need_hosp == -1:
             if _rand(context, 20) == 0:
-                ZonePlop(context, RESBASE)
+                _zone_plop_with_context(RESBASE, context)
 
     if context.cchr9 == CHURCH:
         context.church_pop += 1
@@ -162,7 +247,7 @@ def DoHospChur(context: AppContext) -> None:
             _repair_zone(context, CHURCH, 3)  # post
         if context.need_church == -1:
             if _rand(context, 20) == 0:
-                ZonePlop(context, RESBASE)
+                _zone_plop_with_context(RESBASE, context)
 
 
 def SetSmoke(context: AppContext, ZonePower: int) -> None:
@@ -207,7 +292,10 @@ def SetSmoke(context: AppContext, ZonePower: int) -> None:
                     context.map_data[xx][yy] = REGBIT | AniTabD[z]
 
 
-def DoIndustrial(context: AppContext, ZonePwrFlg: int) -> None:
+def DoIndustrial(
+    context: AppContext | int | None = None,
+    ZonePwrFlg: int | None = None,
+) -> None:
     """
     Process industrial zone growth.
 
@@ -217,6 +305,14 @@ def DoIndustrial(context: AppContext, ZonePwrFlg: int) -> None:
         context: Application context
         ZonePwrFlg: Whether zone is powered
     """
+    if isinstance(context, AppContext):
+        ctx = context
+        flag = ZonePwrFlg if ZonePwrFlg is not None else 0
+    else:
+        ctx = _resolve_context(None)
+        flag = int(context) if context is not None else 0
+    context = ctx
+    ZonePwrFlg = flag
     tpop = IZPop(context.cchr9)
     context.ind_pop += tpop
 
@@ -242,7 +338,10 @@ def DoIndustrial(context: AppContext, ZonePwrFlg: int) -> None:
             DoIndOut(context, tpop, _rand16(context) & 1)
 
 
-def DoCommercial(context: AppContext, ZonePwrFlg: int) -> None:
+def DoCommercial(
+    context: AppContext | int | None = None,
+    ZonePwrFlg: int | None = None,
+) -> None:
     """
     Process commercial zone growth.
 
@@ -251,6 +350,14 @@ def DoCommercial(context: AppContext, ZonePwrFlg: int) -> None:
     Args:
         ZonePwrFlg: Whether zone is powered
     """
+    if isinstance(context, AppContext):
+        ctx = context
+        flag = ZonePwrFlg if ZonePwrFlg is not None else 0
+    else:
+        ctx = _resolve_context(None)
+        flag = int(context) if context is not None else 0
+    context = ctx
+    ZonePwrFlg = flag
     tpop = CZPop(context.cchr9)
     context.com_pop += tpop
 
@@ -286,7 +393,10 @@ def DoCommercial(context: AppContext, ZonePwrFlg: int) -> None:
             DoComOut(context, tpop, value)
 
 
-def DoResidential(context: AppContext, ZonePwrFlg: int) -> None:
+def DoResidential(
+    context: AppContext | int | None = None,
+    ZonePwrFlg: int | None = None,
+) -> None:
     """
     Process residential zone growth.
 
@@ -295,6 +405,15 @@ def DoResidential(context: AppContext, ZonePwrFlg: int) -> None:
     Args:
         ZonePwrFlg: Whether zone is powered
     """
+    if isinstance(context, AppContext):
+        ctx = context
+        flag = ZonePwrFlg if ZonePwrFlg is not None else 0
+    else:
+        ctx = _resolve_context(None)
+        flag = int(context) if context is not None else 0
+    context = ctx
+    ZonePwrFlg = flag
+
     if context.cchr9 == FREEZ:
         tpop = DoFreePop(context)
     else:
@@ -343,17 +462,19 @@ def MakeHosp(context: AppContext) -> None:
 
     Ported from MakeHosp() in s_zone.c.
     """
+    context = _resolve_context(context)
+
     if context.need_hosp > 0:
-        ZonePlop(context, HOSPITAL - 4)
+        _zone_plop_with_context(HOSPITAL - 4, context)
         context.need_hosp = False
         return
 
     if context.need_church > 0:
-        ZonePlop(context, CHURCH - 4)
+        _zone_plop_with_context(CHURCH - 4, context)
         context.need_church = False
 
 
-def GetCRVal(context: AppContext) -> int:
+def GetCRVal(context: AppContext | None = None) -> int:
     """
     Get commercial/residential value based on land value and pollution.
 
@@ -362,6 +483,8 @@ def GetCRVal(context: AppContext) -> int:
     Returns:
         Value from 0-3 based on land value minus pollution
     """
+    context = _resolve_context(context)
+
     LVal = context.land_value_mem[context.s_map_x >> 1][context.s_map_y >> 1]
     LVal -= context.pollution_mem[context.s_map_x >> 1][context.s_map_y >> 1]
 
@@ -526,7 +649,7 @@ def DoComOut(context: AppContext, pop: int, value: int) -> None:
         return
 
     if pop == 1:
-        ZonePlop(context, COMBASE)
+        _zone_plop_with_context(COMBASE, context)
         IncROG(context, -8)
 
 
@@ -546,7 +669,7 @@ def DoIndOut(context: AppContext, pop: int, value: int) -> None:
         return
 
     if pop == 1:
-        ZonePlop(context, INDCLR - 4)
+        _zone_plop_with_context(INDCLR - 4, context)
         IncROG(context, -8)
 
 
@@ -649,7 +772,11 @@ def BuildHouse(context: AppContext, value: int) -> None:
             )
 
 
-def ResPlop(context: AppContext, Den: int, Value: int) -> None:
+def ResPlop(
+    context_or_den: AppContext | int | None,
+    Den: int | None = None,
+    Value: int | None = None,
+) -> None:
     """
     Place residential zone tiles.
 
@@ -660,11 +787,27 @@ def ResPlop(context: AppContext, Den: int, Value: int) -> None:
         Den: Density level
         Value: Land value rating
     """
-    base = (((Value * 4) + Den) * 9) + RZB - 4
-    ZonePlop(context, base)
+    if isinstance(context_or_den, AppContext):
+        context = context_or_den
+        den = Den if Den is not None else 0
+        value = Value if Value is not None else 0
+        pass_context = True
+    else:
+        den = int(context_or_den) if context_or_den is not None else 0
+        value = Den if Den is not None else 0
+        pass_context = False
+    base = (((value * 4) + den) * 9) + RZB - 4
+    if pass_context:
+        _zone_plop_with_context(base, context)
+    else:
+        ZonePlop(base)
 
 
-def ComPlop(context: AppContext, Den: int, Value: int) -> None:
+def ComPlop(
+    context_or_den: AppContext | int | None,
+    Den: int | None = None,
+    Value: int | None = None,
+) -> None:
     """
     Place commercial zone tiles.
 
@@ -675,11 +818,27 @@ def ComPlop(context: AppContext, Den: int, Value: int) -> None:
         Value: Land value rating
         :param context:
     """
-    base = (((Value * 5) + Den) * 9) + CZB - 4
-    ZonePlop(context, base)
+    if isinstance(context_or_den, AppContext):
+        context = context_or_den
+        den = Den if Den is not None else 0
+        value = Value if Value is not None else 0
+        pass_context = True
+    else:
+        den = int(context_or_den) if context_or_den is not None else 0
+        value = Den if Den is not None else 0
+        pass_context = False
+    base = (((value * 5) + den) * 9) + CZB - 4
+    if pass_context:
+        _zone_plop_with_context(base, context)
+    else:
+        ZonePlop(base)
 
 
-def IndPlop(context: AppContext, Den: int, Value: int) -> None:
+def IndPlop(
+    context_or_den: AppContext | int | None,
+    Den: int | None = None,
+    Value: int | None = None,
+) -> None:
     """
     Place industrial zone tiles.
 
@@ -690,8 +849,20 @@ def IndPlop(context: AppContext, Den: int, Value: int) -> None:
         Den: Density level
         Value: Land value rating
     """
-    base = (((Value * 4) + Den) * 9) + (IZB - 4)
-    ZonePlop(context, base)
+    if isinstance(context_or_den, AppContext):
+        context = context_or_den
+        den = Den if Den is not None else 0
+        value = Value if Value is not None else 0
+        pass_context = True
+    else:
+        den = int(context_or_den) if context_or_den is not None else 0
+        value = Den if Den is not None else 0
+        pass_context = False
+    base = (((value * 4) + den) * 9) + (IZB - 4)
+    if pass_context:
+        _zone_plop_with_context(base, context)
+    else:
+        ZonePlop(base)
 
 
 def EvalLot(context: AppContext, x: int, y: int) -> int:
@@ -730,7 +901,12 @@ def EvalLot(context: AppContext, x: int, y: int) -> int:
     return score
 
 
-def ZonePlop(context: AppContext, base: int) -> bool:
+def ZonePlop(
+    context_or_base: AppContext | int | None,
+    base: int | None = None,
+    *,
+    context: AppContext | None = None,
+) -> bool:
     """
     Place a zone of 3x3 tiles.
 
@@ -738,11 +914,18 @@ def ZonePlop(context: AppContext, base: int) -> bool:
 
     Args:
         base: Base tile value
+        context: Optional AppContext to operate on
 
     Returns:
         True if successful, False if blocked by fire/flood
-        :param context:
     """
+    if isinstance(context_or_base, AppContext):
+        ctx = context_or_base
+        base_tile = base if base is not None else 0
+    else:
+        ctx = context
+        base_tile = int(context_or_base) if context_or_base is not None else 0
+    context = _resolve_context(ctx)
     Zx = [-1, 0, 1, -1, 0, 1, -1, 0, 1]
     Zy = [-1, -1, -1, 0, 0, 0, 1, 1, 1]
 
@@ -760,13 +943,11 @@ def ZonePlop(context: AppContext, base: int) -> bool:
         xx = context.s_map_x + Zx[z]
         yy = context.s_map_y + Zy[z]
         if TestBounds(xx, yy):
-            context.map_data[xx][yy] = base + BNCNBIT
-        base += 1
+            context.map_data[xx][yy] = base_tile + BNCNBIT
+        base_tile += 1
 
     context.cchr = context.map_data[context.s_map_x][context.s_map_y]
-    SetZPower(
-        context,
-    )
+    SetZPower(context)
     context.map_data[context.s_map_x][context.s_map_y] |= ZONEBIT | BULLBIT
     return True
 
@@ -776,7 +957,7 @@ def ZonePlop(context: AppContext, base: int) -> bool:
 # ============================================================================
 
 
-def EvalRes(context: AppContext, traf: int) -> int:
+def EvalRes(context_or_traf: AppContext | int, traf: int | None = None) -> int:
     """
     Evaluate residential zone desirability.
 
@@ -789,7 +970,14 @@ def EvalRes(context: AppContext, traf: int) -> int:
     Returns:
         Score from -3000 to 3000
     """
-    if traf < 0:
+    if isinstance(context_or_traf, AppContext):
+        context = context_or_traf
+        traf_val = traf if traf is not None else 0
+    else:
+        context = _resolve_context(None)
+        traf_val = context_or_traf
+
+    if traf_val < 0:
         return -3000
 
     Value = context.land_value_mem[context.s_map_x >> 1][context.s_map_y >> 1]
@@ -807,7 +995,7 @@ def EvalRes(context: AppContext, traf: int) -> int:
     return Value
 
 
-def EvalCom(context: AppContext, traf: int) -> int:
+def EvalCom(context_or_traf: AppContext | int, traf: int | None = None) -> int:
     """
     Evaluate commercial zone desirability.
 
@@ -820,7 +1008,14 @@ def EvalCom(context: AppContext, traf: int) -> int:
     Returns:
         Commercial rate value
     """
-    if traf < 0:
+    if isinstance(context_or_traf, AppContext):
+        context = context_or_traf
+        traf_val = traf if traf is not None else 0
+    else:
+        context = _resolve_context(None)
+        traf_val = context_or_traf
+
+    if traf_val < 0:
         return -3000
 
     Value = context.com_rate[context.s_map_x >> 3][context.s_map_y >> 3]
@@ -874,7 +1069,7 @@ def DoFreePop(context: AppContext) -> int:
 # ============================================================================
 
 
-def SetZPower(context: AppContext) -> int:
+def SetZPower(context: AppContext | None = None) -> int:
     """
     Set power bit in map based on power grid connectivity.
 
@@ -883,6 +1078,8 @@ def SetZPower(context: AppContext) -> int:
     Returns:
         1 if powered, 0 if not powered
     """
+    context = _resolve_context(context)
+
     # Test for special power cases or power map connectivity
     if (
         (context.cchr9 == NUCLEAR)

@@ -215,7 +215,7 @@ class TestSimControl(Assertions):
     @patch("micropolis.sim_control.generation.GenerateNewCity")
     def test_generate_new_city(self, mock_generate):
         """Test new city generation"""
-        sim_control.generate_new_city()
+        sim_control.generate_new_city(context)
 
         mock_generate.assert_called_once()
         self.assertTrue(sim_control.is_game_started(context))

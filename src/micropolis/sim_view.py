@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pygame
 from pydantic import BaseModel, ConfigDict
@@ -8,6 +8,9 @@ from .constants import ALMAP, EDITOR_H, EDITOR_W, MAP_H, MAP_W, DOZE_STATE
 from .context import AppContext
 from .sim_sprite import SimSprite
 from .terrain import WORLD_X, WORLD_Y
+
+if TYPE_CHECKING:
+    from .sim import Sim
 
 
 class SimView(BaseModel):
@@ -33,6 +36,7 @@ class SimView(BaseModel):
     skips: int = 0
     skip: int = 0
     update: bool = False
+    needs_redraw: bool = False
 
     # Map display
     smalltiles: bytes | None = None
@@ -124,7 +128,50 @@ class SimView(BaseModel):
     surface: pygame.Surface | None = None  # Pygame surface for rendering
     overlay_surface: pygame.Surface | None = None  # Overlay (alpha) surface
 
+    sim: "Sim | None" = None
     next: "SimView|None" = None
+
+    # ------------------------------------------------------------------
+    # Legacy-expected helpers
+    # ------------------------------------------------------------------
+    @property
+    def shake_now(self) -> int:
+        ctx = getattr(self.sim, "context", None)
+        if ctx is not None:
+            return getattr(ctx, "shake_now", 0)
+        return 0
+
+    @shake_now.setter
+    def shake_now(self, value: int) -> None:
+        ctx = getattr(self.sim, "context", None)
+        if ctx is not None:
+            ctx.shake_now = int(value)
+
+    @property
+    def do_animation(self) -> bool:
+        ctx = getattr(self.sim, "context", None)
+        if ctx is not None:
+            return bool(getattr(ctx, "do_animation", False))
+        return False
+
+    @do_animation.setter
+    def do_animation(self, value: bool) -> None:
+        ctx = getattr(self.sim, "context", None)
+        if ctx is not None:
+            ctx.do_animation = bool(value)
+
+    @property
+    def pending_tool(self) -> int:
+        ctx = getattr(self.sim, "context", None)
+        if ctx is not None:
+            return int(getattr(ctx, "pending_tool", -1))
+        return -1
+
+    @pending_tool.setter
+    def pending_tool(self, value: int) -> None:
+        ctx = getattr(self.sim, "context", None)
+        if ctx is not None:
+            ctx.pending_tool = int(value)
 
 
 def populate_common_view_fields(

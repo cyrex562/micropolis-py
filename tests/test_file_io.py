@@ -6,21 +6,21 @@ Tests city file loading and saving functionality.
 
 import os
 import tempfile
-import sys
 
+from micropolis.context import AppContext
 from micropolis.file_io import loadFile, saveFile, validateCityFile, getCityFileInfo
-from micropolis import types, allocation, initialization
+from micropolis import allocation, initialization
 
 
-def test_file_io():
+def test_file_io(test_context: AppContext):
     """Test basic file I/O functionality"""
 
     # Initialize simulation state
-    allocation.init_map_arrays()
-    initialization.InitWillStuff()
-    types.scenario_id = 0
-    types.init_sim_load = 1
-    types.do_initial_eval = 0
+    allocation.init_map_arrays(test_context)
+    initialization.InitWillStuff(test_context)
+    test_context.scenario_id = 0
+    test_context.init_sim_load = 1
+    test_context.do_initial_eval = 0
 
     print("Testing file I/O system...")
 
@@ -31,10 +31,10 @@ def test_file_io():
         result = loadFile(test_city)
         if result:
             print("✓ Successfully loaded existing city file")
-            print(f"  City name: {types.city_name}")
-            print(f"  Total funds: {types.total_funds}")
-            print(f"  City time: {types.city_time}")
-            print(f"  City tax: {types.city_tax}")
+            print(f"  City name: {test_context.city_name}")
+            print(f"  Total funds: {test_context.total_funds}")
+            print(f"  City time: {test_context.city_time}")
+            print(f"  City tax: {test_context.city_tax}")
         else:
             print("✗ Failed to load existing city file")
             return False

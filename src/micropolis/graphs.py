@@ -11,6 +11,7 @@ import pygame
 # Expose a module-level flag so tests can patch "PYGAME_AVAILABLE" reliably.
 PYGAME_AVAILABLE: bool = pygame is not None
 
+from importlib import import_module
 from micropolis.constants import (
     ALL_HISTORIES,
     HIST_NAMES,
@@ -306,21 +307,41 @@ def init_graph_maxima(context: AppContext) -> None:
 
     import sys
 
-    for mname, mobj in list(sys.modules.items()):
-        if not mname.endswith(".types"):
-            continue
+    module_candidates = ("src.micropolis.types", "micropolis.types")
+    for module_name in module_candidates:
+        mod = sys.modules.get(module_name)
+        if mod is None:
+            try:
+                mod = import_module(module_name)
+            except ModuleNotFoundError:
+                continue
         try:
-            if hasattr(mobj, "res_his"):
-                res_his = list(getattr(mobj, "res_his"))
-            if hasattr(mobj, "com_his"):
-                com_his = list(getattr(mobj, "com_his"))
-            if hasattr(mobj, "ind_his"):
-                ind_his = list(getattr(mobj, "ind_his"))
-            # If we've found all three on a module, stop searching.
-            if res_his is not None and com_his is not None and ind_his is not None:
-                break
+            res_val = getattr(mod, "res_his", None)
+            com_val = getattr(mod, "com_his", None)
+            ind_val = getattr(mod, "ind_his", None)
         except Exception:
             continue
+        if res_val is not None and com_val is not None and ind_val is not None:
+            res_his = list(res_val)
+            com_his = list(com_val)
+            ind_his = list(ind_val)
+            break
+
+    if res_his is None or com_his is None or ind_his is None:
+        for mname, mobj in list(sys.modules.items()):
+            if "micropolis" not in mname or not mname.endswith(".types"):
+                continue
+            try:
+                if hasattr(mobj, "res_his"):
+                    res_his = list(getattr(mobj, "res_his"))
+                if hasattr(mobj, "com_his"):
+                    com_his = list(getattr(mobj, "com_his"))
+                if hasattr(mobj, "ind_his"):
+                    ind_his = list(getattr(mobj, "ind_his"))
+                if res_his is not None and com_his is not None and ind_his is not None:
+                    break
+            except Exception:
+                continue
 
     # Fall back to context if the module-level arrays weren't found.
     if res_his is None:
@@ -388,23 +409,16 @@ def init_graph_maxima(context: AppContext) -> None:
     # that inspect module-level maxima (eg. `types.res_his_max`) observe the
     # computed values without needing to fetch the AppContext.
     try:
-        # Mirror maxima into any loaded 'types' module object so tests
-        # that inspect module-level maxima (eg. `types.res_his_max`) see
-        # the computed values regardless of whether they imported the
-        # package as `micropolis.types` or `src.micropolis.types`.
-        import sys
-
-        for mname, mobj in list(sys.modules.items()):
-            if not mname.endswith(".types"):
+        for module_name in ("micropolis.types", "src.micropolis.types"):
+            try:
+                mod = import_module(module_name)
+            except Exception:
                 continue
             try:
-                setattr(mobj, "res_his_max", context.res_his_max)
-                # Provide both the legacy single-underscore name and the
-                # historical double-underscore variant that appeared during
-                # migration to ensure tests referencing either name work.
-                setattr(mobj, "com_his__max", context.com_his__max)
-                setattr(mobj, "com_his_max", context.com_his__max)
-                setattr(mobj, "ind_his_max", context.ind_his_max)
+                setattr(mod, "res_his_max", context.res_his_max)
+                setattr(mod, "com_his__max", context.com_his__max)
+                setattr(mod, "com_his_max", context.com_his__max)
+                setattr(mod, "ind_his_max", context.ind_his_max)
             except Exception:
                 continue
     except Exception:

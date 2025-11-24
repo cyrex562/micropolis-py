@@ -5,7 +5,9 @@ Tests pygame platform functionality including display management,
 coordinate conversion, view management, and drawing operations.
 """
 
-from micropolis.constants import COLOR_WHITE
+from micropolis.app_config import AppConfig
+from micropolis.context import AppContext
+from micropolis.constants import COLOR_BLACK, COLOR_WHITE
 from micropolis.sim import Sim
 from micropolis.sim_view import SimView
 import pytest
@@ -42,77 +44,83 @@ from micropolis.platform import (
     view_surfaces,
     view_overlay_surfaces,
 )
-from micropolis.constants import COLOR_BLACK
 from micropolis.view_types import Map_Class, Editor_Class
+
+
+@pytest.fixture
+def app_context() -> AppContext:
+    """Provide a fresh application context for platform tests."""
+    return AppContext(config=AppConfig())
 
 
 class TestPlatformInitialization:
     """Test platform initialization and shutdown."""
 
-    def test_initialize_platform_success(self):
+    def test_initialize_platform_success(self, app_context):
         """Test successful platform initialization."""
         with patch("pygame.init") as mock_init:
-            result = initialize_platform()
+            result = initialize_platform(app_context)
             assert result is True
             mock_init.assert_called_once()
 
-    def test_initialize_platform_failure(self):
+    def test_initialize_platform_failure(self, app_context):
         """Test platform initialization failure."""
         with patch("pygame.init", side_effect=Exception("Init failed")):
-            result = initialize_platform()
+            result = initialize_platform(app_context)
             assert result is False
 
-    def test_shutdown_platform(self):
+    def test_shutdown_platform(self, app_context):
         """Test platform shutdown."""
         with patch("pygame.quit") as mock_quit:
-            shutdown_platform()
+            shutdown_platform(app_context)
             mock_quit.assert_called_once()
 
-    def test_is_platform_initialized(self):
+    def test_is_platform_initialized(self, app_context):
         """Test platform initialization status check."""
         # Initially not initialized
         assert is_platform_initialized() is False
 
         # After initialization
         with patch("pygame.init"):
-            initialize_platform()
+            initialize_platform(app_context)
             assert is_platform_initialized() is True
 
         # After shutdown
-        shutdown_platform()
+        shutdown_platform(app_context)
         assert is_platform_initialized() is False
 
 
 class TestDisplayManagement:
     """Test display mode and pixel management."""
 
-    def test_set_display_mode_success(self):
+    def test_set_display_mode_success(self, app_context):
         """Test successful display mode setting."""
-        initialize_platform()
+        initialize_platform(app_context)
         with patch("pygame.display.set_mode") as mock_set_mode:
             mock_surface = Mock()
             mock_set_mode.return_value = mock_surface
 
-            result = set_display_mode(800, 600)
+            result = set_display_mode(app_context, 800, 600)
             assert result is True
             mock_set_mode.assert_called_once_with((800, 600), 0)
 
-    def test_set_display_mode_failure(self):
+    def test_set_display_mode_failure(self, app_context):
         """Test display mode setting failure."""
-        initialize_platform()
+        initialize_platform(app_context)
         with patch("pygame.display.set_mode", side_effect=Exception("Set mode failed")):
-            result = set_display_mode(800, 600)
+            result = set_display_mode(app_context, 800, 600)
             assert result is False
 
-    def test_get_display_pixels(self):
+    def test_get_display_pixels(self, app_context):
         """Test getting display pixel colors."""
-        initialize_platform()
+        initialize_platform(app_context)
         pixels = get_display_pixels()
         assert isinstance(pixels, list)
         assert len(pixels) == 16  # Should have 16 colors
 
-    def test_get_display_info(self):
+    def test_get_display_info(self, app_context):
         """Test getting display information."""
+        initialize_platform(app_context)
         info = get_display_info()
         assert isinstance(info, dict)
         assert "width" in info
@@ -183,7 +191,8 @@ class TestViewManagement:
 
     def setup_method(self):
         """Set up test environment."""
-        initialize_platform()
+        self.context = AppContext(config=AppConfig())
+        initialize_platform(self.context)
         # Clear any existing surfaces
         view_surfaces.clear()
         view_overlay_surfaces.clear()
@@ -192,7 +201,7 @@ class TestViewManagement:
         """Clean up test environment."""
         view_surfaces.clear()
         view_overlay_surfaces.clear()
-        shutdown_platform()
+        shutdown_platform(self.context)
 
     def test_create_sim_view_editor(self):
         """Test creating an editor view."""
@@ -246,11 +255,12 @@ class TestViewPanning:
 
     def setup_method(self):
         """Set up test environment."""
-        initialize_platform()
+        self.context = AppContext(config=AppConfig())
+        initialize_platform(self.context)
 
     def teardown_method(self):
         """Clean up test environment."""
-        shutdown_platform()
+        shutdown_platform(self.context)
 
     def test_pan_view_by(self):
         """Test panning view by delta."""
@@ -300,11 +310,12 @@ class TestSurfaceOperations:
 
     def setup_method(self):
         """Set up test environment."""
-        initialize_platform()
+        self.context = AppContext(config=AppConfig())
+        initialize_platform(self.context)
 
     def teardown_method(self):
         """Clean up test environment."""
-        shutdown_platform()
+        shutdown_platform(self.context)
 
     def test_blit_view_surface(self):
         """Test blitting view surface to destination."""
@@ -328,11 +339,12 @@ class TestInkDrawing:
 
     def setup_method(self):
         """Set up test environment."""
-        initialize_platform()
+        self.context = AppContext(config=AppConfig())
+        initialize_platform(self.context)
 
     def teardown_method(self):
         """Clean up test environment."""
-        shutdown_platform()
+        shutdown_platform(self.context)
 
     def test_new_ink(self):
         """Test creating new ink."""
@@ -425,7 +437,7 @@ class TestUtilityFunctions:
         assert sim.graphs == 0
         assert sim.sprites == 0
 
-    def test_do_stop_micropolis(self):
+    def test_do_stop_micropolis(self, app_context):
         """Test stopping micropolis."""
         sim = make_new_sim()
 
@@ -434,7 +446,7 @@ class TestUtilityFunctions:
         create_sim_view("View2", Map_Class, 360, 300)
 
         # Stop micropolis
-        do_stop_micropolis(sim)
+        do_stop_micropolis(app_context, sim)
 
         # Check that surfaces were cleared
         assert len(view_surfaces) == 0

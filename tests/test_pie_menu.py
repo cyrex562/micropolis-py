@@ -6,7 +6,13 @@ Tests for PieMenu widget ported from w_piem.c
 
 import pytest
 import pygame
-from micropolis.pie_menu import PieMenu, EntryType, PieMenuCommand, create_pie_menu
+from micropolis.pie_menu import (
+    PieMenu,
+    EntryType,
+    PieMenuCommand,
+    create_pie_menu,
+    handle_command,
+)
 
 
 @pytest.fixture
@@ -285,7 +291,7 @@ class TestPieMenuCommand:
         menu = PieMenu()
         cmd = PieMenuCommand(menu)
 
-        handle_command(context, context, "add", "command", "-label", "Test Item")
+        handle_command(cmd, cmd, "add", "command", "-label", "Test Item")
         assert len(menu.entries) == 1
         assert menu.entries[0].label == "Test Item"
 
@@ -293,7 +299,7 @@ class TestPieMenuCommand:
         """Test activate command."""
         cmd = PieMenuCommand(sample_menu)
 
-        handle_command(context, context, "activate", "1")
+        handle_command(cmd, cmd, "activate", "1")
         assert sample_menu.active == 1
 
     def test_invoke_command(self, sample_menu):
@@ -301,7 +307,7 @@ class TestPieMenuCommand:
         cmd = PieMenuCommand(sample_menu)
 
         # Should not raise exception
-        handle_command(context, context, "invoke", "0")
+        handle_command(cmd, cmd, "invoke", "0")
 
     def test_distance_command(self, sample_menu):
         """Test distance command."""
@@ -310,7 +316,7 @@ class TestPieMenuCommand:
         center_y = sample_menu.center_y
         sample_menu.get_entry_at_position(center_x + 10, center_y)  # Set position
 
-        result = handle_command(context, context, "distance")
+        result = handle_command(cmd, cmd, "distance")
         distance = int(result)
         assert abs(distance - 10) <= 1  # Allow small rounding differences
 
@@ -321,7 +327,7 @@ class TestPieMenuCommand:
         center_y = sample_menu.center_y
         sample_menu.get_entry_at_position(center_x + 10, center_y)  # Right direction
 
-        result = handle_command(context, context, "direction")
+        result = handle_command(cmd, cmd, "direction")
         direction = int(result)
         # Direction should be a valid angle
         assert direction >= 0 and direction <= 360
@@ -331,7 +337,7 @@ class TestPieMenuCommand:
         cmd = PieMenuCommand(sample_menu)
 
         with pytest.raises(ValueError, match="Unknown command"):
-            handle_command(context, context, "invalid")
+            handle_command(cmd, cmd, "invalid")
 
 
 class TestEdgeCases:

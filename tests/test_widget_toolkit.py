@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import pygame
 
 from micropolis.ui.widgets import (
     Button,
@@ -101,7 +102,7 @@ def test_slider_changes_value_with_mouse_and_keys() -> None:
     slider.handle_event(mouse_event("mouse_down", 150, 10, button=1))
     slider.handle_event(mouse_event("mouse_move", 190, 10, button=1))
     slider.handle_event(mouse_event("mouse_up", 190, 10, button=1))
-    slider.handle_event(key_event("key_down", 37))  # left arrow
+    slider.handle_event(key_event("key_down", pygame.K_LEFT))  # left arrow
 
     assert math.isclose(slider.value, 90.0)
     assert values  # at least one change recorded
