@@ -80,16 +80,6 @@ class TestDoStopMicropolis:
 
         mock_cleanup.assert_called_once()
 
-    @patch("micropolis.tkinter_bridge.tk_main_cleanup")
-    def test_cleans_up_tkinter_bridge(self, mock_cleanup):
-        """Test that tkinter bridge is cleaned up."""
-        app_config = AppConfig()
-        context = AppContext(config=app_config)
-
-        DoStopMicropolis(context)
-
-        mock_cleanup.assert_called_once_with(context)
-
     @patch("micropolis.ui.event_bus.get_default_event_bus")
     def test_clears_event_bus(self, mock_get_bus):
         """Test that event bus is cleared."""
@@ -157,11 +147,10 @@ class TestDoStopMicropolis:
 
     @patch("micropolis.audio.shutdown_sound")
     @patch("micropolis.graphics_setup.cleanup_graphics")
-    @patch("micropolis.tkinter_bridge.tk_main_cleanup")
     @patch("micropolis.ui.event_bus.get_default_event_bus")
     @patch("micropolis.engine.pygame.time.set_timer")
     def test_full_teardown_sequence(
-        self, mock_set_timer, mock_get_bus, mock_bridge, mock_graphics, mock_audio
+        self, mock_set_timer, mock_get_bus, mock_graphics, mock_audio
     ):
         """Test complete teardown sequence with all components."""
         app_config = AppConfig()
@@ -180,7 +169,6 @@ class TestDoStopMicropolis:
         assert mock_set_timer.call_count >= 3
         mock_audio.assert_called_once()
         mock_graphics.assert_called_once()
-        mock_bridge.assert_called_once()
         mock_bus.clear.assert_called_once()
 
         # Verify state was reset

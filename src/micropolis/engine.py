@@ -473,11 +473,7 @@ def blit_views_to_screen(
         map_surface = getattr(context.sim.map, "surface", None)
     if map_surface is not None:
         try:
-            main_scaled = pygame.transform.smoothscale(
-                map_surface, (map_area[2], map_area[3])
-            )
-            screen.blit(main_scaled, (map_area[0], map_area[1]))
-
+            # Only blit to minimap, let EditorPanel handle the main view
             mini_scaled = pygame.transform.smoothscale(
                 map_surface, (minimap_area[2], minimap_area[3])
             )
@@ -773,9 +769,7 @@ def sim_update_maps(context: AppContext) -> None:
     view = ctx.sim.map
     while view:
         must_update_map = (
-            ctx.new_map_flags[view.map_state]
-            or ctx.new_map
-            or ctx.shake_now
+            ctx.new_map_flags[view.map_state] or ctx.new_map or ctx.shake_now
         )
         if must_update_map:
             view.invalid = True
@@ -939,15 +933,6 @@ def DoStopMicropolis(context: AppContext) -> None:
         logger.debug("Stopped all pygame timers")
     except Exception as e:
         logger.warning(f"Error stopping timers: {e}")
-
-    # Stop and clean up tkinter bridge resources
-    try:
-        from . import tkinter_bridge
-
-        tkinter_bridge.tk_main_cleanup(context)
-        logger.debug("Cleaned up tkinter bridge")
-    except Exception as e:
-        logger.warning(f"Error cleaning up tkinter bridge: {e}")
 
     # Shutdown audio system and release mixer channels
     try:
@@ -1596,9 +1581,7 @@ def pygame_main_loop(context: AppContext) -> Result[None, Exception]:
             )
             if hasattr(tool_palette_panel, "rect"):
                 tool_palette_panel.rect = tool_palette_rect  # type: ignore
-            tool_palette_panel.on_resize(
-                (tool_palette_rect[2], tool_palette_rect[3])
-            )
+            tool_palette_panel.on_resize((tool_palette_rect[2], tool_palette_rect[3]))
             logger.info("Tool palette panel created and registered successfully")
         except Exception as e:
             logger.error(f"Failed to create tool palette panel: {e}")

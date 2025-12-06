@@ -13,6 +13,7 @@ from micropolis.context import AppContext
 
 import sys
 
+
 # Avoid importing sim_control at module import time to prevent circular imports.
 def get_sim_speed(context: AppContext) -> int:
     from micropolis.sim_control import get_sim_speed as _impl
@@ -27,9 +28,13 @@ def is_sim_paused(context: AppContext) -> bool:
 
 
 def _get_ui_utilities() -> ModuleType:
-    return sys.modules.get(
-        "src.micropolis.ui_utilities"
-    ) or sys.modules.get("micropolis.ui_utilities") or ui_utilities
+    return (
+        sys.modules.get("src.micropolis.ui_utilities")
+        or sys.modules.get("micropolis.ui_utilities")
+        or ui_utilities
+    )
+
+
 from micropolis.ui.event_bus import EventBus, get_default_event_bus
 from micropolis.ui.timer_service import TimerEvent
 from micropolis.ui.uipanel import UIPanel
@@ -130,11 +135,12 @@ class _PygameWidgetRenderer(WidgetRenderer):
         color: tuple[int, int, int, int],
         font: str | None = None,
         size: int | None = None,
+        anchor: str = "center",
     ) -> None:
         font_obj = self._font(font, size)
         surface = font_obj.render(text, True, self._color(color))
         text_rect = surface.get_rect()
-        text_rect.center = position
+        setattr(text_rect, anchor, position)
         self._surface.blit(surface, text_rect)
 
     def draw_line(
@@ -326,8 +332,8 @@ class _HeadPanelView(UIWidget):
                     28,
                 )
             )
-        bar_top = y + 86
-        bar_height = 40
+        bar_top = y + 80
+        bar_height = 30
         bar_width = (w - padding * 2 - 12) // 3
         for idx, widget in enumerate(self.demand_widgets.values()):
             widget.set_rect(
@@ -338,7 +344,7 @@ class _HeadPanelView(UIWidget):
                     bar_height,
                 )
             )
-        self.ticker.set_rect((x + padding, y + h - padding - 32, w - padding * 2, 32))
+        self.ticker.set_rect((x + padding, y + 115, w - padding * 2, 28))
 
     # Data binding helpers -------------------------------------------------
     def set_city_name(self, text: str) -> None:
@@ -426,6 +432,10 @@ class HeadPanel(UIPanel):
         if self._timer_id and self.manager.timer_service.has_timer(self._timer_id):
             self.manager.timer_service.cancel(self._timer_id)
         self._timer_id = None
+
+    def did_resize(self) -> None:
+        self._view.set_rect(self.rect)
+        self._view.layout()
 
     # Rendering ------------------------------------------------------------
     def draw(self, surface: Any) -> None:

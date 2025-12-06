@@ -497,6 +497,7 @@ class AppContext(BaseModel):
     over_ride: int = Field(default=0)
     expensive: int = Field(default=0)
     pending_tool: int = Field(default=0)
+    current_tool_state: int = Field(default=residentialState)
     pending_x: int = Field(default=0)
     pending_y: int = Field(default=0)
     tree_level: int = Field(default=0)

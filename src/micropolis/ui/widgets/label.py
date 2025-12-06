@@ -37,15 +37,19 @@ class TextLabel(UIWidget):
         color = self._color or (theme.palette.text if theme else (255, 255, 255, 255))
         x, y, w, h = self.rect
         text_x = x
+        anchor = "midleft"
         if self.align == "center":
             text_x = x + w // 2
+            anchor = "center"
         elif self.align == "right":
             text_x = x + w
+            anchor = "midright"
         renderer.draw_text(
             self.text,
             (text_x, y + h // 2),
             color,
             font=theme.metrics.font_name if theme else None,
+            anchor=anchor,
         )
 
 

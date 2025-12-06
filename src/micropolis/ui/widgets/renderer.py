@@ -46,6 +46,7 @@ class RecordingRenderer(WidgetRenderer):
         color: Color,
         font: str | None = None,
         size: int | None = None,
+        anchor: str = "center",
     ) -> None:
         self.commands.append(
             RenderCommand(
@@ -56,6 +57,7 @@ class RecordingRenderer(WidgetRenderer):
                     "color": color,
                     "font": font,
                     "size": size,
+                    "anchor": anchor,
                 },
             )
         )
@@ -117,6 +119,7 @@ class NullRenderer(WidgetRenderer):
         color: Color,
         font: str | None = None,
         size: int | None = None,
+        anchor: str = "center",
     ) -> None:  # pragma: no cover - intentionally empty
         return None
 

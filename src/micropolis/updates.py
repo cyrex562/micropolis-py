@@ -14,9 +14,6 @@ Key responsibilities:
 - Evaluation updates
 """
 
-
-
-
 from collections.abc import Callable
 
 
@@ -148,7 +145,9 @@ class UIUpdateManager:
         """
         self.must_update_funds = True
         self.valve_flag = True
-        self.last_city_time = self.last_city_year = self.last_city_month = self.last_funds = self.last_r_valve = -999999
+        self.last_city_time = self.last_city_year = self.last_city_month = (
+            self.last_funds
+        ) = self.last_r_valve = -999999
         self.update_heads()
 
     def update_funds(self):
@@ -175,11 +174,11 @@ class UIUpdateManager:
         if self.total_funds != self.last_funds:
             self.last_funds = self.total_funds
             funds_str = make_dollar_decimal_str(self.total_funds)
-            local_str = f"Funds: {funds_str}"
+            local_str = f"Funds: ${funds_str}"
 
             # Call UI update callback
-            if 'funds' in self.callbacks:
-                self.callbacks['funds'](local_str)
+            if "funds" in self.callbacks:
+                self.callbacks["funds"](local_str)
 
     def do_time_stuff(self):
         """
@@ -211,15 +210,25 @@ class UIUpdateManager:
             self.last_city_month = month
 
             month_names = [
-                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
             ]
 
             date_str = f"{month_names[month]} {year}"
 
             # Call UI update callback
-            if 'date' in self.callbacks:
-                self.callbacks['date'](date_str, month, year)
+            if "date" in self.callbacks:
+                self.callbacks["date"](date_str, month, year)
 
     def show_valves(self):
         """
@@ -254,9 +263,7 @@ class UIUpdateManager:
         if i > 1500:
             i = 1500
 
-        if (r != self.last_r_valve or
-            c != self.last_c_valve or
-            i != self.last_i_valve):
+        if r != self.last_r_valve or c != self.last_c_valve or i != self.last_i_valve:
             self.last_r_valve = r
             self.last_c_valve = c
             self.last_i_valve = i
@@ -273,8 +280,8 @@ class UIUpdateManager:
         i_hundredths = int(i / 100)
 
         # Call UI update callback
-        if 'demand' in self.callbacks:
-            self.callbacks['demand'](r_hundredths, c_hundredths, i_hundredths)
+        if "demand" in self.callbacks:
+            self.callbacks["demand"](r_hundredths, c_hundredths, i_hundredths)
 
     def update_options(self):
         """
@@ -310,19 +317,19 @@ class UIUpdateManager:
         """
         # Extract individual option flags
         option_flags = [
-            (options & 1) != 0,    # auto_budget
-            (options & 2) != 0,    # auto_go
-            (options & 4) != 0,    # auto_bulldoze
-            (options & 8) != 0,    # disasters enabled
-            (options & 16) != 0,   # sound on
-            (options & 32) != 0,   # animation on
-            (options & 64) != 0,   # messages on
-            (options & 128) != 0   # notices on
+            (options & 1) != 0,  # auto_budget
+            (options & 2) != 0,  # auto_go
+            (options & 4) != 0,  # auto_bulldoze
+            (options & 8) != 0,  # disasters enabled
+            (options & 16) != 0,  # sound on
+            (options & 32) != 0,  # animation on
+            (options & 64) != 0,  # messages on
+            (options & 128) != 0,  # notices on
         ]
 
         # Call UI update callback
-        if 'options' in self.callbacks:
-            self.callbacks['options'](option_flags)
+        if "options" in self.callbacks:
+            self.callbacks["options"](option_flags)
 
     # Utility methods
 

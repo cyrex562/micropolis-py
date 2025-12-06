@@ -15,7 +15,8 @@ from micropolis.updates import UpdateFunds
 from . import engine
 from . import sim_control
 from .sim_control import set_city_name
-from . import tkinter_bridge as tkbridge
+
+# from . import tkinter_bridge as tkbridge
 from .file_io import LoadCity
 
 
@@ -23,7 +24,7 @@ from .file_io import LoadCity
 # Global Variables (from w_stubs.c)
 # ============================================================================
 
-# ============================================================================  
+# ============================================================================
 # Global Variables (from w_stubs.c)
 # These module-level names provide conservative, test-only compatibility
 # for legacy call-sites and tests that expect module globals. During
@@ -156,8 +157,8 @@ def GameStarted(context: AppContext) -> None:
     # Call through the module so unit-test patches on
     # `src.micropolis.tkinter_bridge.invalidate_maps` and
     # `invalidate_editors` are observed by this code.
-    tkbridge.invalidate_maps()
-    tkbridge.invalidate_editors()
+    # tkbridge.invalidate_maps()
+    # tkbridge.invalidate_editors()
 
     # Record start time
     start_time = time.time()
@@ -195,21 +196,24 @@ def DoPlayNewCity(context: AppContext) -> None:
     """
 
     # Call through the tkinter_bridge module so test patches attach
-    tkbridge.eval_command("UIPlayNewCity")
+    # tkbridge.eval_command("UIPlayNewCity")
+    pass
 
 
 def DoReallyStartGame(context: AppContext) -> None:
     """
     Really start the game (after initialization).
     """
-    tkbridge.eval_command("UIReallyStartGame")
+    # tkbridge.eval_command("UIReallyStartGame")
+    pass
 
 
 def DoStartLoad(context: AppContext) -> None:
     """
     Start loading a saved city.
     """
-    tkbridge.eval_command("UIStartLoad")
+    # tkbridge.eval_command("UIStartLoad")
+    pass
 
 
 def DoStartScenario(context: AppContext, scenario: int) -> None:
@@ -219,14 +223,16 @@ def DoStartScenario(context: AppContext, scenario: int) -> None:
     Args:
         scenario: Scenario number to start
     """
-    tkbridge.eval_command(f"UIStartScenario {scenario}")
+    # tkbridge.eval_command(f"UIStartScenario {scenario}")
+    pass
 
 
 def DropFireBombs(context: AppContext) -> None:
     """
     Drop fire bombs (disaster effect).
     """
-    tkbridge.eval_command("DropFireBombs")
+    # tkbridge.eval_command("DropFireBombs")
+    pass
 
 
 def InitGame(context: AppContext) -> None:

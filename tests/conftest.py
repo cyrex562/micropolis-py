@@ -143,44 +143,6 @@ def test_context(request):
     setattr(builtins, "context", ctx)
     setattr(builtins, "pygame_display", screen)
 
-    # Tkinter bridge shims
-    try:
-        import queue as _queue
-        import importlib
-
-        for tb_name in ("micropolis.tkinter_bridge", "src.micropolis.tkinter_bridge"):
-            try:
-                tb_mod = importlib.import_module(tb_name)
-            except Exception:
-                continue
-            try:
-                if not hasattr(tb_mod, "main_window"):
-                    setattr(tb_mod, "main_window", None)
-                if not hasattr(tb_mod, "command_callbacks"):
-                    setattr(tb_mod, "command_callbacks", {})
-                if not hasattr(tb_mod, "stdin_thread"):
-                    setattr(tb_mod, "stdin_thread", None)
-                if not hasattr(tb_mod, "stdin_queue"):
-                    setattr(tb_mod, "stdin_queue", _queue.Queue())
-                if not hasattr(tb_mod, "running"):
-                    setattr(tb_mod, "running", False)
-                if not hasattr(tb_mod, "sim_timer_token"):
-                    setattr(tb_mod, "sim_timer_token", None)
-                if not hasattr(tb_mod, "sim_timer_set"):
-                    setattr(tb_mod, "sim_timer_set", False)
-                if not hasattr(tb_mod, "sim_timer_idle"):
-                    setattr(tb_mod, "sim_timer_idle", False)
-                if not hasattr(tb_mod, "earthquake_timer_token"):
-                    setattr(tb_mod, "earthquake_timer_token", None)
-                if not hasattr(tb_mod, "earthquake_timer_set"):
-                    setattr(tb_mod, "earthquake_timer_set", False)
-                if not hasattr(tb_mod, "update_delayed"):
-                    setattr(tb_mod, "update_delayed", False)
-            except Exception:
-                continue
-    except Exception:
-        pass
-
     yield ctx
 
     # Teardown
