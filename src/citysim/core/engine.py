@@ -18,6 +18,7 @@ from citysim.rendering.ui_overlay import UIOverlay
 from citysim.simulation.world import GameMap
 from citysim.simulation.tile import TILE_DEFINITIONS, TileType
 from citysim.simulation.simulation import Simulation
+from citysim.ui.main_menu import MainMenu
 
 
 class Engine:
@@ -43,29 +44,28 @@ class Engine:
         self.camera = Camera(position=(32, 20, 32), yaw=-135, pitch=-30)
         self.meshes = {}
 
-        # Game World
-        self.world = GameMap(64, 64)
-
-        # Simulation
-        self.simulation = Simulation(self.world)
+        # Game World (Allocated later or default)
+        self.world = None
+        self.simulation = None
 
         # Use InstancedMesh instead of standard mesh
         base_cube = MeshBuilder.create_cube()
         self.cube_mesh = InstancedMesh(
-            base_cube.vertices, base_cube.indices, max_instances=64 * 64 * 2
+            base_cube.vertices, base_cube.indices, max_instances=256 * 256 * 2
         )
         self.preview_mesh = base_cube  # Use base cube for drag preview
 
-        self.world_dirty = True  # Flag to trigger instance update
+        self.world_dirty = True
         self.current_instance_count = 0
 
         # Traffic Overlay
         base_plane = MeshBuilder.create_plane()
-        self.traffic_mesh = InstancedMesh(base_plane.vertices, max_instances=64 * 64)
+        self.traffic_mesh = InstancedMesh(base_plane.vertices, max_instances=256 * 256)
         self.view_mode = "NORMAL"  # NORMAL, TRAFFIC
         self.traffic_current_instances = 0
 
         # Gameplay State
+        self.state = "MENU"  # MENU, GAME
         self.selected_tool = TileType.ROAD
         self.layer_view = 0  # 0 = Surface, -1 = Underground
 
@@ -84,6 +84,37 @@ class Engine:
         )
 
         self._setup_ui()
+
+        # Main Menu
+        self.main_menu = MainMenu(
+            self.ui_manager, self.config.window_width, self.config.window_height
+        )
+        self.toggle_game_ui(False)  # Hide HUD initially
+
+    def toggle_game_ui(self, visible: bool):
+        if visible:
+            self.top_bar.show()
+            self.toolbar_window.show()
+        else:
+            self.top_bar.hide()
+            self.toolbar_window.hide()
+            if self.inspector_window:
+                self.inspector_window.hide()
+
+    def start_new_game(self, config_dict):
+        print(f"Starting New Game: {config_dict}")
+        w = config_dict.get("width", 64)
+        h = config_dict.get("height", 64)
+        water = config_dict.get("water_threshold", 0.1)
+
+        self.world = GameMap(w, h, water_threshold=water)
+        self.simulation = Simulation(self.world)
+        self.camera = Camera(position=(w // 2, 20, h // 2), yaw=-135, pitch=-30)
+
+        self.state = "GAME"
+        self.main_menu.hide()
+        self.toggle_game_ui(True)
+        self.world_dirty = True
 
     def _setup_ui(self):
         """Create initial UI elements."""
@@ -222,26 +253,25 @@ class Engine:
     def handle_events(self, dt: float):
         for event in pygame.event.get():
             # Pass event to UI
-            if self.ui_manager.process_events(event):
-                # If UI consumed it, make sure we don't process world clicks for tools
-                # But allow tool selection
+            consumed = self.ui_manager.process_events(event)
+
+            # MENU State Logic
+            if self.state == "MENU":
+                self.main_menu.process_event(event)
+                if self.main_menu.start_game_requested:
+                    self.main_menu.start_game_requested = False
+                    self.start_new_game(self.main_menu.game_config)
+                elif self.main_menu.load_game_requested:
+                    self.main_menu.load_game_requested = False
+                    self.load_game()
+
+            # GAME State Logic: Check if UI consumed input
+            if self.state == "GAME" and consumed:
                 if event.type == MOUSEBUTTONDOWN:
-                    # Very simple check: if we clicked UI, don't drag world
                     continue
 
             if event.type == QUIT:
                 self.running = False
-            elif event.type == MOUSEWHEEL:
-                self.camera.process_zoom(event.y)
-            elif event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    if self.is_dragging:
-                        self.is_dragging = False
-                        print("Drag cancelled.")
-                    else:
-                        self.running = False
-                elif event.key == K_t:
-                    self.toggle_view_mode()
             elif event.type == VIDEORESIZE:
                 self.config.window_width, self.config.window_height = event.size
                 self.renderer.update_viewport(event.w, event.h)
@@ -254,145 +284,170 @@ class Engine:
                     (event.w, event.h), flags=pygame.SRCALPHA
                 )
 
-                # Update Top Bar size
-                self.top_bar.set_dimensions((event.w, 40))
+                if self.state == "MENU":
+                    self.main_menu.resize(event.w, event.h)
+                else:
+                    self.top_bar.set_dimensions((event.w, 40))
 
-            # UI Events
-            if event.type == pygame_gui.UI_BUTTON_PRESSED:
-                # Check if the button has a tool_type attribute
-                if hasattr(event.ui_element, "tool_type"):
-                    print(f"Tool Selection: {event.ui_element.text}")
-                    self.selected_tool = event.ui_element.tool_type
+            # Game-Specific Input
+            if self.state == "GAME":
+                if event.type == MOUSEWHEEL:
+                    self.camera.process_zoom(event.y)
+                elif event.type == KEYDOWN:
+                    if event.key == K_ESCAPE:
+                        if self.is_dragging:
+                            self.is_dragging = False
+                        else:
+                            # Return to Menu
+                            self.state = "MENU"
+                            self.toggle_game_ui(False)
+                            self.main_menu.show()
 
-                    # Auto-switch layer based on tool
-                    if self.selected_tool in [TileType.WATER_PIPE, TileType.SEWER_PIPE]:
+                    elif event.key == K_t:
+                        self.toggle_view_mode()
+
+                # UI Events (Game)
+                if event.type == pygame_gui.UI_BUTTON_PRESSED:
+                    # Check if the button has a tool_type attribute
+                    if hasattr(event.ui_element, "tool_type"):
+                        print(f"Tool Selection: {event.ui_element.text}")
+                        self.selected_tool = event.ui_element.tool_type
+
+                        # Auto-switch layer based on tool
+                        if self.selected_tool in [
+                            TileType.WATER_PIPE,
+                            TileType.SEWER_PIPE,
+                        ]:
+                            if self.layer_view == 0:
+                                self.layer_view = -1
+                                self.btn_layer.set_text("Layer: Underground")
+                                self.world_dirty = True
+                        elif self.selected_tool in [TileType.WATER_PUMP]:
+                            # Ensure Surface
+                            if self.layer_view == -1:
+                                self.layer_view = 0
+                                self.btn_layer.set_text("Layer: Surface")
+                                self.world_dirty = True
+
+                    # Check for Save/Load/Layer
+                    elif event.ui_element == self.btn_layer:
                         if self.layer_view == 0:
                             self.layer_view = -1
                             self.btn_layer.set_text("Layer: Underground")
-                            self.world_dirty = True
-                    elif self.selected_tool in [TileType.WATER_PUMP]:
-                        # Ensure Surface
-                        if self.layer_view == -1:
+                        else:
                             self.layer_view = 0
                             self.btn_layer.set_text("Layer: Surface")
-                            self.world_dirty = True
+                        self.world_dirty = True
 
-                # Check for Save/Load/Layer
-                elif event.ui_element == self.btn_layer:
-                    if self.layer_view == 0:
-                        self.layer_view = -1
-                        self.btn_layer.set_text("Layer: Underground")
-                    else:
-                        self.layer_view = 0
-                        self.btn_layer.set_text("Layer: Surface")
-                    self.world_dirty = True
+                    elif event.ui_element == self.btn_save:
+                        self.save_game()
+                    elif event.ui_element == self.btn_load:
+                        self.load_game()
+                    elif event.ui_element == self.btn_view_mode:
+                        self.toggle_view_mode()
 
-                elif event.ui_element == self.btn_save:
-                    self.save_game()
-                elif event.ui_element == self.btn_load:
-                    self.load_game()
-                elif event.ui_element == self.btn_view_mode:
-                    self.toggle_view_mode()
+                # Mouse Interaction
+                elif event.type == MOUSEBUTTONDOWN:
+                    # Raycast
+                    # Only if not clicking inside a window (simple check)
+                    if not self.toolbar_window.rect.collidepoint(event.pos) and (
+                        not self.inspector_window.visible
+                        or not self.inspector_window.rect.collidepoint(event.pos)
+                    ):
+                        origin, direction = self.camera.get_mouse_ray(
+                            event.pos[0],
+                            event.pos[1],
+                            self.config.window_width,
+                            self.config.window_height,
+                        )
 
-            # Mouse Interaction
-            elif event.type == MOUSEBUTTONDOWN:
-                # Raycast
-                # Only if not clicking inside a window (simple check)
-                if not self.toolbar_window.rect.collidepoint(event.pos) and (
-                    not self.inspector_window.visible
-                    or not self.inspector_window.rect.collidepoint(event.pos)
-                ):
-                    origin, direction = self.camera.get_mouse_ray(
-                        event.pos[0],
-                        event.pos[1],
-                        self.config.window_width,
-                        self.config.window_height,
-                    )
+                        if abs(direction[1]) > 0.0001:
+                            t = -origin[1] / direction[1]
+                            if t > 0:
+                                hit_point = origin + t * direction
+                                gx = int(round(hit_point[0]))
+                                gy = int(round(hit_point[2]))
 
-                    if abs(direction[1]) > 0.0001:
-                        t = -origin[1] / direction[1]
-                        if t > 0:
-                            hit_point = origin + t * direction
-                            gx = int(round(hit_point[0]))
-                            gy = int(round(hit_point[2]))
+                                if event.button == 1:  # Left Click: Tool / Drag
+                                    self.is_dragging = True
+                                    self.drag_start = (gx, gy)
+                                    self.drag_current = (gx, gy)
 
-                            if event.button == 1:  # Left Click: Tool / Drag
-                                self.is_dragging = True
-                                self.drag_start = (gx, gy)
+                                elif event.button == 3:  # Right Click
+                                    if self.is_dragging:
+                                        self.is_dragging = False
+                                        print("Drag cancelled.")
+                                    else:
+                                        self.show_inspector(gx, gy)
+
+                elif event.type == MOUSEMOTION:
+                    if self.is_dragging:
+                        # Update current drag pos
+                        origin, direction = self.camera.get_mouse_ray(
+                            event.pos[0],
+                            event.pos[1],
+                            self.config.window_width,
+                            self.config.window_height,
+                        )
+
+                        if abs(direction[1]) > 0.0001:
+                            t = -origin[1] / direction[1]
+                            if t > 0:
+                                hit_point = origin + t * direction
+                                gx = int(round(hit_point[0]))
+                                gy = int(round(hit_point[2]))
                                 self.drag_current = (gx, gy)
 
-                            elif event.button == 3:  # Right Click
-                                if self.is_dragging:
-                                    self.is_dragging = False
-                                    print("Drag cancelled.")
-                                else:
-                                    self.show_inspector(gx, gy)
+                                # Orthogonal Constraint for Linear Tools
+                                is_linear_tool = self.selected_tool in [
+                                    TileType.ROAD,
+                                    TileType.POWER_LINE,
+                                    TileType.WATER_PIPE,
+                                    TileType.SEWER_PIPE,
+                                ]
+                                if is_linear_tool:
+                                    dx = abs(self.drag_current[0] - self.drag_start[0])
+                                    dy = abs(self.drag_current[1] - self.drag_start[1])
+                                    if dx > dy:
+                                        # Horizontal
+                                        self.drag_current = (
+                                            self.drag_current[0],
+                                            self.drag_start[1],
+                                        )
+                                    else:
+                                        # Vertical
+                                        self.drag_current = (
+                                            self.drag_start[0],
+                                            self.drag_current[1],
+                                        )
 
-            elif event.type == MOUSEMOTION:
-                if self.is_dragging:
-                    # Update current drag pos
-                    origin, direction = self.camera.get_mouse_ray(
-                        event.pos[0],
-                        event.pos[1],
-                        self.config.window_width,
-                        self.config.window_height,
-                    )
+                elif event.type == MOUSEBUTTONUP:
+                    if event.button == 1 and self.is_dragging:
+                        self.is_dragging = False
+                        # Apply Tool to all affected tiles
+                        tiles = self.get_affected_tiles(
+                            self.drag_start, self.drag_current
+                        )
+                        for tx, ty in tiles:
+                            self.apply_tool(tx, ty)
 
-                    if abs(direction[1]) > 0.0001:
-                        t = -origin[1] / direction[1]
-                        if t > 0:
-                            hit_point = origin + t * direction
-                            gx = int(round(hit_point[0]))
-                            gy = int(round(hit_point[2]))
-                            self.drag_current = (gx, gy)
-
-                            # Orthogonal Constraint for Linear Tools
-                            is_linear_tool = self.selected_tool in [
-                                TileType.ROAD,
-                                TileType.POWER_LINE,
-                                TileType.WATER_PIPE,
-                                TileType.SEWER_PIPE,
-                            ]
-                            if is_linear_tool:
-                                dx = abs(self.drag_current[0] - self.drag_start[0])
-                                dy = abs(self.drag_current[1] - self.drag_start[1])
-                                if dx > dy:
-                                    # Horizontal
-                                    self.drag_current = (
-                                        self.drag_current[0],
-                                        self.drag_start[1],
-                                    )
-                                else:
-                                    # Vertical
-                                    self.drag_current = (
-                                        self.drag_start[0],
-                                        self.drag_current[1],
-                                    )
-
-            elif event.type == MOUSEBUTTONUP:
-                if event.button == 1 and self.is_dragging:
-                    self.is_dragging = False
-                    # Apply Tool to all affected tiles
-                    tiles = self.get_affected_tiles(self.drag_start, self.drag_current)
-                    for tx, ty in tiles:
-                        self.apply_tool(tx, ty)
-
-        # Camera Input
-        keys = pygame.key.get_pressed()
-        if keys[K_w]:
-            self.camera.process_keyboard("FORWARD", dt)
-        if keys[K_s]:
-            self.camera.process_keyboard("BACKWARD", dt)
-        if keys[K_a]:
-            self.camera.process_keyboard("LEFT", dt)
-        if keys[K_d]:
-            self.camera.process_keyboard("RIGHT", dt)
-        if keys[K_q]:
-            self.camera.yaw -= 90 * dt
-            self.camera.update_vectors()
-        if keys[K_e]:
-            self.camera.yaw += 90 * dt
-            self.camera.update_vectors()
+        # Camera Input (GAME State only)
+        if self.state == "GAME":
+            keys = pygame.key.get_pressed()
+            if keys[K_w]:
+                self.camera.process_keyboard("FORWARD", dt)
+            if keys[K_s]:
+                self.camera.process_keyboard("BACKWARD", dt)
+            if keys[K_a]:
+                self.camera.process_keyboard("LEFT", dt)
+            if keys[K_d]:
+                self.camera.process_keyboard("RIGHT", dt)
+            if keys[K_q]:
+                self.camera.yaw -= 90 * dt
+                self.camera.update_vectors()
+            if keys[K_e]:
+                self.camera.yaw += 90 * dt
+                self.camera.update_vectors()
 
     def get_affected_tiles(self, start, end):
         """Calculate list of tiles based on tool type (Line vs Rect)."""
@@ -406,9 +461,21 @@ class Engine:
         x2 = max(0, min(x2, self.world.width - 1))
         y2 = max(0, min(y2, self.world.height - 1))
 
-        if self.selected_tool == TileType.ROAD:
-            # Line Calculation (Bresenham-like or just iterate)
-            # For simplicity: Bresenham
+        if self.selected_tool in [
+            TileType.ROAD,
+            TileType.POWER_LINE,
+            TileType.WATER_PIPE,
+            TileType.SEWER_PIPE,
+        ]:
+            # Enforce Orthogonality strictly
+            dx = abs(x2 - x1)
+            dy = abs(y2 - y1)
+            if dx > dy:
+                y2 = y1  # Horizontal
+            else:
+                x2 = x1  # Vertical
+
+            # Line Calculation (Bresenham-like)
             dx = abs(x2 - x1)
             dy = abs(y2 - y1)
             sx = 1 if x1 < x2 else -1
@@ -537,51 +604,37 @@ class Engine:
                     )
                     info += f"Sewage: {status}<br>"
 
+                # Simulation Stats (Pop/Jobs/Traffic)
+                if hasattr(self.simulation, "tile_data"):
+                    data = self.simulation.tile_data.get((x, y))
+                    if data:
+                        if "residents" in data and data["residents"] > 0:
+                            info += f"Residents: {data['residents']}<br>"
+                        if "filled_jobs" in data and data["filled_jobs"] > 0:
+                            info += f"Jobs Filled: {data['filled_jobs']}<br>"
+                        if "workers" in data and data["workers"] > 0:
+                            info += f"Employed: {data['workers']}<br>"
+
+                # Traffic
+                traffic = self.simulation.road_usage.get((x, y), 0)
+                if traffic > 0:
+                    info += f"Traffic: {traffic}<br>"
+
                 self.lbl_inspector_info.set_text(info)
                 self.inspector_window.show()
-
-    def save_game(self):
-        """Save the current city to savegame.json."""
-        print("Saving game...")
-        try:
-            data = self.world.to_dict()
-            import json
-
-            with open("savegame.json", "w") as f:
-                json.dump(data, f)
-            print("Game saved!")
-        except Exception as e:
-            print(f"Failed to save game: {e}")
-
-    def load_game(self):
-        """Load the city from savegame.json."""
-        print("Loading game...")
-        try:
-            import json
-            import os
-
-            if os.path.exists("savegame.json"):
-                with open("savegame.json", "r") as f:
-                    data = json.load(f)
-                    self.world.from_dict(data)
-                self.world_dirty = True
-                print("Game loaded!")
-            else:
-                print("No savegame found.")
-        except Exception as e:
-            print(f"Failed to load game: {e}")
 
     def update(self, dt: float):
         self.ui_manager.update(dt)
 
-        # Run Simulation
-        sim_changed = self.simulation.tick(dt)
-        if sim_changed:
-            self.world_dirty = True
+        if self.state == "GAME" and self.simulation:
+            # Run Simulation
+            sim_changed = self.simulation.tick(dt)
+            if sim_changed:
+                self.world_dirty = True
 
-        # Update Info Bar
-        self.lbl_pop.set_text(f"Population: {self.simulation.population}")
-        self.lbl_date.set_text(f"Day: {self.simulation.day}")
+            # Update Info Bar
+            self.lbl_pop.set_text(f"Population: {self.simulation.population}")
+            self.lbl_date.set_text(f"Day: {self.simulation.day}")
 
         # Update FPS in title
         fps = self.clock.get_fps()
@@ -593,98 +646,162 @@ class Engine:
         glEnable(GL_CULL_FACE)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        self.renderer.set_camera(
-            self.camera.get_view_matrix(),
-            self.camera.get_projection_matrix(
-                self.config.window_width, self.config.window_height
-            ),
-            self.camera.position,
-        )
+        # Only render world if in GAME state
+        if self.state == "GAME" and self.world:
+            self.renderer.set_camera(
+                self.camera.get_view_matrix(),
+                self.camera.get_projection_matrix(
+                    self.config.window_width, self.config.window_height
+                ),
+                self.camera.position,
+            )
 
-        # Update Instances if dirty
-        if self.world_dirty:
-            instance_data = []
-            for x in range(self.world.width):
-                for y in range(self.world.height):
-                    # Iterate over relevant layers to support visibility
-                    visible_layers = []
-                    if self.layer_view == -1:
-                        # Underground View
-                        # 1. Deep Sewer (Layer -2) -> Y = -0.2
-                        visible_layers.append((-2, -0.2))
-                        # 2. Water (Layer -1) -> Y = -0.1
-                        visible_layers.append((-1, -0.1))
-                        # 3. Surface Ghosts -> Handled specially below
+            # Update Instances if dirty
+            if self.world_dirty:
+                self.world_dirty = False
+
+                # --- Vectorized Instance Generation ---
+                MAX_ID = 20
+                if not hasattr(self, "_lookup_heights"):
+                    self._lookup_heights = np.zeros(MAX_ID, dtype=np.float32)
+                    self._lookup_colors = np.zeros((MAX_ID, 3), dtype=np.float32)
+
+                    # Fill Lookups
+                    for tid, tdef in TILE_DEFINITIONS.items():
+                        if int(tid) < MAX_ID:
+                            self._lookup_heights[int(tid)] = tdef.height
+                            self._lookup_colors[int(tid)] = tdef.color
+
+                # Helper for layers
+                def process_layer(layer_id, y_offset, is_ghost=False, mask_fn=None):
+                    grid = self.world.layers.get(layer_id)
+                    if grid is None:
+                        return []
+
+                    if mask_fn:
+                        mask = mask_fn(grid)
                     else:
-                        # Surface View
-                        # 1. Surface (Layer 0) -> Y = 0.0
-                        visible_layers.append((0, 0.0))
-                        # 2. Air (Layer 1) -> Y = +0.3 (Power Lines)
-                        visible_layers.append((1, 0.3))
+                        mask = grid != TileType.EMPTY
 
-                    for l_id, y_offset in visible_layers:
-                        tile_id = self.world.get_tile(x, y, l_id)
-                        tile_def = TILE_DEFINITIONS.get(tile_id)
-                        if tile_def:
-                            # Construct per-instance data
-                            instance_data.extend([1.0, 0.0, 0.0, 0.0])
-                            instance_data.extend([0.0, tile_def.height, 0.0, 0.0])
-                            instance_data.extend([0.0, 0.0, 1.0, 0.0])
-                            instance_data.extend([float(x), y_offset, float(y), 1.0])
-                            instance_data.extend(tile_def.color)
+                    if not np.any(mask):
+                        return []
 
-                    # Ghost Rendering (Surface Footprints in Underground View)
-                    if self.layer_view == -1:
-                        surface_id = self.world.get_tile(x, y, 0)  # Surface Layer 0
+                    count = np.count_nonzero(mask)
+                    xs, ys = np.where(mask)
+                    ids = grid[mask]
 
-                        # Show Water Pumps fully to allow connection
-                        if surface_id == TileType.WATER_PUMP:
-                            s_def = TILE_DEFINITIONS.get(surface_id)
-                            if s_def:
-                                instance_data.extend([1.0, 0.0, 0.0, 0.0])
-                                instance_data.extend([0.0, s_def.height, 0.0, 0.0])
-                                instance_data.extend([0.0, 0.0, 1.0, 0.0])
-                                instance_data.extend([float(x), 0.0, float(y), 1.0])
-                                instance_data.extend(s_def.color)
+                    heights = self._lookup_heights[ids]
+                    colors = self._lookup_colors[ids]
 
-                        # Show other buildings as Ghosts
-                        elif surface_id and surface_id not in [
-                            TileType.DIRT,
-                            TileType.WATER,
-                        ]:
-                            s_def = TILE_DEFINITIONS.get(surface_id)
-                            if s_def:
-                                # Ghost: Flat, Inset, Native Color
-                                instance_data.extend([0.8, 0.0, 0.0, 0.0])
-                                instance_data.extend([0.0, 0.05, 0.0, 0.0])
-                                instance_data.extend([0.0, 0.0, 0.8, 0.0])
-                                # Translation: Center the 0.8 scale (offset by 0.1)
-                                # Y offset = 0.15 (Above the 0.1 floor height)
-                                instance_data.extend(
-                                    [float(x) + 0.1, 0.15, float(y) + 0.1, 1.0]
-                                )
-                                instance_data.extend(s_def.color)
+                    ones = np.ones(count, dtype=np.float32)
+                    zeros = np.zeros(count, dtype=np.float32)
 
-            if instance_data:
-                data_np = np.array(instance_data, dtype=np.float32)
-                self.cube_mesh.update_instances(data_np)
-                self.current_instance_count = len(instance_data) // 19
-            else:
-                self.current_instance_count = 0
+                    if is_ghost:
+                        col0 = np.full(count, 0.8, dtype=np.float32)
+                        col5 = np.full(count, 0.05, dtype=np.float32)
+                        col10 = np.full(count, 0.8, dtype=np.float32)
+                        pos_x = xs.astype(np.float32) + 0.1
+                        pos_y = np.full(count, 0.15, dtype=np.float32)
+                        pos_z = ys.astype(np.float32) + 0.1
+                        c_r = colors[:, 0]
+                        c_g = colors[:, 1]
+                        c_b = colors[:, 2]
+                    else:
+                        col0 = ones
+                        col5 = heights
+                        col10 = ones
+                        pos_x = xs.astype(np.float32)
+                        pos_y = np.full(count, y_offset, dtype=np.float32)
+                        pos_z = ys.astype(np.float32)
+                        c_r = colors[:, 0]
+                        c_g = colors[:, 1]
+                        c_b = colors[:, 2]
 
-            self.world_dirty = False
+                    # Stack columns [0..3, 4..7, 8..11, 12..15, 16..18]
+                    # Note: Original code creates valid padding 0s where needed in extended list
+                    # Layout:
+                    # 1, 0, 0, 0 (col0, zeros, zeros, zeros)
+                    # 0, H, 0, 0 (zeros, col5, zeros, zeros)
+                    # 0, 0, 1, 0 (zeros, zeros, col10, zeros)
+                    # x, y, z, 1 (pos_x, pos_y, pos_z, ones)
+                    # r, g, b    (c_r, c_g, c_b)
 
-        # Draw Instanced
-        if self.current_instance_count > 0:
-            self.renderer.use_instanced()
-            self.cube_mesh.draw(self.current_instance_count)
+                    batch = np.column_stack(
+                        (
+                            col0,
+                            zeros,
+                            zeros,
+                            zeros,
+                            zeros,
+                            col5,
+                            zeros,
+                            zeros,
+                            zeros,
+                            zeros,
+                            col10,
+                            zeros,
+                            pos_x,
+                            pos_y,
+                            pos_z,
+                            ones,
+                            c_r,
+                            c_g,
+                            c_b,
+                        )
+                    )
+                    return batch.flatten()
 
-        # Traffic Overlay
-        if self.view_mode == "TRAFFIC":
-            self.update_traffic_overlay()  # Optimize: only when dirty?
-            if self.traffic_current_instances > 0:
+                # Process Layers based on View
+                all_batches = []
+
+                if self.layer_view == -1:
+                    # Underground
+                    all_batches.append(process_layer(-2, -0.2))  # Sewer
+                    all_batches.append(process_layer(-1, -0.1))  # Water
+
+                    # Ghosts (Surface Layer 0)
+                    pump_mask = lambda g: g == TileType.WATER_PUMP
+                    all_batches.append(
+                        process_layer(0, 0.0, is_ghost=False, mask_fn=pump_mask)
+                    )
+
+                    ghost_mask = (
+                        lambda g: (g != TileType.DIRT)
+                        & (g != TileType.WATER)
+                        & (g != TileType.EMPTY)
+                        & (g != TileType.WATER_PUMP)
+                    )
+                    all_batches.append(
+                        process_layer(0, 0.0, is_ghost=True, mask_fn=ghost_mask)
+                    )
+
+                else:
+                    # Surface
+                    all_batches.append(process_layer(0, 0.0))  # Surface
+                    all_batches.append(process_layer(1, 0.3))  # Air
+
+                # Combine
+                valid_batches = [b for b in all_batches if len(b) > 0]
+                if valid_batches:
+                    final_data = np.concatenate(valid_batches)
+                    self.cube_mesh.update_instances(final_data.astype(np.float32))
+                    self.current_instance_count = len(final_data) // 19
+                else:
+                    self.current_instance_count = 0
+
+                self.world_dirty = False
+
+            # Draw Instanced
+            if self.current_instance_count > 0:
                 self.renderer.use_instanced()
-                self.traffic_mesh.draw(self.traffic_current_instances)
+                self.cube_mesh.draw(self.current_instance_count)
+
+            # Traffic Overlay
+            if self.view_mode == "TRAFFIC":
+                self.update_traffic_overlay()  # Optimize: only when dirty?
+                if self.traffic_current_instances > 0:
+                    self.renderer.use_instanced()
+                    self.traffic_mesh.draw(self.traffic_current_instances)
 
         # 2. Draw Preview if Dragging
         if self.is_dragging:
@@ -775,6 +892,45 @@ class Engine:
             self.traffic_current_instances = len(instance_data) // 19
         else:
             self.traffic_current_instances = 0
+
+    def save_game(self):
+        """Save the city to savegame.json."""
+        if not self.world:
+            return
+        print("Saving game...")
+        try:
+            import json
+
+            data = self.world.to_dict()
+            with open("savegame.json", "w") as f:
+                json.dump(data, f)
+            print("Game saved!")
+        except Exception as e:
+            print(f"Failed to save game: {e}")
+
+    def load_game(self):
+        """Load the city from savegame.json."""
+        print("Loading game...")
+        try:
+            import json
+            import os
+
+            if os.path.exists("savegame.json"):
+                with open("savegame.json", "r") as f:
+                    data = json.load(f)
+
+                self.world = GameMap.from_dict(data)
+
+                self.simulation = Simulation(self.world)
+                self.state = "GAME"
+                self.main_menu.hide()
+                self.toggle_game_ui(True)
+                self.world_dirty = True
+                print("Game loaded!")
+            else:
+                print("No savegame found.")
+        except Exception as e:
+            print(f"Failed to load game: {e}")
 
     def quit(self):
         print("Engine shutting down.")

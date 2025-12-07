@@ -3,9 +3,10 @@ from citysim.simulation.tile import TileType
 
 
 class GameMap:
-    def __init__(self, width: int = 64, height: int = 64):
+    def __init__(self, width: int = 64, height: int = 64, water_threshold: float = 0.1):
         self.width = width
         self.height = height
+        self.water_threshold = water_threshold
         # Layers:
         #  1: Air (Power Lines)
         #  0: Surface (Roads, Buildings, Zones)
@@ -23,7 +24,7 @@ class GameMap:
         """Procedurally generate water bodies."""
         # Simple Cellular Automata for Water
         # 1. Random seeding
-        water_seeds = np.random.random((self.width, self.height)) < 0.10
+        water_seeds = np.random.random((self.width, self.height)) < self.water_threshold
         self.layers[0][water_seeds] = TileType.WATER
 
         # 2. Grow/Smooth (Iterate a few times)
