@@ -1,0 +1,11 @@
+[package]
+name = "micropolis"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = "0.15"
+bevy_egui = "0.31"
+rand = "0.8"
+serde = "1.0"
+noise = "0.9"

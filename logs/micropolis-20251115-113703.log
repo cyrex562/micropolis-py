@@ -1,9 +1,0 @@
-2025-11-15 11:37:03,751 DEBUG __main__: Logging initialized. Console -> rich, File -> C:\Users\cyrex\files\projects\micropolis\logs\micropolis-20251115-113703.log
-2025-11-15 11:37:03,753 INFO micropolis.engine: Welcome to Python Micropolis version 2025.11.11
-2025-11-15 11:37:03,754 INFO micropolis.engine: Copyright (C) 2002 by Electronic Arts, Maxis. All rights reserved.
-2025-11-15 11:37:03,765 DEBUG micropolis.engine: Map view surface not yet initialized (will be set during graphics setup)
-2025-11-15 11:37:04,507 INFO micropolis.audio: Sound system initialized with 7 logical channels
-2025-11-15 11:37:04,509 DEBUG root: Funds set to: $20000
-2025-11-15 11:37:04,510 DEBUG root: Funds set to: $20000
-2025-11-15 11:37:04,511 INFO root: Game level set to 0 (Easy) - Starting funds: $20000
-2025-11-15 11:37:04,513 INFO root: Map cleared - all tiles set to DIRT

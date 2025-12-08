@@ -11,27 +11,27 @@ This document tracks the completed milestones, current focus, and planned future
 
 ### Game World & Simulation
 - [x] **Grid System**: 64x64 Tile map with multiple layers (Surface, Underground, Air).
-- [x] **Layer Management**:
+- [ ] **Layer Management**:
   - `Layer 1`: Air (Power Lines)
   - `Layer 0`: Surface (Roads, Buildings, Zones)
   - `Layer -1`: Underground (Water Pipes)
   - `Layer -2`: Deep Underground (Sewer Pipes)
-- [x] **Utilities Logic**:
+- [ ] **Utilities Logic**:
   - **Power**: Flood-fill propagation (Sources -> Conductors -> Consumers).
   - **Water**: Propagation through pipes and zones; Groundwater pumping logic.
   - **Sewage**: Drainage logic from sources to Map Edge sinks.
   - **Zone Propagation**: RCI Zones conduct utilities internally.
 
 ### Traffic & Labor System
-- [x] **Labor Exchange**: Residents (Seekers) assigned to Jobs (Employers) daily.
-- [x] **Pathfinding**: A* algorithm finding routes through the road network.
-- [x] **Traffic Traffic**: Road usage tracking based on commute paths.
-- [x] **Traffic Overlay**: Visual heat map (Green/Yellow/Red) toggled via 'T'.
+- [ ] **Labor Exchange**: Residents (Seekers) assigned to Jobs (Employers) daily.
+- [ ] **Pathfinding**: A* algorithm finding routes through the road network.
+- [ ] **Traffic Traffic**: Road usage tracking based on commute paths.
+- [ ] **Traffic Overlay**: Visual heat map (Green/Yellow/Red) toggled via 'T'.
 
 ### User Interface
-- [x] **HUD**: Tool selection bar, Top info bar (Population, Time).
-- [x] **Inspector**: Tile details on Right-Click.
-- [x] **Controls**:
+- [ ] **HUD**: Tool selection bar, Top info bar (Population, Time).
+- [ ] **Inspector**: Tile details on Right-Click.
+- [ ] **Controls**:
   - Orthogonal dragging (Straight lines).
   - Camera Zoom (Mouse Wheel).
   - Layer Toggling (Surface/Underground).
@@ -56,6 +56,10 @@ This document tracks the completed milestones, current focus, and planned future
 - [ ] **Map Bounds**: Visually indicate map edges in underground views.
 - [ ] **Grid Overlay**: Toggleable grid lines for precise placement.
 
+### Advanced Building Mechanics
+- [ ] **Non-Uniform Building Sizes**: Support for 1x1, 2x2, ... 5x5 structures for specialized zones.
+- [ ] **Multi-Tile Structures**: Logic for placing and simulating large buildings.
+
 ### Simulation Depth
 - [ ] **Advanced Fluids**: Treat pipes as networks with flow rate and capacity limits.
 - [ ] **Pollution**: Generate pollution based on Traffic and Industrial density.
@@ -71,6 +75,10 @@ This document tracks the completed milestones, current focus, and planned future
 ### New Service Systems
 - [ ] **Safety Services**: Police (Crime logic), Fire (Fire hazard logic), Medical (Health logic).
 - [ ] **Civic Services**: Education (Schools/Universities), Recreation (Parks/Stadiums).
+
+### Visual Ambience
+- [ ] **Day/Night Cycle**: Visual changes based on time of day (lighting, skybox).
+- [ ] **Weather System**: Rain, Snow, Fog effects.
 
 ### Supply Chain Logic
 - [ ] **Resource Management**: Tracking of Goods, Raw Materials, and Food.

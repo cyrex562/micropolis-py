@@ -17,3 +17,8 @@ htmlcov/
 # Snapshot test diffs (commit golden images, not diffs)
 tests/golden/*_diff.png
 tests/golden/*_current.png
+
+
+# Added by cargo
+
+/target

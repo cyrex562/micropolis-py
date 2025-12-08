@@ -1,0 +1,74 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "micropolis"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.12.4",
+    "pydantic-settings>=2.12.0",
+    "pygame>=2.6.1",
+    "pytest>=8.0.0",
+    "result>=0.17.0",
+    "rich>=14.2.0",
+    "pillow>=11.0.0",
+    "numpy>=1.26.0",
+    "pygame-ce>=2.5.6",
+    "pygame-gui>=0.6.14",
+    "pyopengl>=3.1.10",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = ["pytest-cov>=7.0.0", "pytest>=7.4", "pytest-timeout>=2.2", "ruff>=0.1.0"]
+
+[project.scripts]
+micropolis = "micropolis.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/micropolis"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["src"]
+addopts = "-v --cov=src/micropolis --cov-report=term-missing"
+markers = [
+    "timeout(seconds): mark test with a timeout (informational; requires pytest-timeout to enforce)",
+    "slow: mark slow tests",
+]
+
+[tool.coverage.run]
+source = ["src/micropolis"]
+omit = [
+    "tests/*",
+    "src/micropolis/micropolisactivity.py",
+    "src/micropolis/test_ui_utilities.py",
+    "src/micropolis/ui_utilities_backup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

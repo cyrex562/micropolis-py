@@ -1,0 +1,3 @@
+2025-11-23 10:32:32,509 DEBUG micropolis.main: Logging initialized. Console -> rich, File -> C:\Users\cyrex\files\projects\micropolis\logs\micropolis-20251123-103232.log
+2025-11-23 10:32:32,514 INFO micropolis.engine: Welcome to Python Micropolis version 2025.11.11
+2025-11-23 10:32:32,516 INFO micropolis.engine: Copyright (C) 2002 by Electronic Arts, Maxis. All rights reserved.
